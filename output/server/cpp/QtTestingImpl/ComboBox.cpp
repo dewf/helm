@@ -1,10 +1,36 @@
 #include "generated/ComboBox.h"
 
+#include <QObject>
 #include <QComboBox>
+#include <QStringList>
+#include <algorithm>
+
+#define THIS ((QComboBox*)_this)
 
 namespace ComboBox
 {
-    void Handle_todo(HandleRef _this) {
+    void Handle_setItems(HandleRef _this, std::vector<std::string> items) {
+        QStringList items2;
+        std::transform(items.begin(), items.end(), std::back_inserter(items2), std::mem_fn(&std::string::c_str));
+        THIS->addItems(items2);
+    }
+
+    void Handle_onCurrentIndexChanged(HandleRef _this, std::function<IntDelegate> handler) {
+        QObject::connect(
+            THIS,
+            &QComboBox::currentIndexChanged,
+            THIS,
+            handler);
+    }
+
+    void Handle_onCurrentTextChanged(HandleRef _this, std::function<StringDelegate> handler) {
+        QObject::connect(
+            THIS,
+            &QComboBox::currentTextChanged,
+            THIS,
+            [handler](const QString& text) {
+                handler(text.toStdString());
+            });
     }
 
     void Handle_dispose(HandleRef _this) {

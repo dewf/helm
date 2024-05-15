@@ -9,6 +9,8 @@ namespace Application
 
     void Handle_exec__wrapper();
 
+    void Handle_setStyle__wrapper();
+
     void Handle_dispose__wrapper();
 
     void create__wrapper();

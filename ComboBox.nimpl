@@ -1,9 +1,12 @@
 module ComboBox;
 
 import Widget;
+import Signal;
 
 opaque Handle extends Widget.Handle {
-    void todo();
+    void setItems(Array<string> items);
+    void onCurrentIndexChanged(Signal.IntDelegate handler);
+    void onCurrentTextChanged(Signal.StringDelegate handler);
 }
 
 Handle create();

@@ -17,6 +17,7 @@ namespace Org.Whatever.QtTesting
         // built-in array type: string[]
         internal static ModuleMethodHandle _create;
         internal static ModuleMethodHandle _handle_exec;
+        internal static ModuleMethodHandle _handle_setStyle;
         internal static ModuleMethodHandle _handle_dispose;
 
         public static Handle Create(string[] args)
@@ -48,6 +49,12 @@ namespace Org.Whatever.QtTesting
                 NativeImplClient.InvokeModuleMethod(_handle_exec);
                 return NativeImplClient.PopInt32();
             }
+            public void SetStyle(string name)
+            {
+                NativeImplClient.PushString(name);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setStyle);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -69,6 +76,7 @@ namespace Org.Whatever.QtTesting
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
             _handle_exec = NativeImplClient.GetModuleMethod(_module, "Handle_exec");
+            _handle_setStyle = NativeImplClient.GetModuleMethod(_module, "Handle_setStyle");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init

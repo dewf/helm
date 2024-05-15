@@ -34,6 +34,29 @@ namespace Org.Whatever.QtTesting
             }
             return Wrapper;
         }
+        public delegate void IntDelegate(int i);
+
+        internal static void IntDelegate__Push(IntDelegate callback)
+        {
+            void CallbackWrapper()
+            {
+                var i = NativeImplClient.PopInt32();
+                callback(i);
+            }
+            NativeImplClient.PushClientFuncVal(CallbackWrapper, Marshal.GetFunctionPointerForDelegate(callback));
+        }
+
+        internal static IntDelegate IntDelegate__Pop()
+        {
+            var id = NativeImplClient.PopServerFuncValId();
+            var remoteFunc = new ServerFuncVal(id);
+            void Wrapper(int i)
+            {
+                NativeImplClient.PushInt32(i);
+                remoteFunc.Exec();
+            }
+            return Wrapper;
+        }
         public delegate void StringDelegate(string s);
 
         internal static void StringDelegate__Push(StringDelegate callback)

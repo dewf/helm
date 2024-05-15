@@ -13,13 +13,17 @@
 
 #include "Widget.h"
 using namespace ::Widget;
+#include "Signal.h"
+using namespace ::Signal;
 
 namespace ComboBox
 {
 
     struct __Handle; typedef struct __Handle* HandleRef; // extends Widget::HandleRef
 
-    void Handle_todo(HandleRef _this);
+    void Handle_setItems(HandleRef _this, std::vector<std::string> items);
+    void Handle_onCurrentIndexChanged(HandleRef _this, std::function<IntDelegate> handler);
+    void Handle_onCurrentTextChanged(HandleRef _this, std::function<StringDelegate> handler);
     void Handle_dispose(HandleRef _this);
     HandleRef create();
 }

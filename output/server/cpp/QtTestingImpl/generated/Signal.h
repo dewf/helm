@@ -16,5 +16,7 @@ namespace Signal
 
     typedef void VoidDelegate();
 
+    typedef void IntDelegate(int32_t i);
+
     typedef void StringDelegate(std::string s);
 }

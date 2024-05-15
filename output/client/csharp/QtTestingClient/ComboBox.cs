@@ -9,14 +9,19 @@ using Org.Whatever.QtTesting.Support;
 using ModuleHandle = Org.Whatever.QtTesting.Support.ModuleHandle;
 
 using static Org.Whatever.QtTesting.Widget;
+using static Org.Whatever.QtTesting.Signal;
 
 namespace Org.Whatever.QtTesting
 {
     public static class ComboBox
     {
         private static ModuleHandle _module;
+
+        // built-in array type: string[]
         internal static ModuleMethodHandle _create;
-        internal static ModuleMethodHandle _handle_todo;
+        internal static ModuleMethodHandle _handle_setItems;
+        internal static ModuleMethodHandle _handle_onCurrentIndexChanged;
+        internal static ModuleMethodHandle _handle_onCurrentTextChanged;
         internal static ModuleMethodHandle _handle_dispose;
 
         public static Handle Create()
@@ -38,10 +43,23 @@ namespace Org.Whatever.QtTesting
                     _disposed = true;
                 }
             }
-            public void Todo()
+            public void SetItems(string[] items)
             {
+                NativeImplClient.PushStringArray(items);
                 Handle__Push(this);
-                NativeImplClient.InvokeModuleMethod(_handle_todo);
+                NativeImplClient.InvokeModuleMethod(_handle_setItems);
+            }
+            public void OnCurrentIndexChanged(IntDelegate handler)
+            {
+                IntDelegate__Push(handler);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_onCurrentIndexChanged);
+            }
+            public void OnCurrentTextChanged(StringDelegate handler)
+            {
+                StringDelegate__Push(handler);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_onCurrentTextChanged);
             }
         }
 
@@ -63,7 +81,9 @@ namespace Org.Whatever.QtTesting
             _module = NativeImplClient.GetModule("ComboBox");
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
-            _handle_todo = NativeImplClient.GetModuleMethod(_module, "Handle_todo");
+            _handle_setItems = NativeImplClient.GetModuleMethod(_module, "Handle_setItems");
+            _handle_onCurrentIndexChanged = NativeImplClient.GetModuleMethod(_module, "Handle_onCurrentIndexChanged");
+            _handle_onCurrentTextChanged = NativeImplClient.GetModuleMethod(_module, "Handle_onCurrentTextChanged");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init

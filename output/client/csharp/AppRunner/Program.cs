@@ -11,12 +11,18 @@ internal static class Program
         
         using (var app = Application.Create(args))
         {
+            app.SetStyle("Fusion");
+            
             using (var window = Widget.Create())
             {
                 window.SetWindowTitle("Haloooo");
                 window.Resize(800, 600);
 
                 var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+
+                var combo1 = ComboBox.Create();
+                combo1.SetItems([ "one", "two", "three", "four", "five", "six"]);
+                layout.AddWidget(combo1);
 
                 var edit1 = PlainTextEdit.Create();
                 layout.AddWidget(edit1);

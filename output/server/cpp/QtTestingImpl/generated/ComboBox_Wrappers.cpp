@@ -5,8 +5,12 @@
 #include "Widget_wrappers.h"
 using namespace ::Widget;
 
+#include "Signal_wrappers.h"
+using namespace ::Signal;
+
 namespace ComboBox
 {
+    // built-in array type: std::vector<std::string>
     void Handle__push(HandleRef value) {
         ni_pushPtr(value);
     }
@@ -15,9 +19,22 @@ namespace ComboBox
         return (HandleRef)ni_popPtr();
     }
 
-    void Handle_todo__wrapper() {
+    void Handle_setItems__wrapper() {
         auto _this = Handle__pop();
-        Handle_todo(_this);
+        auto items = popStringArrayInternal();
+        Handle_setItems(_this, items);
+    }
+
+    void Handle_onCurrentIndexChanged__wrapper() {
+        auto _this = Handle__pop();
+        auto handler = IntDelegate__pop();
+        Handle_onCurrentIndexChanged(_this, handler);
+    }
+
+    void Handle_onCurrentTextChanged__wrapper() {
+        auto _this = Handle__pop();
+        auto handler = StringDelegate__pop();
+        Handle_onCurrentTextChanged(_this, handler);
     }
 
     void Handle_dispose__wrapper() {
@@ -32,7 +49,9 @@ namespace ComboBox
     int __register() {
         auto m = ni_registerModule("ComboBox");
         ni_registerModuleMethod(m, "create", &create__wrapper);
-        ni_registerModuleMethod(m, "Handle_todo", &Handle_todo__wrapper);
+        ni_registerModuleMethod(m, "Handle_setItems", &Handle_setItems__wrapper);
+        ni_registerModuleMethod(m, "Handle_onCurrentIndexChanged", &Handle_onCurrentIndexChanged__wrapper);
+        ni_registerModuleMethod(m, "Handle_onCurrentTextChanged", &Handle_onCurrentTextChanged__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);
         return 0; // = OK
     }

@@ -2,6 +2,7 @@ module Application;
 
 opaque Handle {
     int exec();
+    void setStyle(string name);
 }
 
 Handle create(Array<string> args);

@@ -2,14 +2,20 @@
 
 #include <QApplication>
 
+#define THIS ((QApplication*)_this)
+
 namespace Application
 {
     int32_t Handle_exec(HandleRef _this) {
-        return ((QApplication*)_this)->exec();
+        return THIS->exec();
+    }
+
+    void Handle_setStyle(HandleRef _this, std::string name) {
+        THIS->setStyle(name.c_str());
     }
 
     void Handle_dispose(HandleRef _this) {
-        delete (QApplication*)_this;
+        delete THIS;
     }
 
     HandleRef create(std::vector<std::string> args) {
