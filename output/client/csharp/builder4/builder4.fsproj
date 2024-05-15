@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="BuilderNode.fs" />
+        <Compile Include="Reactor.fs" />
+        <Compile Include="Util.fs" />
+        <Compile Include="Box.fs" />
+        <Compile Include="Button.fs" />
+        <Compile Include="LineEdit.fs" />
+        <Compile Include="ComboBox.fs" />
+        <Compile Include="Window.fs" />
+        <Compile Include="Program.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="GtkSharp" Version="3.24.24.95" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,19 @@
+module Widget;
+
+import Common;
+import Signal;
+import Layout;
+
+opaque Handle {
+    Rect getRect();
+    void resize(int width, int height);
+    void show();
+    void setWindowTitle(string title);
+    void setLayout(Layout.Handle layout);
+
+    // would be better to have signal properties that could be connected in the traditional way (eg .WindowTitleChanged.connect(...))
+    // but this is a simple demo ...
+    void onWindowTitleChanged(Signal.StringDelegate func);
+}
+
+Handle create();

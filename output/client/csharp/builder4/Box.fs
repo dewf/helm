@@ -1,0 +1,127 @@
+﻿module Box
+
+open System
+open BuilderNode
+
+type private Signal = // just a placeholder for the future
+    | NoneYet
+
+type OrientationValue =
+    | Vertical
+    | Horizontal
+
+type Attr =
+    | Orientation of ov: OrientationValue
+    | Spacing of sp: int
+    | BorderWidth of bw: int
+    
+let private keyFunc = function
+    | Orientation _ -> 0
+    | Spacing _ -> 1
+    | BorderWidth _ -> 2
+    
+let private diffAttrs =
+    genericDiffAttrs keyFunc
+
+type private Model<'msg>(dispatch: 'msg -> unit, items: Gtk.Widget list) =
+    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+    let mutable box = new Gtk.Box(Gtk.Orientation.Vertical, 0)
+    do
+        // no signals yet
+        for item in items do
+            box.PackStart(item, true, true, 0u)
+    member this.Widget with get() = box
+    member this.SignalMap with set(value) = signalMap <- value
+    member this.ApplyAttrs(attrs: Attr list) =
+        for attr in attrs do
+            match attr with
+            | Orientation ov ->
+                box.Orientation <-
+                    match ov with
+                    | Vertical -> Gtk.Orientation.Vertical
+                    | Horizontal -> Gtk.Orientation.Horizontal
+            | Spacing sp ->
+                box.Spacing <- sp
+            | BorderWidth bw ->
+                box.BorderWidth <- uint32 bw
+    interface IDisposable with
+        member this.Dispose() =
+            box.Dispose()
+    member this.Refill(items: Gtk.Widget list) =
+        for child in box.Children do
+            box.Remove(child)
+        for item in items do
+            box.PackStart(item, true, true, 0u)
+        box.ShowAll()
+
+let private create (attrs: Attr list) (items: Gtk.Widget list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch, items)
+    model.ApplyAttrs attrs
+    model.SignalMap <- signalMap
+    model
+
+let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+    model.ApplyAttrs attrs
+    model.SignalMap <- signalMap
+    model
+
+let private dispose (model: Model<'msg>) =
+    (model :> IDisposable).Dispose()
+    
+type Node<'msg>() =
+    inherit WidgetNode<'msg>()
+    let mutable items: WidgetNode<'msg> list = []
+
+    [<DefaultValue>] val mutable private model: Model<'msg>
+    member val Attrs: Attr list = [] with get, set
+    member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
+    member this.Items
+        with get() = items
+        and set(value) = items <- value
+    
+    override this.Dependencies() =
+        // because the indices are generated here, based on items order,
+        // it prevents the possibility of the "user" (app developer) from being able to reorder existing items without them being destroyed/recreated entirely
+        // but I don't think that's a very common use case, to be reordering anything in a vbox/hbox, except maybe adding things at the end (which should work fine)
+        // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
+        // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
+        items
+        |> List.mapi (fun i item -> (i, item :> BuilderNode<'msg>))
+        
+    override this.Create(dispatch: 'msg -> unit) =
+        let widgets =
+            items
+            |> List.map (_.Widget)
+        this.model <- create this.Attrs widgets this.SignalMap dispatch
+        
+    member private this.MigrateContent(leftBox: Node<'msg>) =
+        let leftContents =
+            leftBox.Items
+            |> List.map (_.ContentKey)
+        let thisContents =
+            items
+            |> List.map (_.ContentKey)
+        if leftContents <> thisContents then
+            let widgets =
+                items
+                |> List.map (_.Widget)
+            this.model.Refill(widgets)
+        else
+            ()
+            
+    override this.MigrateFrom(left: BuilderNode<'msg>) =
+        let left' = (left :?> Node<'msg>)
+        let nextAttrs =
+            diffAttrs left'.Attrs this.Attrs
+            |> createdOrChanged
+        this.model <- migrate left'.model nextAttrs this.SignalMap
+        this.MigrateContent(left')
+            
+    override this.Dispose() =
+        (this.model :> IDisposable).Dispose()
+
+    override this.Widget =
+        (this.model.Widget :> Gtk.Widget)
+
+let make (attrs: Attr list) (items: WidgetNode<'msg> list) =
+    Node(Attrs = attrs, Items = items)

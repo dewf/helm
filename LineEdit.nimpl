@@ -1,0 +1,12 @@
+module LineEdit;
+
+import Signal;
+import Widget;
+
+opaque Handle extends Widget.Handle {
+    void setText(string str);
+    void onTextEdited(Signal.StringDelegate handler);
+    void onReturnPressed(Signal.VoidDelegate handler);
+}
+
+Handle create();

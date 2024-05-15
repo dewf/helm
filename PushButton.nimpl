@@ -1,0 +1,10 @@
+module PushButton;
+
+import Widget;
+import Signal;
+
+opaque Handle extends Widget.Handle {
+    void onClicked(Signal.VoidDelegate handler);
+}
+
+Handle create(string label);

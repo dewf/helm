@@ -1,0 +1,6 @@
+module Signal;
+
+// various delegate signatures, just so we don't have to keep redefining them
+
+delegate void VoidDelegate();
+delegate void StringDelegate(string s);

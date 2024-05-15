@@ -1,0 +1,37 @@
+module BoxLayout;
+
+import Widget;
+import Layout;
+
+flags Alignment {
+    // horizontal
+    AlignLeft = 0x1,
+    AlignRight = 0x2,
+    AlignHCenter = 0x4,
+    AlignJustify = 0x8,
+
+    // vertical
+    AlignTop = 0x20,
+    AlignBottom = 0x40,
+    AlignVCenter = 0x80,
+    AlignBaseline = 0x100,
+
+    // both
+    AlignCenter = 0x84 // HCenter | VCenter
+}
+
+enum Direction {
+    LeftToRight,
+    RightToLeft,
+    TopToBottom,
+    BottomToTop
+}
+
+opaque Handle extends Layout.Handle {
+    void addSpacing(int size);
+    void addStretch(int stretch);
+    void addWidget(Widget.Handle widget);
+    void addWidget(Widget.Handle widget, int stretch);
+}
+
+Handle create(Direction dir);

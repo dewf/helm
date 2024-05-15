@@ -1,0 +1,25 @@
+module MainWindow;
+
+import Widget;
+import Layout;
+
+enum Kind { // simplification of WindowFlags
+    Widget,
+    Window,
+    Dialog,
+    Sheet,
+    Drawer,
+    Popup,
+    Tool,
+    ToolTip,
+    SplashScreen,
+    SubWindow,
+    ForeignWindow,
+    CoverWindow
+}
+
+opaque Handle extends Widget.Handle {
+    void setCentralWidget(Widget.Handle widget);
+}
+
+Handle create(Widget.Handle parent, Kind kind);

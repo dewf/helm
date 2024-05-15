@@ -1,0 +1,7 @@
+module Application;
+
+opaque Handle {
+    int exec();
+}
+
+Handle create(Array<string> args);

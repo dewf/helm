@@ -1,0 +1,9 @@
+module ComboBox;
+
+import Widget;
+
+opaque Handle extends Widget.Handle {
+    void todo();
+}
+
+Handle create();
