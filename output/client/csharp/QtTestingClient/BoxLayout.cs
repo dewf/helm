@@ -136,14 +136,8 @@ namespace Org.Whatever.QtTesting
             _create = NativeImplClient.GetModuleMethod(_module, "create");
             _handle_addSpacing = NativeImplClient.GetModuleMethod(_module, "Handle_addSpacing");
             _handle_addStretch = NativeImplClient.GetModuleMethod(_module, "Handle_addStretch");
-            
-            
             _handle_addWidget = NativeImplClient.GetModuleMethod(_module, "Handle_addWidget");
             _handle_addWidget_overload1 = NativeImplClient.GetModuleMethod(_module, "Handle_addWidget_overload1");
-            // ni_registerModuleMethod(m, "Handle_addWidget", &Handle_addWidget__wrapper);
-            // ni_registerModuleMethod(m, "Handle_addWidget_overload1", &Handle_addWidget_overload1__wrapper);
-            
-            
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init

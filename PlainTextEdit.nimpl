@@ -1,0 +1,11 @@
+module PlainTextEdit;
+
+import Widget;
+import Signal;
+
+opaque Handle extends Widget.Handle {
+    void setText(string text);
+    void onTextChanged(Signal.StringDelegate handler);
+}
+
+Handle create();

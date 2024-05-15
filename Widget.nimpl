@@ -4,7 +4,11 @@ import Common;
 import Signal;
 import Layout;
 
+int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
+
 opaque Handle {
+    void setMaximumWidth(int maxWidth);
+    void setMaximumHeight(int maxHeight);
     Rect getRect();
     void resize(int width, int height);
     void show();

@@ -7,6 +7,10 @@ namespace Widget
     void Handle__push(HandleRef value);
     HandleRef Handle__pop();
 
+    void Handle_setMaximumWidth__wrapper();
+
+    void Handle_setMaximumHeight__wrapper();
+
     void Handle_getRect__wrapper();
 
     void Handle_resize__wrapper();

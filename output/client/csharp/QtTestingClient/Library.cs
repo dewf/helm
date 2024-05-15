@@ -21,6 +21,7 @@ public static class Library
         ComboBox.__Init();
         LineEdit.__Init();
         MainWindow.__Init();
+        PlainTextEdit.__Init();
         PushButton.__Init();
     }
 
@@ -28,6 +29,7 @@ public static class Library
     {
         // module static shutdowns (if any, might be empty)
         PushButton.__Shutdown();
+        PlainTextEdit.__Shutdown();
         MainWindow.__Shutdown();
         LineEdit.__Shutdown();
         ComboBox.__Shutdown();

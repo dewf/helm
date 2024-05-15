@@ -18,6 +18,8 @@ namespace Org.Whatever.QtTesting
     {
         private static ModuleHandle _module;
         internal static ModuleMethodHandle _create;
+        internal static ModuleMethodHandle _handle_setMaximumWidth;
+        internal static ModuleMethodHandle _handle_setMaximumHeight;
         internal static ModuleMethodHandle _handle_getRect;
         internal static ModuleMethodHandle _handle_resize;
         internal static ModuleMethodHandle _handle_show;
@@ -25,6 +27,7 @@ namespace Org.Whatever.QtTesting
         internal static ModuleMethodHandle _handle_setLayout;
         internal static ModuleMethodHandle _handle_onWindowTitleChanged;
         internal static ModuleMethodHandle _handle_dispose;
+        public static int WIDGET_SIZE_MAX { get; internal set; }
 
         public static Handle Create()
         {
@@ -47,6 +50,18 @@ namespace Org.Whatever.QtTesting
                     NativeImplClient.InvokeModuleMethod(_handle_dispose);
                     _disposed = true;
                 }
+            }
+            public void SetMaximumWidth(int maxWidth)
+            {
+                NativeImplClient.PushInt32(maxWidth);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setMaximumWidth);
+            }
+            public void SetMaximumHeight(int maxHeight)
+            {
+                NativeImplClient.PushInt32(maxHeight);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setMaximumHeight);
             }
             public Rect GetRect()
             {
@@ -102,8 +117,13 @@ namespace Org.Whatever.QtTesting
         internal static void __Init()
         {
             _module = NativeImplClient.GetModule("Widget");
+            // assign module constants
+            NativeImplClient.PushModuleConstants(_module);
+            WIDGET_SIZE_MAX = NativeImplClient.PopInt32();
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
+            _handle_setMaximumWidth = NativeImplClient.GetModuleMethod(_module, "Handle_setMaximumWidth");
+            _handle_setMaximumHeight = NativeImplClient.GetModuleMethod(_module, "Handle_setMaximumHeight");
             _handle_getRect = NativeImplClient.GetModuleMethod(_module, "Handle_getRect");
             _handle_resize = NativeImplClient.GetModuleMethod(_module, "Handle_resize");
             _handle_show = NativeImplClient.GetModuleMethod(_module, "Handle_show");

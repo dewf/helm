@@ -4,41 +4,53 @@
 #include <QWidget>
 #include "util/convert.h"
 
+#define THIS ((QWidget*)_this)
+
 namespace Widget
 {
+    const int32_t WIDGET_SIZE_MAX = QWIDGETSIZE_MAX;
+
+    void Handle_setMaximumWidth(HandleRef _this, int32_t maxWidth) {
+        THIS->setMaximumWidth(maxWidth);
+    }
+
+    void Handle_setMaximumHeight(HandleRef _this, int32_t maxHeight) {
+        THIS->setMaximumHeight(maxHeight);
+    }
+
     Rect Handle_getRect(HandleRef _this) {
-        auto x = ((QWidget*)_this)->rect();
+        auto x = THIS->rect();
         return qRectToRect(x);
     }
 
     void Handle_resize(HandleRef _this, int32_t width, int32_t height) {
-        ((QWidget*)_this)->resize(width, height);
+        THIS->resize(width, height);
     }
 
     void Handle_show(HandleRef _this) {
-        ((QWidget*)_this)->show();
+        THIS->show();
     }
 
     void Handle_setWindowTitle(HandleRef _this, std::string title) {
-        ((QWidget*)_this)->setWindowTitle(title.c_str());
+        THIS->setWindowTitle(title.c_str());
     }
 
     void Handle_setLayout(HandleRef _this, Layout::HandleRef layout) {
-        ((QWidget*)_this)->setLayout((QLayout*)layout);
+        THIS->setLayout((QLayout*)layout);
     }
 
     void Handle_onWindowTitleChanged(HandleRef _this, std::function<StringDelegate> func) {
         QObject::connect(
-            (QWidget*)_this,
+            THIS,
             &QWidget::windowTitleChanged,
-            (QWidget*)_this,
+            THIS,
             [func](const QString& title) {
                 func(title.toStdString());
             });
     }
 
     void Handle_dispose(HandleRef _this) {
-        delete (QWidget*)_this;
+        delete THIS;
     }
 
     HandleRef create() {

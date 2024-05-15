@@ -43,6 +43,10 @@ add_library(QtTestingImpl STATIC
     ../generated/MainWindow_Wrappers.cpp
     ../MainWindow.cpp
 
+    ../generated/PlainTextEdit.h
+    ../generated/PlainTextEdit_Wrappers.cpp
+    ../PlainTextEdit.cpp
+
     ../generated/PushButton.h
     ../generated/PushButton_Wrappers.cpp
     ../PushButton.cpp

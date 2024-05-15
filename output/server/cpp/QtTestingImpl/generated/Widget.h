@@ -22,7 +22,10 @@ namespace Widget
 {
 
     struct __Handle; typedef struct __Handle* HandleRef;
+    extern const int32_t WIDGET_SIZE_MAX;
 
+    void Handle_setMaximumWidth(HandleRef _this, int32_t maxWidth);
+    void Handle_setMaximumHeight(HandleRef _this, int32_t maxHeight);
     Rect Handle_getRect(HandleRef _this);
     void Handle_resize(HandleRef _this, int32_t width, int32_t height);
     void Handle_show(HandleRef _this);

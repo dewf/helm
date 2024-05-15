@@ -21,6 +21,18 @@ namespace Widget
         return (HandleRef)ni_popPtr();
     }
 
+    void Handle_setMaximumWidth__wrapper() {
+        auto _this = Handle__pop();
+        auto maxWidth = ni_popInt32();
+        Handle_setMaximumWidth(_this, maxWidth);
+    }
+
+    void Handle_setMaximumHeight__wrapper() {
+        auto _this = Handle__pop();
+        auto maxHeight = ni_popInt32();
+        Handle_setMaximumHeight(_this, maxHeight);
+    }
+
     void Handle_getRect__wrapper() {
         auto _this = Handle__pop();
         Rect__push(Handle_getRect(_this), true);
@@ -65,9 +77,16 @@ namespace Widget
         Handle__push(create());
     }
 
+    void __constantsFunc() {
+        ni_pushInt32(WIDGET_SIZE_MAX);
+    }
+
     int __register() {
         auto m = ni_registerModule("Widget");
+        ni_registerModuleConstants(m, &__constantsFunc);
         ni_registerModuleMethod(m, "create", &create__wrapper);
+        ni_registerModuleMethod(m, "Handle_setMaximumWidth", &Handle_setMaximumWidth__wrapper);
+        ni_registerModuleMethod(m, "Handle_setMaximumHeight", &Handle_setMaximumHeight__wrapper);
         ni_registerModuleMethod(m, "Handle_getRect", &Handle_getRect__wrapper);
         ni_registerModuleMethod(m, "Handle_resize", &Handle_resize__wrapper);
         ni_registerModuleMethod(m, "Handle_show", &Handle_show__wrapper);

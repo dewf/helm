@@ -18,19 +18,18 @@ internal static class Program
 
                 var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
 
-                var edit1 = LineEdit.Create();
-                edit1.OnReturnPressed(() =>
-                {
-                    Console.WriteLine("return pressed!!!");
-                    edit1.SetText("");
-                });
+                var edit1 = PlainTextEdit.Create();
                 layout.AddWidget(edit1);
                 
-                var button1 = PushButton.Create("Wahoo!!");
-                layout.AddWidget(button1);
+                var button1 = PushButton.Create($"Wahoo!! {Widget.WIDGET_SIZE_MAX}");
+                button1.SetMaximumHeight(300);
+                layout.AddWidget(button1, 1);
                 
                 var button2 = PushButton.Create("#2 !!!");
-                layout.AddWidget(button2);
+                button2.SetMaximumHeight(300);
+                layout.AddWidget(button2, 1);
+                
+                // layout.AddStretch(1);
                 
                 window.SetLayout(layout);
                 
