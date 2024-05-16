@@ -66,6 +66,7 @@ internal static class Program
                 window.SetWindowTitle("Haloooo");
                 window.Resize(800, 600);
 
+                var central = Widget.Create();
                 var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
 
                 var tabs = TabWidget.Create();
@@ -74,7 +75,8 @@ internal static class Program
                 tabs.AddTab(CreatePage03(), "Page 3");
                 layout.AddWidget(tabs);
                 
-                window.SetLayout(layout);
+                central.SetLayout(layout);
+                window.SetCentralWidget(central);
 
                 var action = Action.Create("E&xit");
                 action.OnTriggered(_ =>
