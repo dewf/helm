@@ -77,17 +77,16 @@ let view (state: State) =
             ["item 01"; "item 02"; "item03"]
         ComboBox.Node(Attrs = [ComboBox.Items items; ComboBox.SelectedIndex (Some 0)], OnSelected = Some ComboChanged)
     let box =
-        Box.Node(
-            Attrs = [Box.Direction Box.Vertical; Box.Spacing 10],
+        BoxLayout.Node(
+            Attrs = [BoxLayout.Direction BoxLayout.Vertical; BoxLayout.Spacing 10],
             Items = [ edit; disableButton; combo; addButton ] @ extraButtons)
     let title =
         match state.LastActivated with
         | Some value -> sprintf "last activation [%s]" value
         | None -> "..."
-    let frame =
-        Window.Node(Attrs = [Window.Title title; Window.Size (800, 600); Window.Visible true],
-                    Content = box)
-    frame :> BuilderNode<Msg>
+    let window = 
+        Window.Node(Attrs = [Window.Title title; Window.Size (800, 600); Window.Visible true], Content = box)
+    window :> BuilderNode<Msg>
     
 let innerApp (argv: string array) =
     use app =

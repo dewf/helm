@@ -1,4 +1,4 @@
-﻿module Box
+﻿module BoxLayout
 
 open System
 open BuilderNode

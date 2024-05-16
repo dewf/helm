@@ -9,7 +9,7 @@
         <Compile Include="BuilderNode.fs" />
         <Compile Include="Reactor.fs" />
         <Compile Include="Util.fs" />
-        <Compile Include="Box.fs" />
+        <Compile Include="BoxLayout.fs" />
         <Compile Include="Button.fs" />
         <Compile Include="LineEdit.fs" />
         <Compile Include="ComboBox.fs" />
