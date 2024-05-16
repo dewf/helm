@@ -20,6 +20,11 @@ internal static class Program
 
                 var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
 
+                var list = ListWidget.Create();
+                list.SetSelectionMode(ListWidget.SelectionMode.Extended);
+                list.SetItems(Enumerable.Range(0, 100).Select(i => $"Item {i}").ToArray());
+                layout.AddWidget(list);
+
                 var combo1 = ComboBox.Create();
                 combo1.SetItems([ "one", "two", "three", "four", "five", "six"]);
                 layout.AddWidget(combo1);

@@ -20,6 +20,7 @@ public static class Library
         BoxLayout.__Init();
         ComboBox.__Init();
         LineEdit.__Init();
+        ListWidget.__Init();
         MainWindow.__Init();
         PlainTextEdit.__Init();
         PushButton.__Init();
@@ -31,6 +32,7 @@ public static class Library
         PushButton.__Shutdown();
         PlainTextEdit.__Shutdown();
         MainWindow.__Shutdown();
+        ListWidget.__Shutdown();
         LineEdit.__Shutdown();
         ComboBox.__Shutdown();
         BoxLayout.__Shutdown();

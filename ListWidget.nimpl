@@ -1,0 +1,22 @@
+module ListWidget;
+
+import Widget;
+import Signal;
+
+enum SelectionMode {
+    None,
+    Single,
+    Multi,
+    Extended,
+    Contiguous
+}
+
+opaque Handle extends Widget.Handle {
+    void setItems(Array<string> items);
+    void setSelectionMode(SelectionMode mode);
+ 
+    // signals
+    void onCurrentRowChanged(Signal.IntDelegate handler);
+}
+
+Handle create();

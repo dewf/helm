@@ -16,47 +16,51 @@ add_library(QtTestingImpl STATIC
     ../generated/Library.cpp
 
     ../generated/Application.h
-    ../generated/Application_Wrappers.cpp
+    ../generated/Application_wrappers.cpp
     ../Application.cpp
 
     ../generated/BoxLayout.h
-    ../generated/BoxLayout_Wrappers.cpp
+    ../generated/BoxLayout_wrappers.cpp
     ../BoxLayout.cpp
 
     ../generated/ComboBox.h
-    ../generated/ComboBox_Wrappers.cpp
+    ../generated/ComboBox_wrappers.cpp
     ../ComboBox.cpp
 
     ../generated/Common.h
-    ../generated/Common_Wrappers.cpp
+    ../generated/Common_wrappers.cpp
     ../Common.cpp
 
     ../generated/Layout.h
-    ../generated/Layout_Wrappers.cpp
+    ../generated/Layout_wrappers.cpp
     ../Layout.cpp
 
     ../generated/LineEdit.h
-    ../generated/LineEdit_Wrappers.cpp
+    ../generated/LineEdit_wrappers.cpp
     ../LineEdit.cpp
 
+    ../generated/ListWidget.h
+    ../generated/ListWidget_wrappers.cpp
+    ../ListWidget.cpp
+
     ../generated/MainWindow.h
-    ../generated/MainWindow_Wrappers.cpp
+    ../generated/MainWindow_wrappers.cpp
     ../MainWindow.cpp
 
     ../generated/PlainTextEdit.h
-    ../generated/PlainTextEdit_Wrappers.cpp
+    ../generated/PlainTextEdit_wrappers.cpp
     ../PlainTextEdit.cpp
 
     ../generated/PushButton.h
-    ../generated/PushButton_Wrappers.cpp
+    ../generated/PushButton_wrappers.cpp
     ../PushButton.cpp
 
     ../generated/Signal.h
-    ../generated/Signal_Wrappers.cpp
+    ../generated/Signal_wrappers.cpp
     ../Signal.cpp
 
     ../generated/Widget.h
-    ../generated/Widget_Wrappers.cpp
+    ../generated/Widget_wrappers.cpp
     ../Widget.cpp
 
     ../util/convert.h
