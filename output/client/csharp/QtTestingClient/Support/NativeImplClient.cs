@@ -457,35 +457,53 @@ namespace Org.Whatever.QtTesting.Support
 
         public static void PushString(string str)
         {
-            var bytes = Encoding.UTF8.GetBytes(str);
-            var ptr = Marshal.AllocHGlobal(bytes.Length);
-            Marshal.Copy(bytes, 0, ptr, bytes.Length);
-            NativeMethods.pushString(ptr, bytes.Length);
-            Marshal.FreeHGlobal(ptr);
+            if (str.Length > 0)
+            {
+                var bytes = Encoding.UTF8.GetBytes(str);
+                var ptr = Marshal.AllocHGlobal(bytes.Length);
+                Marshal.Copy(bytes, 0, ptr, bytes.Length);
+                NativeMethods.pushString(ptr, bytes.Length);
+                Marshal.FreeHGlobal(ptr);
+            }
+            else
+            {
+                NativeMethods.pushString(0, 0);
+            }
         }
 
         public static string PopString()
         {
             NativeMethods.popString(out var ptr, out var length);
-            return Marshal.PtrToStringUTF8(ptr, (int)length);
+            return length > 0 ? Marshal.PtrToStringUTF8(ptr, (int)length) : "";
         }
 
         public static void PushStringArray(string[] strs)
         {
-            IntPtr[] pointers = new IntPtr[strs.Length];
-            IntPtr[] lengths = new IntPtr[strs.Length];
+            var pointers = new IntPtr[strs.Length];
+            var lengths = new IntPtr[strs.Length];
             for (var i = 0; i < strs.Length; i++)
             {
-                var bytes = Encoding.UTF8.GetBytes(strs[i]);
-                var ptr = Marshal.AllocHGlobal(bytes.Length);
-                Marshal.Copy(bytes, 0, ptr, bytes.Length);
-                pointers[i] = ptr;
-                lengths[i] = (IntPtr)bytes.Length;
+                if (strs[i].Length > 0)
+                {
+                    var bytes = Encoding.UTF8.GetBytes(strs[i]);
+                    var ptr = Marshal.AllocHGlobal(bytes.Length);
+                    Marshal.Copy(bytes, 0, ptr, bytes.Length);
+                    pointers[i] = ptr;
+                    lengths[i] = bytes.Length;
+                }
+                else
+                {
+                    pointers[i] = 0;
+                    lengths[i] = 0;
+                }
             }
-            NativeMethods.pushStringArray(pointers, lengths, (IntPtr)strs.Length);
+            NativeMethods.pushStringArray(pointers, lengths, strs.Length);
             foreach (var p in pointers)
             {
-                Marshal.FreeHGlobal(p);
+                if (p != 0)
+                {
+                    Marshal.FreeHGlobal(p);
+                }
             }
         }
 
@@ -500,7 +518,14 @@ namespace Org.Whatever.QtTesting.Support
             var result = new string[intCount];
             for (var i = 0; i < intCount; i++)
             {
-                result[i] = Marshal.PtrToStringUTF8(ptrs[i], (int)lengths[i]);
+                if (lengths[i] > 0)
+                {
+                    result[i] = Marshal.PtrToStringUTF8(ptrs[i], (int)lengths[i]);
+                }
+                else
+                {
+                    result[i] = "";
+                }
             }
             return result;
         }

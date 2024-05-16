@@ -3,17 +3,19 @@
 #include <QObject>
 #include <QLineEdit>
 
+#define THIS ((QLineEdit*)_this)
+
 namespace LineEdit
 {
     void Handle_setText(HandleRef _this, std::string str) {
-        ((QLineEdit*)_this)->setText(str.c_str());
+        THIS->setText(str.c_str());
     }
 
     void Handle_onTextEdited(HandleRef _this, std::function<StringDelegate> handler) {
         QObject::connect(
-            (QLineEdit*)_this,
+            THIS,
             &QLineEdit::textEdited,
-            (QLineEdit*)_this,
+            THIS,
             [handler](const QString& str) {
                 handler(str.toStdString());
             });
@@ -21,14 +23,14 @@ namespace LineEdit
 
     void Handle_onReturnPressed(HandleRef _this, std::function<VoidDelegate> handler) {
         QObject::connect(
-            (QLineEdit*)_this,
+            THIS,
             &QLineEdit::returnPressed,
-            (QLineEdit*)_this,
+            THIS,
             handler);
     }
 
     void Handle_dispose(HandleRef _this) {
-        delete (QLineEdit*)_this;
+        delete THIS;
     }
 
     HandleRef create() {

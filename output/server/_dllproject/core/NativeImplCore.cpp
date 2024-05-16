@@ -411,9 +411,7 @@ public:
 		if (length > 0) {
 			str.assign(raw, length);
 		}
-		else {
-			str = raw;
-		}
+        // else keep empty
 	}
 	std::string stringValue() override {
 		return str;
@@ -429,9 +427,7 @@ public:
 			if (lengths[i] > 0) {
 				str.assign(ptrs[i], lengths[i]);
 			}
-			else {
-				str = ptrs[i]; // null-terminated
-			}
+            // else keep empty
 			values.push_back(str);
 		}
 	}
