@@ -33,6 +33,18 @@ namespace BoxLayout
         return (HandleRef)ni_popPtr();
     }
 
+    void Handle_setDirection__wrapper() {
+        auto _this = Handle__pop();
+        auto dir = Direction__pop();
+        Handle_setDirection(_this, dir);
+    }
+
+    void Handle_setSpacing__wrapper() {
+        auto _this = Handle__pop();
+        auto spacing = ni_popInt32();
+        Handle_setSpacing(_this, spacing);
+    }
+
     void Handle_addSpacing__wrapper() {
         auto _this = Handle__pop();
         auto size = ni_popInt32();
@@ -71,6 +83,8 @@ namespace BoxLayout
     int __register() {
         auto m = ni_registerModule("BoxLayout");
         ni_registerModuleMethod(m, "create", &create__wrapper);
+        ni_registerModuleMethod(m, "Handle_setDirection", &Handle_setDirection__wrapper);
+        ni_registerModuleMethod(m, "Handle_setSpacing", &Handle_setSpacing__wrapper);
         ni_registerModuleMethod(m, "Handle_addSpacing", &Handle_addSpacing__wrapper);
         ni_registerModuleMethod(m, "Handle_addStretch", &Handle_addStretch__wrapper);
         ni_registerModuleMethod(m, "Handle_addWidget", &Handle_addWidget__wrapper);

@@ -2,15 +2,16 @@
 
 open System
 open BuilderNode
+open Org.Whatever.QtTesting
 
 type Signal =
-    | Shown
-    | Destroyed
+    | TitleChanged of title: string
+    
 type Attr =
-    | Title of string
-    | Size of int * int
-    | Visible of bool
-    | ExitOnClose of bool
+    | Title of title: string
+    | Size of width: int * height: int
+    | Visible of state: bool
+    | ExitOnClose of value: bool
 let private keyFunc = function
     | Title _ -> 0
     | Size _ -> 1
@@ -18,58 +19,59 @@ let private keyFunc = function
     | ExitOnClose _ -> 3
 let private diffAttrs = genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeContent: Gtk.Widget option) =
+type private Model<'msg>(dispatch: 'msg -> unit, maybeContent: Layout.Handle option) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable exitOnClose = false
-    let mutable box = new Gtk.Box(Gtk.Orientation.Vertical, 0)
-    let mutable window = new Gtk.Window(Gtk.WindowType.Toplevel)
+    let mutable window = Widget.Create()
     do
-        window.Mapped.Add (fun _ ->
-            signalMap(Shown)
-            |> Option.iter dispatch)
+        let signalDispatch (s: Signal) =
+            match signalMap s with
+            | Some msg ->
+                dispatch msg
+            | None ->
+                ()
+        window.OnWindowTitleChanged (fun title ->
+            signalDispatch (TitleChanged title))
 
-        window.Destroyed.Add (fun _ ->
-            signalMap(Destroyed)
-            |> Option.iter dispatch)
-
-        window.DeleteEvent.Add (fun _ ->
-            if exitOnClose then
-                Gtk.Application.Quit())
-
-        box.BorderWidth <- uint32 10
         maybeContent
-        |> Option.iter box.Add // pack?
-        window.Add box
-        window.ShowAll()
+        |> Option.iter window.SetLayout
+
+        window.Show()
 
     member this.RemoveContent() =
-        for ch in box.Children do
-            ch.Destroy()
-        window.ShowAll()
+        let existing =
+            window.GetLayout()
+        existing.RemoveAll()
+        window.SetLayout(null)
+        // window.ShowAll()
 
-    member this.AddContent(thing: Gtk.Widget) =
-        box.Add(thing)
-        window.ShowAll()
+    member this.AddContent(thing: Layout.Handle) =
+        window.SetLayout(thing)
+        // window.Show()
 
     member this.Widget with get() = window
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | Title text -> window.Title <- text
-            | Size (w, h) -> window.Resize(w, h)
-            | Visible v -> window.Visible <- v
-            | ExitOnClose v -> exitOnClose <- v
+            | Title text ->
+                window.SetWindowTitle(text)
+            | Size (width, height) ->
+                window.Resize(width, height)
+            | Visible state ->
+                window.SetVisible(state)
+            | ExitOnClose value ->
+                exitOnClose <- value
 
     interface IDisposable with
         member this.Dispose() =
             window.Dispose()
 
-let private exitHandler (args: Gtk.DeleteEventArgs) =
-    Gtk.Application.Quit()
+// let private exitHandler (args: Gtk.DeleteEventArgs) =
+//     Gtk.Application.Quit()
 
-let private create (attrs: Attr list) (maybeWidget: Gtk.Widget option) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
-    let model = new Model<'msg>(dispatch, maybeWidget)
+let private create (attrs: Attr list) (maybeContent: Layout.Handle option) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch, maybeContent)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -84,17 +86,19 @@ let private dispose (model: Model<'msg>) =
 
 type Node<'msg>() =
     inherit WidgetNode<'msg>()
-    let mutable maybeContent: WidgetNode<'msg> option = None
+    let mutable maybeContent: LayoutNode<'msg> option = None
     member private this.MaybeContent = maybeContent // need to be able to access from migration (does this need to be a function?)
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    member val OnShown: 'msg option = None with get, set
-    member val OnDestroyed: 'msg option = None with get, set
+    // member val OnShown: 'msg option = None with get, set
+    // member val OnDestroyed: 'msg option = None with get, set
+    member val OnTitleChanged: (string -> 'msg) option = None with get, set
     member private this.SignalMap
         with get() = function
-            | Shown -> this.OnShown
-            | Destroyed -> this.OnDestroyed
+            | TitleChanged title ->
+                this.OnTitleChanged
+                |> Option.map (fun f -> f title)
     member this.Content with set(value) = maybeContent <- Some value
 
     override this.Dependencies() =
@@ -103,9 +107,10 @@ type Node<'msg>() =
         |> Option.toList
 
     override this.Create(dispatch: 'msg -> unit) =
-        let maybeWidget =
-            maybeContent |> Option.map (fun c -> c.Widget)
-        this.model <- create this.Attrs maybeWidget this.SignalMap dispatch
+        let maybeLayout =
+            maybeContent
+            |> Option.map (_.Layout)
+        this.model <- create this.Attrs maybeLayout this.SignalMap dispatch
 
     member private this.MigrateContent(leftFrame: Node<'msg>) =
         let leftContentKey =
@@ -123,14 +128,14 @@ type Node<'msg>() =
             ()
         | None, Some _ ->
             // added content, from nothing
-            this.model.AddContent(maybeContent.Value.Widget)
+            this.model.AddContent(maybeContent.Value.Layout)
         | Some _, None ->
             // removed content
             this.model.RemoveContent()
         | Some _, Some _ -> // implicit "when x <> y" because of first case
             // changed content
             this.model.RemoveContent()
-            this.model.AddContent(maybeContent.Value.Widget)
+            this.model.AddContent(maybeContent.Value.Layout)
 
     override this.MigrateFrom(left: BuilderNode<'msg>) =
         let left' = (left :?> Node<'msg>)
@@ -142,6 +147,5 @@ type Node<'msg>() =
 
     override this.Dispose() =
         (this.model :> IDisposable).Dispose()
-
     override this.Widget =
-        (this.model.Widget :> Gtk.Widget)
+        this.model.Widget

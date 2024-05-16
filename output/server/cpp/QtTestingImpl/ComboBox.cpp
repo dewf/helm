@@ -9,10 +9,18 @@
 
 namespace ComboBox
 {
+    void Handle_clear(HandleRef _this) {
+        THIS->clear();
+    }
+
     void Handle_setItems(HandleRef _this, std::vector<std::string> items) {
         QStringList items2;
         std::transform(items.begin(), items.end(), std::back_inserter(items2), std::mem_fn(&std::string::c_str));
         THIS->addItems(items2);
+    }
+
+    void Handle_setCurrentIndex(HandleRef _this, int32_t index) {
+        THIS->setCurrentIndex(index);
     }
 
     void Handle_onCurrentIndexChanged(HandleRef _this, std::function<IntDelegate> handler) {

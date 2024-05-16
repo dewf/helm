@@ -40,6 +40,8 @@ namespace BoxLayout
         BottomToTop
     };
 
+    void Handle_setDirection(HandleRef _this, Direction dir);
+    void Handle_setSpacing(HandleRef _this, int32_t spacing);
     void Handle_addSpacing(HandleRef _this, int32_t size);
     void Handle_addStretch(HandleRef _this, int32_t stretch);
     void Handle_addWidget(HandleRef _this, Widget::HandleRef widget);

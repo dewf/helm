@@ -28,6 +28,10 @@ enum Direction {
 }
 
 opaque Handle extends Layout.Handle {
+    void setDirection(Direction dir);
+    void setSpacing(int spacing);
+
+    // item adding:
     void addSpacing(int size);
     void addStretch(int stretch);
     void addWidget(Widget.Handle widget);

@@ -19,7 +19,9 @@ namespace Org.Whatever.QtTesting
 
         // built-in array type: string[]
         internal static ModuleMethodHandle _create;
+        internal static ModuleMethodHandle _handle_clear;
         internal static ModuleMethodHandle _handle_setItems;
+        internal static ModuleMethodHandle _handle_setCurrentIndex;
         internal static ModuleMethodHandle _handle_onCurrentIndexChanged;
         internal static ModuleMethodHandle _handle_onCurrentTextChanged;
         internal static ModuleMethodHandle _handle_dispose;
@@ -43,11 +45,22 @@ namespace Org.Whatever.QtTesting
                     _disposed = true;
                 }
             }
+            public void Clear()
+            {
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_clear);
+            }
             public void SetItems(string[] items)
             {
                 NativeImplClient.PushStringArray(items);
                 Handle__Push(this);
                 NativeImplClient.InvokeModuleMethod(_handle_setItems);
+            }
+            public void SetCurrentIndex(int index)
+            {
+                NativeImplClient.PushInt32(index);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setCurrentIndex);
             }
             public void OnCurrentIndexChanged(IntDelegate handler)
             {
@@ -81,7 +94,9 @@ namespace Org.Whatever.QtTesting
             _module = NativeImplClient.GetModule("ComboBox");
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
+            _handle_clear = NativeImplClient.GetModuleMethod(_module, "Handle_clear");
             _handle_setItems = NativeImplClient.GetModuleMethod(_module, "Handle_setItems");
+            _handle_setCurrentIndex = NativeImplClient.GetModuleMethod(_module, "Handle_setCurrentIndex");
             _handle_onCurrentIndexChanged = NativeImplClient.GetModuleMethod(_module, "Handle_onCurrentIndexChanged");
             _handle_onCurrentTextChanged = NativeImplClient.GetModuleMethod(_module, "Handle_onCurrentTextChanged");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");

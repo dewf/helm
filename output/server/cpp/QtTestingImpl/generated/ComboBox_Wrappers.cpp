@@ -19,10 +19,21 @@ namespace ComboBox
         return (HandleRef)ni_popPtr();
     }
 
+    void Handle_clear__wrapper() {
+        auto _this = Handle__pop();
+        Handle_clear(_this);
+    }
+
     void Handle_setItems__wrapper() {
         auto _this = Handle__pop();
         auto items = popStringArrayInternal();
         Handle_setItems(_this, items);
+    }
+
+    void Handle_setCurrentIndex__wrapper() {
+        auto _this = Handle__pop();
+        auto index = ni_popInt32();
+        Handle_setCurrentIndex(_this, index);
     }
 
     void Handle_onCurrentIndexChanged__wrapper() {
@@ -49,7 +60,9 @@ namespace ComboBox
     int __register() {
         auto m = ni_registerModule("ComboBox");
         ni_registerModuleMethod(m, "create", &create__wrapper);
+        ni_registerModuleMethod(m, "Handle_clear", &Handle_clear__wrapper);
         ni_registerModuleMethod(m, "Handle_setItems", &Handle_setItems__wrapper);
+        ni_registerModuleMethod(m, "Handle_setCurrentIndex", &Handle_setCurrentIndex__wrapper);
         ni_registerModuleMethod(m, "Handle_onCurrentIndexChanged", &Handle_onCurrentIndexChanged__wrapper);
         ni_registerModuleMethod(m, "Handle_onCurrentTextChanged", &Handle_onCurrentTextChanged__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);

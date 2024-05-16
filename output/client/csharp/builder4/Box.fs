@@ -2,59 +2,55 @@
 
 open System
 open BuilderNode
+open Org.Whatever.QtTesting
 
 type private Signal = // just a placeholder for the future
     | NoneYet
 
-type OrientationValue =
+type DirectionValue =
     | Vertical
     | Horizontal
 
 type Attr =
-    | Orientation of ov: OrientationValue
-    | Spacing of sp: int
-    | BorderWidth of bw: int
+    | Direction of dir: DirectionValue
+    | Spacing of spacing: int
     
 let private keyFunc = function
-    | Orientation _ -> 0
+    | Direction _ -> 0
     | Spacing _ -> 1
-    | BorderWidth _ -> 2
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, items: Gtk.Widget list) =
+type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable box = new Gtk.Box(Gtk.Orientation.Vertical, 0)
+    let mutable box = BoxLayout.Create(BoxLayout.Direction.TopToBottom)
     do
         // no signals yet
         for item in items do
-            box.PackStart(item, true, true, 0u)
-    member this.Widget with get() = box
+            box.AddWidget(item)
+    member this.Layout with get() = box
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | Orientation ov ->
-                box.Orientation <-
+            | Direction ov ->
+                let dir =
                     match ov with
-                    | Vertical -> Gtk.Orientation.Vertical
-                    | Horizontal -> Gtk.Orientation.Horizontal
-            | Spacing sp ->
-                box.Spacing <- sp
-            | BorderWidth bw ->
-                box.BorderWidth <- uint32 bw
+                    | Vertical -> BoxLayout.Direction.TopToBottom
+                    | Horizontal -> BoxLayout.Direction.LeftToRight
+                box.SetDirection(dir)
+            | Spacing spacing ->
+                box.SetSpacing(spacing)
     interface IDisposable with
         member this.Dispose() =
             box.Dispose()
-    member this.Refill(items: Gtk.Widget list) =
-        for child in box.Children do
-            box.Remove(child)
+    member this.Refill(items: Widget.Handle list) =
+        box.RemoveAll()
         for item in items do
-            box.PackStart(item, true, true, 0u)
-        box.ShowAll()
+            box.AddWidget(item)
 
-let private create (attrs: Attr list) (items: Gtk.Widget list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: Attr list) (items: Widget.Handle list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch, items)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -69,7 +65,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
 type Node<'msg>() =
-    inherit WidgetNode<'msg>()
+    inherit LayoutNode<'msg>()
     let mutable items: WidgetNode<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -120,8 +116,8 @@ type Node<'msg>() =
     override this.Dispose() =
         (this.model :> IDisposable).Dispose()
 
-    override this.Widget =
-        (this.model.Widget :> Gtk.Widget)
+    override this.Layout =
+        (this.model.Layout :> Layout.Handle)
 
 let make (attrs: Attr list) (items: WidgetNode<'msg> list) =
     Node(Attrs = attrs, Items = items)

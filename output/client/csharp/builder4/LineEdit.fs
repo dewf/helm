@@ -2,6 +2,7 @@
 
 open System
 open BuilderNode
+open Org.Whatever.QtTesting
 
 type Signal =
     | Changed of string
@@ -19,7 +20,7 @@ let private diffAttrs =
     
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable entry = new Gtk.Entry()
+    let mutable edit = LineEdit.Create()
     do
         let dispatchSignal (s: Signal) =
             match signalMap s with
@@ -27,23 +28,20 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 dispatch msg
             | None ->
                 ()
-        entry.Changed.Add (fun _ ->
-            dispatchSignal (Changed entry.Text))
-        entry.Activated.Add (fun _ ->
-            dispatchSignal Activated)
-    member this.Widget with get() = entry
+        edit.OnTextEdited (fun str -> dispatchSignal (Changed str))
+        edit.OnReturnPressed (fun _ -> dispatchSignal Activated)
+    member this.Widget with get() = edit
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
             | Value str ->
-                entry.Text <- str
+                edit.SetText(str)
             | Enabled value ->
-                entry.Sensitive <- value
-                // entry.IsEditable <- value
+                edit.SetEnabled(value)
     interface IDisposable with
         member this.Dispose() =
-            entry.Dispose()
+            edit.Dispose()
 
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch)
@@ -90,4 +88,4 @@ type Node<'msg>() =
         (this.model :> IDisposable).Dispose()
         
     override this.Widget =
-        (this.model.Widget :> Gtk.Widget)
+        (this.model.Widget :> Widget.Handle)

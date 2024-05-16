@@ -21,6 +21,12 @@ namespace Widget
         return (HandleRef)ni_popPtr();
     }
 
+    void Handle_setEnabled__wrapper() {
+        auto _this = Handle__pop();
+        auto state = ni_popBool();
+        Handle_setEnabled(_this, state);
+    }
+
     void Handle_setMaximumWidth__wrapper() {
         auto _this = Handle__pop();
         auto maxWidth = ni_popInt32();
@@ -50,6 +56,17 @@ namespace Widget
         Handle_show(_this);
     }
 
+    void Handle_hide__wrapper() {
+        auto _this = Handle__pop();
+        Handle_hide(_this);
+    }
+
+    void Handle_setVisible__wrapper() {
+        auto _this = Handle__pop();
+        auto state = ni_popBool();
+        Handle_setVisible(_this, state);
+    }
+
     void Handle_setWindowTitle__wrapper() {
         auto _this = Handle__pop();
         auto title = popStringInternal();
@@ -60,6 +77,11 @@ namespace Widget
         auto _this = Handle__pop();
         auto layout = Layout::Handle__pop();
         Handle_setLayout(_this, layout);
+    }
+
+    void Handle_getLayout__wrapper() {
+        auto _this = Handle__pop();
+        Layout::Handle__push(Handle_getLayout(_this));
     }
 
     void Handle_onWindowTitleChanged__wrapper() {
@@ -85,13 +107,17 @@ namespace Widget
         auto m = ni_registerModule("Widget");
         ni_registerModuleConstants(m, &__constantsFunc);
         ni_registerModuleMethod(m, "create", &create__wrapper);
+        ni_registerModuleMethod(m, "Handle_setEnabled", &Handle_setEnabled__wrapper);
         ni_registerModuleMethod(m, "Handle_setMaximumWidth", &Handle_setMaximumWidth__wrapper);
         ni_registerModuleMethod(m, "Handle_setMaximumHeight", &Handle_setMaximumHeight__wrapper);
         ni_registerModuleMethod(m, "Handle_getRect", &Handle_getRect__wrapper);
         ni_registerModuleMethod(m, "Handle_resize", &Handle_resize__wrapper);
         ni_registerModuleMethod(m, "Handle_show", &Handle_show__wrapper);
+        ni_registerModuleMethod(m, "Handle_hide", &Handle_hide__wrapper);
+        ni_registerModuleMethod(m, "Handle_setVisible", &Handle_setVisible__wrapper);
         ni_registerModuleMethod(m, "Handle_setWindowTitle", &Handle_setWindowTitle__wrapper);
         ni_registerModuleMethod(m, "Handle_setLayout", &Handle_setLayout__wrapper);
+        ni_registerModuleMethod(m, "Handle_getLayout", &Handle_getLayout__wrapper);
         ni_registerModuleMethod(m, "Handle_onWindowTitleChanged", &Handle_onWindowTitleChanged__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);
         return 0; // = OK

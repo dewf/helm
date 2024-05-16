@@ -21,6 +21,7 @@ namespace PushButton
 
     struct __Handle; typedef struct __Handle* HandleRef; // extends Widget::HandleRef
 
+    void Handle_setText(HandleRef _this, std::string label);
     void Handle_onClicked(HandleRef _this, std::function<VoidDelegate> handler);
     void Handle_dispose(HandleRef _this);
     HandleRef create(std::string label);

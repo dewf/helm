@@ -2,6 +2,7 @@
 
 open BuilderNode
 open System
+open Org.Whatever.QtTesting
 
 type Signal =
     | Clicked
@@ -18,7 +19,7 @@ let private diffAttrs = genericDiffAttrs keyFunc
 
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable button = new Gtk.Button()
+    let mutable button = PushButton.Create("")
     do
         let dispatcher (s: Signal) =
             match signalMap s with
@@ -26,15 +27,17 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 dispatch msg
             | None ->
                 ()
-        button.Clicked.Add (fun _ ->
-            dispatcher Clicked)
+        button.OnClicked (fun _ -> dispatcher Clicked)
+        button.SetMaximumHeight(Widget.WIDGET_SIZE_MAX - 1)
     member this.Widget with get() = button
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | Label text -> button.Label <- text
-            | Enabled state -> button.Sensitive <- state
+            | Label text ->
+                button.SetText(text)
+            | Enabled state ->
+                button.SetEnabled(state)
     interface IDisposable with
         member this.Dispose() =
             button.Dispose()
@@ -77,7 +80,7 @@ type Node<'msg>() =
         (this.model :> IDisposable).Dispose()
 
     override this.Widget =
-        (this.model.Widget :> Gtk.Widget)
+        (this.model.Widget :> Widget.Handle)
 
 // various easy constructors here
 let make (label: string) (onClick: 'msg) =

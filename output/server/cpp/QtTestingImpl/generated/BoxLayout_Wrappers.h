@@ -13,6 +13,10 @@ namespace BoxLayout
     void Handle__push(HandleRef value);
     HandleRef Handle__pop();
 
+    void Handle_setDirection__wrapper();
+
+    void Handle_setSpacing__wrapper();
+
     void Handle_addSpacing__wrapper();
 
     void Handle_addStretch__wrapper();

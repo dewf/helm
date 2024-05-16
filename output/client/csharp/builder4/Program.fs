@@ -1,7 +1,7 @@
-﻿open Gtk
+﻿open System
 open BuilderNode
+open Org.Whatever.QtTesting
 open Reactor
-open Util
 
 type Msg =
     | ToggleEdit
@@ -9,14 +9,14 @@ type Msg =
     | EditActivated
     | AddButton
     | ExtraPush of int
-    | ComboChanged of value: (int * string) option
+    | ComboChanged of maybeValue: int option
     
 type State = {
     EditEnabled: bool
     TextValue: string
     LastActivated: string option
     ExtraButtonCount: int
-    ComboSelection: (int * string) option
+    ComboSelection: int option
 }
 
 let init() =
@@ -42,8 +42,8 @@ let update (state: State) (msg: Msg): State =
     | ComboChanged maybeValue ->
         let nextTextValue =
             match maybeValue with
-            | Some (index, str) ->
-                sprintf "you selected %d [%s]" index str
+            | Some index ->
+                sprintf "you selected %d" index
             | None ->
                 state.TextValue
         { state with ComboSelection = maybeValue; TextValue = nextTextValue }
@@ -78,24 +78,30 @@ let view (state: State) =
         ComboBox.Node(Attrs = [ComboBox.Items items; ComboBox.SelectedIndex (Some 0)], OnSelected = Some ComboChanged)
     let box =
         Box.Node(
-            Attrs = [Box.Orientation Box.Vertical; Box.Spacing 10; Box.BorderWidth 20],
+            Attrs = [Box.Direction Box.Vertical; Box.Spacing 10],
             Items = [ edit; disableButton; combo; addButton ] @ extraButtons)
     let title =
         match state.LastActivated with
         | Some value -> sprintf "last activation [%s]" value
         | None -> "..."
     let frame =
-        Window.Node(Attrs = [Window.Title title; Window.Size (800, 600); Window.Visible true; Window.ExitOnClose true],
+        Window.Node(Attrs = [Window.Title title; Window.Size (800, 600); Window.Visible true],
                     Content = box)
     frame :> BuilderNode<Msg>
+    
+let innerApp (argv: string array) =
+    use app =
+        Application.Create(argv)
+    app.SetStyle("Fusion")
+    use reactor =
+        new Reactor<State,Msg>(init, update, view)
+    reactor.Run(app)
 
 [<EntryPoint>]
+[<STAThread>]
 let main argv =
-    Application.Init()
-    let app = new Application("com.whatever.builder4", GLib.ApplicationFlags.None)
-    app.Register(GLib.Cancellable.Current) |> ignore
-
-    let reactor = Reactor(init, update, view)
-    reactor.Run()
-
-    0 // return an integer exit code
+    Library.Init()
+    let code = innerApp argv
+    Library.DumpTables()
+    Library.Shutdown()
+    code

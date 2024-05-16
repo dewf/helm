@@ -12,6 +12,11 @@ namespace Layout
         return (HandleRef)ni_popPtr();
     }
 
+    void Handle_removeAll__wrapper() {
+        auto _this = Handle__pop();
+        Handle_removeAll(_this);
+    }
+
     void Handle_dispose__wrapper() {
         auto _this = Handle__pop();
         Handle_dispose(_this);
@@ -19,6 +24,7 @@ namespace Layout
 
     int __register() {
         auto m = ni_registerModule("Layout");
+        ni_registerModuleMethod(m, "Handle_removeAll", &Handle_removeAll__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);
         return 0; // = OK
     }

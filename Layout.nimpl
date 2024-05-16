@@ -1,3 +1,5 @@
 module Layout;
 
-opaque Handle;
+opaque Handle {
+    void removeAll();
+}

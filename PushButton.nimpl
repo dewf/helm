@@ -4,6 +4,7 @@ import Widget;
 import Signal;
 
 opaque Handle extends Widget.Handle {
+    void setText(string label);
     void onClicked(Signal.VoidDelegate handler);
 }
 

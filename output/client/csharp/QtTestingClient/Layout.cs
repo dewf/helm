@@ -13,6 +13,7 @@ namespace Org.Whatever.QtTesting
     public static class Layout
     {
         private static ModuleHandle _module;
+        internal static ModuleMethodHandle _handle_removeAll;
         internal static ModuleMethodHandle _handle_dispose;
         public class Handle : IDisposable
         {
@@ -30,6 +31,11 @@ namespace Org.Whatever.QtTesting
                     NativeImplClient.InvokeModuleMethod(_handle_dispose);
                     _disposed = true;
                 }
+            }
+            public void RemoveAll()
+            {
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_removeAll);
             }
         }
 
@@ -50,6 +56,7 @@ namespace Org.Whatever.QtTesting
         {
             _module = NativeImplClient.GetModule("Layout");
             // assign module handles
+            _handle_removeAll = NativeImplClient.GetModuleMethod(_module, "Handle_removeAll");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init

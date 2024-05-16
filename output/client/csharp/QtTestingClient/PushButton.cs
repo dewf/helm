@@ -17,6 +17,7 @@ namespace Org.Whatever.QtTesting
     {
         private static ModuleHandle _module;
         internal static ModuleMethodHandle _create;
+        internal static ModuleMethodHandle _handle_setText;
         internal static ModuleMethodHandle _handle_onClicked;
         internal static ModuleMethodHandle _handle_dispose;
 
@@ -39,6 +40,12 @@ namespace Org.Whatever.QtTesting
                     NativeImplClient.InvokeModuleMethod(_handle_dispose);
                     _disposed = true;
                 }
+            }
+            public void SetText(string label)
+            {
+                NativeImplClient.PushString(label);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setText);
             }
             public void OnClicked(VoidDelegate handler)
             {
@@ -66,6 +73,7 @@ namespace Org.Whatever.QtTesting
             _module = NativeImplClient.GetModule("PushButton");
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
+            _handle_setText = NativeImplClient.GetModuleMethod(_module, "Handle_setText");
             _handle_onClicked = NativeImplClient.GetModuleMethod(_module, "Handle_onClicked");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 

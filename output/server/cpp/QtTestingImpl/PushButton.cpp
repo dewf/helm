@@ -3,18 +3,24 @@
 #include <QObject>
 #include <QPushButton>
 
+#define THIS ((QPushButton*)_this)
+
 namespace PushButton
 {
+    void Handle_setText(HandleRef _this, std::string label) {
+        THIS->setText(label.c_str());
+    }
+
     void Handle_onClicked(HandleRef _this, std::function<VoidDelegate> handler) {
         QObject::connect(
-            (QPushButton*)_this,
+            THIS,
             &QPushButton::clicked,
-            (QPushButton*)_this,
+            THIS,
             handler);
     }
 
     void Handle_dispose(HandleRef _this) {
-        delete (QPushButton*)_this;
+        delete THIS;
     }
 
     HandleRef create(std::string label) {

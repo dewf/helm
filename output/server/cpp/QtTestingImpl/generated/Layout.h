@@ -16,5 +16,6 @@ namespace Layout
 
     struct __Handle; typedef struct __Handle* HandleRef;
 
+    void Handle_removeAll(HandleRef _this);
     void Handle_dispose(HandleRef _this);
 }

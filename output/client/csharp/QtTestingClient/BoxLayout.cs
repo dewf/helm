@@ -17,6 +17,8 @@ namespace Org.Whatever.QtTesting
     {
         private static ModuleHandle _module;
         internal static ModuleMethodHandle _create;
+        internal static ModuleMethodHandle _handle_setDirection;
+        internal static ModuleMethodHandle _handle_setSpacing;
         internal static ModuleMethodHandle _handle_addSpacing;
         internal static ModuleMethodHandle _handle_addStretch;
         internal static ModuleMethodHandle _handle_addWidget;
@@ -89,6 +91,18 @@ namespace Org.Whatever.QtTesting
                     _disposed = true;
                 }
             }
+            public void SetDirection(Direction dir)
+            {
+                Direction__Push(dir);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setDirection);
+            }
+            public void SetSpacing(int spacing)
+            {
+                NativeImplClient.PushInt32(spacing);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setSpacing);
+            }
             public void AddSpacing(int size)
             {
                 NativeImplClient.PushInt32(size);
@@ -134,6 +148,8 @@ namespace Org.Whatever.QtTesting
             _module = NativeImplClient.GetModule("BoxLayout");
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
+            _handle_setDirection = NativeImplClient.GetModuleMethod(_module, "Handle_setDirection");
+            _handle_setSpacing = NativeImplClient.GetModuleMethod(_module, "Handle_setSpacing");
             _handle_addSpacing = NativeImplClient.GetModuleMethod(_module, "Handle_addSpacing");
             _handle_addStretch = NativeImplClient.GetModuleMethod(_module, "Handle_addStretch");
             _handle_addWidget = NativeImplClient.GetModuleMethod(_module, "Handle_addWidget");

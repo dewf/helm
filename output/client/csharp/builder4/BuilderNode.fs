@@ -1,5 +1,7 @@
 ﻿module BuilderNode
 
+open Org.Whatever.QtTesting
+
 
 module List =
     let zipWithIndex (xs: 'a list) =
@@ -29,8 +31,14 @@ type BuilderNode<'msg>() =
 [<AbstractClass>]
 type WidgetNode<'msg>() =
     inherit BuilderNode<'msg>()
-    abstract member Widget: Gtk.Widget
+    abstract member Widget: Widget.Handle
     override this.ContentKey = this.Widget
+    
+[<AbstractClass>]    
+type LayoutNode<'msg>() =
+    inherit BuilderNode<'msg>()
+    abstract member Layout: Layout.Handle
+    override this.ContentKey = this.Layout
 
 type Empty<'msg>() =
     inherit BuilderNode<'msg>()

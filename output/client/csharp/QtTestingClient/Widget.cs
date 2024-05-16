@@ -18,13 +18,17 @@ namespace Org.Whatever.QtTesting
     {
         private static ModuleHandle _module;
         internal static ModuleMethodHandle _create;
+        internal static ModuleMethodHandle _handle_setEnabled;
         internal static ModuleMethodHandle _handle_setMaximumWidth;
         internal static ModuleMethodHandle _handle_setMaximumHeight;
         internal static ModuleMethodHandle _handle_getRect;
         internal static ModuleMethodHandle _handle_resize;
         internal static ModuleMethodHandle _handle_show;
+        internal static ModuleMethodHandle _handle_hide;
+        internal static ModuleMethodHandle _handle_setVisible;
         internal static ModuleMethodHandle _handle_setWindowTitle;
         internal static ModuleMethodHandle _handle_setLayout;
+        internal static ModuleMethodHandle _handle_getLayout;
         internal static ModuleMethodHandle _handle_onWindowTitleChanged;
         internal static ModuleMethodHandle _handle_dispose;
         public static int WIDGET_SIZE_MAX { get; internal set; }
@@ -50,6 +54,12 @@ namespace Org.Whatever.QtTesting
                     NativeImplClient.InvokeModuleMethod(_handle_dispose);
                     _disposed = true;
                 }
+            }
+            public void SetEnabled(bool state)
+            {
+                NativeImplClient.PushBool(state);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setEnabled);
             }
             public void SetMaximumWidth(int maxWidth)
             {
@@ -81,6 +91,17 @@ namespace Org.Whatever.QtTesting
                 Handle__Push(this);
                 NativeImplClient.InvokeModuleMethod(_handle_show);
             }
+            public void Hide()
+            {
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_hide);
+            }
+            public void SetVisible(bool state)
+            {
+                NativeImplClient.PushBool(state);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setVisible);
+            }
             public void SetWindowTitle(string title)
             {
                 NativeImplClient.PushString(title);
@@ -92,6 +113,12 @@ namespace Org.Whatever.QtTesting
                 Layout.Handle__Push(layout);
                 Handle__Push(this);
                 NativeImplClient.InvokeModuleMethod(_handle_setLayout);
+            }
+            public Layout.Handle GetLayout()
+            {
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_getLayout);
+                return Layout.Handle__Pop();
             }
             public void OnWindowTitleChanged(StringDelegate func)
             {
@@ -122,13 +149,17 @@ namespace Org.Whatever.QtTesting
             WIDGET_SIZE_MAX = NativeImplClient.PopInt32();
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
+            _handle_setEnabled = NativeImplClient.GetModuleMethod(_module, "Handle_setEnabled");
             _handle_setMaximumWidth = NativeImplClient.GetModuleMethod(_module, "Handle_setMaximumWidth");
             _handle_setMaximumHeight = NativeImplClient.GetModuleMethod(_module, "Handle_setMaximumHeight");
             _handle_getRect = NativeImplClient.GetModuleMethod(_module, "Handle_getRect");
             _handle_resize = NativeImplClient.GetModuleMethod(_module, "Handle_resize");
             _handle_show = NativeImplClient.GetModuleMethod(_module, "Handle_show");
+            _handle_hide = NativeImplClient.GetModuleMethod(_module, "Handle_hide");
+            _handle_setVisible = NativeImplClient.GetModuleMethod(_module, "Handle_setVisible");
             _handle_setWindowTitle = NativeImplClient.GetModuleMethod(_module, "Handle_setWindowTitle");
             _handle_setLayout = NativeImplClient.GetModuleMethod(_module, "Handle_setLayout");
+            _handle_getLayout = NativeImplClient.GetModuleMethod(_module, "Handle_getLayout");
             _handle_onWindowTitleChanged = NativeImplClient.GetModuleMethod(_module, "Handle_onWindowTitleChanged");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 

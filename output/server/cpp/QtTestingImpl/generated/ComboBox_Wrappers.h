@@ -7,7 +7,11 @@ namespace ComboBox
     void Handle__push(HandleRef value);
     HandleRef Handle__pop();
 
+    void Handle_clear__wrapper();
+
     void Handle_setItems__wrapper();
+
+    void Handle_setCurrentIndex__wrapper();
 
     void Handle_onCurrentIndexChanged__wrapper();
 

@@ -2,9 +2,10 @@
 
 open System
 open BuilderNode
+open Org.Whatever.QtTesting
 
 type Signal =
-    | Selected of selected: (int * string) option
+    | Selected of index: int option
     
 type Attr =
     | Items of items: string list
@@ -19,7 +20,7 @@ let private diffAttrs =
     
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable combo = new Gtk.ComboBoxText()
+    let mutable combo = ComboBox.Create()
     do
         let signalDispatch (s: Signal) =
             match signalMap s with
@@ -27,10 +28,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 dispatch msg
             | None ->
                 ()
-        combo.Changed.Add (fun _ ->
+        combo.OnCurrentIndexChanged (fun i ->
             let value =
-                if combo.Active >= 0 then
-                    Some (combo.Active, combo.ActiveText)
+                if i >= 0 then
+                    Some i
                 else
                     None
             signalDispatch (Selected value))
@@ -40,15 +41,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         for attr in attrs do
             match attr with
             | Items items ->
-                combo.RemoveAll()
-                items
-                |> List.iter combo.AppendText
+                combo.Clear()
+                combo.SetItems(items |> Array.ofList)
             | SelectedIndex maybeIndex ->
                 match maybeIndex with
                 | Some value ->
-                    combo.Active <- value
+                    combo.SetCurrentIndex(value)
                 | None ->
-                    combo.Active <- -1
+                    combo.SetCurrentIndex(-1)
     interface IDisposable with
         member this.Dispose() =
             combo.Dispose()
@@ -72,7 +72,7 @@ type Node<'msg>() =
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    member val OnSelected: ((int * string) option -> 'msg) option = None with get, set
+    member val OnSelected: (int option -> 'msg) option = None with get, set
     member private this.SignalMap
         with get() = function
             | Selected maybeArgs ->
@@ -91,4 +91,4 @@ type Node<'msg>() =
     override this.Dispose() =
         (this.model :> IDisposable).Dispose()
     override this.Widget =
-        (this.model.Widget :> Gtk.Widget)
+        (this.model.Widget :> Widget.Handle)

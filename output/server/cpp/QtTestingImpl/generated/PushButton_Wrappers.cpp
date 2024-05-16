@@ -18,6 +18,12 @@ namespace PushButton
         return (HandleRef)ni_popPtr();
     }
 
+    void Handle_setText__wrapper() {
+        auto _this = Handle__pop();
+        auto label = popStringInternal();
+        Handle_setText(_this, label);
+    }
+
     void Handle_onClicked__wrapper() {
         auto _this = Handle__pop();
         auto handler = VoidDelegate__pop();
@@ -37,6 +43,7 @@ namespace PushButton
     int __register() {
         auto m = ni_registerModule("PushButton");
         ni_registerModuleMethod(m, "create", &create__wrapper);
+        ni_registerModuleMethod(m, "Handle_setText", &Handle_setText__wrapper);
         ni_registerModuleMethod(m, "Handle_onClicked", &Handle_onClicked__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);
         return 0; // = OK

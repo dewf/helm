@@ -2,26 +2,37 @@
 
 #include <QBoxLayout>
 
+#define THIS ((QBoxLayout*)_this)
+
 namespace BoxLayout
 {
+    void Handle_setDirection(HandleRef _this, Direction dir) {
+        auto qDir = (QBoxLayout::Direction)dir;
+        THIS->setDirection(qDir);
+    }
+
+    void Handle_setSpacing(HandleRef _this, int32_t spacing) {
+        THIS->setSpacing(spacing);
+    }
+
     void Handle_addSpacing(HandleRef _this, int32_t size) {
-        ((QBoxLayout*)_this)->addSpacing(size);
+        THIS->addSpacing(size);
     }
 
     void Handle_addStretch(HandleRef _this, int32_t stretch) {
-        ((QBoxLayout*)_this)->addStretch(stretch);
+        THIS->addStretch(stretch);
     }
 
     void Handle_addWidget(HandleRef _this, Widget::HandleRef widget) {
-        ((QBoxLayout*)_this)->addWidget((QWidget*)widget);
+        THIS->addWidget((QWidget*)widget);
     }
 
     void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t stretch) {
-        ((QBoxLayout*)_this)->addWidget((QWidget*)widget, stretch);
+        THIS->addWidget((QWidget*)widget, stretch);
     }
 
     void Handle_dispose(HandleRef _this) {
-        delete (QBoxLayout*)_this;
+        delete THIS;
     }
 
     HandleRef create(Direction dir) {

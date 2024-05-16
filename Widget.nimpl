@@ -7,13 +7,20 @@ import Layout;
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
 opaque Handle {
+    void setEnabled(bool state);
     void setMaximumWidth(int maxWidth);
     void setMaximumHeight(int maxHeight);
     Rect getRect();
     void resize(int width, int height);
+
     void show();
+    void hide();
+    void setVisible(bool state);
+
     void setWindowTitle(string title);
+
     void setLayout(Layout.Handle layout);
+    Layout.Handle getLayout();
 
     // would be better to have signal properties that could be connected in the traditional way (eg .WindowTitleChanged.connect(...))
     // but this is a simple demo ...

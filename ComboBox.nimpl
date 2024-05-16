@@ -4,7 +4,9 @@ import Widget;
 import Signal;
 
 opaque Handle extends Widget.Handle {
+    void clear();
     void setItems(Array<string> items);
+    void setCurrentIndex(int index);
     void onCurrentIndexChanged(Signal.IntDelegate handler);
     void onCurrentTextChanged(Signal.StringDelegate handler);
 }

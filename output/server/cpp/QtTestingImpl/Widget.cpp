@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QLayout>
 #include "util/convert.h"
 
 #define THIS ((QWidget*)_this)
@@ -9,6 +10,10 @@
 namespace Widget
 {
     const int32_t WIDGET_SIZE_MAX = QWIDGETSIZE_MAX;
+
+    void Handle_setEnabled(HandleRef _this, bool state) {
+        THIS->setEnabled(state);
+    }
 
     void Handle_setMaximumWidth(HandleRef _this, int32_t maxWidth) {
         THIS->setMaximumWidth(maxWidth);
@@ -31,12 +36,24 @@ namespace Widget
         THIS->show();
     }
 
+    void Handle_hide(HandleRef _this) {
+        THIS->hide();
+    }
+
+    void Handle_setVisible(HandleRef _this, bool state) {
+        THIS->setVisible(state);
+    }
+
     void Handle_setWindowTitle(HandleRef _this, std::string title) {
         THIS->setWindowTitle(title.c_str());
     }
 
     void Handle_setLayout(HandleRef _this, Layout::HandleRef layout) {
         THIS->setLayout((QLayout*)layout);
+    }
+
+    Layout::HandleRef Handle_getLayout(HandleRef _this) {
+        return (Layout::HandleRef)THIS->layout();
     }
 
     void Handle_onWindowTitleChanged(HandleRef _this, std::function<StringDelegate> func) {
