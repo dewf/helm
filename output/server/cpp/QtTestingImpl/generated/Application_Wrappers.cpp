@@ -13,20 +13,18 @@ namespace Application
         return (HandleRef)ni_popPtr();
     }
 
-    void Handle_exec__wrapper() {
-        auto _this = Handle__pop();
-        ni_pushInt32(Handle_exec(_this));
-    }
-
-    void Handle_setStyle__wrapper() {
-        auto _this = Handle__pop();
-        auto name = popStringInternal();
-        Handle_setStyle(_this, name);
-    }
-
     void Handle_dispose__wrapper() {
         auto _this = Handle__pop();
         Handle_dispose(_this);
+    }
+
+    void setStyle__wrapper() {
+        auto name = popStringInternal();
+        setStyle(name);
+    }
+
+    void exec__wrapper() {
+        ni_pushInt32(exec());
     }
 
     void create__wrapper() {
@@ -36,9 +34,9 @@ namespace Application
 
     int __register() {
         auto m = ni_registerModule("Application");
+        ni_registerModuleMethod(m, "setStyle", &setStyle__wrapper);
+        ni_registerModuleMethod(m, "exec", &exec__wrapper);
         ni_registerModuleMethod(m, "create", &create__wrapper);
-        ni_registerModuleMethod(m, "Handle_exec", &Handle_exec__wrapper);
-        ni_registerModuleMethod(m, "Handle_setStyle", &Handle_setStyle__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);
         return 0; // = OK
     }

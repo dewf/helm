@@ -16,8 +16,8 @@ namespace Application
 
     struct __Handle; typedef struct __Handle* HandleRef;
 
-    int32_t Handle_exec(HandleRef _this);
-    void Handle_setStyle(HandleRef _this, std::string name);
     void Handle_dispose(HandleRef _this);
+    void setStyle(std::string name);
+    int32_t exec();
     HandleRef create(std::vector<std::string> args);
 }

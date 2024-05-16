@@ -58,7 +58,7 @@ internal static class Program
         
         using (var app = Application.Create(args))
         {
-            app.SetStyle("Fusion");
+            Application.SetStyle("Fusion");
             
             using (var window = Widget.Create())
             {
@@ -78,7 +78,7 @@ internal static class Program
                 window.Show();
                 
                 // runloop, before window destroyed plz
-                app.Exec();
+                Application.Exec();
             }
         }
         

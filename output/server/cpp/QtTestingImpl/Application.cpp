@@ -6,16 +6,16 @@
 
 namespace Application
 {
-    int32_t Handle_exec(HandleRef _this) {
-        return THIS->exec();
-    }
-
-    void Handle_setStyle(HandleRef _this, std::string name) {
-        THIS->setStyle(name.c_str());
-    }
-
     void Handle_dispose(HandleRef _this) {
         delete THIS;
+    }
+
+    void setStyle(std::string name) {
+        QApplication::setStyle(name.c_str());
+    }
+
+    int32_t exec() {
+        return QApplication::exec();
     }
 
     HandleRef create(std::vector<std::string> args) {

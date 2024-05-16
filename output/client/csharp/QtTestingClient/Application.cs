@@ -15,10 +15,22 @@ namespace Org.Whatever.QtTesting
         private static ModuleHandle _module;
 
         // built-in array type: string[]
+        internal static ModuleMethodHandle _setStyle;
+        internal static ModuleMethodHandle _exec;
         internal static ModuleMethodHandle _create;
-        internal static ModuleMethodHandle _handle_exec;
-        internal static ModuleMethodHandle _handle_setStyle;
         internal static ModuleMethodHandle _handle_dispose;
+
+        public static void SetStyle(string name)
+        {
+            NativeImplClient.PushString(name);
+            NativeImplClient.InvokeModuleMethod(_setStyle);
+        }
+
+        public static int Exec()
+        {
+            NativeImplClient.InvokeModuleMethod(_exec);
+            return NativeImplClient.PopInt32();
+        }
 
         public static Handle Create(string[] args)
         {
@@ -43,18 +55,6 @@ namespace Org.Whatever.QtTesting
                     _disposed = true;
                 }
             }
-            public int Exec()
-            {
-                Handle__Push(this);
-                NativeImplClient.InvokeModuleMethod(_handle_exec);
-                return NativeImplClient.PopInt32();
-            }
-            public void SetStyle(string name)
-            {
-                NativeImplClient.PushString(name);
-                Handle__Push(this);
-                NativeImplClient.InvokeModuleMethod(_handle_setStyle);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -74,9 +74,9 @@ namespace Org.Whatever.QtTesting
         {
             _module = NativeImplClient.GetModule("Application");
             // assign module handles
+            _setStyle = NativeImplClient.GetModuleMethod(_module, "setStyle");
+            _exec = NativeImplClient.GetModuleMethod(_module, "exec");
             _create = NativeImplClient.GetModuleMethod(_module, "create");
-            _handle_exec = NativeImplClient.GetModuleMethod(_module, "Handle_exec");
-            _handle_setStyle = NativeImplClient.GetModuleMethod(_module, "Handle_setStyle");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init
