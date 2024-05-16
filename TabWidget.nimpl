@@ -1,0 +1,13 @@
+module TabWidget;
+
+import Signal;
+import Widget;
+
+opaque Handle extends Widget.Handle {
+    void addTab(Widget.Handle page, string label);
+    void insertTab(int index, Widget.Handle page, string label);
+
+    void onCurrentChanged(Signal.IntDelegate handler);
+}
+
+Handle create();

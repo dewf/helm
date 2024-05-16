@@ -10,6 +10,7 @@
 #include "MainWindow_wrappers.h"
 #include "PlainTextEdit_wrappers.h"
 #include "PushButton_wrappers.h"
+#include "TabWidget_wrappers.h"
 
 extern "C" int nativeLibraryInit() {
     ::Application::__register();
@@ -24,6 +25,7 @@ extern "C" int nativeLibraryInit() {
     ::MainWindow::__register();
     ::PlainTextEdit::__register();
     ::PushButton::__register();
+    ::TabWidget::__register();
     // should we do module inits here as well?
     // currently they are manually done on the C# side inside the <module>.Init methods (which perform registration first) - and those are individually called by Library.Init, which first calls nativeImplInit
     return 0;

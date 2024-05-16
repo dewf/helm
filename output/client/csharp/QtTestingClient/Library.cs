@@ -24,11 +24,13 @@ public static class Library
         MainWindow.__Init();
         PlainTextEdit.__Init();
         PushButton.__Init();
+        TabWidget.__Init();
     }
 
     public static void Shutdown()
     {
         // module static shutdowns (if any, might be empty)
+        TabWidget.__Shutdown();
         PushButton.__Shutdown();
         PlainTextEdit.__Shutdown();
         MainWindow.__Shutdown();

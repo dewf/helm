@@ -59,6 +59,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Signal_wrappers.cpp
     ../Signal.cpp
 
+    ../generated/TabWidget.h
+    ../generated/TabWidget_wrappers.cpp
+    ../TabWidget.cpp
+
     ../generated/Widget.h
     ../generated/Widget_wrappers.cpp
     ../Widget.cpp

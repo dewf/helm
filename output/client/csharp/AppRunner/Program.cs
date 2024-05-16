@@ -4,6 +4,53 @@ namespace AppRunner;
 
 internal static class Program
 {
+    private static Widget.Handle CreatePage01()
+    {
+        var page = Widget.Create();
+        var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+        
+        var list = ListWidget.Create();
+        list.SetSelectionMode(ListWidget.SelectionMode.Extended);
+        list.SetItems(Enumerable.Range(0, 100).Select(i => $"Item {i}").ToArray());
+        layout.AddWidget(list);
+        
+        page.SetLayout(layout);
+        return page;
+    }
+
+    private static Widget.Handle CreatePage02()
+    {
+        var page = Widget.Create();
+        var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+        
+        var combo1 = ComboBox.Create();
+        combo1.SetItems([ "one", "two", "three", "four", "five", "six"]);
+        layout.AddWidget(combo1);
+
+        var edit1 = PlainTextEdit.Create();
+        layout.AddWidget(edit1);
+                
+        var button1 = PushButton.Create($"Wahoo!! {Widget.WIDGET_SIZE_MAX}");
+        button1.SetMaximumHeight(300);
+        layout.AddWidget(button1, 1);
+        
+        page.SetLayout(layout);
+        return page;
+    }
+
+    private static Widget.Handle CreatePage03()
+    {
+        var page = Widget.Create();
+        var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+        
+        var button2 = PushButton.Create("#2 !!!");
+        button2.SetMaximumHeight(Widget.WIDGET_SIZE_MAX - 1);
+        layout.AddWidget(button2);
+        
+        page.SetLayout(layout);
+        return page;
+    }
+    
     [STAThread]
     private static void Main(string[] args)
     {
@@ -20,27 +67,11 @@ internal static class Program
 
                 var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
 
-                var list = ListWidget.Create();
-                list.SetSelectionMode(ListWidget.SelectionMode.Extended);
-                list.SetItems(Enumerable.Range(0, 100).Select(i => $"Item {i}").ToArray());
-                layout.AddWidget(list);
-
-                var combo1 = ComboBox.Create();
-                combo1.SetItems([ "one", "two", "three", "four", "five", "six"]);
-                layout.AddWidget(combo1);
-
-                var edit1 = PlainTextEdit.Create();
-                layout.AddWidget(edit1);
-                
-                var button1 = PushButton.Create($"Wahoo!! {Widget.WIDGET_SIZE_MAX}");
-                button1.SetMaximumHeight(300);
-                layout.AddWidget(button1, 1);
-                
-                var button2 = PushButton.Create("#2 !!!");
-                button2.SetMaximumHeight(300);
-                layout.AddWidget(button2, 1);
-                
-                // layout.AddStretch(1);
+                var tabs = TabWidget.Create();
+                tabs.AddTab(CreatePage01(), "Page 1");
+                tabs.AddTab(CreatePage02(), "Page 2");
+                tabs.AddTab(CreatePage03(), "Page 3");
+                layout.AddWidget(tabs);
                 
                 window.SetLayout(layout);
                 
