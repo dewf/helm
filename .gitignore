@@ -1,0 +1,3 @@
+output/client/csharp/QtTestingClient/*.cs
+output/server/cpp/QtTestingImpl/generated/*
+
