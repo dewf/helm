@@ -8,51 +8,29 @@ using CSharpFunctionalExtensions;
 using Org.Whatever.QtTesting.Support;
 using ModuleHandle = Org.Whatever.QtTesting.Support.ModuleHandle;
 
+using static Org.Whatever.QtTesting.Widget;
+using static Org.Whatever.QtTesting.Menu;
+
 namespace Org.Whatever.QtTesting
 {
-    public static class Application
+    public static class MenuBar
     {
         private static ModuleHandle _module;
-
-        // built-in array type: string[]
-        internal static ModuleMethodHandle _setStyle;
-        internal static ModuleMethodHandle _exec;
-        internal static ModuleMethodHandle _quit;
         internal static ModuleMethodHandle _create;
+        internal static ModuleMethodHandle _handle_addMenu;
         internal static ModuleMethodHandle _handle_dispose;
 
-        public static void SetStyle(string name)
+        public static Handle Create()
         {
-            NativeImplClient.PushString(name);
-            NativeImplClient.InvokeModuleMethod(_setStyle);
-        }
-
-        public static int Exec()
-        {
-            NativeImplClient.InvokeModuleMethod(_exec);
-            return NativeImplClient.PopInt32();
-        }
-
-        public static void Quit()
-        {
-            NativeImplClient.InvokeModuleMethod(_quit);
-        }
-
-        public static Handle Create(string[] args)
-        {
-            NativeImplClient.PushStringArray(args);
             NativeImplClient.InvokeModuleMethod(_create);
             return Handle__Pop();
         }
-        public class Handle : IDisposable
+        public class Handle : Widget.Handle
         {
-            internal readonly IntPtr NativeHandle;
-            protected bool _disposed;
-            internal Handle(IntPtr nativeHandle)
+            internal Handle(IntPtr nativeHandle) : base(nativeHandle)
             {
-                NativeHandle = nativeHandle;
             }
-            public virtual void Dispose()
+            public override void Dispose()
             {
                 if (!_disposed)
                 {
@@ -60,6 +38,12 @@ namespace Org.Whatever.QtTesting
                     NativeImplClient.InvokeModuleMethod(_handle_dispose);
                     _disposed = true;
                 }
+            }
+            public void AddMenu(Menu.Handle menu)
+            {
+                Menu.Handle__Push(menu);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_addMenu);
             }
         }
 
@@ -78,12 +62,10 @@ namespace Org.Whatever.QtTesting
 
         internal static void __Init()
         {
-            _module = NativeImplClient.GetModule("Application");
+            _module = NativeImplClient.GetModule("MenuBar");
             // assign module handles
-            _setStyle = NativeImplClient.GetModuleMethod(_module, "setStyle");
-            _exec = NativeImplClient.GetModuleMethod(_module, "exec");
-            _quit = NativeImplClient.GetModuleMethod(_module, "quit");
             _create = NativeImplClient.GetModuleMethod(_module, "create");
+            _handle_addMenu = NativeImplClient.GetModuleMethod(_module, "Handle_addMenu");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init

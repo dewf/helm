@@ -5,5 +5,6 @@ opaque Handle;
 // so far all the "methods" are static ...
 void setStyle(string name);
 int exec();
+void quit();
 
 Handle create(Array<string> args);

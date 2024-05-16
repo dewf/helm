@@ -1,0 +1,9 @@
+module Action;
+
+import Signal;
+
+opaque Handle {
+    void onTriggered(Signal.BoolDelegate handler);
+}
+
+Handle create(string title);

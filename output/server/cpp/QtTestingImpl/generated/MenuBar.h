@@ -13,18 +13,15 @@
 
 #include "Widget.h"
 using namespace ::Widget;
-#include "Layout.h"
-using namespace ::Layout;
-#include "MenuBar.h"
-using namespace ::MenuBar;
+#include "Menu.h"
+using namespace ::Menu;
 
-namespace MainWindow
+namespace MenuBar
 {
 
     struct __Handle; typedef struct __Handle* HandleRef; // extends Widget::HandleRef
 
-    void Handle_setCentralWidget(HandleRef _this, Widget::HandleRef widget);
-    void Handle_setMenuBar(HandleRef _this, MenuBar::HandleRef menubar);
+    void Handle_addMenu(HandleRef _this, Menu::HandleRef menu);
     void Handle_dispose(HandleRef _this);
     HandleRef create();
 }

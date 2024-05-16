@@ -27,6 +27,10 @@ namespace Application
         ni_pushInt32(exec());
     }
 
+    void quit__wrapper() {
+        quit();
+    }
+
     void create__wrapper() {
         auto args = popStringArrayInternal();
         Handle__push(create(args));
@@ -36,6 +40,7 @@ namespace Application
         auto m = ni_registerModule("Application");
         ni_registerModuleMethod(m, "setStyle", &setStyle__wrapper);
         ni_registerModuleMethod(m, "exec", &exec__wrapper);
+        ni_registerModuleMethod(m, "quit", &quit__wrapper);
         ni_registerModuleMethod(m, "create", &create__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);
         return 0; // = OK

@@ -13,6 +13,8 @@ namespace Application
 
     void exec__wrapper();
 
+    void quit__wrapper();
+
     void create__wrapper();
 
     int __register();

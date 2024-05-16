@@ -1,0 +1,10 @@
+module MenuBar;
+
+import Widget;
+import Menu;
+
+opaque Handle extends Widget.Handle {
+    void addMenu(Menu.Handle menu);
+}
+
+Handle create();

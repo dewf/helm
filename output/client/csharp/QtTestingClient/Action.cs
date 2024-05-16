@@ -8,39 +8,20 @@ using CSharpFunctionalExtensions;
 using Org.Whatever.QtTesting.Support;
 using ModuleHandle = Org.Whatever.QtTesting.Support.ModuleHandle;
 
+using static Org.Whatever.QtTesting.Signal;
+
 namespace Org.Whatever.QtTesting
 {
-    public static class Application
+    public static class Action
     {
         private static ModuleHandle _module;
-
-        // built-in array type: string[]
-        internal static ModuleMethodHandle _setStyle;
-        internal static ModuleMethodHandle _exec;
-        internal static ModuleMethodHandle _quit;
         internal static ModuleMethodHandle _create;
+        internal static ModuleMethodHandle _handle_onTriggered;
         internal static ModuleMethodHandle _handle_dispose;
 
-        public static void SetStyle(string name)
+        public static Handle Create(string title)
         {
-            NativeImplClient.PushString(name);
-            NativeImplClient.InvokeModuleMethod(_setStyle);
-        }
-
-        public static int Exec()
-        {
-            NativeImplClient.InvokeModuleMethod(_exec);
-            return NativeImplClient.PopInt32();
-        }
-
-        public static void Quit()
-        {
-            NativeImplClient.InvokeModuleMethod(_quit);
-        }
-
-        public static Handle Create(string[] args)
-        {
-            NativeImplClient.PushStringArray(args);
+            NativeImplClient.PushString(title);
             NativeImplClient.InvokeModuleMethod(_create);
             return Handle__Pop();
         }
@@ -61,6 +42,12 @@ namespace Org.Whatever.QtTesting
                     _disposed = true;
                 }
             }
+            public void OnTriggered(BoolDelegate handler)
+            {
+                BoolDelegate__Push(handler);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_onTriggered);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -78,12 +65,10 @@ namespace Org.Whatever.QtTesting
 
         internal static void __Init()
         {
-            _module = NativeImplClient.GetModule("Application");
+            _module = NativeImplClient.GetModule("Action");
             // assign module handles
-            _setStyle = NativeImplClient.GetModuleMethod(_module, "setStyle");
-            _exec = NativeImplClient.GetModuleMethod(_module, "exec");
-            _quit = NativeImplClient.GetModuleMethod(_module, "quit");
             _create = NativeImplClient.GetModuleMethod(_module, "create");
+            _handle_onTriggered = NativeImplClient.GetModuleMethod(_module, "Handle_onTriggered");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init

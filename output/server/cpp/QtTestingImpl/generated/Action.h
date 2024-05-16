@@ -11,14 +11,15 @@
 #include <optional>
 #include "../support/result.h"
 
-namespace Application
+#include "Signal.h"
+using namespace ::Signal;
+
+namespace Action
 {
 
     struct __Handle; typedef struct __Handle* HandleRef;
 
+    void Handle_onTriggered(HandleRef _this, std::function<BoolDelegate> handler);
     void Handle_dispose(HandleRef _this);
-    void setStyle(std::string name);
-    int32_t exec();
-    void quit();
-    HandleRef create(std::vector<std::string> args);
+    HandleRef create(std::string title);
 }

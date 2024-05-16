@@ -18,6 +18,10 @@ namespace Application
         return QApplication::exec();
     }
 
+    void quit() {
+        QApplication::quit();
+    }
+
     HandleRef create(std::vector<std::string> args) {
         auto argc = (int)args.size();
         auto argv = new char*[argc];

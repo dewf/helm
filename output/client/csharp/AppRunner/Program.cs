@@ -1,4 +1,5 @@
 ﻿using Org.Whatever.QtTesting;
+using Action = Org.Whatever.QtTesting.Action;
 
 namespace AppRunner;
 
@@ -60,7 +61,7 @@ internal static class Program
         {
             Application.SetStyle("Fusion");
             
-            using (var window = Widget.Create())
+            using (var window = MainWindow.Create())
             {
                 window.SetWindowTitle("Haloooo");
                 window.Resize(800, 600);
@@ -74,6 +75,19 @@ internal static class Program
                 layout.AddWidget(tabs);
                 
                 window.SetLayout(layout);
+
+                var action = Action.Create("E&xit");
+                action.OnTriggered(_ =>
+                {
+                    Console.WriteLine("Exit triggered!");
+                    Application.Quit();
+                });
+                
+                var menu = Menu.Create("&File");
+                menu.AddAction(action);
+                var menuBar = MenuBar.Create();
+                menuBar.AddMenu(menu);
+                window.SetMenuBar(menuBar);
                 
                 window.Show();
                 

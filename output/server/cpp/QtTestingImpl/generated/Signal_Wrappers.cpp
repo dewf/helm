@@ -26,6 +26,30 @@ namespace Signal
         };
         return wrapper;
     }
+    void BoolDelegate__push(std::function<BoolDelegate> f) {
+        size_t uniqueKey = 0;
+        if (f) {
+            BoolDelegate* ptr_fun = f.target<BoolDelegate>();
+            if (ptr_fun != nullptr) {
+                uniqueKey = (size_t)ptr_fun;
+            }
+        }
+        auto wrapper = [f]() {
+            auto b = ni_popBool();
+            f(b);
+        };
+        pushServerFuncVal(wrapper, uniqueKey);
+    }
+
+    std::function<BoolDelegate> BoolDelegate__pop() {
+        auto id = ni_popClientFunc();
+        auto cf = std::shared_ptr<ClientFuncVal>(new ClientFuncVal(id));
+        auto wrapper = [cf](bool b) {
+            ni_pushBool(b);
+            cf->remoteExec();
+        };
+        return wrapper;
+    }
     void IntDelegate__push(std::function<IntDelegate> f) {
         size_t uniqueKey = 0;
         if (f) {

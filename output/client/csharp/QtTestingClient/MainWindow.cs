@@ -10,6 +10,7 @@ using ModuleHandle = Org.Whatever.QtTesting.Support.ModuleHandle;
 
 using static Org.Whatever.QtTesting.Widget;
 using static Org.Whatever.QtTesting.Layout;
+using static Org.Whatever.QtTesting.MenuBar;
 
 namespace Org.Whatever.QtTesting
 {
@@ -18,42 +19,13 @@ namespace Org.Whatever.QtTesting
         private static ModuleHandle _module;
         internal static ModuleMethodHandle _create;
         internal static ModuleMethodHandle _handle_setCentralWidget;
+        internal static ModuleMethodHandle _handle_setMenuBar;
         internal static ModuleMethodHandle _handle_dispose;
 
-        public static Handle Create(Widget.Handle parent, Kind kind)
+        public static Handle Create()
         {
-            Kind__Push(kind);
-            Widget.Handle__Push(parent);
             NativeImplClient.InvokeModuleMethod(_create);
             return Handle__Pop();
-        }
-        public enum Kind
-        {
-            Widget,
-            Window,
-            Dialog,
-            Sheet,
-            Drawer,
-            Popup,
-            Tool,
-            ToolTip,
-            SplashScreen,
-            SubWindow,
-            ForeignWindow,
-            CoverWindow
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Kind__Push(Kind value)
-        {
-            NativeImplClient.PushInt32((int)value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Kind Kind__Pop()
-        {
-            var ret = NativeImplClient.PopInt32();
-            return (Kind)ret;
         }
         public class Handle : Widget.Handle
         {
@@ -74,6 +46,12 @@ namespace Org.Whatever.QtTesting
                 Widget.Handle__Push(widget);
                 Handle__Push(this);
                 NativeImplClient.InvokeModuleMethod(_handle_setCentralWidget);
+            }
+            public void SetMenuBar(MenuBar.Handle menubar)
+            {
+                MenuBar.Handle__Push(menubar);
+                Handle__Push(this);
+                NativeImplClient.InvokeModuleMethod(_handle_setMenuBar);
             }
         }
 
@@ -96,6 +74,7 @@ namespace Org.Whatever.QtTesting
             // assign module handles
             _create = NativeImplClient.GetModuleMethod(_module, "create");
             _handle_setCentralWidget = NativeImplClient.GetModuleMethod(_module, "Handle_setCentralWidget");
+            _handle_setMenuBar = NativeImplClient.GetModuleMethod(_module, "Handle_setMenuBar");
             _handle_dispose = NativeImplClient.GetModuleMethod(_module, "Handle_dispose");
 
             // no static init

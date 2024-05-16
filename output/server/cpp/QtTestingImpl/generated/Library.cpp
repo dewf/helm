@@ -7,6 +7,9 @@
 #include "ComboBox_wrappers.h"
 #include "LineEdit_wrappers.h"
 #include "ListWidget_wrappers.h"
+#include "Action_wrappers.h"
+#include "Menu_wrappers.h"
+#include "MenuBar_wrappers.h"
 #include "MainWindow_wrappers.h"
 #include "PlainTextEdit_wrappers.h"
 #include "PushButton_wrappers.h"
@@ -22,6 +25,9 @@ extern "C" int nativeLibraryInit() {
     ::ComboBox::__register();
     ::LineEdit::__register();
     ::ListWidget::__register();
+    ::Action::__register();
+    ::Menu::__register();
+    ::MenuBar::__register();
     ::MainWindow::__register();
     ::PlainTextEdit::__register();
     ::PushButton::__register();

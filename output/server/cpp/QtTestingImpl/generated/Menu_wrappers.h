@@ -1,15 +1,13 @@
 #pragma once
-#include "MainWindow.h"
+#include "Menu.h"
 
-namespace MainWindow
+namespace Menu
 {
 
     void Handle__push(HandleRef value);
     HandleRef Handle__pop();
 
-    void Handle_setCentralWidget__wrapper();
-
-    void Handle_setMenuBar__wrapper();
+    void Handle_addAction__wrapper();
 
     void Handle_dispose__wrapper();
 

@@ -2,24 +2,11 @@ module MainWindow;
 
 import Widget;
 import Layout;
-
-enum Kind { // simplification of WindowFlags
-    Widget,
-    Window,
-    Dialog,
-    Sheet,
-    Drawer,
-    Popup,
-    Tool,
-    ToolTip,
-    SplashScreen,
-    SubWindow,
-    ForeignWindow,
-    CoverWindow
-}
+import MenuBar;
 
 opaque Handle extends Widget.Handle {
     void setCentralWidget(Widget.Handle widget);
+    void setMenuBar(MenuBar.Handle menubar);
 }
 
-Handle create(Widget.Handle parent, Kind kind);
+Handle create();

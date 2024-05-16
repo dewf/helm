@@ -15,6 +15,10 @@ add_library(QtTestingImpl STATIC
     ../support/NativeImplServer.cpp
     ../generated/Library.cpp
 
+    ../generated/Action.h
+    ../generated/Action_wrappers.cpp
+    ../Action.cpp
+
     ../generated/Application.h
     ../generated/Application_wrappers.cpp
     ../Application.cpp
@@ -46,6 +50,14 @@ add_library(QtTestingImpl STATIC
     ../generated/MainWindow.h
     ../generated/MainWindow_wrappers.cpp
     ../MainWindow.cpp
+
+    ../generated/Menu.h
+    ../generated/Menu_wrappers.cpp
+    ../Menu.cpp
+
+    ../generated/MenuBar.h
+    ../generated/MenuBar_wrappers.cpp
+    ../MenuBar.cpp
 
     ../generated/PlainTextEdit.h
     ../generated/PlainTextEdit_wrappers.cpp

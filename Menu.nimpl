@@ -1,0 +1,11 @@
+module Menu;
+
+import Widget;
+import Signal;
+import Action;
+
+opaque Handle extends Widget.Handle {
+    void addAction(Action.Handle action);
+}
+
+Handle create(string title);

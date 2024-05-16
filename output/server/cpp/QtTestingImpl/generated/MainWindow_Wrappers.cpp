@@ -8,16 +8,11 @@ using namespace ::Widget;
 #include "Layout_wrappers.h"
 using namespace ::Layout;
 
+#include "MenuBar_wrappers.h"
+using namespace ::MenuBar;
+
 namespace MainWindow
 {
-    void Kind__push(Kind value) {
-        ni_pushInt32((int32_t)value);
-    }
-
-    Kind Kind__pop() {
-        auto tag = ni_popInt32();
-        return (Kind)tag;
-    }
     void Handle__push(HandleRef value) {
         ni_pushPtr(value);
     }
@@ -32,21 +27,26 @@ namespace MainWindow
         Handle_setCentralWidget(_this, widget);
     }
 
+    void Handle_setMenuBar__wrapper() {
+        auto _this = Handle__pop();
+        auto menubar = MenuBar::Handle__pop();
+        Handle_setMenuBar(_this, menubar);
+    }
+
     void Handle_dispose__wrapper() {
         auto _this = Handle__pop();
         Handle_dispose(_this);
     }
 
     void create__wrapper() {
-        auto parent = Widget::Handle__pop();
-        auto kind = Kind__pop();
-        Handle__push(create(parent, kind));
+        Handle__push(create());
     }
 
     int __register() {
         auto m = ni_registerModule("MainWindow");
         ni_registerModuleMethod(m, "create", &create__wrapper);
         ni_registerModuleMethod(m, "Handle_setCentralWidget", &Handle_setCentralWidget__wrapper);
+        ni_registerModuleMethod(m, "Handle_setMenuBar", &Handle_setMenuBar__wrapper);
         ni_registerModuleMethod(m, "Handle_dispose", &Handle_dispose__wrapper);
         return 0; // = OK
     }
