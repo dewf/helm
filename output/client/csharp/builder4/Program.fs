@@ -93,6 +93,7 @@ let view (state: State) =
         let fileMenu =
             let items = [
                 Action.Node(Attrs = [Action.Text "- nothing -"]) :> ActionNode<Msg>
+                Action.Node(Attrs = [Action.Separator true])
                 Action.Node(Attrs = [Action.Text "E&xit"], OnTriggered = (fun _ -> ExitTriggered))
             ]
             Menu.Node(Attrs = [Menu.Title "&File"], Items = items)

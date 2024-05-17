@@ -15,6 +15,10 @@ namespace Action
         THIS->setText(text.c_str());
     }
 
+    void Handle_setSeparator(HandleRef _this, bool state) {
+        THIS->setSeparator(state);
+    }
+
     void Handle_setEnabled(HandleRef _this, bool state) {
         THIS->setEnabled(state);
     }

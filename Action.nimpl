@@ -6,6 +6,7 @@ opaque Handle {
     string getText();
     void setEnabled(bool state);
     void setText(string text);
+    void setSeparator(bool state);
     void onTriggered(Signal.BoolDelegate handler);
 }
 
