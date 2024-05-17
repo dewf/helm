@@ -46,10 +46,10 @@ let private diffAttrs = genericDiffAttrs keyFunc
 //         maybeThisThing
 //         |> Option.iter (accessor >> adder)
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeContent: Layout.Handle option) =
+type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeEntity: LayoutEntity option) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable exitOnClose = false
-    let mutable central = Widget.Create()
+    let mutable central = Widget.Create() // in case a layout is provided, we need a central widget to stuff it in
     let mutable mainWindow = MainWindow.Create()
     do
         mainWindow.SetCentralWidget(central)
@@ -62,9 +62,13 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
                 ()
         mainWindow.OnWindowTitleChanged (fun title ->
             signalDispatch (TitleChanged title))
-
-        maybeContent
-        |> Option.iter central.SetLayout
+        
+        maybeEntity
+        |> Option.iter (function
+            | WidgetItem w -> mainWindow.SetCentralWidget(w)
+            | LayoutItem l ->
+                central.SetLayout(l)
+                mainWindow.SetCentralWidget(central))
         
         maybeMenuBar
         |> Option.iter mainWindow.SetMenuBar
@@ -74,17 +78,26 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
     member this.RemoveMenuBar() =
         printfn "*** not currently possible to remove MenuBar from Window ***"
     
-    member this.RemoveContent() =
-        let existing =
-            central.GetLayout()
-        existing.RemoveAll()
-        central.SetLayout(null)
+    member this.RemoveContent(leftNode: LayoutItemNode<'msg>) = // we have to provide what it was as a parameter, since removal is type-sensitive
+        match leftNode.LayoutEntity with
+        | WidgetItem _ ->
+            mainWindow.SetCentralWidget(null) // sufficient??
+        | LayoutItem _ ->
+            let existing =
+                central.GetLayout()
+            existing.RemoveAll()    // remove the widgets from the layout (thus window) ... but will this cause problems later if for some reason the layout was re-used in another widget? seems an extreme/exotic use case - I would imagine it's getting destroyed
+            central.SetLayout(null)
         
     member this.AddMenuBar(menuBar: MenuBar.Handle) =
         mainWindow.SetMenuBar(menuBar)
         
-    member this.AddContent(thing: Layout.Handle) =
-        central.SetLayout(thing)
+    member this.AddContent(entity: LayoutEntity) =
+        match entity with
+        | WidgetItem w ->
+            mainWindow.SetCentralWidget(w)
+        | LayoutItem l ->
+            central.SetLayout(l)
+            mainWindow.SetCentralWidget(central)
 
     member this.Widget with get() = mainWindow
     member this.SignalMap with set(value) = signalMap <- value
@@ -106,8 +119,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
 // let private exitHandler (args: Gtk.DeleteEventArgs) =
 //     Gtk.Application.Quit()
 
-let private create (attrs: Attr list) (maybeMenuBar: MenuBar.Handle option) (maybeContent: Layout.Handle option) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
-    let model = new Model<'msg>(dispatch, maybeMenuBar, maybeContent)
+let private create (attrs: Attr list) (maybeMenuBar: MenuBar.Handle option) (maybeEntity: LayoutEntity option) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch, maybeMenuBar, maybeEntity)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -123,9 +136,9 @@ let private dispose (model: Model<'msg>) =
 type Node<'msg>() =
     inherit WidgetNode<'msg>()
     let mutable maybeMenuBar: MenuBarNode<'msg> option = None
-    let mutable maybeContent: LayoutNode<'msg> option = None
+    let mutable maybeEntity: LayoutItemNode<'msg> option = None
     member private this.MaybeMenuBar = maybeMenuBar
-    member private this.MaybeContent = maybeContent // need to be able to access from migration (does this need to be a function?)
+    member private this.MaybeEntity = maybeEntity // need to be able to access from migration (does this need to be a function?)
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
@@ -136,7 +149,7 @@ type Node<'msg>() =
             | TitleChanged title ->
                 onTitleChanged
                 |> Option.map (fun f -> f title)
-    member this.Content with set value = maybeContent <- Some value
+    member this.Content with set value = maybeEntity <- Some value
     member this.MenuBar with set value = maybeMenuBar <- Some value
 
     override this.Dependencies() =
@@ -145,7 +158,7 @@ type Node<'msg>() =
             |> Option.map (fun menuBar -> (0, menuBar :> BuilderNode<'msg>))
             |> Option.toList
         let contentList =
-            maybeContent
+            maybeEntity
             |> Option.map (fun content -> (1, content :> BuilderNode<'msg>))
             |> Option.toList
         menuBarList @ contentList
@@ -154,10 +167,10 @@ type Node<'msg>() =
         let maybeMenuBarHandle =
             maybeMenuBar
             |> Option.map (_.MenuBar)
-        let maybeLayout =
-            maybeContent
-            |> Option.map (_.Layout)
-        this.model <- create this.Attrs maybeMenuBarHandle maybeLayout this.SignalMap dispatch
+        let maybeEntityHandle =
+            maybeEntity
+            |> Option.map (_.LayoutEntity)
+        this.model <- create this.Attrs maybeMenuBarHandle maybeEntityHandle this.SignalMap dispatch
 
     member private this.MigrateContent(leftFrame: Node<'msg>) =
         // MENUBAR =====================
@@ -185,12 +198,12 @@ type Node<'msg>() =
             this.model.RemoveMenuBar()
             this.model.AddMenuBar(maybeMenuBar.Value.MenuBar)
             
-        // CONTENT (LAYOUT) ==========================
+        // CONTENT (LAYOUT/WIDGET) ========================
         let leftContentKey =
-            leftFrame.MaybeContent
+            leftFrame.MaybeEntity
             |> Option.map (_.ContentKey)
         let contentKey =
-            maybeContent
+            maybeEntity
             |> Option.map (_.ContentKey)
         match leftContentKey, contentKey with
         | None, None ->
@@ -201,14 +214,16 @@ type Node<'msg>() =
             ()
         | None, Some _ ->
             // added content, from nothing
-            this.model.AddContent(maybeContent.Value.Layout)
+            this.model.AddContent(maybeEntity.Value.LayoutEntity)
         | Some _, None ->
             // removed content
-            this.model.RemoveContent()
+            leftFrame.MaybeEntity
+            |> Option.iter this.model.RemoveContent
         | Some _, Some _ -> // implicit "when x <> y" because of first case
             // changed content
-            this.model.RemoveContent()
-            this.model.AddContent(maybeContent.Value.Layout)
+            leftFrame.MaybeEntity
+            |> Option.iter this.model.RemoveContent
+            this.model.AddContent(maybeEntity.Value.LayoutEntity)
 
     override this.MigrateFrom(left: BuilderNode<'msg>) =
         let left' = (left :?> Node<'msg>)

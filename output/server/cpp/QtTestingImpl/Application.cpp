@@ -1,6 +1,7 @@
 #include "generated/Application.h"
 
 #include <QApplication>
+#include <QStyleFactory>
 
 #define THIS ((QApplication*)_this)
 
@@ -20,6 +21,14 @@ namespace Application
 
     void quit() {
         QApplication::quit();
+    }
+
+    std::vector<std::string> availableStyles() {
+        std::vector<std::string> result;
+        for (auto & key : QStyleFactory::keys()) {
+            result.push_back(key.toStdString());
+        }
+        return result;
     }
 
     HandleRef create(std::vector<std::string> args) {

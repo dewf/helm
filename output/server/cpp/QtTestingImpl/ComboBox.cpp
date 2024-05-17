@@ -3,7 +3,6 @@
 #include <QObject>
 #include <QComboBox>
 #include <QStringList>
-#include <algorithm>
 
 #define THIS ((QComboBox*)_this)
 
@@ -15,7 +14,10 @@ namespace ComboBox
 
     void Handle_setItems(HandleRef _this, std::vector<std::string> items) {
         QStringList items2;
-        std::transform(items.begin(), items.end(), std::back_inserter(items2), std::mem_fn(&std::string::c_str));
+        for (auto & str : items) {
+            items2.push_back(str.c_str());
+        }
+//        std::transform(items.begin(), items.end(), std::back_inserter(items2), std::mem_fn(&std::string::c_str));
         THIS->addItems(items2);
     }
 

@@ -6,5 +6,6 @@ opaque Handle;
 void setStyle(string name);
 int exec();
 void quit();
+Array<string> availableStyles();
 
 Handle create(Array<string> args);

@@ -15,6 +15,7 @@ type Msg =
     | ComboChanged of maybeValue: int option
     
 type State = {
+    AvailableStyles: string list
     EditEnabled: bool
     TextValue: string
     LastActivated: string option
@@ -23,7 +24,8 @@ type State = {
 }
 
 let init () =
-    { EditEnabled = true
+    { AvailableStyles = Application.AvailableStyles() |> Array.toList
+      EditEnabled = true
       TextValue = ""
       LastActivated = None
       ExtraButtonCount = 0
@@ -78,9 +80,7 @@ let view (state: State) =
         else
             []
     let combo =
-        let items =
-            ["item 01"; "item 02"; "item03"]
-        ComboBox.Node(Attrs = [ComboBox.Items items; ComboBox.SelectedIndex (Some 0)], OnSelected = ComboChanged)
+        ComboBox.Node(Attrs = [ComboBox.Items state.AvailableStyles; ComboBox.SelectedIndex (Some 0)], OnSelected = ComboChanged)
     let box =
         BoxLayout.Node(
             Attrs = [BoxLayout.Direction BoxLayout.Vertical; BoxLayout.Spacing 10],
@@ -108,7 +108,7 @@ let view (state: State) =
 let innerApp (argv: string array) =
     use app =
         Application.Create(argv)
-    Application.SetStyle("Fusion")
+    Application.SetStyle("Windows")
     let rec processCmd = function
         | Noop ->
             ()
