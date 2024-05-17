@@ -1,47 +1,57 @@
-﻿module LineEdit
+﻿module Widgets.ComboBox
 
 open System
 open BuilderNode
 open Org.Whatever.QtTesting
 
 type Signal =
-    | Changed of string
-    | Activated
+    | Selected of index: int option
     
 type Attr =
-    | Value of string
-    | Enabled of bool
-let private attrKey = function
-    | Value _ -> 0
-    | Enabled _ -> 1
+    | Items of items: string list
+    | SelectedIndex of maybeIndex: int option
 
+let private attrKey = function
+    | Items _ -> 0
+    | SelectedIndex _ -> 1
+    
 let private diffAttrs =
     genericDiffAttrs attrKey
     
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable edit = LineEdit.Create()
+    let mutable combo = ComboBox.Create()
     do
-        let dispatchSignal (s: Signal) =
+        let signalDispatch (s: Signal) =
             match signalMap s with
             | Some msg ->
                 dispatch msg
             | None ->
                 ()
-        edit.OnTextEdited (fun str -> dispatchSignal (Changed str))
-        edit.OnReturnPressed (fun _ -> dispatchSignal Activated)
-    member this.Widget with get() = edit
+        combo.OnCurrentIndexChanged (fun i ->
+            let value =
+                if i >= 0 then
+                    Some i
+                else
+                    None
+            signalDispatch (Selected value))
+    member this.Widget with get() = combo
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | Value str ->
-                edit.SetText(str)
-            | Enabled value ->
-                edit.SetEnabled(value)
+            | Items items ->
+                combo.Clear()
+                combo.SetItems(items |> Array.ofList)
+            | SelectedIndex maybeIndex ->
+                match maybeIndex with
+                | Some value ->
+                    combo.SetCurrentIndex(value)
+                | None ->
+                    combo.SetCurrentIndex(-1)
     interface IDisposable with
         member this.Dispose() =
-            edit.Dispose()
+            combo.Dispose()
 
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch)
@@ -62,20 +72,15 @@ type Node<'msg>() =
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    member val OnChanged: (string -> 'msg) option = None with get, set
-    member val OnActivated: 'msg option = None with get, set
+    member val OnSelected: (int option -> 'msg) option = None with get, set
     member private this.SignalMap
         with get() = function
-            | Changed s ->
-                this.OnChanged
-                |> Option.map (fun f -> f s)
-            | Activated -> this.OnActivated
-    
+            | Selected maybeArgs ->
+                this.OnSelected
+                |> Option.map (fun f -> f maybeArgs)
     override this.Dependencies() = []
-
     override this.Create(dispatch: 'msg -> unit) =
         this.model <- create this.Attrs this.SignalMap dispatch
-
     override this.MigrateFrom(left: BuilderNode<'msg>) =
         let left' = (left :?> Node<'msg>)
         let nextAttrs =
@@ -83,9 +88,7 @@ type Node<'msg>() =
             |> createdOrChanged
         this.model <-
             migrate left'.model nextAttrs this.SignalMap
-
     override this.Dispose() =
         (this.model :> IDisposable).Dispose()
-        
     override this.Widget =
         (this.model.Widget :> Widget.Handle)

@@ -2,7 +2,6 @@
 
 open System
 open BuilderNode
-open Org.Whatever.QtTesting
 
 type Reactor<'state, 'msg>(init: unit -> 'state, update: 'state -> 'msg -> 'state, view: 'state -> BuilderNode<'msg>) =
     let mutable state: 'state = init()
@@ -24,12 +23,10 @@ type Reactor<'state, 'msg>(init: unit -> 'state, update: 'state -> 'msg -> 'stat
             inDispatch <- true
             diff dispatch (Some prevRoot) (Some root)
             inDispatch <- false
-
-    member this.Run (app: Application.Handle) =
-        // initial view (root already set)
+            
+    do
         build dispatch root
-        app.Exec()
-    
+
     interface IDisposable with
         member this.Dispose() =
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it

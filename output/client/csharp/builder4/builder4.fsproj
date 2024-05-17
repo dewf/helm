@@ -9,11 +9,11 @@
         <Compile Include="BuilderNode.fs" />
         <Compile Include="Reactor.fs" />
         <Compile Include="Util.fs" />
-        <Compile Include="BoxLayout.fs" />
-        <Compile Include="Button.fs" />
-        <Compile Include="LineEdit.fs" />
-        <Compile Include="ComboBox.fs" />
-        <Compile Include="Window.fs" />
+        <Compile Include="Widgets\BoxLayout.fs" />
+        <Compile Include="Widgets\Button.fs" />
+        <Compile Include="Widgets\LineEdit.fs" />
+        <Compile Include="Widgets\ComboBox.fs" />
+        <Compile Include="Widgets\Window.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

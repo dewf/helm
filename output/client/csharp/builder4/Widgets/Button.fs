@@ -1,4 +1,4 @@
-﻿module Button
+﻿module Widgets.Button
 
 open BuilderNode
 open System

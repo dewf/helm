@@ -1,4 +1,4 @@
-﻿module BoxLayout
+﻿module Widgets.BoxLayout
 
 open System
 open BuilderNode

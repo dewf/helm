@@ -2,6 +2,7 @@
 open BuilderNode
 open Org.Whatever.QtTesting
 open Reactor
+open Widgets
 
 type Msg =
     | ToggleEdit
@@ -91,10 +92,13 @@ let view (state: State) =
 let innerApp (argv: string array) =
     use app =
         Application.Create(argv)
-    app.SetStyle("Fusion")
+    Application.SetStyle("Fusion")
     use reactor =
+        // this binding will keep reactor alive for the entire lifetime of this method (until Application.Exec() exits), correct??
+        // because the connection between what's going on in Reactor, and the state of Qt is completely implicit / behind-the-scenes
+        // if it got garbage-collected or something that would be bad news :)
         new Reactor<State,Msg>(init, update, view)
-    reactor.Run(app)
+    Application.Exec()
 
 [<EntryPoint>]
 [<STAThread>]
