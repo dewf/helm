@@ -61,11 +61,14 @@ type Node<'msg>() =
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    member val OnClicked: 'msg option = None with get, set
+    let mutable onClicked: 'msg option = None
+    member this.OnClicked
+        with set value = onClicked <- Some value
+        
     member private this.SignalMap
         with get() = function
-            | Clicked -> this.OnClicked
-
+            | Clicked -> onClicked
+            
     override this.Dependencies() = []
 
     override this.Create(dispatch: 'msg -> unit) =
@@ -84,4 +87,4 @@ type Node<'msg>() =
 
 // various easy constructors here
 let make (label: string) (onClick: 'msg) =
-    Node(Attrs = [Label label], OnClicked = Some onClick)
+    Node(Attrs = [Label label], OnClicked = onClick)

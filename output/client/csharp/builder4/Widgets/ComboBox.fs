@@ -72,11 +72,13 @@ type Node<'msg>() =
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    member val OnSelected: (int option -> 'msg) option = None with get, set
+    let mutable onSelected: (int option -> 'msg) option = None
+    member this.OnSelected
+        with set value = onSelected <- Some value
     member private this.SignalMap
         with get() = function
             | Selected maybeArgs ->
-                this.OnSelected
+                onSelected
                 |> Option.map (fun f -> f maybeArgs)
     override this.Dependencies() = []
     override this.Create(dispatch: 'msg -> unit) =

@@ -3,8 +3,10 @@ open BuilderNode
 open Org.Whatever.QtTesting
 open Reactor
 open Widgets
+open Widgets.Menus
 
 type Msg =
+    | ExitTriggered
     | ToggleEdit
     | EditChanged of string
     | EditActivated
@@ -29,6 +31,9 @@ let init() =
 
 let update (state: State) (msg: Msg): State =
     match msg with
+    | ExitTriggered ->
+        printfn "EXITED!!"
+        state
     | EditChanged str ->
         { state with TextValue = str }
     | EditActivated ->
@@ -51,7 +56,7 @@ let update (state: State) (msg: Msg): State =
     
 let view (state: State) =
     let edit =
-        LineEdit.Node(Attrs = [LineEdit.Value state.TextValue; LineEdit.Enabled state.EditEnabled], OnChanged = Some EditChanged, OnActivated = Some EditActivated)
+        LineEdit.Node(Attrs = [LineEdit.Value state.TextValue; LineEdit.Enabled state.EditEnabled], OnChanged = EditChanged, OnActivated = EditActivated)
     let disableButton =
         let label =
             if state.EditEnabled then
@@ -62,7 +67,7 @@ let view (state: State) =
     let addButton =
         let enabled =
             state.ExtraButtonCount < 5
-        Button.Node(Attrs = [Button.Label "Add"; Button.Enabled enabled], OnClicked = Some AddButton)
+        Button.Node(Attrs = [Button.Label "Add"; Button.Enabled enabled], OnClicked = AddButton)
     let extraButtons =
         if state.ExtraButtonCount > 0 then
             seq {
@@ -76,7 +81,7 @@ let view (state: State) =
     let combo =
         let items =
             ["item 01"; "item 02"; "item03"]
-        ComboBox.Node(Attrs = [ComboBox.Items items; ComboBox.SelectedIndex (Some 0)], OnSelected = Some ComboChanged)
+        ComboBox.Node(Attrs = [ComboBox.Items items; ComboBox.SelectedIndex (Some 0)], OnSelected = ComboChanged)
     let box =
         BoxLayout.Node(
             Attrs = [BoxLayout.Direction BoxLayout.Vertical; BoxLayout.Spacing 10],
@@ -85,8 +90,19 @@ let view (state: State) =
         match state.LastActivated with
         | Some value -> sprintf "last activation [%s]" value
         | None -> "..."
+    let menuBar =
+        let fileMenu =
+            let items = [
+                Action.Node(Attrs = [Action.Text "- nothing -"]) :> ActionNode<Msg>
+                Action.Node(Attrs = [Action.Text "E&xit"], OnTriggered = (fun _ -> ExitTriggered))
+            ]
+            Menu.Node(Attrs = [Menu.Title "&File"], Items = items)
+        MenuBar.Node(Menus = [ fileMenu ])
     let window = 
-        Window.Node(Attrs = [Window.Title title; Window.Size (800, 600); Window.Visible true], Content = box)
+        Window.Node(
+            Attrs = [Window.Title title; Window.Size (800, 600); Window.Visible true],
+            MenuBar = menuBar,
+            Content = box)
     window :> BuilderNode<Msg>
     
 let innerApp (argv: string array) =

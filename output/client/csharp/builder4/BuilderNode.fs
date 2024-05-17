@@ -27,12 +27,30 @@ type BuilderNode<'msg>() =
     abstract member MigrateFrom: BuilderNode<'msg> -> unit // will the dispatch ever change?
     abstract member Dispose: unit -> unit
     abstract member ContentKey: System.Object
-
+    
 [<AbstractClass>]
 type WidgetNode<'msg>() =
     inherit BuilderNode<'msg>()
     abstract member Widget: Widget.Handle
     override this.ContentKey = this.Widget
+    
+[<AbstractClass>]
+type MenuBarNode<'msg>() =
+    inherit BuilderNode<'msg>()
+    abstract member MenuBar: MenuBar.Handle
+    override this.ContentKey = this.MenuBar
+    
+[<AbstractClass>]
+type MenuNode<'msg>() =
+    inherit BuilderNode<'msg>()
+    abstract member Menu: Menu.Handle
+    override this.ContentKey = this.Menu
+
+[<AbstractClass>]
+type ActionNode<'msg>() =
+    inherit BuilderNode<'msg>()
+    abstract member Action: Action.Handle
+    override this.ContentKey = this.Action
     
 [<AbstractClass>]    
 type LayoutNode<'msg>() =

@@ -5,7 +5,12 @@ import Signal;
 import Action;
 
 opaque Handle extends Widget.Handle {
+    void clear();
+    void setTitle(string title);
     void addAction(Action.Handle action);
+
+    void onAboutToShow(Signal.VoidDelegate handler);
 }
 
+Handle create();
 Handle create(string title);

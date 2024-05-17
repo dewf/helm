@@ -1,47 +1,48 @@
-﻿module Widgets.LineEdit
+﻿module Widgets.Menus.Action
 
 open System
 open BuilderNode
 open Org.Whatever.QtTesting
 
 type Signal =
-    | Changed of string
-    | Activated
+    | Triggered of checked_: bool
     
 type Attr =
-    | Value of string
-    | Enabled of bool
-let private attrKey = function
-    | Value _ -> 0
-    | Enabled _ -> 1
-
-let private diffAttrs =
-    genericDiffAttrs attrKey
+    | Text of text: string
+    | Enabled of state: bool
     
+let private keyFunc = function
+    | Text _ -> 0
+    | Enabled _ -> 1
+    
+let private diffAttrs =
+    genericDiffAttrs keyFunc
+
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable edit = LineEdit.Create()
+    let mutable action = Action.Create()
     do
-        let dispatchSignal (s: Signal) =
+        let signalDispatch (s: Signal) =
             match signalMap s with
             | Some msg ->
                 dispatch msg
             | None ->
                 ()
-        edit.OnTextEdited (fun str -> dispatchSignal (Changed str))
-        edit.OnReturnPressed (fun _ -> dispatchSignal Activated)
-    member this.Widget with get() = edit
-    member this.SignalMap with set(value) = signalMap <- value
+        action.OnTriggered (fun checked_ ->
+            signalDispatch (Triggered checked_))
+        
+    member this.Action with get() = action
+    member this.SignalMap with set value = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | Value str ->
-                edit.SetText(str)
-            | Enabled value ->
-                edit.SetEnabled(value)
+            | Text text ->
+                action.SetText(text)
+            | Enabled state ->
+                action.SetEnabled(state)
     interface IDisposable with
         member this.Dispose() =
-            edit.Dispose()
+            action.Dispose()
 
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch)
@@ -56,31 +57,25 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
-
+            
 type Node<'msg>() =
-    inherit WidgetNode<'msg>()
+    inherit ActionNode<'msg>()
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    let mutable onChanged: (string -> 'msg) option = None
-    member this.OnChanged
-        with set value = onChanged <- Some value
-    let mutable onActivated: 'msg option = None
-    member this.OnActivated
-        with set value = onActivated <- Some value
+    let mutable onTriggered: (bool -> 'msg) option = None
+    member this.OnTriggered
+        with set value =
+            onTriggered <- Some value
     member private this.SignalMap
         with get() = function
-            | Changed s ->
-                onChanged
-                |> Option.map (fun f -> f s)
-            | Activated ->
-                onActivated
+            | Triggered checked_ ->
+                onTriggered
+                |> Option.map (fun f -> f checked_)
                 
     override this.Dependencies() = []
-
     override this.Create(dispatch: 'msg -> unit) =
         this.model <- create this.Attrs this.SignalMap dispatch
-
     override this.MigrateFrom(left: BuilderNode<'msg>) =
         let left' = (left :?> Node<'msg>)
         let nextAttrs =
@@ -88,9 +83,11 @@ type Node<'msg>() =
             |> createdOrChanged
         this.model <-
             migrate left'.model nextAttrs this.SignalMap
-
     override this.Dispose() =
         (this.model :> IDisposable).Dispose()
-        
-    override this.Widget =
-        (this.model.Widget :> Widget.Handle)
+    override this.Action =
+        this.model.Action
+    
+                
+    
+    

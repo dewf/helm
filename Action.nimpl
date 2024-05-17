@@ -3,7 +3,11 @@ module Action;
 import Signal;
 
 opaque Handle {
+    string getText();
+    void setEnabled(bool state);
+    void setText(string text);
     void onTriggered(Signal.BoolDelegate handler);
 }
 
-Handle create(string title);
+Handle create();
+Handle create(string text);

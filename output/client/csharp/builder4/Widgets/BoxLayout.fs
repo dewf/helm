@@ -73,7 +73,7 @@ type Node<'msg>() =
     member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
     member this.Items
         with get() = items
-        and set(value) = items <- value
+        and set value = items <- value
     
     override this.Dependencies() =
         // because the indices are generated here, based on items order,

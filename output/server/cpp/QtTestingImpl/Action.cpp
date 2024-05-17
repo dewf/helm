@@ -7,6 +7,18 @@
 
 namespace Action
 {
+    std::string Handle_getText(HandleRef _this) {
+        return THIS->text().toStdString();
+    }
+
+    void Handle_setText(HandleRef _this, std::string text) {
+        THIS->setText(text.c_str());
+    }
+
+    void Handle_setEnabled(HandleRef _this, bool state) {
+        THIS->setEnabled(state);
+    }
+
     void Handle_onTriggered(HandleRef _this, std::function<BoolDelegate> handler) {
         QObject::connect(
             THIS,
@@ -19,7 +31,11 @@ namespace Action
         delete THIS;
     }
 
-    HandleRef create(std::string title) {
-        return (HandleRef)new QAction(title.c_str());
+    HandleRef create() {
+        return (HandleRef)new QAction();
+    }
+
+    HandleRef create(std::string text) {
+        return (HandleRef)new QAction(text.c_str());
     }
 }

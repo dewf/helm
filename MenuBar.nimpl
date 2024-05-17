@@ -2,9 +2,15 @@ module MenuBar;
 
 import Widget;
 import Menu;
+import Action;
 
 opaque Handle extends Widget.Handle {
+    static {
+        delegate void ActionDelegate(Action.Handle action);
+    }
+    void clear();
     void addMenu(Menu.Handle menu);
+    void onTriggered(ActionDelegate handler);
 }
 
 Handle create();
