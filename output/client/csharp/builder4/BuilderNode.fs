@@ -28,11 +28,29 @@ type BuilderNode<'msg>() =
     abstract member Dispose: unit -> unit
     abstract member ContentKey: System.Object
     
+ 
+type LayoutEntity =
+    | WidgetItem of handle: Widget.Handle
+    | LayoutItem of handle: Layout.Handle
+     
+[<AbstractClass>]
+type LayoutItemNode<'msg>() =
+    inherit BuilderNode<'msg>()
+    abstract member LayoutEntity: LayoutEntity
+    
 [<AbstractClass>]
 type WidgetNode<'msg>() =
-    inherit BuilderNode<'msg>()
+    inherit LayoutItemNode<'msg>()
     abstract member Widget: Widget.Handle
+    override this.LayoutEntity = WidgetItem this.Widget
     override this.ContentKey = this.Widget
+    
+[<AbstractClass>]
+type LayoutNode<'msg>() =
+    inherit LayoutItemNode<'msg>()
+    abstract member Layout: Layout.Handle
+    override this.LayoutEntity = LayoutItem this.Layout
+    override this.ContentKey = this.Layout
     
 [<AbstractClass>]
 type MenuBarNode<'msg>() =
@@ -52,12 +70,6 @@ type ActionNode<'msg>() =
     abstract member Action: Action.Handle
     override this.ContentKey = this.Action
     
-[<AbstractClass>]    
-type LayoutNode<'msg>() =
-    inherit BuilderNode<'msg>()
-    abstract member Layout: Layout.Handle
-    override this.ContentKey = this.Layout
-
 type Empty<'msg>() =
     inherit BuilderNode<'msg>()
     override this.Dependencies() = []

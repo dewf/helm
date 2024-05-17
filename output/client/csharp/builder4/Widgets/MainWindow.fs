@@ -1,4 +1,4 @@
-﻿module Widgets.Window
+﻿module Widgets.MainWindow
 
 open System
 open BuilderNode
@@ -130,8 +130,7 @@ type Node<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     let mutable onTitleChanged: (string -> 'msg) option = None
-    member this.OnTitleChanged
-        with set value = onTitleChanged <- Some value
+    member this.OnTitleChanged with set value = onTitleChanged <- Some value
     member private this.SignalMap
         with get() = function
             | TitleChanged title ->

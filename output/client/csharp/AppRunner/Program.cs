@@ -67,16 +67,16 @@ internal static class Program
                 window.Resize(800, 600);
 
                 var central = Widget.Create();
-                var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+                // var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
 
                 var tabs = TabWidget.Create();
                 tabs.AddTab(CreatePage01(), "Page 1");
                 tabs.AddTab(CreatePage02(), "Page 2");
                 tabs.AddTab(CreatePage03(), "Page 3");
-                layout.AddWidget(tabs);
-                
-                central.SetLayout(layout);
-                window.SetCentralWidget(central);
+                // layout.AddWidget(tabs);
+                //
+                // central.SetLayout(layout);
+                window.SetCentralWidget(tabs);
 
                 var action = Action.Create("E&xit");
                 action.OnTriggered(_ =>

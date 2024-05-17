@@ -4,8 +4,7 @@ open System
 open BuilderNode
 open Org.Whatever.QtTesting
 
-type private Signal = // just a placeholder for the future
-    | NoneYet
+// no signals yet
 
 type DirectionValue =
     | Vertical
@@ -22,13 +21,14 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
+type private Model<'msg>(dispatch: 'msg -> unit, items: LayoutEntity list) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable box = BoxLayout.Create(BoxLayout.Direction.TopToBottom)
     do
         // no signals yet
-        for item in items do
-            box.AddWidget(item)
+        items |> List.iter (function
+            | WidgetItem widget -> box.AddWidget(widget)
+            | LayoutItem layout -> box.AddLayout(layout))
     member this.Layout with get() = box
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -45,12 +45,13 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
     interface IDisposable with
         member this.Dispose() =
             box.Dispose()
-    member this.Refill(items: Widget.Handle list) =
+    member this.Refill(items: LayoutEntity list) =
         box.RemoveAll()
-        for item in items do
-            box.AddWidget(item)
+        items |> List.iter (function
+            | WidgetItem widget -> box.AddWidget(widget)
+            | LayoutItem layout -> box.AddLayout(layout))
 
-let private create (attrs: Attr list) (items: Widget.Handle list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: Attr list) (items: LayoutEntity list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch, items)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -66,7 +67,7 @@ let private dispose (model: Model<'msg>) =
     
 type Node<'msg>() =
     inherit LayoutNode<'msg>()
-    let mutable items: WidgetNode<'msg> list = []
+    let mutable items: LayoutItemNode<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
@@ -85,10 +86,10 @@ type Node<'msg>() =
         |> List.mapi (fun i item -> (i, item :> BuilderNode<'msg>))
         
     override this.Create(dispatch: 'msg -> unit) =
-        let widgets =
+        let entities =
             items
-            |> List.map (_.Widget)
-        this.model <- create this.Attrs widgets this.SignalMap dispatch
+            |> List.map (_.LayoutEntity)
+        this.model <- create this.Attrs entities this.SignalMap dispatch
         
     member private this.MigrateContent(leftBox: Node<'msg>) =
         let leftContents =
@@ -98,10 +99,10 @@ type Node<'msg>() =
             items
             |> List.map (_.ContentKey)
         if leftContents <> thisContents then
-            let widgets =
+            let entities =
                 items
-                |> List.map (_.Widget)
-            this.model.Refill(widgets)
+                |> List.map (_.LayoutEntity)
+            this.model.Refill(entities)
         else
             ()
             
@@ -119,5 +120,5 @@ type Node<'msg>() =
     override this.Layout =
         (this.model.Layout :> Layout.Handle)
 
-let make (attrs: Attr list) (items: WidgetNode<'msg> list) =
+let make (attrs: Attr list) (items: LayoutItemNode<'msg> list) =
     Node(Attrs = attrs, Items = items)

@@ -31,6 +31,14 @@ namespace BoxLayout
         THIS->addWidget((QWidget*)widget, stretch);
     }
 
+    void Handle_addLayout(HandleRef _this, Layout::HandleRef layout) {
+        THIS->addLayout((QLayout*)layout);
+    }
+
+    void Handle_addLayout(HandleRef _this, Layout::HandleRef layout, int32_t stretch) {
+        THIS->addLayout((QLayout*)layout, stretch);
+    }
+
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }

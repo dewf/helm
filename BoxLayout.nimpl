@@ -36,6 +36,8 @@ opaque Handle extends Layout.Handle {
     void addStretch(int stretch);
     void addWidget(Widget.Handle widget);
     void addWidget(Widget.Handle widget, int stretch);
+    void addLayout(Layout.Handle layout);
+    void addLayout(Layout.Handle layout, int stretch);
 }
 
 Handle create(Direction dir);

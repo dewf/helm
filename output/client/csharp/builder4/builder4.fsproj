@@ -9,6 +9,7 @@
         <Compile Include="BuilderNode.fs" />
         <Compile Include="Reactor.fs" />
         <Compile Include="Util.fs" />
+        <Compile Include="Widgets\Widget.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />
         <Compile Include="Widgets\Button.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
@@ -16,7 +17,7 @@
         <Compile Include="Widgets\Menus\Action.fs" />
         <Compile Include="Widgets\Menus\Menu.fs" />
         <Compile Include="Widgets\Menus\MenuBar.fs" />
-        <Compile Include="Widgets\Window.fs" />
+        <Compile Include="Widgets\MainWindow.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

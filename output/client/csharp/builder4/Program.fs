@@ -73,7 +73,7 @@ let view (state: State) =
                 for i in 1..state.ExtraButtonCount do
                     let label =
                         sprintf "extra button %02d" i
-                    Button.make label (ExtraPush i) :> WidgetNode<Msg>
+                    Button.make label (ExtraPush i) :> LayoutItemNode<Msg>
             } |> Seq.toList
         else
             []
@@ -99,8 +99,8 @@ let view (state: State) =
             Menu.Node(Attrs = [Menu.Title "&File"], Items = items)
         MenuBar.Node(Menus = [ fileMenu ])
     let window = 
-        Window.Node(
-            Attrs = [Window.Title title; Window.Size (800, 600); Window.Visible true],
+        MainWindow.Node(
+            Attrs = [MainWindow.Title title; MainWindow.Size (800, 600); MainWindow.Visible true],
             MenuBar = menuBar,
             Content = box)
     window :> BuilderNode<Msg>
