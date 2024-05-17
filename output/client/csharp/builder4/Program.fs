@@ -22,29 +22,28 @@ type State = {
     ComboSelection: int option
 }
 
-let init() =
+let init () =
     { EditEnabled = true
       TextValue = ""
       LastActivated = None
       ExtraButtonCount = 0
-      ComboSelection = None }
+      ComboSelection = None }, Cmd.Noop
 
-let update (state: State) (msg: Msg): State =
+let update (state: State) (msg: Msg) =
     match msg with
     | ExitTriggered ->
-        printfn "EXITED!!"
-        state
+        state, Cmd.QuitApplication
     | EditChanged str ->
-        { state with TextValue = str }
+        { state with TextValue = str }, Cmd.Noop
     | EditActivated ->
-        { state with LastActivated = Some state.TextValue }
+        { state with LastActivated = Some state.TextValue }, Cmd.Noop
     | ToggleEdit ->
-        { state with EditEnabled = not state.EditEnabled }
+        { state with EditEnabled = not state.EditEnabled }, Cmd.Noop
     | AddButton ->
-        { state with ExtraButtonCount = state.ExtraButtonCount + 1 }
+        { state with ExtraButtonCount = state.ExtraButtonCount + 1 }, Cmd.Noop
     | ExtraPush i ->
         printfn "hello from extra button %02d" i
-        state
+        state, Cmd.Noop
     | ComboChanged maybeValue ->
         let nextTextValue =
             match maybeValue with
@@ -52,7 +51,7 @@ let update (state: State) (msg: Msg): State =
                 sprintf "you selected %d" index
             | None ->
                 state.TextValue
-        { state with ComboSelection = maybeValue; TextValue = nextTextValue }
+        { state with ComboSelection = maybeValue; TextValue = nextTextValue }, Cmd.Noop
     
 let view (state: State) =
     let edit =
@@ -109,11 +108,18 @@ let innerApp (argv: string array) =
     use app =
         Application.Create(argv)
     Application.SetStyle("Fusion")
+    let rec processCmd = function
+        | Noop ->
+            ()
+        | QuitApplication ->
+            Application.Quit()
+        | Batch commands ->
+            commands |> List.iter processCmd
     use reactor =
         // this binding will keep reactor alive for the entire lifetime of this method (until Application.Exec() exits), correct??
         // because the connection between what's going on in Reactor, and the state of Qt is completely implicit / behind-the-scenes
         // if it got garbage-collected or something that would be bad news :)
-        new Reactor<State,Msg>(init, update, view)
+        new Reactor<State,Msg>(init, update, view, processCmd)
     Application.Exec()
 
 [<EntryPoint>]

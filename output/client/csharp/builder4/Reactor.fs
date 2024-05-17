@@ -3,8 +3,14 @@
 open System
 open BuilderNode
 
-type Reactor<'state, 'msg>(init: unit -> 'state, update: 'state -> 'msg -> 'state, view: 'state -> BuilderNode<'msg>) =
-    let mutable state: 'state = init()
+type Cmd<'msg> =
+    | Noop
+    | QuitApplication
+    | Batch of commands: Cmd<'msg> list
+    
+type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> 'msg -> 'state * Cmd<'msg>, view: 'state -> BuilderNode<'msg>, processCmd: Cmd<'msg> -> unit) =
+    let initState, initCmd = init()
+    let mutable state = initState
     let mutable root = view state
     let mutable inDispatch = false
 
@@ -17,15 +23,19 @@ type Reactor<'state, 'msg>(init: unit -> 'state, update: 'state -> 'msg -> 'stat
             ()
         else
             let prevRoot = root
-            state <- update state msg
+            let nextState, cmd =
+                update state msg
+            state <- nextState
             root <- view state
             // prevent nested dispatching with a guard:
             inDispatch <- true
             diff dispatch (Some prevRoot) (Some root)
             inDispatch <- false
-            
+            // process command(s) after tree diff
+            processCmd cmd
     do
         build dispatch root
+        processCmd initCmd
 
     interface IDisposable with
         member this.Dispose() =
