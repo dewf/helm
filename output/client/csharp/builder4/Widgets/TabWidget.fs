@@ -83,7 +83,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * LayoutEnti
             nextPairs |> Map.ofList
             
     member this.Refill(pages: (string * LayoutEntity) list) =
-        printfn "tab widget refill"
         tabWidget.Clear()
         addPages pages
         deleteOrphanedLayoutContainers pages
@@ -151,7 +150,6 @@ type Node<'msg>() =
         this.model <- create this.Attrs pageLabelsAndHandles this.SignalMap dispatch
         
     member private this.MigrateContent(leftTabWidget: Node<'msg>) =
-        printfn "in TabWidget.MigrateContent"
         let leftContents =
             leftTabWidget.Pages
             |> List.map (fun (label, node) -> label, node.ContentKey)
