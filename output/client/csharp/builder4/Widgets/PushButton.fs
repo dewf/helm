@@ -1,4 +1,4 @@
-﻿module Widgets.Button
+﻿module Widgets.PushButton
 
 open BuilderNode
 open System
@@ -15,7 +15,8 @@ let private keyFunc = function
     | Label _ -> 0
     | Enabled _ -> 1
 
-let private diffAttrs = genericDiffAttrs keyFunc
+let private diffAttrs =
+    genericDiffAttrs keyFunc
 
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -28,7 +29,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             | None ->
                 ()
         button.OnClicked (fun _ -> dispatcher Clicked)
-        button.SetMaximumHeight(Widget.WIDGET_SIZE_MAX - 1)
     member this.Widget with get() = button
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =

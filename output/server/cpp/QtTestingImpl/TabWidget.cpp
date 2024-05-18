@@ -16,6 +16,18 @@ namespace TabWidget
         THIS->insertTab(index, WIDGET(page), label.c_str());
     }
 
+    Widget::HandleRef Handle_widgetAt(HandleRef _this, int32_t index) {
+        return (Widget::HandleRef)THIS->widget(index);
+    }
+
+    void Handle_clear(HandleRef _this) {
+        THIS->clear();
+    }
+
+    void Handle_removeTab(HandleRef _this, int32_t index) {
+        THIS->removeTab(index);
+    }
+
     void Handle_onCurrentChanged(HandleRef _this, std::function<IntDelegate> handler) {
         QObject::connect(
             THIS,

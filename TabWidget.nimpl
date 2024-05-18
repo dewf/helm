@@ -7,6 +7,11 @@ opaque Handle extends Widget.Handle {
     void addTab(Widget.Handle page, string label);
     void insertTab(int index, Widget.Handle page, string label);
 
+    Widget.Handle widgetAt(int index);                              // get page @ position (note: Qt method "widget", but that causes a C# name collision, hence "widgetAt")
+
+    void clear();                                                   // remove all widgets without destroying
+    void removeTab(int index);
+
     void onCurrentChanged(Signal.IntDelegate handler);
 }
 

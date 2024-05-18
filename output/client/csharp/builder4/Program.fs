@@ -56,39 +56,23 @@ let update (state: State) (msg: Msg) =
         { state with ComboSelection = maybeValue; TextValue = nextTextValue }, Cmd.Noop
     
 let view (state: State) =
-    let edit =
-        LineEdit.Node(Attrs = [LineEdit.Value state.TextValue; LineEdit.Enabled state.EditEnabled], OnChanged = EditChanged, OnActivated = EditActivated)
-    let disableButton =
-        let label =
-            if state.EditEnabled then
-                "disable text box"
-            else
-                "enable text box"
-        Button.make label ToggleEdit
-    let addButton =
-        let enabled =
-            state.ExtraButtonCount < 5
-        Button.Node(Attrs = [Button.Label "Add"; Button.Enabled enabled], OnClicked = AddButton)
-    let extraButtons =
-        if state.ExtraButtonCount > 0 then
-            seq {
-                for i in 1..state.ExtraButtonCount do
-                    let label =
-                        sprintf "extra button %02d" i
-                    Button.make label (ExtraPush i) :> LayoutItemNode<Msg>
-            } |> Seq.toList
-        else
-            []
-    let combo =
-        ComboBox.Node(Attrs = [ComboBox.Items state.AvailableStyles; ComboBox.SelectedIndex (Some 0)], OnSelected = ComboChanged)
-    let box =
-        BoxLayout.Node(
-            Attrs = [BoxLayout.Direction BoxLayout.Vertical; BoxLayout.Spacing 10],
-            Items = [ edit; disableButton; combo; addButton ] @ extraButtons)
-    let title =
-        match state.LastActivated with
-        | Some value -> sprintf "last activation [%s]" value
-        | None -> "..."
+    let tabs =
+        let page1 =
+            PushButton.Node(Attrs = [PushButton.Label "PAGE 01"])
+        let page2 =
+            PushButton.Node(Attrs = [PushButton.Label "PAGE 02"])
+        let page3 =
+            let edit =
+                LineEdit.Node()
+            let button =
+                PushButton.Node(Attrs = [PushButton.Label "PAGE 03 BUTTON"])
+            BoxLayout.Node(Attrs = [BoxLayout.Direction BoxLayout.Vertical],
+                           Items = [edit; button])
+        TabWidget.Node(Pages = [
+            "Page 1", page1
+            "Page 2", page2
+            "Page 3", page3
+        ])
     let menuBar =
         let fileMenu =
             let items = [
@@ -100,19 +84,24 @@ let view (state: State) =
         MenuBar.Node(Menus = [ fileMenu ])
     let window = 
         MainWindow.Node(
-            Attrs = [MainWindow.Title title; MainWindow.Size (800, 600); MainWindow.Visible true],
+            Attrs = [MainWindow.Title "Very Nice!"; MainWindow.Visible true], // MainWindow.Size (800, 600);
             MenuBar = menuBar,
-            Content = box)
+            Content = tabs) // PushButton.Node(Attrs = [PushButton.Label "nice"])
     window :> BuilderNode<Msg>
     
 let innerApp (argv: string array) =
     use app =
         Application.Create(argv)
-    Application.SetStyle("Windows")
+    Application.SetStyle("Fusion")
+    // Application.SetStyle("Windows")
     let rec processCmd = function
         | Noop ->
             ()
         | QuitApplication ->
+            // hmm, since this is effectively being called from within a menu event handler ...
+            // we probably need a way of only running commands after dispatch() has completely returned
+            // uhh, but how?
+            // because Qt self-destructing while we're still referring to widgets is probably a bad thing
             Application.Quit()
         | Batch commands ->
             commands |> List.iter processCmd

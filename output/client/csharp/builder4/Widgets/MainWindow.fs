@@ -11,13 +11,12 @@ type Attr =
     | Title of title: string
     | Size of width: int * height: int
     | Visible of state: bool
-    | ExitOnClose of value: bool
 let private keyFunc = function
     | Title _ -> 0
     | Size _ -> 1
     | Visible _ -> 2
-    | ExitOnClose _ -> 3
-let private diffAttrs = genericDiffAttrs keyFunc
+let private diffAttrs =
+    genericDiffAttrs keyFunc
 
 // let addRemoveOptional<'msg, 'node when 'node :> BuilderNode<'msg>> (maybeLeftThing: 'node option) (maybeThisThing: 'node option) (accessor: 'node -> 'handle) (adder: 'handle -> unit) (remover: unit -> unit) =
 //     let leftKey =
@@ -48,12 +47,9 @@ let private diffAttrs = genericDiffAttrs keyFunc
 
 type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeEntity: LayoutEntity option) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable exitOnClose = false
     let mutable central = Widget.Create() // in case a layout is provided, we need a central widget to stuff it in
     let mutable mainWindow = MainWindow.Create()
     do
-        mainWindow.SetCentralWidget(central)
-        
         let signalDispatch (s: Signal) =
             match signalMap s with
             | Some msg ->
@@ -65,7 +61,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         
         maybeEntity
         |> Option.iter (function
-            | WidgetItem w -> mainWindow.SetCentralWidget(w)
+            | WidgetItem w ->
+                mainWindow.SetCentralWidget(w)
             | LayoutItem l ->
                 central.SetLayout(l)
                 mainWindow.SetCentralWidget(central))
@@ -102,22 +99,16 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
     member this.Widget with get() = mainWindow
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
-            match attr with
+        attrs |> List.iter (function
             | Title text ->
                 mainWindow.SetWindowTitle(text)
             | Size (width, height) ->
                 mainWindow.Resize(width, height)
             | Visible state ->
-                mainWindow.SetVisible(state)
-            | ExitOnClose value ->
-                exitOnClose <- value
+                mainWindow.SetVisible(state))
     interface IDisposable with
         member this.Dispose() =
             mainWindow.Dispose()
-
-// let private exitHandler (args: Gtk.DeleteEventArgs) =
-//     Gtk.Application.Quit()
 
 let private create (attrs: Attr list) (maybeMenuBar: MenuBar.Handle option) (maybeEntity: LayoutEntity option) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch, maybeMenuBar, maybeEntity)
