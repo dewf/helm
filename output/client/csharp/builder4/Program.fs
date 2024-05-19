@@ -64,10 +64,14 @@ let view (state: State) =
         let page3 =
             let edit =
                 LineEdit.Node()
-            let button =
-                PushButton.Node(Attrs = [PushButton.Label "PAGE 03 BUTTON"])
+            let list =
+                ListWidget.Node(Attrs = [
+                    let items =
+                        [ for i in 0 .. 99 -> $"%02d{i}" ]
+                    ListWidget.Items items
+                ])
             BoxLayout.Node(Attrs = [BoxLayout.Direction BoxLayout.Vertical],
-                           Items = [edit; button])
+                           Items = [edit; list])
         TabWidget.Node(Pages = [
             "Page 1", page1
             "Page 2", page2
@@ -98,13 +102,10 @@ let innerApp (argv: string array) =
         | Noop ->
             ()
         | QuitApplication ->
-            // hmm, since this is effectively being called from within a menu event handler ...
-            // we probably need a way of only running commands after dispatch() has completely returned
-            // uhh, but how?
-            // because Qt self-destructing while we're still referring to widgets is probably a bad thing
             Application.Quit()
         | Batch commands ->
-            commands |> List.iter processCmd
+            commands
+            |> List.iter processCmd
     use reactor =
         // this binding will keep reactor alive for the entire lifetime of this method (until Application.Exec() exits), correct??
         // because the connection between what's going on in Reactor, and the state of Qt is completely implicit / behind-the-scenes

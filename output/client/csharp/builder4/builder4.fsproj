@@ -14,6 +14,7 @@
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
         <Compile Include="Widgets\ComboBox.fs" />
+        <Compile Include="Widgets\ListWidget.fs" />
         <Compile Include="Widgets\Menus\Action.fs" />
         <Compile Include="Widgets\Menus\Menu.fs" />
         <Compile Include="Widgets\Menus\MenuBar.fs" />

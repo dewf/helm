@@ -6,6 +6,7 @@ open Org.Whatever.QtTesting
 
 type Signal =
     | CurrentRowChanged of index: int option
+    | ItemSelectionChanged of indices: int list
 
 type SelectionMode =
     | NotAllowed
@@ -22,3 +23,88 @@ let private attrKey = function
 
 let private diffAttrs =
     genericDiffAttrs attrKey
+
+type private Model<'msg>(dispatch: 'msg -> unit) =
+    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+    let mutable listWidget = ListWidget.Create()
+    do
+        let signalDispatch (s: Signal) =
+            match signalMap s with
+            | Some msg ->
+                dispatch msg
+            | None ->
+                ()
+        listWidget.OnCurrentRowChanged (fun index ->
+            let value =
+                if index >= 0 then
+                    Some index
+                else
+                    None
+            signalDispatch (CurrentRowChanged value))
+        listWidget.OnItemSelectionChanged (fun _ ->
+            let indices =
+                listWidget.SelectedIndices()
+                |> Array.toList
+            signalDispatch (ItemSelectionChanged indices))
+    member this.Widget with get() = listWidget
+    member this.SignalMap with set(value) = signalMap <- value
+    member this.ApplyAttrs(attrs: Attr list) =
+        attrs |> List.iter (function
+            | Items items ->
+                listWidget.SetItems (items |> Array.ofList)
+            | SelectionMode mode ->
+                match mode with
+                | NotAllowed -> ListWidget.SelectionMode.None
+                | Single -> ListWidget.SelectionMode.Single
+                | Extended -> ListWidget.SelectionMode.Extended
+                |> listWidget.SetSelectionMode)
+    interface IDisposable with
+        member this.Dispose() =
+            listWidget.Dispose()
+
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch)
+    model.ApplyAttrs attrs
+    model.SignalMap <- signalMap
+    model
+
+let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+    model.ApplyAttrs attrs
+    model.SignalMap <- signalMap
+    model
+
+let private dispose (model: Model<'msg>) =
+    (model :> IDisposable).Dispose()
+
+
+type Node<'msg>() =
+    inherit WidgetNode<'msg>()
+
+    [<DefaultValue>] val mutable private model: Model<'msg>
+    member val Attrs: Attr list = [] with get, set
+    let mutable onCurrentRowChanged: (int option -> 'msg) option = None
+    let mutable onItemSelectionChanged: (int list -> 'msg) option = None
+    member this.OnCurrentRowChanged with set value = onCurrentRowChanged <- Some value
+    member this.OnItemSelectionChanged with set value = onItemSelectionChanged <- Some value
+    member private this.SignalMap
+        with get() = function
+            | CurrentRowChanged maybeIndex ->
+                onCurrentRowChanged
+                |> Option.map (fun f -> f maybeIndex)
+            | ItemSelectionChanged indices ->
+                onItemSelectionChanged
+                |> Option.map (fun f -> f indices)
+    override this.Dependencies() = []
+    override this.Create(dispatch: 'msg -> unit) =
+        this.model <- create this.Attrs this.SignalMap dispatch
+    override this.MigrateFrom(left: BuilderNode<'msg>) =
+        let left' = (left :?> Node<'msg>)
+        let nextAttrs =
+            diffAttrs left'.Attrs this.Attrs
+            |> createdOrChanged
+        this.model <-
+            migrate left'.model nextAttrs this.SignalMap
+    override this.Dispose() =
+        (this.model :> IDisposable).Dispose()
+    override this.Widget =
+        (this.model.Widget :> Widget.Handle)

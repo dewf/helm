@@ -12,8 +12,24 @@ internal static class Program
         
         var list = ListWidget.Create();
         list.SetSelectionMode(ListWidget.SelectionMode.Extended);
-        list.SetItems(Enumerable.Range(0, 100).Select(i => $"Item {i}").ToArray());
+        list.SetItems(Enumerable.Range(0, 1000).Select(i => $"Item {i}").ToArray());
+        list.OnItemSelectionChanged(() =>
+        {
+            Console.WriteLine("List selection:");
+            foreach (var index in list.SelectedIndices())
+            {
+                Console.WriteLine($" - {index}");
+            }
+        });
         layout.AddWidget(list);
+
+        var button = PushButton.Create("Scroll to #634");
+        button.OnClicked(() =>
+        {
+            list.SetCurrentRow(634);
+            list.ScrollToRow(634, ListWidget.ScrollHint.PositionAtCenter);
+        });
+        layout.AddWidget(button);
         
         page.SetLayout(layout);
         return page;
@@ -51,7 +67,7 @@ internal static class Program
         page.SetLayout(layout);
         return page;
     }
-    
+
     [STAThread]
     private static void Main(string[] args)
     {
