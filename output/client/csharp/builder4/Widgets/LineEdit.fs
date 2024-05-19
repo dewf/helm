@@ -6,7 +6,7 @@ open Org.Whatever.QtTesting
 
 type Signal =
     | Changed of string
-    | Activated
+    | ReturnPressed
     
 type Attr =
     | Value of string
@@ -29,7 +29,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             | None ->
                 ()
         edit.OnTextEdited (fun str -> dispatchSignal (Changed str))
-        edit.OnReturnPressed (fun _ -> dispatchSignal Activated)
+        edit.OnReturnPressed (fun _ -> dispatchSignal ReturnPressed)
     member this.Widget with get() = edit
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -65,16 +65,16 @@ type Node<'msg>() =
     let mutable onChanged: (string -> 'msg) option = None
     member this.OnChanged
         with set value = onChanged <- Some value
-    let mutable onActivated: 'msg option = None
-    member this.OnActivated
-        with set value = onActivated <- Some value
+    let mutable onReturnPressed: 'msg option = None
+    member this.OnReturnPressed
+        with set value = onReturnPressed <- Some value
     member private this.SignalMap
         with get() = function
             | Changed s ->
                 onChanged
                 |> Option.map (fun f -> f s)
-            | Activated ->
-                onActivated
+            | ReturnPressed ->
+                onReturnPressed
                 
     override this.Dependencies() = []
 

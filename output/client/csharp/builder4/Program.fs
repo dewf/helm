@@ -6,54 +6,37 @@ open Widgets
 open Widgets.Menus
 
 type Msg =
+    | CoolHappening of string
     | ExitTriggered
-    | ToggleEdit
     | EditChanged of string
     | EditActivated
-    | AddButton
-    | ExtraPush of int
-    | ComboChanged of maybeValue: int option
     
 type State = {
-    AvailableStyles: string list
-    EditEnabled: bool
-    TextValue: string
-    LastActivated: string option
-    ExtraButtonCount: int
-    ComboSelection: int option
+    EditValue: string
+    ButtonLabel: string
+    ActivationCount: int
 }
 
 let init () =
-    { AvailableStyles = Application.AvailableStyles() |> Array.toList
-      EditEnabled = true
-      TextValue = ""
-      LastActivated = None
-      ExtraButtonCount = 0
-      ComboSelection = None }, Cmd.Noop
+    { EditValue = ""
+      ButtonLabel = "Init Label"
+      ActivationCount = 0
+      }, Cmd.None
 
 let update (state: State) (msg: Msg) =
     match msg with
+    | CoolHappening str ->
+        printfn "Cool happening!!! [%s]" str
+        state, Cmd.None
     | ExitTriggered ->
         state, Cmd.QuitApplication
     | EditChanged str ->
-        { state with TextValue = str }, Cmd.Noop
+        { state with EditValue = str }, Cmd.None
     | EditActivated ->
-        { state with LastActivated = Some state.TextValue }, Cmd.Noop
-    | ToggleEdit ->
-        { state with EditEnabled = not state.EditEnabled }, Cmd.Noop
-    | AddButton ->
-        { state with ExtraButtonCount = state.ExtraButtonCount + 1 }, Cmd.Noop
-    | ExtraPush i ->
-        printfn "hello from extra button %02d" i
-        state, Cmd.Noop
-    | ComboChanged maybeValue ->
-        let nextTextValue =
-            match maybeValue with
-            | Some index ->
-                sprintf "you selected %d" index
-            | None ->
-                state.TextValue
-        { state with ComboSelection = maybeValue; TextValue = nextTextValue }, Cmd.Noop
+        { state with
+            ButtonLabel = state.EditValue
+            EditValue = ""
+            ActivationCount = state.ActivationCount + 1 }, Cmd.None
     
 let view (state: State) =
     let tabs =
@@ -63,7 +46,12 @@ let view (state: State) =
             PushButton.Node(Attrs = [PushButton.Label "PAGE 02"])
         let page3 =
             let edit =
-                LineEdit.Node()
+                LineEdit.Node(
+                    Attrs = [
+                        LineEdit.Value state.EditValue
+                    ],
+                    OnChanged = EditChanged,
+                    OnReturnPressed = EditActivated)
             let list =
                 ListWidget.Node(Attrs = [
                     let items =
@@ -72,10 +60,15 @@ let view (state: State) =
                 ])
             BoxLayout.Node(Attrs = [BoxLayout.Direction BoxLayout.Vertical],
                            Items = [edit; list])
+        let page4 =
+            let label =
+                sprintf "%s - %02d" state.ButtonLabel state.ActivationCount
+            CoolPanel.Node(Attrs = [CoolPanel.ButtonLabel label], OnSomethingHappened = CoolHappening)
         TabWidget.Node(Pages = [
             "Page 1", page1
             "Page 2", page2
             "Page 3", page3
+            "Page 4", page4
         ])
     let menuBar =
         let fileMenu =
@@ -99,11 +92,11 @@ let innerApp (argv: string array) =
     Application.SetStyle("Fusion")
     // Application.SetStyle("Windows")
     let rec processCmd = function
-        | Noop ->
+        | Cmd.None ->
             ()
-        | QuitApplication ->
+        | Cmd.QuitApplication ->
             Application.Quit()
-        | Batch commands ->
+        | Cmd.Batch commands ->
             commands
             |> List.iter processCmd
     use reactor =

@@ -11,7 +11,6 @@ type Attr =
     | NoneYet
 let private keyFunc = function
     | NoneYet -> 0
-
 let private diffAttrs =
     genericDiffAttrs keyFunc
     
