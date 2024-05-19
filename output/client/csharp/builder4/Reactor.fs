@@ -52,8 +52,8 @@ type SubCmd<'msg,'signal> =
 
 type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> BuilderNode<'msg>>(
                     init: unit -> 'state * SubCmd<'msg,'signal>,
-                    update: 'state -> 'msg -> 'state * SubCmd<'msg,'signal>,
                     attrUpdate: 'state -> 'attr -> 'state,
+                    update: 'state -> 'msg -> 'state * SubCmd<'msg,'signal>,
                     view: 'state -> 'root,
                     processCmd: SubCmd<'msg,'signal> -> unit) =
     let initState, initCmd = init()
@@ -104,3 +104,48 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> BuilderNode<'m
         member this.Dispose() =
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
+
+
+[<AbstractClass>]    
+type ReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
+                init: unit -> 'state * SubCmd<'msg, 'signal>,
+                attrUpdate: 'state -> 'attr -> 'state,
+                update: 'state -> 'msg -> 'state * SubCmd<'msg, 'signal>,
+                view: 'state -> LayoutNode<'msg>,
+                diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
+                ) =
+    inherit LayoutNode<'outerMsg>()
+
+    [<DefaultValue>] val mutable reactor: SubReactor<'state,'attr,'msg,'signal,LayoutNode<'msg>>
+    member val Attrs: 'attr list = [] with get, set
+    override this.Dependencies() = []
+    abstract member SignalMap: 'signal -> 'outerMsg option
+
+    override this.Create(dispatch: 'outerMsg -> unit) =
+        let rec processCmd (cmd: SubCmd<'msg, 'signal>) =
+            match cmd with
+            | SubCmd.None ->
+                ()
+            | SubCmd.Signal signal ->
+                match this.SignalMap signal with
+                | Some outerMsg ->
+                    dispatch outerMsg
+                | None ->
+                    ()
+            | SubCmd.Batch commands ->
+                commands
+                |> List.iter processCmd
+        this.reactor <- new SubReactor<'state,'attr,'msg,'signal,LayoutNode<'msg>>(init, attrUpdate, update, view, processCmd)
+        this.reactor.ApplyAttrs(this.Attrs)
+
+    override this.MigrateFrom(left: BuilderNode<'outerMsg>) =
+        let left' = (left :?> ReactorNode<'outerMsg,'state,'msg,'attr,'signal>)
+        let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+        this.reactor <- left'.reactor
+        this.reactor.ApplyAttrs(nextAttrs)
+        
+    override this.Dispose() =
+        (this.reactor :> IDisposable).Dispose()
+        
+    override this.Layout =
+        this.reactor.Root.Layout

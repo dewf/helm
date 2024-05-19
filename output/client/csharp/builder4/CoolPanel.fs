@@ -7,7 +7,6 @@ open Reactor
 
 type Signal =
     | SomethingHappened of value: string
-    
 type Attr =
     | ButtonLabel of label: string
 let private keyFunc = function
@@ -21,20 +20,20 @@ type State = {
     AddedItems: string list
 }
 
-type Msg =
-    | SubmitItem
-    | EditChanged of value: string
-    | FireSignal
+let init () =
+    { ButtonLabel = "default"
+      EditValue = ""
+      AddedItems = [] }, SubCmd.None
     
 let attrUpdate (state: State) (attr: Attr) =
     match attr with
     | ButtonLabel label ->
         { state with ButtonLabel = label }
-    
-let init () =
-    { ButtonLabel = "default"
-      EditValue = ""
-      AddedItems = [] }, SubCmd.None
+
+type Msg =
+    | SubmitItem
+    | EditChanged of value: string
+    | FireSignal
     
 let update (state: State) (msg: Msg) =
     match msg with
@@ -77,51 +76,13 @@ let view (state: State) =
         Attrs = [BoxLayout.Direction BoxLayout.Vertical],
         Items = [ edit; list; button; fireSignal ])
     :> LayoutNode<Msg>
-    
+
 type Node<'outerMsg>() =
-    inherit LayoutNode<'outerMsg>()
+    inherit ReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)
     let mutable onSomethingHappened: (string -> 'outerMsg) option = None
-
-    [<DefaultValue>] val mutable reactor: SubReactor<State,Attr,Msg,Signal,LayoutNode<Msg>>
-    
-    member private this.SignalMap
-        with get() = function
-            | SomethingHappened str ->
-                onSomethingHappened
-                |> Option.map (fun f -> f str)
-        
-    member val Attrs: Attr list = [] with get, set
-
     member this.OnSomethingHappened with set value = onSomethingHappened <- Some value
-    
-    override this.Dependencies() = []
-    
-    override this.Create(dispatch: 'outerMsg -> unit) =
-        let rec processCmd (cmd: SubCmd<Msg, Signal>) =
-            match cmd with
-            | SubCmd.None ->
-                ()
-            | SubCmd.Signal signal ->
-                match this.SignalMap signal with
-                | Some outerMsg ->
-                    dispatch outerMsg
-                | None ->
-                    ()
-            | SubCmd.Batch commands ->
-                commands
-                |> List.iter processCmd
-        this.reactor <- new SubReactor<State,Attr,Msg,Signal,LayoutNode<Msg>>(init, update, attrUpdate, view, processCmd)
-        this.reactor.ApplyAttrs(this.Attrs)
-
-    override this.MigrateFrom(left: BuilderNode<'outerMsg>) =
-        let left' = (left :?> Node<'outerMsg>)
-        let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-        this.reactor <- left'.reactor
-        this.reactor.ApplyAttrs(nextAttrs)
-
-    override this.Dispose() =
-        printfn "###### NESTED REACTOR DISPOSING"
-        (this.reactor :> IDisposable).Dispose()
-        
-    override this.Layout =
-        this.reactor.Root.Layout
+    override this.SignalMap (s: Signal) =
+        match s with
+        | SomethingHappened str ->
+            onSomethingHappened
+            |> Option.map (fun f -> f str)
