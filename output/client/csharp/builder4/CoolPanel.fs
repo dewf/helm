@@ -1,6 +1,5 @@
 ﻿module CoolPanel
 
-open System
 open BuilderNode
 open Widgets
 open Reactor

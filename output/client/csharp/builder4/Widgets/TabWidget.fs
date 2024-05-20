@@ -14,36 +14,12 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
     
-type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * LayoutEntity) list) =
+type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * Widget.Handle) list) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable tabWidget = TabWidget.Create()
-    let mutable layoutToWidgetMap: Map<Layout.Handle, Widget.Handle> = Map.empty
-    
-    let widgetForLayout(layout: Layout.Handle) =
-        match layoutToWidgetMap.TryFind(layout) with
-        | Some widget ->
-            // re-use existing
-            widget
-        | None ->
-            // create new
-            let widget =
-                Widget.Create()
-            widget.SetLayout(layout)
-            // keep record of it ...
-            layoutToWidgetMap <- layoutToWidgetMap.Add(layout, widget)
-            // return it
-            widget
-            
-    let addPages(pages: (string * LayoutEntity) list) =
-        for label, page in pages do
-        match page with
-        | WidgetItem widget ->
+    let addPages(pages: (string * Widget.Handle) list) =
+        for label, widget in pages do
             tabWidget.AddTab(widget, label)
-        | LayoutItem layout ->
-            let widget =
-                widgetForLayout(layout)
-            tabWidget.AddTab(widget, label)
-            
     do
         let signalDispatch (s: Signal) =
             match signalMap s with
@@ -56,35 +32,10 @@ type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * LayoutEnti
         
         addPages initPages
         
-    let deleteOrphanedLayoutContainers (incomingPages: (string * LayoutEntity) list) =
-        // look through layoutToWidgetMap and locate any layout keys that AREN'T in the incoming set
-        // their old synthetic container widgets are now orphaned and need to be deleted
-        let incomingLayouts =
-            incomingPages
-            |> List.choose (fun (_, entity) ->
-                match entity with
-                | LayoutItem layout -> Some layout
-                | _ -> None)
-            |> Set.ofList
-        let nextPairs =
-            layoutToWidgetMap
-            |> Map.toList
-            |> List.choose (fun (layout, widget) ->
-                if incomingLayouts.Contains(layout) then
-                    // widget is safe for now
-                    Some (layout, widget)
-                else
-                    // disposed of orphaned widget and continue
-                    widget.Dispose()
-                    // filter out pair
-                    None)
-        layoutToWidgetMap <-
-            nextPairs |> Map.ofList
-            
-    member this.Refill(pages: (string * LayoutEntity) list) =
+    member this.Refill(pages: (string * Widget.Handle) list) =
         tabWidget.Clear()
         addPages pages
-        deleteOrphanedLayoutContainers pages
+        // deleteOrphanedLayoutContainers pages
         
     member this.Widget with get() = tabWidget
     member this.SignalMap with set(value) = signalMap <- value
@@ -99,7 +50,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * LayoutEnti
         member this.Dispose() =
             tabWidget.Dispose()
 
-let private create (attrs: Attr list) (pages: (string * LayoutEntity) list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: Attr list) (pages: (string * Widget.Handle) list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch, pages)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -115,7 +66,7 @@ let private dispose (model: Model<'msg>) =
 
 type Node<'msg>() =
     inherit WidgetNode<'msg>()
-    let mutable pages: (string * LayoutItemNode<'msg>) list = []
+    let mutable pages: (string * WidgetNode<'msg>) list = []
     // member private this.Pages = pages // need to be able to access from migration (does this need to be a function?)
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -144,8 +95,8 @@ type Node<'msg>() =
     override this.Create(dispatch: 'msg -> unit) =
         let pageLabelsAndHandles =
             pages
-            |> List.map (fun (label, node) ->
-                label, node.LayoutEntity)
+            |> List.map (fun (label, widget) ->
+                label, widget.Widget)
         this.model <- create this.Attrs pageLabelsAndHandles this.SignalMap dispatch
         
     member private this.MigrateContent(leftTabWidget: Node<'msg>) =
@@ -158,7 +109,7 @@ type Node<'msg>() =
         if leftContents <> thisContents then
             let pageLabelsAndHandles =
                 pages
-                |> List.map (fun (label, node) -> label, node.LayoutEntity)
+                |> List.map (fun (label, node) -> label, node.Widget)
             this.model.Refill(pageLabelsAndHandles)
         else
             ()

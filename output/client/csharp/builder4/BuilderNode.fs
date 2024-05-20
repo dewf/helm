@@ -28,29 +28,30 @@ type BuilderNode<'msg>() =
     abstract member Dispose: unit -> unit
     abstract member ContentKey: System.Object
     
- 
-type LayoutEntity =
-    | WidgetItem of handle: Widget.Handle
-    | LayoutItem of handle: Layout.Handle
-     
-[<AbstractClass>]
-type LayoutItemNode<'msg>() =
-    inherit BuilderNode<'msg>()
-    abstract member LayoutEntity: LayoutEntity
-    
+
 [<AbstractClass>]
 type WidgetNode<'msg>() =
-    inherit LayoutItemNode<'msg>()
+    inherit BuilderNode<'msg>()
     abstract member Widget: Widget.Handle
-    override this.LayoutEntity = WidgetItem this.Widget
     override this.ContentKey = this.Widget
     
 [<AbstractClass>]
 type LayoutNode<'msg>() =
-    inherit LayoutItemNode<'msg>()
+    inherit WidgetNode<'msg>()
+    let mutable maybeSyntheticParent: Widget.Handle option = None
     abstract member Layout: Layout.Handle
-    override this.LayoutEntity = LayoutItem this.Layout
     override this.ContentKey = this.Layout
+    override this.Widget =
+        // create a widget on demand to hold the layout
+        // TODO: need to set up a dispose system so that all the inheritance tree disposes properly
+        match maybeSyntheticParent with
+        | Some widget ->
+            widget
+        | None ->
+            let widget = Widget.Create()
+            widget.SetLayout(this.Layout)
+            maybeSyntheticParent <- Some widget
+            widget
     
 [<AbstractClass>]
 type MenuBarNode<'msg>() =

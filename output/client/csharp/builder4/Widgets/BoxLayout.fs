@@ -21,14 +21,13 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, items: LayoutEntity list) =
+type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable box = BoxLayout.Create(BoxLayout.Direction.TopToBottom)
     do
         // no signals yet
-        items |> List.iter (function
-            | WidgetItem widget -> box.AddWidget(widget)
-            | LayoutItem layout -> box.AddLayout(layout))
+        items
+        |> List.iter box.AddWidget
     member this.Layout with get() = box
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -45,13 +44,12 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: LayoutEntity list) =
     interface IDisposable with
         member this.Dispose() =
             box.Dispose()
-    member this.Refill(items: LayoutEntity list) =
+    member this.Refill(items: Widget.Handle list) =
         box.RemoveAll()
-        items |> List.iter (function
-            | WidgetItem widget -> box.AddWidget(widget)
-            | LayoutItem layout -> box.AddLayout(layout))
+        items
+        |> List.iter box.AddWidget
 
-let private create (attrs: Attr list) (items: LayoutEntity list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: Attr list) (items: Widget.Handle list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch, items)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -67,7 +65,7 @@ let private dispose (model: Model<'msg>) =
     
 type Node<'msg>() =
     inherit LayoutNode<'msg>()
-    let mutable items: LayoutItemNode<'msg> list = []
+    let mutable items: WidgetNode<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
@@ -86,10 +84,10 @@ type Node<'msg>() =
         |> List.mapi (fun i item -> (i, item :> BuilderNode<'msg>))
         
     override this.Create(dispatch: 'msg -> unit) =
-        let entities =
+        let widgets =
             items
-            |> List.map (_.LayoutEntity)
-        this.model <- create this.Attrs entities this.SignalMap dispatch
+            |> List.map (_.Widget)
+        this.model <- create this.Attrs widgets this.SignalMap dispatch
         
     member private this.MigrateContent(leftBox: Node<'msg>) =
         let leftContents =
@@ -99,10 +97,10 @@ type Node<'msg>() =
             items
             |> List.map (_.ContentKey)
         if leftContents <> thisContents then
-            let entities =
+            let widgets =
                 items
-                |> List.map (_.LayoutEntity)
-            this.model.Refill(entities)
+                |> List.map (_.Widget)
+            this.model.Refill(widgets)
         else
             ()
             
@@ -120,5 +118,5 @@ type Node<'msg>() =
     override this.Layout =
         (this.model.Layout :> Layout.Handle)
 
-let make (attrs: Attr list) (items: LayoutItemNode<'msg> list) =
+let make (attrs: Attr list) (items: WidgetNode<'msg> list) =
     Node(Attrs = attrs, Items = items)
