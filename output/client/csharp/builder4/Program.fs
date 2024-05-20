@@ -56,9 +56,9 @@ let view (state: State) =
             ], MenuBar = menuBar())
     WindowSet.Node(
         Windows = [
-            1, window01
-            2, window02
-            3, window03
+            StrKey "one", window01
+            StrKey "two", window02
+            StrKey "three", window03
         ]) :> BuilderNode<Msg>
     
 let innerApp (argv: string array) =

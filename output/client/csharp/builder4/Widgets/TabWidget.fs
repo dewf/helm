@@ -87,7 +87,7 @@ type Node<'msg>() =
         // seems silly to needlessly destroy/create things just because the order changed and the user didn't provide keys,
         // especially when .ContentKeys exist
         pages
-        |> List.mapi (fun i (_, node) -> i, node :> BuilderNode<'msg>)
+        |> List.mapi (fun i (_, node) -> IntKey i, node :> BuilderNode<'msg>)
         
     override this.Create(dispatch: 'msg -> unit) =
         let pageLabelsAndHandles =

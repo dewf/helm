@@ -4,7 +4,7 @@ open BuilderNode
 
 type Node<'msg>() =
     inherit TopLevelNode<'msg>()
-    let mutable windows: (int * WindowNode<'msg>) list = []
+    let mutable windows: (DepsKey * WindowNode<'msg>) list = []
     
     member this.Windows
         with get() = windows
@@ -29,4 +29,3 @@ type Node<'msg>() =
     override this.ContentKey =
         // does this even make sense?
         windows
-  

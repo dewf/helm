@@ -79,7 +79,7 @@ type Node<'msg>() =
     
     override this.Dependencies() =
         maybeLayout
-        |> Option.map (fun content -> (1, content :> BuilderNode<'msg>))
+        |> Option.map (fun content -> (StrKey "layout", content :> BuilderNode<'msg>))
         |> Option.toList
   
     override this.Create(dispatch: 'msg -> unit) =

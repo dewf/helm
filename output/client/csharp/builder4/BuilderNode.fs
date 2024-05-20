@@ -18,10 +18,14 @@ type AttrChange<'a> =
 let createdOrChanged (changes: AttrChange<'a> list) =
     changes
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
+    
+type DepsKey =
+    | IntKey of i: int
+    | StrKey of str: string
 
 [<AbstractClass>]
 type BuilderNode<'msg>() =
-    abstract member Dependencies: unit -> (int * BuilderNode<'msg>) list
+    abstract member Dependencies: unit -> (DepsKey * BuilderNode<'msg>) list
     abstract member Create: ('msg -> unit) -> unit
     abstract member MigrateFrom: BuilderNode<'msg> -> unit // will the dispatch ever change?
     abstract member Dispose: unit -> unit

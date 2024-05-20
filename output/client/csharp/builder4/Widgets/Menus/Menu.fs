@@ -80,7 +80,7 @@ type Node<'msg>() =
     override this.Dependencies() =
         // see long note on same BoxLayout method
         items
-        |> List.mapi (fun i item -> (i, item :> BuilderNode<'msg>))
+        |> List.mapi (fun i item -> (IntKey i, item :> BuilderNode<'msg>))
     override this.Create(dispatch: 'msg -> unit) =
         let actionHandles =
             items

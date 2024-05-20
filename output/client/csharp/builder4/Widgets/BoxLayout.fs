@@ -81,7 +81,7 @@ type Node<'msg>() =
         // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
         // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
         items
-        |> List.mapi (fun i item -> (i, item :> BuilderNode<'msg>))
+        |> List.mapi (fun i item -> (IntKey i, item :> BuilderNode<'msg>))
         
     override this.Create(dispatch: 'msg -> unit) =
         let widgets =

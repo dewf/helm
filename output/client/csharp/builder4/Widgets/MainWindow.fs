@@ -128,11 +128,11 @@ type Node<'msg>() =
     override this.Dependencies() =
         let menuBarList =
             maybeMenuBar
-            |> Option.map (fun menuBar -> (0, menuBar :> BuilderNode<'msg>))
+            |> Option.map (fun menuBar -> (StrKey "menu", menuBar :> BuilderNode<'msg>))
             |> Option.toList
         let contentList =
             maybeContent
-            |> Option.map (fun content -> (1, content :> BuilderNode<'msg>))
+            |> Option.map (fun content -> (StrKey "content", content :> BuilderNode<'msg>))
             |> Option.toList
         menuBarList @ contentList
 
