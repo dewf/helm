@@ -107,7 +107,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Node<'msg>() =
-    inherit WidgetNode<'msg>()
+    inherit WindowNode<'msg>()
     let mutable maybeMenuBar: MenuBarNode<'msg> option = None
     let mutable maybeContent: WidgetNode<'msg> option = None
     member private this.MaybeMenuBar = maybeMenuBar
@@ -206,5 +206,5 @@ type Node<'msg>() =
 
     override this.Dispose() =
         (this.model :> IDisposable).Dispose()
-    override this.Widget =
+    override this.WindowWidget =
         this.model.Widget

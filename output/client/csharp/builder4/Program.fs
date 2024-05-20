@@ -6,85 +6,60 @@ open Widgets
 open Widgets.Menus
 
 type Msg =
-    | CoolHappening of string
-    | ExitTriggered
-    | EditChanged of string
-    | EditActivated
+    | ExitAction
     
 type State = {
-    EditValue: string
-    ButtonLabel: string
-    ActivationCount: int
+    Placeholder: int
 }
 
 let init () =
-    { EditValue = ""
-      ButtonLabel = "Init Label"
-      ActivationCount = 0
-      }, Cmd.None
+    let nextState =
+        { Placeholder = 0 }
+    nextState, Cmd.None
 
 let update (state: State) (msg: Msg) =
     match msg with
-    | CoolHappening str ->
-        printfn "Cool happening!!! [%s]" str
-        state, Cmd.None
-    | ExitTriggered ->
+    | ExitAction ->
         state, Cmd.QuitApplication
-    | EditChanged str ->
-        { state with EditValue = str }, Cmd.None
-    | EditActivated ->
-        { state with
-            ButtonLabel = state.EditValue
-            EditValue = ""
-            ActivationCount = state.ActivationCount + 1 }, Cmd.None
     
 let view (state: State) =
-    let tabs =
-        let page1 =
-            PushButton.Node(Attrs = [PushButton.Label "PAGE 01"])
-        let page2 =
-            PushButton.Node(Attrs = [PushButton.Label "PAGE 02"])
-        let page3 =
-            let edit =
-                LineEdit.Node(
-                    Attrs = [
-                        LineEdit.Value state.EditValue
-                    ],
-                    OnChanged = EditChanged,
-                    OnReturnPressed = EditActivated)
-            let list =
-                ListWidget.Node(Attrs = [
-                    let items =
-                        [ for i in 0 .. 99 -> $"%02d{i}" ]
-                    ListWidget.Items items
+    // TODO: detect when a given node has been attached to 2+ places in a single graph
+    // since nodes are stateful, this would no doubt cause havoc
+    let menuBar() =
+        MenuBar.Node(Menus = [
+            Menu.Node(Attrs = [
+                    Menu.Title "&File"
+                ], Items = [
+                    Action.Node(Attrs = [ Action.Text "E&xit" ], OnTriggered = (fun _ -> ExitAction))
                 ])
-            BoxLayout.Node(Attrs = [BoxLayout.Direction BoxLayout.Vertical],
-                           Items = [edit; list])
-        let page4 =
-            let label =
-                sprintf "%s - %02d" state.ButtonLabel state.ActivationCount
-            CoolPanel.Node(Attrs = [CoolPanel.ButtonLabel label], OnSomethingHappened = CoolHappening)
-        TabWidget.Node(Pages = [
-            "Page 1", page1
-            "Page 2", page2
-            "Page 3", page3
-            "Page 4", page4
-        ])
-    let menuBar =
-        let fileMenu =
-            let items = [
-                Action.Node(Attrs = [Action.Text "- nothing -"]) :> ActionNode<Msg>
-                Action.Node(Attrs = [Action.Separator true])
-                Action.Node(Attrs = [Action.Text "E&xit"], OnTriggered = (fun _ -> ExitTriggered))
-            ]
-            Menu.Node(Attrs = [Menu.Title "&File"], Items = items)
-        MenuBar.Node(Menus = [ fileMenu ])
-    let window = 
+            ])
+    let window01 =
         MainWindow.Node(
-            Attrs = [MainWindow.Title "Very Nice!"; MainWindow.Visible true], // MainWindow.Size (800, 600);
-            MenuBar = menuBar,
-            Content = tabs) // PushButton.Node(Attrs = [PushButton.Label "nice"])
-    window :> BuilderNode<Msg>
+            Attrs = [
+                MainWindow.Title "Window 01"
+                MainWindow.Size (800, 600)
+                MainWindow.Visible true
+            ], MenuBar = menuBar())
+    let window02 =
+        MainWindow.Node(
+            Attrs = [
+                MainWindow.Title "Window 02"
+                MainWindow.Size (800, 600)
+                MainWindow.Visible true
+            ], MenuBar = menuBar())
+    let window03 =
+        MainWindow.Node(
+            Attrs = [
+                MainWindow.Title "Window 03"
+                MainWindow.Size (800, 600)
+                MainWindow.Visible true
+            ], MenuBar = menuBar())
+    WindowSet.Node(
+        Windows = [
+            1, window01
+            2, window02
+            3, window03
+        ]) :> BuilderNode<Msg>
     
 let innerApp (argv: string array) =
     use app =

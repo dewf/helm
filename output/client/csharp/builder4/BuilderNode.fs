@@ -2,7 +2,6 @@
 
 open Org.Whatever.QtTesting
 
-
 module List =
     let zipWithIndex (xs: 'a list) =
         xs |> List.mapi (fun i x -> (i, x))
@@ -70,6 +69,16 @@ type ActionNode<'msg>() =
     inherit BuilderNode<'msg>()
     abstract member Action: Action.Handle
     override this.ContentKey = this.Action
+    
+[<AbstractClass>]
+type TopLevelNode<'msg>() =
+    inherit BuilderNode<'msg>()
+    
+[<AbstractClass>]
+type WindowNode<'msg>() =
+    inherit TopLevelNode<'msg>()
+    abstract member WindowWidget: Widget.Handle
+    override this.ContentKey = this.WindowWidget
     
 type Empty<'msg>() =
     inherit BuilderNode<'msg>()

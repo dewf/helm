@@ -35,7 +35,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * Widget.Han
     member this.Refill(pages: (string * Widget.Handle) list) =
         tabWidget.Clear()
         addPages pages
-        // deleteOrphanedLayoutContainers pages
         
     member this.Widget with get() = tabWidget
     member this.SignalMap with set(value) = signalMap <- value
@@ -45,7 +44,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * Widget.Han
             | NoneYet ->
                 ())
         
-    // don't forget to dispose widgets from layoutToWidgetMap
     interface IDisposable with
         member this.Dispose() =
             tabWidget.Dispose()
@@ -67,7 +65,6 @@ let private dispose (model: Model<'msg>) =
 type Node<'msg>() =
     inherit WidgetNode<'msg>()
     let mutable pages: (string * WidgetNode<'msg>) list = []
-    // member private this.Pages = pages // need to be able to access from migration (does this need to be a function?)
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
