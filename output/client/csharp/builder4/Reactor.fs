@@ -6,6 +6,7 @@ open BuilderNode
 [<RequireQualifiedAccess>]
 type Cmd<'msg> =
     | None
+    | OfMsg of 'msg
     | QuitApplication
     | Batch of commands: Cmd<'msg> list
     
@@ -37,6 +38,9 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
     do
         build dispatch root
         processCmd initCmd
+        
+    member this.ProcessMsg (msg: 'msg) =
+        dispatch msg
 
     interface IDisposable with
         member this.Dispose() =
@@ -47,6 +51,7 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
 [<RequireQualifiedAccess>]
 type SubCmd<'msg,'signal> =
     | None
+    | OfMsg of 'msg
     | Signal of 'signal
     | Batch of commands: SubCmd<'msg,'signal> list
 
@@ -99,6 +104,9 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> BuilderNode<'m
         diff dispatch (Some prevRoot) (Some root)
         inDispatch <- false
         // no commands allowed in attr update (for now)
+    
+    member this.ProcessMsg (msg: 'msg) =
+        dispatch msg
 
     interface IDisposable with
         member this.Dispose() =
@@ -126,6 +134,9 @@ type ReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
             match cmd with
             | SubCmd.None ->
                 ()
+            | SubCmd.OfMsg msg ->
+                // note, will break if used by init() - 'reactor' variable hasn't been set!
+                this.reactor.ProcessMsg(msg)
             | SubCmd.Signal signal ->
                 match this.SignalMap signal with
                 | Some outerMsg ->

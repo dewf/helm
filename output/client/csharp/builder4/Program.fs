@@ -94,6 +94,9 @@ let innerApp (argv: string array) =
     let rec processCmd = function
         | Cmd.None ->
             ()
+        | Cmd.OfMsg msg ->
+            // how about moving all this stuff into an 'AppReactor' class?
+            printfn "!!! root level doesn't yet support Cmd.OfMsg, need to reorganize some things"
         | Cmd.QuitApplication ->
             Application.Quit()
         | Cmd.Batch commands ->
