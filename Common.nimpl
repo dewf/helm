@@ -7,7 +7,35 @@ struct Rect {
     int height;
 }
 
+struct RectF {
+    double x;
+    double y;
+    double width;
+    double height;
+}
+
 struct Point {
     int x;
     int y;
+}
+
+// these are flags on the C++ side, but to keep this simple for now we will use a simple enum,
+// because our flags handling is not yet as advanced as C++ (can't refer to prior values and 'or' them together etc)
+enum Alignment {
+    Left,
+    Leading,
+    Right,
+    Trailing,
+    HCenter,
+    Justify,
+    Absolute,
+    // Horizontal_Mask,
+
+    Top,
+    Bottom,
+    VCenter,
+    Baseline,
+    // Vertical_Mask,
+
+    Center
 }

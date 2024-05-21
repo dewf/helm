@@ -3,6 +3,7 @@ module Widget;
 import Common;
 import Signal;
 import Layout;
+import Painter;
 
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
@@ -28,3 +29,27 @@ opaque Handle {
 }
 
 Handle create();
+
+// SUBCLASSING ===========================================================
+
+flags MethodMask {
+    PaintEvent = 1 << 0,
+    MousePressEvent = 1 << 1
+}
+
+struct MouseEvent {
+    Point pos;
+}
+
+// sadly client will have to implement all of these, BUT empty methods / returning default values will be OK
+// because only those included in the "method mask" will actually be invoked
+interface MethodDelegate {
+    void paintEvent(Painter.Handle painter, Rect rect);
+    void mousePressEvent(MouseEvent mouseEvent);
+}
+
+// allows us to inject the Widget instance into the method delegate
+// not strictly necessary but leads to cleaner client code -- can use a primary constructor, don't have to make the internal widget nullable / assigned later, etc.
+delegate MethodDelegate CreateDelegateFunc(Handle widget);
+
+Handle createSubclassed(CreateDelegateFunc createFunc, MethodMask methodMask);

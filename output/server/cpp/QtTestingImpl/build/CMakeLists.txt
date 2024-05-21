@@ -59,6 +59,10 @@ add_library(QtTestingImpl STATIC
     ../generated/MenuBar_wrappers.cpp
     ../MenuBar.cpp
 
+    ../generated/Painter.h
+    ../generated/Painter_wrappers.cpp
+    ../Painter.cpp
+
     ../generated/PlainTextEdit.h
     ../generated/PlainTextEdit_wrappers.cpp
     ../PlainTextEdit.cpp

@@ -3,6 +3,10 @@
 #include <QObject>
 #include <QWidget>
 #include <QLayout>
+
+#include <QPainter>
+#include <QPaintEvent>
+
 #include "util/convert.h"
 
 #define THIS ((QWidget*)_this)
@@ -25,7 +29,7 @@ namespace Widget
 
     Rect Handle_getRect(HandleRef _this) {
         auto x = THIS->rect();
-        return qRectToRect(x);
+        return toRect(x);
     }
 
     void Handle_resize(HandleRef _this, int32_t width, int32_t height) {
@@ -72,5 +76,41 @@ namespace Widget
 
     HandleRef create() {
         return (HandleRef)new QWidget();
+    }
+
+    // subclass stuff ==========================================================
+
+    class WidgetSubclass : public QWidget {
+    private:
+        std::shared_ptr<MethodDelegate> methodDelegate;
+        uint32_t methodMask;
+    public:
+        WidgetSubclass(std::function<CreateDelegateFunc> &createFunc, uint32_t methodMask) : methodMask(methodMask) {
+            // create the method delegate by injecting the 'this' pointer
+            methodDelegate = createFunc((HandleRef)this);
+        }
+    protected:
+        void paintEvent(QPaintEvent *event) override {
+            if (methodMask & MethodMask::PaintEvent) {
+                QPainter painter(this);
+                methodDelegate->paintEvent((Painter::HandleRef)&painter, toRect(event->rect()));
+            } else {
+                QWidget::paintEvent(event);
+            }
+        }
+        void mousePressEvent(QMouseEvent *event) override {
+            if (methodMask & MethodMask::MousePressEvent) {
+                MouseEvent ev {};
+                ev.pos.x = event->pos().x();
+                ev.pos.y = event->pos().y();
+                methodDelegate->mousePressEvent(ev);
+            } else {
+                QWidget::mousePressEvent(event);
+            }
+        }
+    };
+
+    HandleRef createSubclassed(std::function<CreateDelegateFunc> createFunc, uint32_t methodMask) {
+        return (HandleRef) new WidgetSubclass(createFunc, methodMask);
     }
 }
