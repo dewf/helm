@@ -5,39 +5,45 @@ open Widgets
 open Reactor
 
 type Signal =
-    | SomethingHappened of value: string
+    | SomethingHappened
 type Attr =
+    | WindowTitle of label: string
     | ButtonLabel of label: string
 let private keyFunc = function
-    | ButtonLabel _ -> 0
+    | WindowTitle _ -> 0
+    | ButtonLabel _ -> 1
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
 type State = {
+    WindowTitle: string
     ButtonLabel: string
     EditValue: string
     AddedItems: string list
 }
 
+type Msg =
+    | SubmitItem
+    | EditChanged of value: string
+    | FireSignal
+
 let init () =
-    { ButtonLabel = "default"
+    { WindowTitle = "default Window title"
+      ButtonLabel = "default"
       EditValue = ""
       AddedItems = [] }, SubCmd.None
     
 let attrUpdate (state: State) (attr: Attr) =
     match attr with
+    | WindowTitle title ->
+        { state with WindowTitle = title }
     | ButtonLabel label ->
         { state with ButtonLabel = label }
-
-type Msg =
-    | SubmitItem
-    | EditChanged of value: string
-    | FireSignal
-    
+        
 let update (state: State) (msg: Msg) =
     match msg with
     | FireSignal ->
-        state, SubCmd.Signal (SomethingHappened "yazooo")
+        state, SubCmd.Signal SomethingHappened
     | SubmitItem ->
         let toAdd =
             if state.EditValue <> "" then
@@ -77,7 +83,7 @@ let view (state: State) =
             Items = [ edit; list; button; fireSignal ])
     MainWindow.Node(
         Attrs = [
-            MainWindow.Title "Cool Window, Bro!"
+            MainWindow.Title state.WindowTitle
             MainWindow.Size (800, 600)
             MainWindow.Visible true
         ], Content = box)
@@ -85,10 +91,9 @@ let view (state: State) =
 
 type Node<'outerMsg>() =
     inherit WindowReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)
-    let mutable onSomethingHappened: (string -> 'outerMsg) option = None
+    let mutable onSomethingHappened: 'outerMsg option = None
     member this.OnSomethingHappened with set value = onSomethingHappened <- Some value
     override this.SignalMap (s: Signal) =
         match s with
-        | SomethingHappened str ->
+        | SomethingHappened ->
             onSomethingHappened
-            |> Option.map (fun f -> f str)

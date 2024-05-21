@@ -38,11 +38,17 @@ let view (state: State) =
                 ])
             ])
     let window01 =
-        CoolPanel.Node(OnSomethingHappened = Happening)
+        CoolPanel.Node(
+            Attrs = [ CoolPanel.WindowTitle "Window 01" ],
+            OnSomethingHappened = Happening "01")
     let window02 =
-        CoolPanel.Node(OnSomethingHappened = Happening)
+        CoolPanel.Node(
+            Attrs = [ CoolPanel.WindowTitle "Window 02" ],
+            OnSomethingHappened = Happening "02")
     let window03 =
-        CoolPanel.Node(OnSomethingHappened = Happening)
+        CoolPanel.Node(
+            Attrs = [ CoolPanel.WindowTitle "Window 03" ],
+            OnSomethingHappened = Happening "03")
     WindowSet.Node(
         Windows = [
             StrKey "one", window01
