@@ -4,8 +4,30 @@ import Common;
 
 opaque Color {
     static {
-        // fromRgbF
-        Color create(float r, float g, float b); // a = 1.0 default
+        enum Constant {
+            Black,
+            White,
+            DarkGray,
+            Gray,
+            LightGray,
+            Red,
+            Green,
+            Blue,
+            Cyan,
+            Magenta,
+            Yellow,
+            DarkRed,
+            DarkGreen,
+            DarkBlue,
+            DarkCyan,
+            DarkMagenta,
+            DarkYellow,
+            Transparent
+        }
+        Color create(Constant name);
+        Color create(int r, int g, int b);
+        Color create(int r, int g, int b, int a);
+        Color create(float r, float g, float b);
         Color create(float r, float g, float b, float a); 
     }
 }

@@ -20,6 +20,68 @@ namespace Painter
     };
 
     namespace Color {
+        QColor fromConstant(Constant name) {
+            switch (name) {
+                case Constant::Black:
+                    return QColorConstants::Black;
+                case Constant::White:
+                    return QColorConstants::White;
+                case Constant::DarkGray:
+                    return QColorConstants::DarkGray;
+                case Constant::Gray:
+                    return QColorConstants::Gray;
+                case Constant::LightGray:
+                    return QColorConstants::LightGray;
+                case Constant::Red:
+                    return QColorConstants::Red;
+                case Constant::Green:
+                    return QColorConstants::Green;
+                case Constant::Blue:
+                    return QColorConstants::Blue;
+                case Constant::Cyan:
+                    return QColorConstants::Cyan;
+                case Constant::Magenta:
+                    return QColorConstants::Magenta;
+                case Constant::Yellow:
+                    return QColorConstants::Yellow;
+                case Constant::DarkRed:
+                    return QColorConstants::DarkRed;
+                case Constant::DarkGreen:
+                    return QColorConstants::DarkGreen;
+                case Constant::DarkBlue:
+                    return QColorConstants::DarkBlue;
+                case Constant::DarkCyan:
+                    return QColorConstants::DarkCyan;
+                case Constant::DarkMagenta:
+                    return QColorConstants::DarkMagenta;
+                case Constant::DarkYellow:
+                    return QColorConstants::DarkYellow;
+                case Constant::Transparent:
+                    return QColorConstants::Transparent;
+                default:
+                    printf("Painter.cpp Color::fromConstant - unhandled value\n");
+            }
+            return QColorConstants::Black;
+        }
+
+        ColorRef create(Constant name) {
+            return new __Color {
+                fromConstant(name)
+            };
+        }
+
+        ColorRef create(int32_t r, int32_t g, int32_t b) {
+            return new __Color {
+                QColor::fromRgb(r, g, b)
+            };
+        }
+
+        ColorRef create(int32_t r, int32_t g, int32_t b, int32_t a) {
+            return new __Color {
+                QColor::fromRgb(r, g, b, a)
+            };
+        }
+
         ColorRef create(float r, float g, float b) {
             return new __Color {
                 QColor::fromRgbF(r, g, b)
