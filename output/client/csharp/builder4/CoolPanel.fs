@@ -88,6 +88,26 @@ let view (state: State) =
             MainWindow.Visible true
         ], Content = box)
     :> IWindowNode<Msg>
+    
+// for future experiments:
+// type MenuBarWrapper<'outerMsg>(wrapped: IMenuBarNode<'outerMsg>, outerDispatch: 'outerMsg -> unit) =
+//     member val private Wrapped = wrapped
+//     interface IMenuBarNode<Msg> with
+//         member this.Dependencies() = []
+//         member this.Create(_: Msg -> unit) = // notice we ignore the provided dispatch and use the one from the ctor
+//             wrapped.Create(outerDispatch)
+//         member this.MigrateFrom(leftNode: IBuilderNode<Msg>) =
+//             let leftWrapperNode =
+//                 leftNode :?> MenuBarWrapper<'outerMsg>
+//             wrapped.MigrateFrom(leftWrapperNode.Wrapped)
+//         member this.Dispose() =
+//             // safe/correct?
+//             wrapped.Dispose()
+//         member this.ContentKey =
+//             (this :> IMenuBarNode<Msg>).MenuBar
+//         member this.MenuBar =
+//             wrapped.MenuBar
+//
 
 type Node<'outerMsg>() =
     inherit WindowReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)
