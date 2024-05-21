@@ -7,6 +7,7 @@ open Widgets.Menus
 
 type Msg =
     | ExitAction
+    | Happening of string
     
 type State = {
     Placeholder: int
@@ -21,6 +22,9 @@ let update (state: State) (msg: Msg) =
     match msg with
     | ExitAction ->
         state, Cmd.QuitApplication
+    | Happening text ->
+        printfn "got a happening!!!: %s" text
+        state, Cmd.None
     
 let view (state: State) =
     // TODO: detect when a given node has been attached to 2+ places in a single graph
@@ -34,32 +38,17 @@ let view (state: State) =
                 ])
             ])
     let window01 =
-        MainWindow.Node(
-            Attrs = [
-                MainWindow.Title "Window 01"
-                MainWindow.Size (800, 600)
-                MainWindow.Visible true
-            ], MenuBar = menuBar())
+        CoolPanel.Node(OnSomethingHappened = Happening)
     let window02 =
-        MainWindow.Node(
-            Attrs = [
-                MainWindow.Title "Window 02"
-                MainWindow.Size (800, 600)
-                MainWindow.Visible true
-            ], MenuBar = menuBar())
+        CoolPanel.Node(OnSomethingHappened = Happening)
     let window03 =
-        MainWindow.Node(
-            Attrs = [
-                MainWindow.Title "Window 03"
-                MainWindow.Size (800, 600)
-                MainWindow.Visible true
-            ], MenuBar = menuBar())
+        CoolPanel.Node(OnSomethingHappened = Happening)
     WindowSet.Node(
         Windows = [
             StrKey "one", window01
             StrKey "two", window02
             StrKey "three", window03
-        ]) :> BuilderNode<Msg>
+        ]) :> IBuilderNode<Msg>
     
 let innerApp (argv: string array) =
     use app =
@@ -88,7 +77,7 @@ let innerApp (argv: string array) =
 [<STAThread>]
 let main argv =
     Library.Init()
-    let code = innerApp argv
+    let resultCode = innerApp argv
     Library.DumpTables()
     Library.Shutdown()
-    code
+    resultCode

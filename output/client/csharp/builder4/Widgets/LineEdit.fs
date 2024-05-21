@@ -58,8 +58,6 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Node<'msg>() =
-    inherit WidgetNode<'msg>()
-
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     let mutable onChanged: (string -> 'msg) option = None
@@ -76,21 +74,20 @@ type Node<'msg>() =
             | ReturnPressed ->
                 onReturnPressed
                 
-    override this.Dependencies() = []
-
-    override this.Create(dispatch: 'msg -> unit) =
-        this.model <- create this.Attrs this.SignalMap dispatch
-
-    override this.MigrateFrom(left: BuilderNode<'msg>) =
-        let left' = (left :?> Node<'msg>)
-        let nextAttrs =
-            diffAttrs left'.Attrs this.Attrs
-            |> createdOrChanged
-        this.model <-
-            migrate left'.model nextAttrs this.SignalMap
-
-    override this.Dispose() =
-        (this.model :> IDisposable).Dispose()
-        
-    override this.Widget =
-        (this.model.Widget :> Widget.Handle)
+    interface IWidgetNode<'msg> with
+        override this.Dependencies() = []
+        override this.Create(dispatch: 'msg -> unit) =
+            this.model <- create this.Attrs this.SignalMap dispatch
+        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+            let left' = (left :?> Node<'msg>)
+            let nextAttrs =
+                diffAttrs left'.Attrs this.Attrs
+                |> createdOrChanged
+            this.model <-
+                migrate left'.model nextAttrs this.SignalMap
+        override this.Dispose() =
+            (this.model :> IDisposable).Dispose()
+        override this.Widget =
+            (this.model.Widget :> Widget.Handle)
+        override this.ContentKey =
+            (this :> IWidgetNode<'msg>).Widget

@@ -107,9 +107,8 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Node<'msg>() =
-    inherit WindowNode<'msg>()
-    let mutable maybeMenuBar: MenuBarNode<'msg> option = None
-    let mutable maybeContent: WidgetNode<'msg> option = None
+    let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
+    let mutable maybeContent: IWidgetNode<'msg> option = None
     member private this.MaybeMenuBar = maybeMenuBar
     member private this.MaybeContent = maybeContent // need to be able to access from migration (does this need to be a function?)
 
@@ -124,27 +123,7 @@ type Node<'msg>() =
                 |> Option.map (fun f -> f title)
     member this.Content with set value = maybeContent <- Some value
     member this.MenuBar with set value = maybeMenuBar <- Some value
-
-    override this.Dependencies() =
-        let menuBarList =
-            maybeMenuBar
-            |> Option.map (fun menuBar -> (StrKey "menu", menuBar :> BuilderNode<'msg>))
-            |> Option.toList
-        let contentList =
-            maybeContent
-            |> Option.map (fun content -> (StrKey "content", content :> BuilderNode<'msg>))
-            |> Option.toList
-        menuBarList @ contentList
-
-    override this.Create(dispatch: 'msg -> unit) =
-        let maybeMenuBarHandle =
-            maybeMenuBar
-            |> Option.map (_.MenuBar)
-        let maybeWidgetHandle =
-            maybeContent
-            |> Option.map (_.Widget)
-        this.model <- create this.Attrs maybeMenuBarHandle maybeWidgetHandle this.SignalMap dispatch
-
+    
     member private this.MigrateContent(leftFrame: Node<'msg>) =
         // MENUBAR =====================
         let leftMenuBarKey =
@@ -195,16 +174,39 @@ type Node<'msg>() =
             // changed content
             this.model.RemoveContent()
             this.model.AddContent(maybeContent.Value.Widget)
+    
+    interface IWindowNode<'msg> with
+        override this.Dependencies() =
+            let menuBarList =
+                maybeMenuBar
+                |> Option.map (fun menuBar -> (StrKey "menu", menuBar :> IBuilderNode<'msg>))
+                |> Option.toList
+            let contentList =
+                maybeContent
+                |> Option.map (fun content -> (StrKey "content", content :> IBuilderNode<'msg>))
+                |> Option.toList
+            menuBarList @ contentList
 
-    override this.MigrateFrom(left: BuilderNode<'msg>) =
-        let left' = (left :?> Node<'msg>)
-        let nextAttrs =
-            diffAttrs left'.Attrs this.Attrs
-            |> createdOrChanged
-        this.model <- migrate left'.model nextAttrs this.SignalMap
-        this.MigrateContent(left')
+        override this.Create(dispatch: 'msg -> unit) =
+            let maybeMenuBarHandle =
+                maybeMenuBar
+                |> Option.map (_.MenuBar)
+            let maybeWidgetHandle =
+                maybeContent
+                |> Option.map (_.Widget)
+            this.model <- create this.Attrs maybeMenuBarHandle maybeWidgetHandle this.SignalMap dispatch
 
-    override this.Dispose() =
-        (this.model :> IDisposable).Dispose()
-    override this.WindowWidget =
-        this.model.Widget
+        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+            let left' = (left :?> Node<'msg>)
+            let nextAttrs =
+                diffAttrs left'.Attrs this.Attrs
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.MigrateContent(left')
+
+        override this.Dispose() =
+            (this.model :> IDisposable).Dispose()
+        override this.WindowWidget =
+            this.model.Widget
+        override this.ContentKey =
+            (this :> IWindowNode<'msg>).WindowWidget

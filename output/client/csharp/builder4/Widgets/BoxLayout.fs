@@ -64,30 +64,16 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
 type Node<'msg>() =
-    inherit LayoutNode<'msg>()
-    let mutable items: WidgetNode<'msg> list = []
+    let mutable maybeSyntheticParent: Widget.Handle option = None
+    let mutable items: IWidgetNode<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     member val Attrs: Attr list = [] with get, set
     member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
     member this.Items
         with get() = items
         and set value = items <- value
-    
-    override this.Dependencies() =
-        // because the indices are generated here, based on items order,
-        // it prevents the possibility of the "user" (app developer) from being able to reorder existing items without them being destroyed/recreated entirely
-        // but I don't think that's a very common use case, to be reordering anything in a vbox/hbox, except maybe adding things at the end (which should work fine)
-        // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
-        // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
-        items
-        |> List.mapi (fun i item -> (IntKey i, item :> BuilderNode<'msg>))
-        
-    override this.Create(dispatch: 'msg -> unit) =
-        let widgets =
-            items
-            |> List.map (_.Widget)
-        this.model <- create this.Attrs widgets this.SignalMap dispatch
         
     member private this.MigrateContent(leftBox: Node<'msg>) =
         let leftContents =
@@ -103,20 +89,52 @@ type Node<'msg>() =
             this.model.Refill(widgets)
         else
             ()
+        
+    interface ILayoutNode<'msg> with
+        override this.Dependencies() =
+            // because the indices are generated here, based on items order,
+            // it prevents the possibility of the "user" (app developer) from being able to reorder existing items without them being destroyed/recreated entirely
+            // but I don't think that's a very common use case, to be reordering anything in a vbox/hbox, except maybe adding things at the end (which should work fine)
+            // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
+            // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
+            items
+            |> List.mapi (fun i item -> (IntKey i, item :> IBuilderNode<'msg>))
             
-    override this.MigrateFrom(left: BuilderNode<'msg>) =
-        let left' = (left :?> Node<'msg>)
-        let nextAttrs =
-            diffAttrs left'.Attrs this.Attrs
-            |> createdOrChanged
-        this.model <- migrate left'.model nextAttrs this.SignalMap
-        this.MigrateContent(left')
+        override this.Create(dispatch: 'msg -> unit) =
+            let widgets =
+                items
+                |> List.map (_.Widget)
+            this.model <- create this.Attrs widgets this.SignalMap dispatch
+        
+        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+            let left' = (left :?> Node<'msg>)
+            let nextAttrs =
+                diffAttrs left'.Attrs this.Attrs
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.MigrateContent(left')
+                
+        override this.Dispose() =
+            (this.model :> IDisposable).Dispose()
+            // not sure if this order is correct / safe ...
+            maybeSyntheticParent
+            |> Option.iter (_.Dispose())
+
+        override this.Layout =
+            (this.model.Layout :> Layout.Handle)
             
-    override this.Dispose() =
-        (this.model :> IDisposable).Dispose()
+        override this.ContentKey =
+            (this :> ILayoutNode<'msg>).Layout
+            
+        override this.Widget =
+            match maybeSyntheticParent with
+            | Some widget ->
+                widget
+            | None ->
+                let widget = Widget.Create()
+                widget.SetLayout((this :> ILayoutNode<'msg>).Layout)
+                maybeSyntheticParent <- Some widget
+                widget
 
-    override this.Layout =
-        (this.model.Layout :> Layout.Handle)
-
-let make (attrs: Attr list) (items: WidgetNode<'msg> list) =
+let make (attrs: Attr list) (items: IWidgetNode<'msg> list) =
     Node(Attrs = attrs, Items = items)

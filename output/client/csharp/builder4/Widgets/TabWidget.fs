@@ -63,8 +63,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Node<'msg>() =
-    inherit WidgetNode<'msg>()
-    let mutable pages: (string * WidgetNode<'msg>) list = []
+    let mutable pages: (string * IWidgetNode<'msg>) list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
@@ -81,21 +80,6 @@ type Node<'msg>() =
         with get() = pages
         and set value = pages <- value
         
-    override this.Dependencies() =
-        // as usual, this is order-based (since the outside 'user' is not providing keys)
-        // ... we should probably switch to string keys anyway, and/or rethink how widgets can survive reorderings
-        // seems silly to needlessly destroy/create things just because the order changed and the user didn't provide keys,
-        // especially when .ContentKeys exist
-        pages
-        |> List.mapi (fun i (_, node) -> IntKey i, node :> BuilderNode<'msg>)
-        
-    override this.Create(dispatch: 'msg -> unit) =
-        let pageLabelsAndHandles =
-            pages
-            |> List.map (fun (label, widget) ->
-                label, widget.Widget)
-        this.model <- create this.Attrs pageLabelsAndHandles this.SignalMap dispatch
-        
     member private this.MigrateContent(leftTabWidget: Node<'msg>) =
         let leftContents =
             leftTabWidget.Pages
@@ -110,17 +94,36 @@ type Node<'msg>() =
             this.model.Refill(pageLabelsAndHandles)
         else
             ()
-            
-    override this.MigrateFrom(left: BuilderNode<'msg>) =
-        let left' = (left :?> Node<'msg>)
-        let nextAttrs =
-            diffAttrs left'.Attrs this.Attrs
-            |> createdOrChanged
-        this.model <- migrate left'.model nextAttrs this.SignalMap
-        this.MigrateContent(left')
         
-    override this.Dispose() =
-        (this.model :> IDisposable).Dispose()
+    interface IWidgetNode<'msg> with
+        override this.Dependencies() =
+            // as usual, this is order-based (since the outside 'user' is not providing keys)
+            // ... we should probably switch to string keys anyway, and/or rethink how widgets can survive reorderings
+            // seems silly to needlessly destroy/create things just because the order changed and the user didn't provide keys,
+            // especially when .ContentKeys exist
+            pages
+            |> List.mapi (fun i (_, node) -> IntKey i, node :> IBuilderNode<'msg>)
+            
+        override this.Create(dispatch: 'msg -> unit) =
+            let pageLabelsAndHandles =
+                pages
+                |> List.map (fun (label, widget) ->
+                    label, widget.Widget)
+            this.model <- create this.Attrs pageLabelsAndHandles this.SignalMap dispatch
+            
+        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+            let left' = (left :?> Node<'msg>)
+            let nextAttrs =
+                diffAttrs left'.Attrs this.Attrs
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.MigrateContent(left')
+            
+        override this.Dispose() =
+            (this.model :> IDisposable).Dispose()
 
-    override this.Widget =
-        this.model.Widget
+        override this.Widget =
+            this.model.Widget
+            
+        override this.ContentKey =
+            (this :> IWidgetNode<'msg>).Widget

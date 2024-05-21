@@ -61,8 +61,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Node<'msg>() =
-    inherit MenuNode<'msg>()
-    let mutable items: ActionNode<'msg> list = []
+    let mutable items: IActionNode<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
@@ -77,15 +76,7 @@ type Node<'msg>() =
     member this.Items
         with get() = items
         and set value = items <- value
-    override this.Dependencies() =
-        // see long note on same BoxLayout method
-        items
-        |> List.mapi (fun i item -> (IntKey i, item :> BuilderNode<'msg>))
-    override this.Create(dispatch: 'msg -> unit) =
-        let actionHandles =
-            items
-            |> List.map (_.Action)
-        this.model <- create this.Attrs actionHandles this.SignalMap dispatch
+        
     member private this.MigrateContent (leftMenu: Node<'msg>) =
         let leftItems =
             leftMenu.Items
@@ -100,17 +91,30 @@ type Node<'msg>() =
             this.model.Refill(actions)
         else
             ()
-    override this.MigrateFrom(left: BuilderNode<'msg>) =
-        let leftNode = (left :?> Node<'msg>)
-        let nextAttrs =
-            diffAttrs leftNode.Attrs this.Attrs
-            |> createdOrChanged
-        this.model <- migrate leftNode.model nextAttrs this.SignalMap
-        this.MigrateContent(leftNode)
-    override this.Dispose() =
-        (this.model :> IDisposable).Dispose()
-    override this.Menu =
-        this.model.Menu
+        
+    interface IMenuNode<'msg> with
+        override this.Dependencies() =
+            // see long note on same BoxLayout method
+            items
+            |> List.mapi (fun i item -> (IntKey i, item :> IBuilderNode<'msg>))
+        override this.Create(dispatch: 'msg -> unit) =
+            let actionHandles =
+                items
+                |> List.map (_.Action)
+            this.model <- create this.Attrs actionHandles this.SignalMap dispatch
+        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+            let leftNode = (left :?> Node<'msg>)
+            let nextAttrs =
+                diffAttrs leftNode.Attrs this.Attrs
+                |> createdOrChanged
+            this.model <- migrate leftNode.model nextAttrs this.SignalMap
+            this.MigrateContent(leftNode)
+        override this.Dispose() =
+            (this.model :> IDisposable).Dispose()
+        override this.Menu =
+            this.model.Menu
+        override this.ContentKey =
+            (this :> IMenuNode<'msg>).Menu
 
-let make (attrs: Attr list) (items: ActionNode<'msg> list) =
+let make (attrs: Attr list) (items: IActionNode<'msg> list) =
     Node(Attrs = attrs, Items = items)

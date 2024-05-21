@@ -71,13 +71,20 @@ let view (state: State) =
         PushButton.Node(Attrs = [PushButton.Label state.ButtonLabel], OnClicked = SubmitItem)
     let fireSignal =
         PushButton.Node(Attrs = [PushButton.Label "Fire Signal!"], OnClicked = FireSignal)
-    BoxLayout.Node(
-        Attrs = [BoxLayout.Direction BoxLayout.Vertical],
-        Items = [ edit; list; button; fireSignal ])
-    :> LayoutNode<Msg>
+    let box =
+        BoxLayout.Node(
+            Attrs = [BoxLayout.Direction BoxLayout.Vertical],
+            Items = [ edit; list; button; fireSignal ])
+    MainWindow.Node(
+        Attrs = [
+            MainWindow.Title "Cool Window, Bro!"
+            MainWindow.Size (800, 600)
+            MainWindow.Visible true
+        ], Content = box)
+    :> IWindowNode<Msg>
 
 type Node<'outerMsg>() =
-    inherit ReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)
+    inherit WindowReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)
     let mutable onSomethingHappened: (string -> 'outerMsg) option = None
     member this.OnSomethingHappened with set value = onSomethingHappened <- Some value
     override this.SignalMap (s: Signal) =

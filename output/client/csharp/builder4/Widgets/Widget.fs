@@ -67,8 +67,7 @@ let private dispose (model: Model<'msg>) =
             
  
 type Node<'msg>() =
-    inherit WidgetNode<'msg>()
-    let mutable maybeLayout: LayoutNode<'msg> option = None
+    let mutable maybeLayout: ILayoutNode<'msg> option = None
     member private this.MaybeLayout = maybeLayout // need to be able to access from migration (does this need to be a function?)
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -77,17 +76,6 @@ type Node<'msg>() =
         with get() = (fun _ -> None)
     member this.Layout with set value = maybeLayout <- Some value
     
-    override this.Dependencies() =
-        maybeLayout
-        |> Option.map (fun content -> (StrKey "layout", content :> BuilderNode<'msg>))
-        |> Option.toList
-  
-    override this.Create(dispatch: 'msg -> unit) =
-        let maybeLayoutHandle =
-            maybeLayout
-            |> Option.map (_.Layout)
-        this.model <- create this.Attrs maybeLayoutHandle this.SignalMap dispatch
-
     member private this.MigrateContent(leftFrame: Node<'msg>) =
         let leftContentKey =
             leftFrame.MaybeLayout
@@ -112,16 +100,32 @@ type Node<'msg>() =
             // changed content
             this.model.RemoveLayout()
             this.model.AddLayout(maybeLayout.Value.Layout)
-            
-    override this.MigrateFrom(left: BuilderNode<'msg>) =
-        let left' = (left :?> Node<'msg>)
-        let nextAttrs =
-            diffAttrs left'.Attrs this.Attrs
-            |> createdOrChanged
-        this.model <- migrate left'.model nextAttrs this.SignalMap
-        this.MigrateContent(left')
+    
+    interface IWidgetNode<'msg> with
+        override this.Dependencies() =
+            maybeLayout
+            |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))
+            |> Option.toList
+  
+        override this.Create(dispatch: 'msg -> unit) =
+            let maybeLayoutHandle =
+                maybeLayout
+                |> Option.map (_.Layout)
+            this.model <- create this.Attrs maybeLayoutHandle this.SignalMap dispatch
 
-    override this.Dispose() =
-        (this.model :> IDisposable).Dispose()
-    override this.Widget =
-        this.model.Widget
+        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+            let left' = (left :?> Node<'msg>)
+            let nextAttrs =
+                diffAttrs left'.Attrs this.Attrs
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.MigrateContent(left')
+
+        override this.Dispose() =
+            (this.model :> IDisposable).Dispose()
+            
+        override this.Widget =
+            this.model.Widget
+            
+        override this.ContentKey =
+            (this :> IWidgetNode<'msg>).ContentKey

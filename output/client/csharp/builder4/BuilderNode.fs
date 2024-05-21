@@ -23,76 +23,93 @@ type DepsKey =
     | IntKey of i: int
     | StrKey of str: string
 
-[<AbstractClass>]
-type BuilderNode<'msg>() =
-    abstract member Dependencies: unit -> (DepsKey * BuilderNode<'msg>) list
-    abstract member Create: ('msg -> unit) -> unit
-    abstract member MigrateFrom: BuilderNode<'msg> -> unit // will the dispatch ever change?
-    abstract member Dispose: unit -> unit
-    abstract member ContentKey: System.Object
-    
+type IBuilderNode<'msg> =
+    interface
+        abstract Dependencies: unit -> (DepsKey * IBuilderNode<'msg>) list
+        abstract Create: ('msg -> unit) -> unit
+        abstract MigrateFrom: IBuilderNode<'msg> -> unit // will the dispatch ever change?
+        abstract Dispose: unit -> unit
+        abstract ContentKey: System.Object
+    end
 
-[<AbstractClass>]
-type WidgetNode<'msg>() =
-    inherit BuilderNode<'msg>()
-    abstract member Widget: Widget.Handle
-    override this.ContentKey = this.Widget
+type IWidgetNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+        abstract Widget: Widget.Handle
+    end
     
-[<AbstractClass>]
-type LayoutNode<'msg>() =
-    inherit WidgetNode<'msg>()
-    let mutable maybeSyntheticParent: Widget.Handle option = None
-    abstract member Layout: Layout.Handle
-    override this.ContentKey = this.Layout
-    override this.Widget =
-        // create a widget on demand to hold the layout
-        // TODO: need to set up a dispose system so that all the inheritance tree disposes properly
-        match maybeSyntheticParent with
-        | Some widget ->
-            widget
-        | None ->
-            let widget = Widget.Create()
-            widget.SetLayout(this.Layout)
-            maybeSyntheticParent <- Some widget
-            widget
+type ILayoutNode<'msg> =
+    interface
+        // layout nodes inherit widgetnode, because they need to be capable of creating a parent widget on demand
+        // just makes things a little easier, so you can always add a layout where a widget is expected
+        inherit IWidgetNode<'msg>
+            abstract member Layout: Layout.Handle
+    end
     
-[<AbstractClass>]
-type MenuBarNode<'msg>() =
-    inherit BuilderNode<'msg>()
-    abstract member MenuBar: MenuBar.Handle
-    override this.ContentKey = this.MenuBar
+// leaving this below for future reference, in case fancier inheritance (eg default interface methods / traits) ever comes to F#
+// unfortunately we have to manually implement this pattern below in anything that implements LayoutNode interface for now
+// but it's a small price to pay for cleaner, less redundant implementation of the various reactor node types (eg LayoutReactorNode, WindowReactorNode, etc)
+// (that was the problem that necessitated changing the *Node inheritance hierarchy from abstract classes to interfaces)
+// (but/and the only reason they were abstract classes to begin with, was to get some default implementation behavior -
+//  back in the original Scala/Swing experiment that led to this framework, the *Node types were defined as Scala traits)
     
-[<AbstractClass>]
-type MenuNode<'msg>() =
-    inherit BuilderNode<'msg>()
-    abstract member Menu: Menu.Handle
-    override this.ContentKey = this.Menu
-
-[<AbstractClass>]
-type ActionNode<'msg>() =
-    inherit BuilderNode<'msg>()
-    abstract member Action: Action.Handle
-    override this.ContentKey = this.Action
+// [<AbstractClass>]
+// type BaseLayoutNode<'msg>() =
+//     let mutable maybeSyntheticParent: Widget.Handle option = None
+//     interface LayoutNode<'msg> with
+//         override this.ContentKey = (this :> LayoutNode<'msg>).Layout
+//         override this.Widget =
+//             // create a widget on demand to hold the layout
+//             // TODO: set up .Dipose() inheritance business so that everything up and down the hierarchy disposes properly
+//             match maybeSyntheticParent with
+//             | Some widget ->
+//                 widget
+//             | None ->
+//                 let widget = Widget.Create()
+//                 widget.SetLayout((this :> LayoutNode<'msg>).Layout)
+//                 maybeSyntheticParent <- Some widget
+//                 widget
     
-[<AbstractClass>]
-type TopLevelNode<'msg>() =
-    inherit BuilderNode<'msg>()
+type IMenuBarNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+            abstract MenuBar: MenuBar.Handle
+    end
     
-[<AbstractClass>]
-type WindowNode<'msg>() =
-    inherit TopLevelNode<'msg>()
-    abstract member WindowWidget: Widget.Handle
-    override this.ContentKey = this.WindowWidget
+type IMenuNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+            abstract member Menu: Menu.Handle
+    end
+    
+type IActionNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+            abstract member Action: Action.Handle
+    end
+    
+type ITopLevelNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+        // doesn't define any properties / contenkey itself
+        // abstract member Ignore: bool
+    end
+    
+type IWindowNode<'msg> =
+    interface
+        inherit ITopLevelNode<'msg>
+        abstract member WindowWidget: Widget.Handle
+    end
     
 type Empty<'msg>() =
-    inherit BuilderNode<'msg>()
-    override this.Dependencies() = []
-    override this.Create(dispatch: 'msg -> unit) = ()
-    override this.MigrateFrom(left: BuilderNode<'msg>) = ()
-    override this.Dispose() = ()
-    override this.ContentKey = "!!empty!!"
+    interface IBuilderNode<'msg> with
+        override this.Dependencies() = []
+        override this.Create(dispatch: 'msg -> unit) = ()
+        override this.MigrateFrom(left: IBuilderNode<'msg>) = ()
+        override this.Dispose() = ()
+        override this.ContentKey = "!!empty!!"
 
-let rec disposeTree(node: BuilderNode<'msg>) =
+let rec disposeTree(node: IBuilderNode<'msg>) =
     for (_, node) in node.Dependencies() do
         disposeTree node
     node.Dispose()
@@ -121,8 +138,8 @@ let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
             Created right |> Some
         | _ -> failwith "shouldn't happen")
 
-let rec diff (dispatch: 'msg -> unit) (maybeLeft: BuilderNode<'msg> option) (maybeRight: BuilderNode<'msg> option) =
-    let createRight (dispatch: 'msg -> unit) (right: BuilderNode<'msg>) =
+let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) =
+    let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =
         // realize dependencies
         for (_, node) in right.Dependencies() do
             diff dispatch None (Some node)
@@ -162,5 +179,5 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: BuilderNode<'msg> option) (may
         disposeTree left
         createRight dispatch right
 
-let build (dispatch: 'msg -> unit) (root: BuilderNode<'msg>) =
+let build (dispatch: 'msg -> unit) (root: IBuilderNode<'msg>) =
     diff dispatch None (Some root)
