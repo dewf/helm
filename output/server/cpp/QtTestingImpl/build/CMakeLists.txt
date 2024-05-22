@@ -79,6 +79,10 @@ add_library(QtTestingImpl STATIC
     ../generated/TabWidget_wrappers.cpp
     ../TabWidget.cpp
 
+    ../generated/Timer.h
+    ../generated/Timer_wrappers.cpp
+    ../Timer.cpp
+
     ../generated/Widget.h
     ../generated/Widget_wrappers.cpp
     ../Widget.cpp

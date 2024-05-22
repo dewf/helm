@@ -1,0 +1,15 @@
+module Timer;
+
+import Signal;
+
+opaque Handle {
+    void setInterval(int msec);
+    void setSingleShot(bool state);
+    void start(int msec);
+    void start();
+    void stop();
+    void onTimeout(Signal.VoidDelegate handler);
+}
+
+Handle create();
+void singleShot(int msec, Signal.VoidDelegate handler);
