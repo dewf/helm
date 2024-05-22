@@ -21,6 +21,7 @@
         <Compile Include="Widgets\TabWidget.fs" />
         <Compile Include="Widgets\MainWindow.fs" />
         <Compile Include="Widgets\WindowSet.fs" />
+        <Compile Include="Widgets\Timer.fs" />
         <Compile Include="CoolPanel.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
