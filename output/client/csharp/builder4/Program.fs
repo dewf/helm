@@ -38,14 +38,6 @@ let update (state: State) (msg: Msg) =
 let view (state: State) =
     // TODO: detect when a given node has been attached to 2+ places in a single graph
     // since nodes are stateful, this would no doubt cause havoc
-    let menuBar() =
-        MenuBar.Node(Menus = [
-            Menu.Node(Attrs = [
-                    Menu.Title "&File"
-                ], Items = [
-                    Action.Node(Attrs = [ Action.Text "E&xit" ], OnTriggered = (fun _ -> ExitAction))
-                ])
-            ])
     let window01 =
         CoolPanel.Node(
             Attrs = [ CoolPanel.WindowTitle "Window 01" ],
@@ -53,8 +45,16 @@ let view (state: State) =
     let window02 =
         let listBox =
             ListWidget.Node(Attrs = [ ListWidget.Items state.TimerItems ])
+        let menuBar =
+            MenuBar.Node(Menus = [
+                Menu.Node(Attrs = [
+                        Menu.Title "&File"
+                    ], Items = [
+                        Action.Node(Attrs = [ Action.Text "E&xit" ], OnTriggered = (fun _ -> ExitAction))
+                    ])
+                ])
         let window =
-            MainWindow.Node(Attrs = [ MainWindow.Title "Timer window" ], Content = listBox, MenuBar = menuBar())
+            MainWindow.Node(Attrs = [ MainWindow.Title "Timer window" ], Content = listBox, MenuBar = menuBar)
         let timer =
             Timer.Node(Attrs = [ Timer.Interval 1000; Timer.Running true ], OnTimeout = TimerTick)
         WindowWithNonVisual([ timer ], window)
