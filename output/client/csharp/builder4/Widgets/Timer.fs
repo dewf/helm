@@ -2,6 +2,7 @@
 
 open System
 open BuilderNode
+open NonVisual
 open Org.Whatever.QtTesting
 
 type Signal =

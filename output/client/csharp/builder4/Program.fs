@@ -1,5 +1,6 @@
 ﻿open System
 open BuilderNode
+open NonVisual
 open Org.Whatever.QtTesting
 open Reactor
 open Widgets
@@ -8,14 +9,16 @@ open Widgets.Menus
 type Msg =
     | ExitAction
     | Happening of string
+    | TimerTick
     
 type State = {
-    Placeholder: int
+    TimerItems: string list
 }
 
 let init () =
-    let nextState =
-        { Placeholder = 0 }
+    let nextState = {
+        TimerItems = [] 
+    }
     nextState, Cmd.None
 
 let update (state: State) (msg: Msg) =
@@ -25,6 +28,12 @@ let update (state: State) (msg: Msg) =
     | Happening text ->
         printfn "got a happening!!!: %s" text
         state, Cmd.None
+    | TimerTick ->
+        let text =
+            sprintf "Timer Tick #%d" state.TimerItems.Length
+        let nextItems =
+            text :: state.TimerItems
+        { state with TimerItems = nextItems }, Cmd.None
     
 let view (state: State) =
     // TODO: detect when a given node has been attached to 2+ places in a single graph
@@ -42,18 +51,17 @@ let view (state: State) =
             Attrs = [ CoolPanel.WindowTitle "Window 01" ],
             OnSomethingHappened = Happening "01")
     let window02 =
-        CoolPanel.Node(
-            Attrs = [ CoolPanel.WindowTitle "Window 02" ],
-            OnSomethingHappened = Happening "02")
-    let window03 =
-        CoolPanel.Node(
-            Attrs = [ CoolPanel.WindowTitle "Window 03" ],
-            OnSomethingHappened = Happening "03")
+        let listBox =
+            ListWidget.Node(Attrs = [ ListWidget.Items state.TimerItems ])
+        let window =
+            MainWindow.Node(Attrs = [ MainWindow.Title "Timer window" ], Content = listBox, MenuBar = menuBar())
+        let timer =
+            Timer.Node(Attrs = [ Timer.Interval 1000; Timer.Running true ], OnTimeout = TimerTick)
+        WindowWithNonVisual([ timer ], window)
     WindowSet.Node(
         Windows = [
             StrKey "one", window01
             StrKey "two", window02
-            StrKey "three", window03
         ]) :> IBuilderNode<Msg>
     
 let innerApp (argv: string array) =

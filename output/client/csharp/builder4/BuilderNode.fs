@@ -32,12 +32,6 @@ type IBuilderNode<'msg> =
         abstract ContentKey: System.Object
     end
     
-type INonVisualNode<'msg> =
-    interface
-        inherit IBuilderNode<'msg>
-        // could have a QObject property, but do we really need it yet? (might be a premature restriction to require these to be QObjects)
-    end
-
 type IWidgetNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
@@ -114,7 +108,7 @@ type Empty<'msg>() =
         override this.MigrateFrom(left: IBuilderNode<'msg>) = ()
         override this.Dispose() = ()
         override this.ContentKey = "!!empty!!"
-
+        
 let rec disposeTree(node: IBuilderNode<'msg>) =
     for (_, node) in node.Dependencies() do
         disposeTree node

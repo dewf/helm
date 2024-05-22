@@ -64,6 +64,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         maybeMenuBar
         |> Option.iter mainWindow.SetMenuBar
         
+        // always show by default
+        // hopefully this won't flicker if users want them hidden initially, but we can attend to that later
         mainWindow.Show()
         
     member this.RemoveMenuBar() =
@@ -88,6 +90,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
                 mainWindow.Resize(width, height)
             | Visible state ->
                 mainWindow.SetVisible(state))
+    
     interface IDisposable with
         member this.Dispose() =
             mainWindow.Dispose()
