@@ -31,20 +31,21 @@ let update (state: State) (msg: Msg) =
         nextState, Cmd.None
         
 type PaintState(state: State) =
-    inherit CustomWidget.AbstractPaintState()
-    member val state = state
-    override this.ComputeUpdateArea previous =
+    inherit CustomWidget.PaintStateBase<State>(state)
+    override this.StateEquals other =
+        // optional override:
+        // here we can consider only a subset of the total state, if we like (when deciding whether a redraw is necessary at all - this occurs during Attr diff phase)
+        // default implementation compares the entire states
+        state.RectPositions = other.RectPositions
+    override this.ComputeUpdateArea prev =
+        // optional override:
+        // compare previous/this states to determine what changed and what areas need updating
+        // or just redraw everything!
         CustomWidget.Everything
-        // // this is where we do precision comparison between our state and the previous state
-        // // this would confer the ability to pick exactly which areas to update, if you're into that sort of thing
-        // let prevState = (previous :?> PaintState).state
-        // if state.RectPositions <> prevState.RectPositions then
-        //     CustomWidget.Everything
-        // else
-        //     CustomWidget.NotRequired
-            
     override this.DoPaint widget painter rect =
+        // required:
         // perform actual painting here with QPainter methods and resources (brushes, pens, colors, gradients, etc)
+        // 'rect' param will probably become a Qt region or something more advanced eventually
         use black = Painter.Color.Create(Painter.Color.Constant.Black)
         use green = Painter.Color.Create(Painter.Color.Constant.Green)
         use pen = Painter.Pen.Create(green)
@@ -52,12 +53,6 @@ type PaintState(state: State) =
         painter.SetPen(pen)
         for pos in state.RectPositions do
             painter.DrawRect(Common.Rect(X = pos.X - 20, Y = pos.Y - 20, Width = 40, Height = 40))
-            
-    override this.IsEqualTo other =
-        // this is called during the attribute diffing phase, because the custom widget has no idea what constitutes our paint state
-        state = (other :?> PaintState).state
-    override this.CustomHashCode =
-        state.GetHashCode()
     
 let view (state: State) =
     let custom =

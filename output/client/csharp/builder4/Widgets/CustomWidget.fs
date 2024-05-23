@@ -12,17 +12,40 @@ type UpdateArea =
     | Rects of Common.Rect list
     
 [<AbstractClass>]
-type AbstractPaintState() =
-    abstract member ComputeUpdateArea: AbstractPaintState -> UpdateArea
-    abstract member DoPaint: Widget.Handle -> Painter.Handle -> Common.Rect -> unit
-    abstract member IsEqualTo: AbstractPaintState -> bool
-    abstract member CustomHashCode: int
+type PaintState() =
+    // implementing all this is a lot of annoying boilerplate,
+    // ... so use PaintStateBase below instead.
+    // then you only have to implement 1 required method: DoPaint
+    // and optionally ComputeUpdateArea and StateEquals
+    abstract member DoPaint: Widget.Handle -> Painter.Handle -> Common.Rect -> unit // required
+    abstract member ComputeAreaInternal: PaintState -> UpdateArea
+    abstract member InternalEquals: PaintState -> bool
+    abstract member InternalHashCode: int
     override this.Equals(other: Object) =
         match other with
-        | :? AbstractPaintState as otherPS -> this.IsEqualTo(otherPS)
+        | :? PaintState as otherPS -> this.InternalEquals(otherPS)
         | _ -> false
     override this.GetHashCode() =
-        this.CustomHashCode
+        this.InternalHashCode
+        
+[<AbstractClass>]
+type PaintStateBase<'state when 'state: equality>(state: 'state) =
+    inherit PaintState()
+    member val state = state
+    abstract member ComputeUpdateArea: 'state -> UpdateArea // optional
+    default this.ComputeUpdateArea _ =
+        Everything
+    override this.ComputeAreaInternal prevRaw =
+        let prev = prevRaw :?> PaintStateBase<'state>
+        this.ComputeUpdateArea prev.state
+    abstract member StateEquals: 'state -> bool             // optional
+    default this.StateEquals otherState =
+        state = otherState
+    override this.InternalEquals (other: PaintState) =
+        let other' = other :?> PaintStateBase<'state>
+        this.StateEquals other'.state
+    override this.InternalHashCode with get() =
+        state.GetHashCode()
         
 // begin widget proper =================================================
 
@@ -30,7 +53,7 @@ type Signal =
     | MousePress of ev: Widget.MouseEvent
     
 type Attr =
-    | PaintState of ps: AbstractPaintState
+    | PaintState of ps: PaintState
     | UpdatesEnabled of state: bool
     
 let private attrKey = function
@@ -47,11 +70,11 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
         signalMap s
         |> Option.iter dispatch
         
-    let mutable lastPaintState: AbstractPaintState option = None
+    let mutable maybePaintState: PaintState option = None
         
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
-            lastPaintState
+            maybePaintState
             |> Option.iter (fun ps -> ps.DoPaint widget painter rect)
         override this.MousePressEvent(mouseEvent: Widget.MouseEvent) =
             signalDispatch (MousePress mouseEvent)
@@ -69,14 +92,14 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 // raw paintstate changed, but do we actually need a redraw?
                 // the provided PaintState can perform more precise checking
                 let updateArea =
-                    match lastPaintState with
+                    match maybePaintState with
                     | Some last ->
-                        ps.ComputeUpdateArea last
+                        ps.ComputeAreaInternal last
                     | None ->
                         // first incoming paintstate, must draw!
                         Everything
                 // assign now that we've checked
-                lastPaintState <- Some ps
+                maybePaintState <- Some ps
                 // then perform any invalidations requested
                 match updateArea with
                 | NotRequired ->
