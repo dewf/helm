@@ -35,6 +35,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Common_wrappers.cpp
     ../Common.cpp
 
+    ../generated/Label.h
+    ../generated/Label_wrappers.cpp
+    ../Label.cpp
+
     ../generated/Layout.h
     ../generated/Layout_wrappers.cpp
     ../Layout.cpp

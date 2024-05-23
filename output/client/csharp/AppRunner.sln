@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QtTestingClient", "QtTestin
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "builder4", "builder4\builder4.fsproj", "{6AE71979-2339-4CD4-A873-FC179089FBA8}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Demos", "Demos\Demos.fsproj", "{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{6AE71979-2339-4CD4-A873-FC179089FBA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AE71979-2339-4CD4-A873-FC179089FBA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AE71979-2339-4CD4-A873-FC179089FBA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,8 +24,6 @@
         <Compile Include="Widgets\WindowSet.fs" />
         <Compile Include="Widgets\Timer.fs" />
         <Compile Include="Widgets\CustomWidget.fs" />
-        <Compile Include="CoolPanel.fs" />
-        <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>
