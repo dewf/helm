@@ -48,6 +48,28 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
             
+type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg>, update: 'state -> 'msg -> 'state * Cmd<'msg>, view: 'state -> IBuilderNode<'msg>) =
+    [<DefaultValue>] val mutable reactor: Reactor<'state,'msg>
+    member this.Run(argv: string array) =
+        use app =
+            Application.Create(argv)
+        Application.SetStyle("Fusion")
+        let rec processCmd = function
+            | Cmd.None ->
+                ()
+            | Cmd.OfMsg msg ->
+                this.reactor.ProcessMsg msg
+            | Cmd.QuitApplication ->
+                Application.Quit()
+            | Cmd.Batch commands ->
+                commands
+                |> List.iter processCmd
+        this.reactor <-
+            new Reactor<'state,'msg>(init, update, view, processCmd)
+        Application.Exec()
+    interface IDisposable with
+        member this.Dispose() =
+            (this.reactor :> IDisposable).Dispose()
 
 [<RequireQualifiedAccess>]
 type SubCmd<'msg,'signal> =

@@ -74,34 +74,18 @@ let view (state: State) =
         Content = custom,
         MenuBar = menuBar) :> IBuilderNode<Msg>
     
-let innerApp (argv: string array) =
-    use app =
-        Application.Create(argv)
-    Application.SetStyle("Fusion")
-    // Application.SetStyle("Windows")
-    let rec processCmd = function
-        | Cmd.None ->
-            ()
-        | Cmd.OfMsg msg ->
-            // how about moving all this stuff into an 'AppReactor' class?
-            printfn "!!! root level doesn't yet support Cmd.OfMsg, need to reorganize some things"
-        | Cmd.QuitApplication ->
-            Application.Quit()
-        | Cmd.Batch commands ->
-            commands
-            |> List.iter processCmd
-    use reactor =
-        // this binding will keep reactor alive for the entire lifetime of this method (until Application.Exec() exits), correct??
-        // because the connection between what's going on in Reactor, and the state of Qt is completely implicit / behind-the-scenes
-        // if it got garbage-collected or something that would be bad news :)
-        new Reactor<State,Msg>(init, update, view, processCmd)
-    Application.Exec()
-
 [<EntryPoint>]
 [<STAThread>]
 let main argv =
+    // initialize NativeImpl library
     Library.Init()
-    let resultCode = innerApp argv
+    // begin F#Qt proper
+    let exitCode =
+        // notice the 'use' inside of here, because we want it to .Dispose the app when leaving this block/binding
+        use app =
+            new AppReactor<Msg,State>(init, update, view)
+        app.Run argv
+    // NativeImpl shutdown
     Library.DumpTables()
     Library.Shutdown()
-    resultCode
+    exitCode
