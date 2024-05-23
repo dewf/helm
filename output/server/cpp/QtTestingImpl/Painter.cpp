@@ -262,6 +262,18 @@ namespace Painter
         THIS->fillRect(toQRect(rect), color->qColor);
     }
 
+    void Handle_drawRect(HandleRef _this, Rect rect) {
+        THIS->drawRect(toQRect(rect));
+    }
+
+    void Handle_drawRect(HandleRef _this, RectF rect) {
+        THIS->drawRect(toQRectF(rect));
+    }
+
+    void Handle_drawRect(HandleRef _this, int32_t x, int32_t y, int32_t width, int32_t height) {
+        THIS->drawRect(x, y, width, height);
+    }
+
     void Handle_dispose(HandleRef _this) {
         // presently these will never be created (therefore owned) by the client side
         printf("QPainter handle dispose called - why?\n");

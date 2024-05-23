@@ -48,6 +48,22 @@ namespace Widget
         THIS->setVisible(state);
     }
 
+    void Handle_setUpdatesEnabled(HandleRef _this, bool state) {
+        THIS->setUpdatesEnabled(state);
+    }
+
+    void Handle_update(HandleRef _this) {
+        THIS->update();
+    }
+
+    void Handle_update(HandleRef _this, int32_t x, int32_t y, int32_t width, int32_t height) {
+        THIS->update(x, y, width, height);
+    }
+
+    void Handle_update(HandleRef _this, Rect rect) {
+        THIS->update(toQRect(rect));
+    }
+
     void Handle_setWindowTitle(HandleRef _this, std::string title) {
         THIS->setWindowTitle(title.c_str());
     }
@@ -85,10 +101,9 @@ namespace Widget
         std::shared_ptr<MethodDelegate> methodDelegate;
         uint32_t methodMask;
     public:
-        WidgetSubclass(std::function<CreateDelegateFunc> &createFunc, uint32_t methodMask) : methodMask(methodMask) {
-            // create the method delegate by injecting the 'this' pointer
-            methodDelegate = createFunc((HandleRef)this);
-        }
+        WidgetSubclass(std::shared_ptr<MethodDelegate> &methodDelegate, uint32_t methodMask) :
+            methodDelegate(methodDelegate),
+            methodMask(methodMask) {}
     protected:
         void paintEvent(QPaintEvent *event) override {
             if (methodMask & MethodMask::PaintEvent) {
@@ -110,7 +125,7 @@ namespace Widget
         }
     };
 
-    HandleRef createSubclassed(std::function<CreateDelegateFunc> createFunc, uint32_t methodMask) {
-        return (HandleRef) new WidgetSubclass(createFunc, methodMask);
+    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, uint32_t methodMask) {
+        return (HandleRef) new WidgetSubclass(methodDelegate, methodMask);
     }
 }

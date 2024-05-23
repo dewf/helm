@@ -107,4 +107,8 @@ opaque Handle {
 
     void fillRect(Rect rect, Brush brush);
     void fillRect(Rect rect, Color color);
+
+    void drawRect(Rect rect);
+    void drawRect(RectF rect);
+    void drawRect(int x, int y, int width, int height);
 }

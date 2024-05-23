@@ -23,6 +23,7 @@
         <Compile Include="Widgets\MainWindow.fs" />
         <Compile Include="Widgets\WindowSet.fs" />
         <Compile Include="Widgets\Timer.fs" />
+        <Compile Include="Widgets\CustomWidget.fs" />
         <Compile Include="CoolPanel.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>

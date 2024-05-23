@@ -68,7 +68,6 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Node<'msg>() =
-
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     let mutable onSelected: (int option -> 'msg) option = None

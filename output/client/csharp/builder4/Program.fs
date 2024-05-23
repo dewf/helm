@@ -1,23 +1,21 @@
 ﻿open System
 open BuilderNode
-open NonVisual
 open Org.Whatever.QtTesting
 open Reactor
 open Widgets
 open Widgets.Menus
 
 type Msg =
+    | MouseDown of ev: Widget.MouseEvent
     | ExitAction
-    | Happening of string
-    | TimerTick
-    
+
 type State = {
-    TimerItems: string list
+    RectPositions: Common.Point list
 }
 
 let init () =
     let nextState = {
-        TimerItems = [] 
+        RectPositions = []
     }
     nextState, Cmd.None
 
@@ -25,43 +23,64 @@ let update (state: State) (msg: Msg) =
     match msg with
     | ExitAction ->
         state, Cmd.QuitApplication
-    | Happening text ->
-        printfn "got a happening!!!: %s" text
-        state, Cmd.None
-    | TimerTick ->
-        let text =
-            sprintf "Timer Tick #%d" state.TimerItems.Length
-        let nextItems =
-            text :: state.TimerItems
-        { state with TimerItems = nextItems }, Cmd.None
+    | MouseDown ev ->
+        let nextPositions =
+            ev.Pos :: state.RectPositions
+        let nextState =
+            { state with RectPositions = nextPositions }
+        nextState, Cmd.None
+        
+type PaintState(state: State) =
+    inherit CustomWidget.AbstractPaintState()
+    member val state = state
+    override this.ComputeUpdateArea previous =
+        CustomWidget.Everything
+        // // this is where we do precision comparison between our state and the previous state
+        // // this would confer the ability to pick exactly which areas to update, if you're into that sort of thing
+        // let prevState = (previous :?> PaintState).state
+        // if state.RectPositions <> prevState.RectPositions then
+        //     CustomWidget.Everything
+        // else
+        //     CustomWidget.NotRequired
+            
+    override this.DoPaint widget painter rect =
+        // perform actual painting here with QPainter methods and resources (brushes, pens, colors, gradients, etc)
+        use black = Painter.Color.Create(Painter.Color.Constant.Black)
+        use green = Painter.Color.Create(Painter.Color.Constant.Green)
+        use pen = Painter.Pen.Create(green)
+        painter.FillRect(widget.GetRect(), black)
+        painter.SetPen(pen)
+        for pos in state.RectPositions do
+            painter.DrawRect(Common.Rect(X = pos.X - 20, Y = pos.Y - 20, Width = 40, Height = 40))
+            
+    override this.IsEqualTo other =
+        // this is called during the attribute diffing phase, because the custom widget has no idea what constitutes our paint state
+        state = (other :?> PaintState).state
+    override this.CustomHashCode =
+        state.GetHashCode()
     
 let view (state: State) =
-    // TODO: detect when a given node has been attached to 2+ places in a single graph
-    // since nodes are stateful, this would no doubt cause havoc
-    let window01 =
-        CoolPanel.Node(
-            Attrs = [ CoolPanel.WindowTitle "Window 01" ],
-            OnSomethingHappened = Happening "01")
-    let window02 =
-        let listBox =
-            ListWidget.Node(Attrs = [ ListWidget.Items state.TimerItems ])
-        let menuBar =
-            MenuBar.Node(Menus = [
-                Menu.Node(Attrs = [
-                        Menu.Title "&File"
-                    ], Items = [
-                        Action.Node(Attrs = [ Action.Text "E&xit" ], OnTriggered = (fun _ -> ExitAction))
-                    ])
+    let custom =
+        CustomWidget.Node(
+            Attrs = [ CustomWidget.PaintState (PaintState state)],
+            OnMousePress = MouseDown)
+    let menuBar =
+        MenuBar.Node(Menus = [
+            Menu.Node(
+                Attrs = [
+                    Menu.Title "&File"
+                ], Items = [
+                    Action.Node(Attrs = [ Action.Text "E&xit" ], OnTriggered = (fun _ -> ExitAction))
                 ])
-        let window =
-            MainWindow.Node(Attrs = [ MainWindow.Title "Timer window" ], Content = listBox, MenuBar = menuBar)
-        let timer =
-            Timer.Node(Attrs = [ Timer.Interval 1000; Timer.Running true ], OnTimeout = TimerTick)
-        WindowWithNonVisual([ timer ], window)
+            ])
+    let window =
+        MainWindow.Node(
+            Attrs = [ MainWindow.Title "Paint Testing!"; MainWindow.Size(800, 600) ],
+            Content = custom,
+            MenuBar = menuBar)
     WindowSet.Node(
         Windows = [
-            StrKey "one", window01
-            StrKey "two", window02
+            StrKey "one", window
         ]) :> IBuilderNode<Msg>
     
 let innerApp (argv: string array) =

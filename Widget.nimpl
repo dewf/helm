@@ -18,6 +18,11 @@ opaque Handle {
     void hide();
     void setVisible(bool state);
 
+    void setUpdatesEnabled(bool state);
+    void update();
+    void update(int x, int y, int width, int height);
+    void update(Rect rect);
+
     void setWindowTitle(string title);
 
     void setLayout(Layout.Handle layout);
@@ -33,6 +38,7 @@ Handle create();
 // SUBCLASSING ===========================================================
 
 flags MethodMask {
+    None = 0,                // F# giving us grief!
     PaintEvent = 1 << 0,
     MousePressEvent = 1 << 1
 }
@@ -48,8 +54,4 @@ interface MethodDelegate {
     void mousePressEvent(MouseEvent mouseEvent);
 }
 
-// allows us to inject the Widget instance into the method delegate
-// not strictly necessary but leads to cleaner client code -- can use a primary constructor, don't have to make the internal widget nullable / assigned later, etc.
-delegate MethodDelegate CreateDelegateFunc(Handle widget);
-
-Handle createSubclassed(CreateDelegateFunc createFunc, MethodMask methodMask);
+Handle createSubclassed(MethodDelegate methodDelegate, MethodMask methodMask);
