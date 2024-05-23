@@ -1,0 +1,97 @@
+module PaintResources;
+
+opaque Color {
+    static {
+        enum Constant {
+            Black,
+            White,
+            DarkGray,
+            Gray,
+            LightGray,
+            Red,
+            Green,
+            Blue,
+            Cyan,
+            Magenta,
+            Yellow,
+            DarkRed,
+            DarkGreen,
+            DarkBlue,
+            DarkCyan,
+            DarkMagenta,
+            DarkYellow,
+            Transparent
+        }
+        Color create(Constant name);
+        Color create(int r, int g, int b);
+        Color create(int r, int g, int b, int a);
+        Color create(float r, float g, float b);
+        Color create(float r, float g, float b, float a); 
+    }
+}
+
+opaque Gradient {
+    void setColorAt(double location, Color color);
+}
+
+opaque RadialGradient extends Gradient {
+    static {
+        RadialGradient create(double cx, double cy, double centerRadius, double fx, double fy, double focalRadius);
+    }
+}
+
+opaque Brush {
+    static {
+        Brush create(Color color); // + BrushStyle in the future
+        Brush create(Gradient gradient);
+    }
+}
+
+opaque Pen {
+    static {
+        enum Style {
+            NoPen,
+            SolidLine,
+            DashLine,
+            DotLine,
+            DashDotLine,
+            DashDotDotLine,
+            CustomDashLine // uses .setDashPattern() elsewhere?
+        }
+        enum CapStyle {
+            Flat,
+            Square,
+            Round
+        }
+        enum JoinStyle {
+            Miter,
+            Bevel,
+            Round,
+            SvgMiter
+        }
+        Pen create();
+        Pen create(Style style);
+        Pen create(Color color);
+        Pen create(Brush brush, double width, Style style, CapStyle cap, JoinStyle join);
+    }
+    void setBrush(Brush brush);
+}
+
+opaque Font {
+    static {
+        enum Weight {
+            Thin = 100,
+            ExtraLight = 200,
+            Light = 300,
+            Normal = 400,
+            Medium = 500,
+            DemiBold = 600,
+            Bold = 700,
+            ExtraBold = 800,
+            Black = 900
+        }
+        Font create(string family, int pointSize);
+        Font create(string family, int pointSize, Weight weight);
+        Font create(string family, int pointSize, Weight weight, bool italic);
+    }
+}

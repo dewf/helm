@@ -4,6 +4,7 @@ open Org.Whatever.QtTesting
 open Reactor
 open Widgets
 open Widgets.Menus
+open type PaintResources // saves some typing in .DoPoint - pens, colors, brushes, etc
 
 type Msg =
     | MouseDown of ev: Widget.MouseEvent
@@ -46,9 +47,9 @@ type PaintState(state: State) =
         // required:
         // perform actual painting here with QPainter methods and resources (brushes, pens, colors, gradients, etc)
         // 'rect' param will probably become a Qt region or something more advanced eventually
-        use black = Painter.Color.Create(Painter.Color.Constant.Black)
-        use green = Painter.Color.Create(Painter.Color.Constant.Green)
-        use pen = Painter.Pen.Create(green)
+        use black = Color.Create(Color.Constant.Black)
+        use green = Color.Create(Color.Constant.Green)
+        use pen = Pen.Create(green)
         painter.FillRect(widget.GetRect(), black)
         painter.SetPen(pen)
         for pos in state.RectPositions do
@@ -68,15 +69,10 @@ let view (state: State) =
                     Action.Node(Attrs = [ Action.Text "E&xit" ], OnTriggered = (fun _ -> ExitAction))
                 ])
             ])
-    let window =
-        MainWindow.Node(
-            Attrs = [ MainWindow.Title "Paint Testing!"; MainWindow.Size(800, 600) ],
-            Content = custom,
-            MenuBar = menuBar)
-    WindowSet.Node(
-        Windows = [
-            StrKey "one", window
-        ]) :> IBuilderNode<Msg>
+    MainWindow.Node(
+        Attrs = [ MainWindow.Title "Paint Testing!"; MainWindow.Size(800, 600) ],
+        Content = custom,
+        MenuBar = menuBar) :> IBuilderNode<Msg>
     
 let innerApp (argv: string array) =
     use app =
