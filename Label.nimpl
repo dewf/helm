@@ -1,0 +1,9 @@
+module Label;
+
+import Widget;
+
+opaque Handle extends Widget.Handle {
+    void setText(string text);
+}
+
+Handle create();
