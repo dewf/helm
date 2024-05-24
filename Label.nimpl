@@ -1,9 +1,11 @@
 module Label;
 
+import Common;
 import Widget;
 
 opaque Handle extends Widget.Handle {
     void setText(string text);
+    void setAlignment(Alignment align);
 }
 
 Handle create();

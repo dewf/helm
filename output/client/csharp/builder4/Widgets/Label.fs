@@ -6,12 +6,23 @@ open Org.Whatever.QtTesting
 
 type Signal = unit
 
+type Align =
+    | Left
+    | HCenter
+    | Right
+    | Top
+    | VCenter
+    | Bottom
+    | Center
+
 type Attr =
     | Text of text: string
+    | Alignment of align: Align
 
 let private diffAttrs =
     genericDiffAttrs (function
-        | Text _ -> 0)
+        | Text _ -> 0
+        | Alignment _ -> 1)
 
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -24,6 +35,17 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             match attr with
             | Text text ->
                 label.SetText(text)
+            | Alignment align ->
+                let qAlign =
+                    match align with
+                    | Left -> Common.Alignment.Left
+                    | HCenter -> Common.Alignment.HCenter
+                    | Right -> Common.Alignment.Right
+                    | Top -> Common.Alignment.Top
+                    | VCenter -> Common.Alignment.VCenter
+                    | Bottom -> Common.Alignment.Bottom
+                    | Center -> Common.Alignment.Center
+                label.SetAlignment(qAlign)
     interface IDisposable with
         member this.Dispose() =
             label.Dispose()

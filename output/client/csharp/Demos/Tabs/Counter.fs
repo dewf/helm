@@ -21,7 +21,10 @@ let update (state: State) (msg: Msg) =
         
 let view (state: State) =
     let label =
-        Label.Node(Attrs = [ Label.Text $"Count: {state.Count}" ])
+        Label.Node(Attrs = [
+            Label.Text $"Count: {state.Count}"
+            Label.Alignment Label.Center
+        ])
     let button =
         PushButton.Node(Attrs = [ PushButton.Label "Increment" ], OnClicked = Increment)
     BoxLayout.Node(
