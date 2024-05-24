@@ -7,7 +7,8 @@
 
     <ItemGroup>
         <Compile Include="CoolPanel.fs" />
-        <Compile Include="Program.fs"/>
+        <Compile Include="Tabs\Counter.fs" />
+        <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>

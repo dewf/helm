@@ -137,6 +137,9 @@ let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
         | None, Some right ->
             Created right |> Some
         | _ -> failwith "shouldn't happen")
+    
+let nullDiffAttrs (a1: 'a list) (a2: 'a list) =
+    []
 
 let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) =
     let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =

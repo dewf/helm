@@ -8,4 +8,5 @@ opaque Handle extends Widget.Handle {
     void onClicked(Signal.VoidDelegate handler);
 }
 
+Handle create();
 Handle create(string label);

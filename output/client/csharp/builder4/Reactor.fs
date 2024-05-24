@@ -70,6 +70,9 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg>, update: 'state ->
     interface IDisposable with
         member this.Dispose() =
             (this.reactor :> IDisposable).Dispose()
+            
+let createApplication (init: unit -> 'state * Cmd<'msg>) (update: 'state -> 'msg -> 'state * Cmd<'msg>) (view: 'state -> IBuilderNode<'msg>) =
+    new AppReactor<'msg,'state>(init, update, view)
 
 [<RequireQualifiedAccess>]
 type SubCmd<'msg,'signal> =
@@ -77,7 +80,11 @@ type SubCmd<'msg,'signal> =
     | OfMsg of 'msg
     | Signal of 'signal
     | Batch of commands: SubCmd<'msg,'signal> list
-
+    
+    
+let nullAttrUpdate (state: 'state) (attr: 'attr) =
+    state
+    
 type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                     init: unit -> 'state * SubCmd<'msg,'signal>,
                     attrUpdate: 'state -> 'attr -> 'state,
@@ -148,6 +155,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
     [<DefaultValue>] val mutable reactor: SubReactor<'state,'attr,'msg,'signal,'root>
     member val Attrs: 'attr list = [] with get, set
     abstract member SignalMap: 'signal -> 'outerMsg option
+    default this.SignalMap _ = None
     
     interface IBuilderNode<'outerMsg> with
         override this.Dependencies() = []

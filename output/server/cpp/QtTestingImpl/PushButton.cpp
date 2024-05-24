@@ -23,6 +23,10 @@ namespace PushButton
         delete THIS;
     }
 
+    HandleRef create() {
+        return (HandleRef)new QPushButton();
+    }
+
     HandleRef create(std::string label) {
         return (HandleRef)new QPushButton(label.c_str());
     }
