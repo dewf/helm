@@ -142,6 +142,29 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
         member this.Dispose() =
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
+            
+// type AppReactor2<'msg,'state>(init: unit -> 'state * SubCmd<'msg,unit>, update: 'state -> 'msg -> 'state * SubCmd<'msg,unit>, view: 'state -> IBuilderNode<'msg>) =
+//     [<DefaultValue>] val mutable reactor: SubReactor<'state,unit,'msg,unit,IBuilderNode<'msg>>
+//     member this.Run(argv: string array) =
+//         use app =
+//             Application.Create(argv)
+//         Application.SetStyle("Fusion")
+//         let rec processCmd = function
+//             | SubCmd.None ->
+//                 ()
+//             | SubCmd.OfMsg msg ->
+//                 this.reactor.ProcessMsg msg
+//             | SubCmd.Signal _ ->
+//                 ()
+//             | SubCmd.Batch commands ->
+//                 commands
+//                 |> List.iter processCmd
+//         this.reactor <-
+//             new SubReactor<'state,unit,'msg,unit,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
+//         Application.Exec()
+//     interface IDisposable with
+//         member this.Dispose() =
+//             (this.reactor :> IDisposable).Dispose()
 
 
 [<AbstractClass>]    
