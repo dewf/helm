@@ -7,7 +7,7 @@ open Widgets
 type Msg =
     | SetCelsius of text: string
     | SetFahrenheit of text: string
-
+    
 type State = {
     CelsiusText: string
     FahrenText: string
@@ -27,46 +27,40 @@ let tryParseFloat (str: string) =
     | _ ->
         None
         
+let celsiusToFahren (cText: string) =
+    if cText.Length > 0 then
+        match tryParseFloat cText with
+        | Some celsius ->
+            let fahren =
+                (celsius * 9.0) / 5.0 + 32.0
+            sprintf "%.2f" fahren
+        | None ->
+            "<- invalid"
+    else
+        ""
+        
+let fahrenToCelsius (fText: string) =
+    if fText.Length > 0 then
+        match tryParseFloat fText with
+        | Some fahren ->
+            let celsius =
+                (fahren - 32.0) * 5.0 / 9.0
+            sprintf "%.2f" celsius
+        | None ->
+            "invalid ->"
+    else
+        ""
+        
 let update (state: State) (msg: Msg) =
     match msg with
     | SetCelsius text ->
         let nextState =
-            if text.Length > 0 then
-                let cValue =
-                    tryParseFloat text
-                let fText =
-                    match cValue with
-                    | Some celsius ->
-                        let value =
-                            (celsius * 9.0) / 5.0 + 32.0
-                        sprintf "%.2f" value
-                    | None ->
-                        "<- invalid"
-                { state with
-                    CelsiusText = text
-                    FahrenText = fText }
-            else
-                State.Init
+            { state with CelsiusText = text; FahrenText = celsiusToFahren text }
         nextState, SubCmd.None
                 
     | SetFahrenheit text ->
         let nextState =
-            if text.Length > 0 then
-                let fValue =
-                    tryParseFloat text
-                let cText =
-                    match fValue with
-                    | Some fahren ->
-                        let value =
-                            (fahren - 32.0) * 5.0 / 9.0
-                        sprintf "%.2f" value
-                    | None ->
-                        "invalid ->"
-                { state with
-                    CelsiusText = cText
-                    FahrenText = text }
-            else
-                State.Init
+            { state with FahrenText = text; CelsiusText = fahrenToCelsius text }
         nextState, SubCmd.None
         
 let view (state: State) =
