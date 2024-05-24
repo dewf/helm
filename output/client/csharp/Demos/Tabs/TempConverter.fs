@@ -1,7 +1,7 @@
 ﻿module Tabs.TempConverter
 
 open BuilderNode
-open Reactor
+open SubReactor
 open Widgets
 
 type Msg =
@@ -18,7 +18,7 @@ type State = {
     }
 
 let init () =
-    State.Init, SubCmd.None
+    State.Init, Cmd.None
     
 let tryParseFloat (str: string) =
     match System.Single.TryParse str with
@@ -56,12 +56,12 @@ let update (state: State) (msg: Msg) =
     | SetCelsius text ->
         let nextState =
             { state with CelsiusText = text; FahrenText = celsiusToFahren text }
-        nextState, SubCmd.None
+        nextState, Cmd.None
                 
     | SetFahrenheit text ->
         let nextState =
             { state with FahrenText = text; CelsiusText = fahrenToCelsius text }
-        nextState, SubCmd.None
+        nextState, Cmd.None
         
 let view (state: State) =
     let celsiusText =

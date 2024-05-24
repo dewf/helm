@@ -3,11 +3,9 @@
 open System
 open BuilderNode
 open Org.Whatever.QtTesting
-open Reactor
+open AppReactor
 open Tabs
 open Widgets
-open Widgets.Menus
-open type PaintResources // saves some typing in .DoPoint - pens, colors, brushes, etc
 
 type Msg =
     | NothingYet

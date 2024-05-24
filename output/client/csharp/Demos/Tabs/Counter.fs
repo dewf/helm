@@ -1,7 +1,7 @@
 ﻿module Tabs.Counter
 
 open BuilderNode
-open Reactor
+open SubReactor
 open Widgets
 
 type Msg =
@@ -12,12 +12,12 @@ type State = {
 }
 
 let init () =
-    { Count = 0 }, SubCmd.None
+    { Count = 0 }, Cmd.None
     
 let update (state: State) (msg: Msg) =
     match msg with
     | Increment ->
-        { state with Count = state.Count + 1 }, SubCmd.None
+        { state with Count = state.Count + 1 }, Cmd.None
         
 let view (state: State) =
     let label =

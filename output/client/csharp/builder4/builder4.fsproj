@@ -7,7 +7,8 @@
 
     <ItemGroup>
         <Compile Include="BuilderNode.fs" />
-        <Compile Include="Reactor.fs" />
+        <Compile Include="AppReactor.fs" />
+        <Compile Include="SubReactor.fs" />
         <Compile Include="NonVisual.fs" />
         <Compile Include="Util.fs" />
         <Compile Include="Widgets\Widget.fs" />

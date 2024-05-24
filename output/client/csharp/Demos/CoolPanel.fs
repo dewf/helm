@@ -2,7 +2,7 @@
 
 open BuilderNode
 open Widgets
-open Reactor
+open SubReactor
 
 type Signal =
     | SomethingHappened
@@ -31,7 +31,7 @@ let init () =
     { WindowTitle = "default Window title"
       ButtonLabel = "default"
       EditValue = ""
-      AddedItems = [] }, SubCmd.None
+      AddedItems = [] }, Cmd.None
     
 let attrUpdate (state: State) (attr: Attr) =
     match attr with
@@ -43,7 +43,7 @@ let attrUpdate (state: State) (attr: Attr) =
 let update (state: State) (msg: Msg) =
     match msg with
     | FireSignal ->
-        state, SubCmd.Signal SomethingHappened
+        state, Cmd.Signal SomethingHappened
     | SubmitItem ->
         let toAdd =
             if state.EditValue <> "" then
@@ -56,12 +56,12 @@ let update (state: State) (msg: Msg) =
             { state with
                 AddedItems = nextItems
                 EditValue = "" }
-        nextState, SubCmd.None
+        nextState, Cmd.None
     | EditChanged value ->
         printfn "edit changed: %s" value
         let nextState =
             { state with EditValue = value }
-        nextState, SubCmd.None
+        nextState, Cmd.None
 
 let view (state: State) =
     let edit =
