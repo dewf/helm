@@ -30,6 +30,7 @@ let view (state: State) =
         TabWidget.Node(
             Pages = [
                 "Counter", Counter.Node()
+                "TempConv", TempConverter.Node()
             ])
     MainWindow.Node(
         Attrs = [ MainWindow.Title "7GUIs: F#/Qt edition" ],

@@ -8,6 +8,7 @@
     <ItemGroup>
         <Compile Include="CoolPanel.fs" />
         <Compile Include="Tabs\Counter.fs" />
+        <Compile Include="Tabs\TempConverter.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 
