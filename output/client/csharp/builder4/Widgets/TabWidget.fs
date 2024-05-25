@@ -111,7 +111,7 @@ type Node<'msg>() =
                     label, widget.Widget)
             this.model <- create this.Attrs pageLabelsAndHandles this.SignalMap dispatch
             
-        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+        override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Node<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs

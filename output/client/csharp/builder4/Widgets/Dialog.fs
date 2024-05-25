@@ -92,31 +92,23 @@ type Node<'msg>() =
             | Accepted -> onAccepted
             | Rejected -> onRejected
             
-    member private this.MigrateContent(leftFrame: Node<'msg>) =
+    member private this.MigrateContent (chamgeMap: Map<DepsKey, DepsChange>) =
+        match chamgeMap.TryFind (StrKey "layout") with
+        | Some change ->
+            match change with
+            | Unchanged ->
+                ()
+            | Added ->
+                this.model.AddLayout(maybeLayout.Value.Layout)
+            | Removed ->
+                this.model.RemoveLayout()
+            | Swapped ->
+                this.model.RemoveLayout()
+                this.model.AddLayout(maybeLayout.Value.Layout)
+        | None ->
+            // neither side had layout
+            ()
         // layout only - parent can't be changed after creation
-        let leftContentKey =
-            leftFrame.MaybeLayout
-            |> Option.map (_.ContentKey)
-        let contentKey =
-            maybeLayout
-            |> Option.map (_.ContentKey)
-        match leftContentKey, contentKey with
-        | None, None ->
-            // both no content
-            ()
-        | Some x, Some y when x = y ->
-            // same content
-            ()
-        | None, Some _ ->
-            // added content, from nothing
-            this.model.AddLayout(maybeLayout.Value.Layout)
-        | Some _, None ->
-            // removed content
-            this.model.RemoveLayout()
-        | Some _, Some _ -> // implicit "when x <> y" because of first case
-            // changed content
-            this.model.RemoveLayout()
-            this.model.AddLayout(maybeLayout.Value.Layout)
     
     interface IDialogNode<'msg> with
         override this.Dependencies() =
@@ -134,13 +126,13 @@ type Node<'msg>() =
                 |> Option.map (_.Layout)
             this.model <- create this.Attrs this.SignalMap dispatch maybeLayoutHandle maybeParentHandle
             
-        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+        override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Node<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
             this.model <- migrate left'.model nextAttrs this.SignalMap
-            this.MigrateContent(left')
+            this.MigrateContent (depsChanges |> Map.ofList)
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

@@ -154,7 +154,7 @@ type Node<'msg>() =
         override this.Dependencies() = []
         override this.Create(dispatch: 'msg -> unit) =
             this.model <- create this.Attrs this.SignalMap dispatch this.MethodMask
-        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+        override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Node<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs

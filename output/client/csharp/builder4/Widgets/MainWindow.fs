@@ -127,57 +127,39 @@ type Node<'msg>() =
     member this.Content with set value = maybeContent <- Some value
     member this.MenuBar with set value = maybeMenuBar <- Some value
     
-    member private this.MigrateContent(leftFrame: Node<'msg>) =
-        // MENUBAR =====================
-        let leftMenuBarKey =
-            leftFrame.MaybeMenuBar
-            |> Option.map (_.ContentKey)
-        let menuBarKey =
-            maybeMenuBar
-            |> Option.map (_.ContentKey)
-        match leftMenuBarKey, menuBarKey with
-        | None, None ->
-            // both no content
+    member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
+        match changeMap.TryFind (StrKey "menu") with
+        | Some change ->
+            match change with
+            | Unchanged ->
+                ()
+            | Added ->
+                this.model.AddMenuBar(maybeMenuBar.Value.MenuBar)
+            | Removed ->
+                this.model.RemoveMenuBar()
+            | Swapped ->
+                this.model.RemoveMenuBar()
+                this.model.AddMenuBar(maybeMenuBar.Value.MenuBar)
+        | None ->
+            // neither side had a menubar
             ()
-        | Some x, Some y when x = y ->
-            // same content
+        
+        match changeMap.TryFind (StrKey "content") with
+        | Some change ->
+            match change with
+            | Unchanged ->
+                ()
+            | Added ->
+                this.model.AddContent(maybeContent.Value.Widget)
+            | Removed ->
+                this.model.RemoveContent()
+            | Swapped ->
+                this.model.RemoveContent()
+                this.model.AddContent(maybeContent.Value.Widget)
+        | None ->
+            // neither side had 'content'
             ()
-        | None, Some _ ->
-            // added menubar, from nothing
-            this.model.AddMenuBar(maybeMenuBar.Value.MenuBar)
-        | Some _, None ->
-            // removed menubar
-            this.model.RemoveMenuBar()
-        | Some _, Some _ -> // implicit "when x <> y" because of first case
-            // changed
-            this.model.RemoveMenuBar()
-            this.model.AddMenuBar(maybeMenuBar.Value.MenuBar)
-            
-        // CONTENT (LAYOUT/WIDGET) ========================
-        let leftContentKey =
-            leftFrame.MaybeContent
-            |> Option.map (_.ContentKey)
-        let contentKey =
-            maybeContent
-            |> Option.map (_.ContentKey)
-        match leftContentKey, contentKey with
-        | None, None ->
-            // both no content
-            ()
-        | Some x, Some y when x = y ->
-            // same content
-            ()
-        | None, Some _ ->
-            // added content, from nothing
-            this.model.AddContent(maybeContent.Value.Widget)
-        | Some _, None ->
-            // removed content
-            this.model.RemoveContent()
-        | Some _, Some _ -> // implicit "when x <> y" because of first case
-            // changed content
-            this.model.RemoveContent()
-            this.model.AddContent(maybeContent.Value.Widget)
-    
+        
     interface IWindowNode<'msg> with
         override this.Dependencies() =
             let menuBarList =
@@ -199,13 +181,13 @@ type Node<'msg>() =
                 |> Option.map (_.Widget)
             this.model <- create this.Attrs maybeMenuBarHandle maybeWidgetHandle this.SignalMap dispatch
 
-        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+        override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Node<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
             this.model <- migrate left'.model nextAttrs this.SignalMap
-            this.MigrateContent(left')
+            this.MigrateContent (depsChanges |> Map.ofList)
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

@@ -18,7 +18,7 @@ type WithNonVisual<'msg>(nonVisualItems: INonVisualNode<'msg> list, content: IBu
             (content :: trayAsBuilderNodes)
             |> List.mapi (fun i node -> IntKey i, node)
         member this.Create dispatch = ()
-        member this.MigrateFrom left = ()
+        member this.MigrateFrom left depsChanges = ()
         member this.Dispose() = ()
         member this.ContentKey = null // sensible? the dependencies should take care of themselves ...
 

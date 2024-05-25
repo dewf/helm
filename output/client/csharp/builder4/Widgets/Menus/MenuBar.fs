@@ -100,7 +100,7 @@ type Node<'msg>() =
                 menus
                 |> List.map (_.Menu)
             this.model <- create this.Attrs menuHandles this.SignalMap dispatch
-        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+        override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let leftNode = (left :?> Node<'msg>)
             let nextAttrs =
                 diffAttrs leftNode.Attrs this.Attrs

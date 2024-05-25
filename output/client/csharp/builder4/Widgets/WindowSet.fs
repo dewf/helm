@@ -16,7 +16,7 @@ type Node<'msg>() =
         override this.Create(dispatch: 'msg -> unit) =
             // no model, nothing to do
             ()
-        override this.MigrateFrom(left: IBuilderNode<'msg>) =
+        override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             // no model, nothing to do
             ()
         override this.Dispose() =

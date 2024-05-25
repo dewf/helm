@@ -135,7 +135,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                     |> List.iter processCmd
             this.reactor <- new SubReactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
             this.reactor.ApplyAttrs(this.Attrs)
-        override this.MigrateFrom(left: IBuilderNode<'outerMsg>) =
+        override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
             this.reactor <- left'.reactor

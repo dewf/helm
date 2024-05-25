@@ -22,12 +22,18 @@ let createdOrChanged (changes: AttrChange<'a> list) =
 type DepsKey =
     | IntKey of i: int
     | StrKey of str: string
-
+    
+type DepsChange =
+    | Unchanged
+    | Added
+    | Removed
+    | Swapped
+    
 type IBuilderNode<'msg> =
     interface
         abstract Dependencies: unit -> (DepsKey * IBuilderNode<'msg>) list
         abstract Create: ('msg -> unit) -> unit
-        abstract MigrateFrom: IBuilderNode<'msg> -> unit // will the dispatch ever change?
+        abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
         abstract ContentKey: System.Object
     end
@@ -110,7 +116,7 @@ type Empty<'msg>() =
     interface IBuilderNode<'msg> with
         override this.Dependencies() = []
         override this.Create(dispatch: 'msg -> unit) = ()
-        override this.MigrateFrom(left: IBuilderNode<'msg>) = ()
+        override this.MigrateFrom (left: IBuilderNode<'msg>) (changed: (DepsKey * DepsChange) list) = ()
         override this.Dispose() = ()
         override this.ContentKey = "!!empty!!"
         
@@ -172,12 +178,35 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         let uniqueIds = (Map.keys leftMap @ Map.keys rightMap) |> List.distinct |> List.sort
         let leftChildren = uniqueIds |> List.map leftMap.TryFind
         let rightChildren = uniqueIds |> List.map rightMap.TryFind
-        for (lch, rch) in List.zip leftChildren rightChildren do
+        let zipped =
+            List.zip leftChildren rightChildren
+        for lch, rch in zipped do
             diff dispatch lch rch
+            
+        let depsChanges =
+            // provide a more precise breakdown of the dependency changes
+            // saves redundant comparison code in widgets with dependencies of different types (eg MainWindow)
+            // see MainWindow.MigrateContent to see how this is typically used
+            [for id, (lch, rch) in List.zip uniqueIds zipped ->
+                let changeType =
+                    match lch, rch with
+                    | None, None ->
+                        // how would the ID even exist if it wasn't in either side to begin with?
+                        failwith "shouldn't happen (BuilderNode.diff - depsChanges)"
+                    | None, Some _ ->
+                        Added
+                    | Some _, None ->
+                        Removed
+                    | Some left, Some right ->
+                        if left.ContentKey = right.ContentKey then
+                            Unchanged
+                        else
+                            Swapped
+                id, changeType]
 
         // now merge the nodes themselves, with the children having been recursively reconciled above
         // attrs are handled internally
-        right.MigrateFrom left
+        right.MigrateFrom left depsChanges
 
     | Some left, Some right ->
         // different types - dispose left, create right
