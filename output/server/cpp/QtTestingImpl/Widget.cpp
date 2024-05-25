@@ -19,6 +19,10 @@ namespace Widget
         THIS->setParent((QWidget*)parent);
     }
 
+    HandleRef Handle_getWindow(HandleRef _this) {
+        return (HandleRef)THIS->window();
+    }
+
     void Handle_setEnabled(HandleRef _this, bool state) {
         THIS->setEnabled(state);
     }

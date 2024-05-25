@@ -9,6 +9,7 @@ int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
 opaque Handle {
     void setParent(Handle parent);
+    Handle getWindow();
     
     void setEnabled(bool state);
     void setMaximumWidth(int maxWidth);
