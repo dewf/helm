@@ -1,0 +1,16 @@
+module Dialog;
+
+import Widget;
+import Signal;
+
+opaque Handle extends Widget.Handle {
+    void accept();
+    void reject();
+    void exec();
+
+    void onAccepted(Signal.VoidDelegate handler);
+    void onRejected(Signal.VoidDelegate handler);
+}
+
+Handle create();
+Handle create(Widget.Handle parent);

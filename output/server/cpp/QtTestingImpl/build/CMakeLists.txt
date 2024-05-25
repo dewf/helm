@@ -35,6 +35,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Common_wrappers.cpp
     ../Common.cpp
 
+    ../generated/Dialog.h
+    ../generated/Dialog_wrappers.cpp
+    ../Dialog.cpp
+
     ../generated/Label.h
     ../generated/Label_wrappers.cpp
     ../Label.cpp

@@ -91,14 +91,19 @@ type IActionNode<'msg> =
 type ITopLevelNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
-        // doesn't define any properties / contenkey itself
-        // abstract member Ignore: bool
+        // doesn't define any properties / contentkey itself
     end
     
 type IWindowNode<'msg> =
     interface
         inherit ITopLevelNode<'msg>
         abstract member WindowWidget: Widget.Handle
+    end
+    
+type IDialogNode<'msg> =
+    interface
+        inherit ITopLevelNode<'msg>
+        abstract member Dialog: Dialog.Handle
     end
     
 type Empty<'msg>() =

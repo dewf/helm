@@ -8,6 +8,8 @@ import Painter;
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
 opaque Handle {
+    void setParent(Handle parent);
+    
     void setEnabled(bool state);
     void setMaximumWidth(int maxWidth);
     void setMaximumHeight(int maxHeight);

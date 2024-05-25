@@ -26,6 +26,7 @@
         <Compile Include="Widgets\WindowSet.fs" />
         <Compile Include="Widgets\Timer.fs" />
         <Compile Include="Widgets\CustomWidget.fs" />
+        <Compile Include="Widgets\Dialog.fs" />
     </ItemGroup>
 
     <ItemGroup>

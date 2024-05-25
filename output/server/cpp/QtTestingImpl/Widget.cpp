@@ -15,6 +15,10 @@ namespace Widget
 {
     const int32_t WIDGET_SIZE_MAX = QWIDGETSIZE_MAX;
 
+    void Handle_setParent(HandleRef _this, HandleRef parent) {
+        THIS->setParent((QWidget*)parent);
+    }
+
     void Handle_setEnabled(HandleRef _this, bool state) {
         THIS->setEnabled(state);
     }
