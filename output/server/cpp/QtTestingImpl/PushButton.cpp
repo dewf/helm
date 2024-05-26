@@ -11,6 +11,10 @@ namespace PushButton
         THIS->setText(label.c_str());
     }
 
+    void Handle_setAutoDefault(HandleRef _this, bool value) {
+        THIS->setAutoDefault(value);
+    }
+
     void Handle_onClicked(HandleRef _this, std::function<VoidDelegate> handler) {
         QObject::connect(
             THIS,

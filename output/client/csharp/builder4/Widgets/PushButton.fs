@@ -10,10 +10,12 @@ type Signal =
 type Attr =
     | Label of string
     | Enabled of bool
+    | AutoDefault of bool
 
 let private keyFunc = function
     | Label _ -> 0
     | Enabled _ -> 1
+    | AutoDefault _ -> 2
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -38,6 +40,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 button.SetText(text)
             | Enabled state ->
                 button.SetEnabled(state)
+            | AutoDefault value ->
+                button.SetAutoDefault(value)
     interface IDisposable with
         member this.Dispose() =
             button.Dispose()
