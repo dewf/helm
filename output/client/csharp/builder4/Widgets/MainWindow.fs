@@ -58,8 +58,9 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
     member this.AddContent(widget: Widget.Handle) =
         mainWindow.SetCentralWidget(widget)
         
-    member this.ReattachDialogs(dialogs: Dialog.Handle list) =
-        printfn "*** MainWindow.ReattachDialogs not yet implemented"
+    member this.ReparentDialogs(dialogs: Dialog.Handle list) =
+        dialogs
+        |> List.iter (_.SetParentDialogFlags(mainWindow))
 
     member this.Widget with get() = mainWindow
     member this.SignalMap with set(value) = signalMap <- value
@@ -141,8 +142,19 @@ type Node<'msg>() =
             // neither side had 'content'
             ()
             
-        // migrating attached dialogs not yet handled
-        // (we can .Create with them but not yet .MigrateFrom)
+        // removed dialogs should have been disposed (and therefore removed as children) already
+        // so I guess just set the parent on any that were added/swapped in
+        let toReparent =
+            attachedDialogs
+            |> List.choose (fun (name, node) ->
+                match changeMap.TryFind (StrKey $"dlg_{name}") with
+                | Some change ->
+                    match change with
+                    | Added | Swapped -> Some node.Dialog
+                    | _ -> None
+                | None ->
+                    None)
+        this.model.ReparentDialogs toReparent
         
     interface IWindowNode<'msg> with
         override this.Dependencies() =
