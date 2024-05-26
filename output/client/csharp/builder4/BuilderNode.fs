@@ -112,6 +112,11 @@ type IDialogNode<'msg> =
         abstract member Dialog: Dialog.Handle
     end
     
+type IDialogParent<'msg> =
+    interface
+        abstract member AttachedDialogs: (string * IDialogNode<'msg>) list
+    end
+    
 type Empty<'msg>() =
     interface IBuilderNode<'msg> with
         override this.Dependencies() = []

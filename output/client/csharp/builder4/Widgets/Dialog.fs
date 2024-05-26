@@ -9,20 +9,17 @@ type Signal =
     | Rejected
     
 type Attr =
-    | NoneYet
+    | Size of width: int * height: int
+    
+let private keyFunc = function
+    | Size _ -> 0
 
 let private diffAttrs =
-    genericDiffAttrs (function
-        | NoneYet -> 0)
+    genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle option, maybeParent: Widget.Handle option) =
+type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle option) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable dialog =
-        match maybeParent with
-        | Some parent ->
-            Dialog.Create(parent)
-        | None ->
-            Dialog.Create()
+    let mutable dialog = Dialog.Create()
     do
         let signalDispatch (s: Signal) =
             match signalMap s with
@@ -42,8 +39,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
     member this.ApplyAttrs (attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | NoneYet ->
-                ()
+            | Size (w, h) ->
+                dialog.Resize(w, h)
     
     interface IDisposable with
         member this.Dispose() =
@@ -58,8 +55,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
     member this.AddLayout (layout: Layout.Handle) =
         dialog.SetLayout(layout)
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeLayout: Layout.Handle option) (maybeParent: Widget.Handle option) =
-    let model = new Model<'msg>(dispatch, maybeLayout, maybeParent)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeLayout: Layout.Handle option) =
+    let model = new Model<'msg>(dispatch, maybeLayout)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -74,13 +71,10 @@ let private dispose (model: Model<'msg>) =
 
 type Node<'msg>() =
     let mutable maybeLayout: ILayoutNode<'msg> option = None
-    let mutable maybeParent: IWidgetNode<'msg> option = None
     let mutable onAccepted: 'msg option = None
     let mutable onRejected: 'msg option = None
     member private this.MaybeLayout = maybeLayout
-    member private this.MaybeParent = maybeParent
     member this.Layout with set value = maybeLayout <- Some value
-    member this.__ParentPrivate with set value = maybeParent <- Some value // used for dialog modal code
     member this.OnAccepted with set value = onAccepted <- Some value
     member this.OnRejected with set value = onRejected <- Some value
     
@@ -118,13 +112,10 @@ type Node<'msg>() =
             |> Option.toList
             
         override this.Create(dispatch: 'msg -> unit) =
-            let maybeParentHandle =
-                maybeParent
-                |> Option.map (_.Widget)
             let maybeLayoutHandle =
                 maybeLayout
                 |> Option.map (_.Layout)
-            this.model <- create this.Attrs this.SignalMap dispatch maybeLayoutHandle maybeParentHandle
+            this.model <- create this.Attrs this.SignalMap dispatch maybeLayoutHandle
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Node<'msg>)
@@ -141,4 +132,4 @@ type Node<'msg>() =
             this.model.Dialog
             
         override this.ContentKey =
-            (this :> IDialogNode<'msg>).ContentKey
+            (this :> IDialogNode<'msg>).Dialog

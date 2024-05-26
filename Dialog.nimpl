@@ -4,6 +4,8 @@ import Widget;
 import Signal;
 
 opaque Handle extends Widget.Handle {
+    void setParentDialogFlags(Widget.Handle parent); // a version where we're setting WindowFlags (Qt::Dialog) - otherwise it won't work
+
     void accept();
     void reject();
     void exec();

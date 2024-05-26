@@ -7,6 +7,10 @@
 
 namespace Dialog
 {
+    void Handle_setParentDialogFlags(HandleRef _this, Widget::HandleRef parent) {
+        THIS->setParent((QWidget*)parent, Qt::Dialog);
+    }
+
     void Handle_accept(HandleRef _this) {
         THIS->accept();
     }
