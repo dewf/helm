@@ -23,12 +23,12 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
     let initState, initCmd = init()
     let mutable state = initState
     let mutable root = view state
-    let mutable inDispatch = false
+    let mutable disableDispatch = false
 
     // dispatch isn't actually (supposed to be) recursive, but we do pass it as a parameter because it gets injected into all the widget models for callbacks
     // but we need to protect against reentrance, which is the purpose of the 'inDispatch' flag
     let rec dispatch (msg: 'msg) =
-        if inDispatch then
+        if disableDispatch then
             // already in dispatch, something fired an even when it shouldn't have
             // basically this acts as a global callback disabler, preventing them while we're handling one already
             ()
@@ -39,9 +39,9 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
             state <- nextState
             root <- view state
             // prevent nested dispatching with a guard:
-            inDispatch <- true
+            disableDispatch <- true
             diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>))
-            inDispatch <- false
+            disableDispatch <- false
             // process command(s) after tree diff
             processCmd cmd
     do
@@ -59,9 +59,9 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
         state <- nextState
         root <- view state
         // prevent any dispatching
-        inDispatch <- true
+        disableDispatch <- true
         diff dispatch (Some prevRoot) (Some root)
-        inDispatch <- false
+        disableDispatch <- false
         // no commands allowed in attr update (for now)
     
     member this.ProcessMsg (msg: 'msg) =

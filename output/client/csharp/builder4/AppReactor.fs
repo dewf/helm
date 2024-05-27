@@ -21,7 +21,7 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
     let initState, initCmd = init()
     let mutable state = initState
     let mutable root = view state
-    let mutable nowDiffing = false
+    let mutable disableDispatch = false
     let mutable dialogMap = Map.empty<string, IDialogNode<'msg>>
     
     let updateDialogMap() =
@@ -42,7 +42,7 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
     // dispatch isn't actually (supposed to be) recursive, but we do pass it as a parameter because it gets injected into all the widget models for callbacks
     // but we need to protect against reentrance, which is the purpose of the 'nowDiffing' flag
     let rec dispatch (msg: 'msg) =
-        if nowDiffing then
+        if disableDispatch then
             // still diffing, something fired an event when it shouldn't have
             // basically this acts as a global callback disabler, preventing them while we're migrating the tree
             ()
@@ -53,9 +53,9 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
             state <- nextState
             root <- view state
             // prevent nested dispatching with a guard:
-            nowDiffing <- true
+            disableDispatch <- true
             diff dispatch (Some prevRoot) (Some root)
-            nowDiffing <- false
+            disableDispatch <- false
             //
             updateDialogMap()
             // process command(s) after tree diff
