@@ -40,12 +40,17 @@ let update (state: State) (msg: Msg) =
 let view (state: State) =
     let launchButton =
         PushButton.Node(Attrs = [PushButton.Label "Launch Dialog"], OnClicked = OpenDialog)
+    let combo =
+        ComboBox.Node(Attrs = [
+            ComboBox.Items [ "one"; "two"; "three" ]
+        ])
     let tabWidget =
         TabWidget.Node(
             Pages = [
                 "Counter", Counter.Node()
                 "TempConv", TempConverter.Node()
                 "Launch", launchButton
+                "COMBO", combo
             ])
     let dialog =
         let button =

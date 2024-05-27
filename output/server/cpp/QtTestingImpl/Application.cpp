@@ -8,7 +8,9 @@
 namespace Application
 {
     void Handle_dispose(HandleRef _this) {
+        printf("QApplication about to be deleted\n");
         delete THIS;
+        printf("QApplication deleted!\n");
     }
 
     void setStyle(std::string name) {

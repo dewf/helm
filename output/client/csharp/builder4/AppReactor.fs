@@ -17,7 +17,7 @@ type Cmd<'msg> =
     | Batch of commands: Cmd<'msg> list
     | DialogOp of name: string * op: DialogOps
     
-type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> 'msg -> 'state * Cmd<'msg>, view: 'state -> IBuilderNode<'msg>, processCmd: Cmd<'msg> -> unit) =
+type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> 'msg -> 'state * Cmd<'msg>, view: 'state -> IBuilderNode<'msg>, processCmd: Reactor<'state, 'msg> -> Cmd<'msg> -> unit) as this =
     let initState, initCmd = init()
     let mutable state = initState
     let mutable root = view state
@@ -59,11 +59,11 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
             //
             updateDialogMap()
             // process command(s) after tree diff
-            processCmd cmd
+            processCmd this cmd
     do
         build dispatch root
         updateDialogMap()
-        processCmd initCmd
+        processCmd this initCmd
         
     member this.ProcessMsg (msg: 'msg) =
         dispatch msg
@@ -80,33 +80,34 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
             
     interface IDisposable with
         member this.Dispose() =
+            printfn "Reactor type .Dispose()"
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
             
 type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg>, update: 'state -> 'msg -> 'state * Cmd<'msg>, view: 'state -> IBuilderNode<'msg>) =
-    [<DefaultValue>] val mutable reactor: Reactor<'state,'msg>
     member this.Run(argv: string array) =
         use app =
             Application.Create(argv)
         Application.SetStyle("Fusion")
-        let rec processCmd = function
+        let rec processCmd (reactor: Reactor<'state,'msg>) = function
             | Cmd.None ->
                 ()
             | Cmd.OfMsg msg ->
-                this.reactor.ProcessMsg msg
+                reactor.ProcessMsg msg
             | Cmd.QuitApplication ->
                 Application.Quit()
             | Cmd.Batch commands ->
                 commands
-                |> List.iter processCmd
+                |> List.iter (processCmd reactor)
             | Cmd.DialogOp (name, op) ->
-                this.reactor.DialogOp name op
-        this.reactor <-
+                reactor.DialogOp name op
+        use reactor =
             new Reactor<'state,'msg>(init, update, view, processCmd)
         Application.Exec()
+        // reactor should be disposed, then app (QApplication instance)
     interface IDisposable with
         member this.Dispose() =
-            (this.reactor :> IDisposable).Dispose()
+            printfn "AppReactor .Dispose() (nothing to do, currently)"
             
 let createApplication (init: unit -> 'state * Cmd<'msg>) (update: 'state -> 'msg -> 'state * Cmd<'msg>) (view: 'state -> IBuilderNode<'msg>) =
     new AppReactor<'msg,'state>(init, update, view)

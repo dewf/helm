@@ -31,8 +31,7 @@ opaque Handle {
     void setLayout(Layout.Handle layout);
     Layout.Handle getLayout();
 
-    // would be better to have signal properties that could be connected in the traditional way (eg .WindowTitleChanged.connect(...))
-    // but this is a simple demo ...
+    // signals + event handling
     void onWindowTitleChanged(Signal.StringDelegate func);
 }
 
