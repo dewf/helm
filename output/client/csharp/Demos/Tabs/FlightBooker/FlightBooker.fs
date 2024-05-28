@@ -51,22 +51,34 @@ let update (state: State) (msg: Msg) =
             | Some 1 -> RoundTrip
             | _ -> failwith "nope"
         { state with Mode = nextMode }, Cmd.None
+        
+let computeStatus (state: State) =
+    match state.Mode with
+    | OneWay ->
+        match state.DepartDate with
+        | Some value ->
+            if value >= DateTime.Today then
+                true, "ready to book"
+            else
+                false, "departure date must be today or later"
+        | None ->
+            false, "invalid departure date"
+    | RoundTrip ->
+        match state.DepartDate, state.ReturnDate with
+        | Some depart, Some return_ ->
+            if depart >= DateTime.Today then
+                if return_ >= depart then
+                    true, "ready to book"
+                else
+                    false, "return date must be on or after departure date"
+            else
+                false, "departure date must be today or later"
+        | _ ->
+            false, "roundtrip requires two valid dates"
 
 let view (state: State) =
-    let canBook =
-        match state.Mode with
-        | OneWay ->
-            match state.DepartDate with
-            | Some value ->
-                value >= DateTime.Today
-            | None ->
-                false
-        | RoundTrip ->
-            match state.DepartDate, state.ReturnDate with
-            | Some depart, Some return_ ->
-                depart >= DateTime.Today && return_ >= depart
-            | _ ->
-                false
+    let canBook, status =
+        computeStatus state
     let combo =
         let selectedIndex =
             match state.Mode with
@@ -82,11 +94,13 @@ let view (state: State) =
         DatePicker.Node(OnValueChanged = (fun value -> PickerChanged (Depart, value)))
     let edit2 =
         DatePicker.Node(Attrs = [ DatePicker.Enabled (state.Mode = RoundTrip) ], OnValueChanged = (fun value -> PickerChanged (Return, value)))
+    let status =
+        Label.Node(Attrs = [ Label.Text status ])
     let bookButton =
         PushButton.Node(Attrs = [ PushButton.Label "Book Trip"; PushButton.Enabled canBook ])
     BoxLayout.Node(
         Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
-        Items = [ combo; edit1; edit2; bookButton ])
+        Items = [ combo; edit1; edit2; status; bookButton ])
     :> ILayoutNode<Msg>
     
 type Node<'outerMsg>() =
