@@ -11,10 +11,6 @@ namespace BoxLayout
         THIS->setDirection(qDir);
     }
 
-    void Handle_setSpacing(HandleRef _this, int32_t spacing) {
-        THIS->setSpacing(spacing);
-    }
-
     void Handle_addSpacing(HandleRef _this, int32_t size) {
         THIS->addSpacing(size);
     }

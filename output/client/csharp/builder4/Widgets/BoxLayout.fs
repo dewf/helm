@@ -13,10 +13,12 @@ type DirectionValue =
 type Attr =
     | Direction of dir: DirectionValue
     | Spacing of spacing: int
+    | ContentsMargins of left: int * top: int * right: int * bottom: int
     
 let private keyFunc = function
     | Direction _ -> 0
     | Spacing _ -> 1
+    | ContentsMargins _ -> 2
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -41,6 +43,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
                 box.SetDirection(dir)
             | Spacing spacing ->
                 box.SetSpacing(spacing)
+            | ContentsMargins (left, top, right, bottom) ->
+                box.SetContentsMargins (left, top, right, bottom)
     interface IDisposable with
         member this.Dispose() =
             box.Dispose()

@@ -15,7 +15,7 @@ type Mode =
 type State = {
     Mode: Mode
     DepartDate: DateTime option
-    LeaveDate: DateTime option
+    ReturnDate: DateTime option
 }
 
 type Msg =
@@ -24,7 +24,7 @@ type Msg =
 let init() =
     { Mode = OneWay
       DepartDate = Some DateTime.Now
-      LeaveDate = None }, Cmd.None
+      ReturnDate = None }, Cmd.None
     
 let update (state: State) (msg: Msg) =
     match msg with
@@ -37,6 +37,20 @@ let update (state: State) (msg: Msg) =
         { state with Mode = nextMode }, Cmd.None
 
 let view (state: State) =
+    let canBook =
+        match state.Mode with
+        | OneWay ->
+            match state.DepartDate with
+            | Some value ->
+                value >= DateTime.Today
+            | None ->
+                false
+        | RoundTrip ->
+            match state.DepartDate, state.ReturnDate with
+            | Some depart, Some return_ ->
+                depart >= DateTime.Today && return_ >= depart
+            | _ ->
+                false
     let combo =
         let selectedIndex =
             match state.Mode with
@@ -49,11 +63,11 @@ let view (state: State) =
         // PushButton.Node(Attrs = [ PushButton.Label "just testing" ])
         ComboBox.Node(Attrs = [ ComboBox.Items items; ComboBox.SelectedIndex (Some selectedIndex) ], OnSelected = ComboChanged)
     let edit1 =
-        DateEdit.Node()
+        DatePicker.Node()
     let edit2 =
-        DateEdit.Node(Attrs = [ DateEdit.Enabled (state.Mode = RoundTrip) ])
+        DatePicker.Node(Attrs = [ DatePicker.Enabled (state.Mode = RoundTrip) ])
     let bookButton =
-        PushButton.Node(Attrs = [ PushButton.Label "Book Trip"; PushButton.Enabled false ])
+        PushButton.Node(Attrs = [ PushButton.Label "Book Trip"; PushButton.Enabled canBook ])
     BoxLayout.Node(
         Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
         Items = [ combo; edit1; edit2; bookButton ])

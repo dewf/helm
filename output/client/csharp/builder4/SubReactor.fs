@@ -38,7 +38,7 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
                 update state msg
             state <- nextState
             root <- view state
-            // prevent nested dispatching with a guard:
+            // prevent diff-triggered dispatching with a guard:
             disableDispatch <- true
             diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>))
             disableDispatch <- false
@@ -58,7 +58,7 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
             ||> List.fold attrUpdate
         state <- nextState
         root <- view state
-        // prevent any dispatching
+        // prevent dispatching while diffing
         disableDispatch <- true
         diff dispatch (Some prevRoot) (Some root)
         disableDispatch <- false

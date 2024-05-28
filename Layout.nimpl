@@ -2,4 +2,6 @@ module Layout;
 
 opaque Handle {
     void removeAll();
+    void setSpacing(int spacing);
+    void setContentsMargins(int left, int top, int right, int bottom);
 }

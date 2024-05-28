@@ -9,7 +9,7 @@
         <Compile Include="CoolPanel.fs" />
         <Compile Include="Tabs\Counter.fs" />
         <Compile Include="Tabs\TempConverter.fs" />
-        <Compile Include="Tabs\FlightBooker\DateEdit.fs" />
+        <Compile Include="Tabs\FlightBooker\DatePicker.fs" />
         <Compile Include="Tabs\FlightBooker\FlightBooker.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
