@@ -21,6 +21,7 @@ let private diffAttrs =
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable edit = LineEdit.Create()
+    let mutable lastValue = ""
     do
         let dispatchSignal (s: Signal) =
             match signalMap s with
@@ -28,15 +29,23 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 dispatch msg
             | None ->
                 ()
-        edit.OnTextEdited (fun str -> dispatchSignal (Changed str))
+        edit.OnTextEdited (fun str ->
+            lastValue <- str
+            dispatchSignal (Changed str))
         edit.OnReturnPressed (fun _ -> dispatchSignal ReturnPressed)
     member this.Widget with get() = edit
-    member this.SignalMap with set(value) = signalMap <- value
+    member this.SignalMap with set value = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
             | Value str ->
-                edit.SetText(str)
+                // short-circuit identical current values
+                // dispatching is disabled during tree diffing so it's not the end of the world (no infinite feedback loops),
+                // BUT it can result in certain annoyances and needless calls into the C++ side,
+                // so we should probably always avoid setting identical values since they are probably the result of a previous signal
+                if str <> lastValue then
+                    edit.SetText(str)
+                    lastValue <- str
             | Enabled value ->
                 edit.SetEnabled(value)
     interface IDisposable with
