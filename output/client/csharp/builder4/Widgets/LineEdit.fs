@@ -7,6 +7,7 @@ open Org.Whatever.QtTesting
 type Signal =
     | Changed of string
     | ReturnPressed
+    | LostFocus
     
 type Attr =
     | Value of string
@@ -33,6 +34,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             lastValue <- str
             dispatchSignal (Changed str))
         edit.OnReturnPressed (fun _ -> dispatchSignal ReturnPressed)
+        edit.OnLostFocus (fun _ -> dispatchSignal LostFocus)
     member this.Widget with get() = edit
     member this.SignalMap with set value = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -68,13 +70,13 @@ let private dispose (model: Model<'msg>) =
 
 type Node<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
-    member val Attrs: Attr list = [] with get, set
     let mutable onChanged: (string -> 'msg) option = None
-    member this.OnChanged
-        with set value = onChanged <- Some value
     let mutable onReturnPressed: 'msg option = None
-    member this.OnReturnPressed
-        with set value = onReturnPressed <- Some value
+    let mutable onLostFocus: 'msg option = None
+    member this.OnChanged with set value = onChanged <- Some value
+    member this.OnReturnPressed with set value = onReturnPressed <- Some value
+    member this.OnLostFocus with set value = onLostFocus <- Some value
+    member val Attrs: Attr list = [] with get, set
     member private this.SignalMap
         with get() = function
             | Changed s ->
@@ -82,6 +84,8 @@ type Node<'msg>() =
                 |> Option.map (fun f -> f s)
             | ReturnPressed ->
                 onReturnPressed
+            | LostFocus ->
+                onLostFocus
                 
     interface IWidgetNode<'msg> with
         override this.Dependencies() = []

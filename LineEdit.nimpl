@@ -7,6 +7,9 @@ opaque Handle extends Widget.Handle {
     void setText(string str);
     void onTextEdited(Signal.StringDelegate handler);
     void onReturnPressed(Signal.VoidDelegate handler);
+
+    // an event of our own
+    void onLostFocus(Signal.VoidDelegate handler);
 }
 
 Handle create();
