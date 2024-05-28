@@ -102,16 +102,11 @@ let view (state: State) =
     let canBook, status =
         computeStatus state
     let combo =
-        let selectedIndex =
-            match state.Mode with
-            | OneWay -> 0
-            | RoundTrip -> 1
         let items = [
             "One Way"
             "Round Trip"
         ]
-        // PushButton.Node(Attrs = [ PushButton.Label "just testing" ])
-        ComboBox.Node(Attrs = [ ComboBox.Items items; ComboBox.SelectedIndex (Some selectedIndex) ], OnSelected = ComboChanged)
+        ComboBox.Node(Attrs = [ ComboBox.Items items ], OnSelected = ComboChanged)
     let edit1 =
         DatePicker(
             Attrs = [ Value state.DepartDate ],
