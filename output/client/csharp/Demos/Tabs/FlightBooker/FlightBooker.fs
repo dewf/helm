@@ -25,25 +25,21 @@ type WhichPicker =
 
 type Msg =
     | ComboChanged of maybeIndex: int option
-    | PickerChanged of which: WhichPicker * value: DatePicker.Value
+    | PickerChanged of which: WhichPicker * value: DateTime option
 
 let init() =
     { Mode = OneWay
-      DepartDate = Some DateTime.Now
-      ReturnDate = None }, Cmd.None
+      DepartDate = Some DateTime.Today
+      ReturnDate = Some DateTime.Today }, Cmd.None
     
 let update (state: State) (msg: Msg) =
     match msg with
     | PickerChanged (which, value) ->
-        let optValue =
-            match value with
-            | DatePicker.Valid dt -> Some dt
-            | DatePicker.Invalid -> None
         match which with
         | Depart ->
-            { state with DepartDate = optValue }, Cmd.None
+            { state with DepartDate = value }, Cmd.None
         | Return ->
-            { state with ReturnDate = optValue }, Cmd.None
+            { state with ReturnDate = value }, Cmd.None
     | ComboChanged maybeIndex ->
         let nextMode = 
             match maybeIndex with
@@ -91,9 +87,16 @@ let view (state: State) =
         // PushButton.Node(Attrs = [ PushButton.Label "just testing" ])
         ComboBox.Node(Attrs = [ ComboBox.Items items; ComboBox.SelectedIndex (Some selectedIndex) ], OnSelected = ComboChanged)
     let edit1 =
-        DatePicker.Node(OnValueChanged = (fun value -> PickerChanged (Depart, value)))
+        DatePicker.Node(
+            Attrs = [ DatePicker.Value DateTime.Today ],
+            OnValueChanged = (fun value -> PickerChanged (Depart, value)))
     let edit2 =
-        DatePicker.Node(Attrs = [ DatePicker.Enabled (state.Mode = RoundTrip) ], OnValueChanged = (fun value -> PickerChanged (Return, value)))
+        DatePicker.Node(
+            Attrs = [
+                DatePicker.Value DateTime.Today
+                DatePicker.Enabled (state.Mode = RoundTrip)
+            ],
+            OnValueChanged = (fun value -> PickerChanged (Return, value)))
     let status =
         Label.Node(Attrs = [ Label.Text status ])
     let bookButton =

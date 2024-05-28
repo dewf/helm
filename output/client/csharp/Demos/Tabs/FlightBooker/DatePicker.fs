@@ -5,15 +5,11 @@ open BuilderNode
 open SubReactor
 open Widgets
 
-type Value =
-    | Invalid
-    | Valid of dt: DateTime
-    
 type Signal =
-    | ValueChanged of value: Value
+    | ValueChanged of maybeValue: DateTime option
     
 type Attr =
-    | Value of dt: DateTime
+    | Value of value: DateTime
     | Enabled of value: bool
     
 let keyFunc = function
@@ -23,7 +19,7 @@ let keyFunc = function
 type State = {
     Enabled: bool
     Raw: string
-    Parsed: Value
+    Parsed: DateTime option
 }
 
 type Msg =
@@ -32,21 +28,26 @@ type Msg =
     | ShowCalendar
 
 let init () =
-    let dt =
-        DateTime.Now
     let state = {
         Enabled = true
-        Raw = dt.ToShortDateString()
-        Parsed = Valid dt
+        Raw = ""
+        Parsed = None
     }
     state, Cmd.None
     
 let attrUpdate (state: State) (attr: Attr) =
     match attr with
-    | Value dt ->
-        { state with
-            Parsed = Valid dt
-            Raw = dt.ToShortDateString() }
+    | Value value ->
+        match state.Parsed, value with
+        | Some prev, dt ->
+            // only update 'raw' if value actually changed
+            // what we don't want is to overwrite a variation of the same date (eg 5/1 vs 5/1/2024), jarring the user
+            if dt <> prev then
+                { state with Parsed = Some dt; Raw = dt.ToShortDateString() }
+            else
+                state
+        | None, dt ->
+            { state with Parsed = Some dt; Raw = dt.ToShortDateString() }
     | Enabled value ->
         { state with Enabled = value }
         
@@ -59,11 +60,7 @@ let update (state: State) (msg: Msg) =
     match msg with
     | EditChanged str ->
         let nextParsed =
-            match tryParseDate str with
-            | Some value ->
-                Valid value
-            | None ->
-                Invalid
+            tryParseDate str
         let cmd =
             if nextParsed <> state.Parsed then
                 Cmd.Signal (ValueChanged nextParsed)
@@ -93,7 +90,7 @@ let view (state: State) =
     
 type Node<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, genericDiffAttrs keyFunc)
-    let mutable onValueChanged: (Value -> 'outerMsg) option = None
+    let mutable onValueChanged: (DateTime option -> 'outerMsg) option = None
     member this.OnValueChanged with set value = onValueChanged <- Some value
     override this.SignalMap (s: Signal) =
         match s with
