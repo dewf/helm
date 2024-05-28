@@ -21,6 +21,7 @@ let private diffAttrs =
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable combo = ComboBox.Create()
+    let mutable selectedIndex: int option = None
     do
         let signalDispatch (s: Signal) =
             match signalMap s with
@@ -34,6 +35,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                     Some i
                 else
                     None
+            selectedIndex <- value
             signalDispatch (Selected value))
     member this.Widget with get() = combo
     member this.SignalMap with set(value) = signalMap <- value
@@ -44,11 +46,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 combo.Clear()
                 combo.SetItems(items |> Array.ofList)
             | SelectedIndex maybeIndex ->
-                match maybeIndex with
-                | Some value ->
-                    combo.SetCurrentIndex(value)
-                | None ->
-                    combo.SetCurrentIndex(-1)
+                // short-circuit identical values, see LineEdit comments for explanation why
+                if maybeIndex <> selectedIndex then
+                    selectedIndex <- maybeIndex
+                    match maybeIndex with
+                    | Some value ->
+                        combo.SetCurrentIndex(value)
+                    | None ->
+                        combo.SetCurrentIndex(-1)
     interface IDisposable with
         member this.Dispose() =
             combo.Dispose()
