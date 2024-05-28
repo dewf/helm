@@ -4,6 +4,7 @@ open System
 open BuilderNode
 open SubReactor
 open Tabs.FlightBooker
+open Tabs.FlightBooker.DatePicker
 open Widgets
 
 type Signal = unit
@@ -15,8 +16,8 @@ type Mode =
 
 type State = {
     Mode: Mode
-    DepartDate: DateTime option
-    ReturnDate: DateTime option
+    DepartDate: DatePicker.Value
+    ReturnDate: DatePicker.Value
 }
 
 type WhichPicker =
@@ -25,12 +26,12 @@ type WhichPicker =
 
 type Msg =
     | ComboChanged of maybeIndex: int option
-    | PickerChanged of which: WhichPicker * value: DateTime option
+    | PickerChanged of which: WhichPicker * value: DatePicker.Value
 
 let init() =
     { Mode = OneWay
-      DepartDate = Some DateTime.Today
-      ReturnDate = Some DateTime.Today }, Cmd.None
+      DepartDate = Valid DateTime.Today
+      ReturnDate = Empty }, Cmd.None
     
 let update (state: State) (msg: Msg) =
     match msg with
@@ -41,27 +42,46 @@ let update (state: State) (msg: Msg) =
         | Return ->
             { state with ReturnDate = value }, Cmd.None
     | ComboChanged maybeIndex ->
-        let nextMode = 
+        let nextMode, nextReturn = 
             match maybeIndex with
-            | Some 0 -> OneWay
-            | Some 1 -> RoundTrip
+            | Some 0 ->
+                let nextReturn =
+                    // clear out return date if it was invalid
+                    match state.ReturnDate with
+                    | Valid dt -> Valid dt
+                    | _ -> Empty
+                OneWay, nextReturn
+            | Some 1 ->
+                let nextReturn =
+                    match state.ReturnDate with
+                    | Valid dt ->
+                        // keep existing since it's OK
+                        Valid dt
+                    | _ ->
+                        // needs a suitable default - try copying from depart date
+                        match state.DepartDate with
+                        | Valid dt -> Valid dt
+                        | _ -> Empty
+                RoundTrip, nextReturn
             | _ -> failwith "nope"
-        { state with Mode = nextMode }, Cmd.None
+        { state with Mode = nextMode; ReturnDate = nextReturn }, Cmd.None
         
 let computeStatus (state: State) =
     match state.Mode with
     | OneWay ->
         match state.DepartDate with
-        | Some value ->
+        | Valid value ->
             if value >= DateTime.Today then
                 true, "ready to book"
             else
                 false, "departure date must be today or later"
-        | None ->
+        | Invalid ->
             false, "invalid departure date"
+        | Empty ->
+            false, "departure date required"
     | RoundTrip ->
         match state.DepartDate, state.ReturnDate with
-        | Some depart, Some return_ ->
+        | Valid depart, Valid return_ ->
             if depart >= DateTime.Today then
                 if return_ >= depart then
                     true, "ready to book"
@@ -69,8 +89,14 @@ let computeStatus (state: State) =
                     false, "return date must be on or after departure date"
             else
                 false, "departure date must be today or later"
-        | _ ->
-            false, "roundtrip requires two valid dates"
+        | Empty, _ ->
+            false, "departure date required"
+        | Invalid, _ ->
+            false, "invalid departure date"
+        | _, Empty ->
+            false, "return date required"
+        | _, Invalid ->
+            false, "invalid return date"
 
 let view (state: State) =
     let canBook, status =
@@ -87,14 +113,14 @@ let view (state: State) =
         // PushButton.Node(Attrs = [ PushButton.Label "just testing" ])
         ComboBox.Node(Attrs = [ ComboBox.Items items; ComboBox.SelectedIndex (Some selectedIndex) ], OnSelected = ComboChanged)
     let edit1 =
-        DatePicker.Node(
-            Attrs = [ DatePicker.Value DateTime.Today ],
+        DatePicker(
+            Attrs = [ Value state.DepartDate ],
             OnValueChanged = (fun value -> PickerChanged (Depart, value)))
     let edit2 =
-        DatePicker.Node(
+        DatePicker(
             Attrs = [
-                DatePicker.Value DateTime.Today
-                DatePicker.Enabled (state.Mode = RoundTrip)
+                Value state.ReturnDate
+                Enabled (state.Mode = RoundTrip)
             ],
             OnValueChanged = (fun value -> PickerChanged (Return, value)))
     let status =

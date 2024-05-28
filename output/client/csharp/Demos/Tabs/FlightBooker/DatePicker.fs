@@ -6,11 +6,16 @@ open BuilderNode
 open SubReactor
 open Widgets
 
+type Value =
+    | Empty
+    | Invalid
+    | Valid of dt: DateTime
+    
 type Signal =
-    | ValueChanged of maybeValue: DateTime option
+    | ValueChanged of value: Value
     
 type Attr =
-    | Value of value: DateTime
+    | Value of value: Value
     | Enabled of value: bool
     
 let keyFunc = function
@@ -20,7 +25,7 @@ let keyFunc = function
 type State = {
     Enabled: bool
     Raw: string
-    Parsed: DateTime option
+    Value: Value
 }
 
 type Msg =
@@ -32,23 +37,25 @@ let init () =
     let state = {
         Enabled = true
         Raw = ""
-        Parsed = None
+        Value = Empty
     }
     state, Cmd.None
     
 let attrUpdate (state: State) (attr: Attr) =
     match attr with
     | Value value ->
-        match state.Parsed, value with
-        | Some prev, dt ->
-            // only update 'raw' if value actually changed
-            // what we don't want is to overwrite a variation of the same date (eg 5/1 vs 5/1/2024), jarring the user
-            if dt <> prev then
-                { state with Parsed = Some dt; Raw = dt.ToShortDateString() }
-            else
-                state
-        | None, dt ->
-            { state with Parsed = Some dt; Raw = dt.ToShortDateString() }
+        if value <> state.Value then
+            match value with
+            | Empty ->
+                { state with Value = Empty; Raw = "" }
+            | Invalid ->
+                // unlikely to be assigned from outside except as a 2-way echo
+                // we'd only get here if the parent component explicitly changed the value to invalid
+                { state with Value = Invalid; Raw = "??invalid??" }
+            | Valid dt ->
+                { state with Value = Valid dt; Raw = dt.ToShortDateString() }
+        else
+            state
     | Enabled value ->
         { state with Enabled = value }
         
@@ -60,14 +67,21 @@ let tryParseDate (str: string) =
 let update (state: State) (msg: Msg) =
     match msg with
     | EditChanged str ->
-        let nextParsed =
-            tryParseDate str
+        let nextValue =
+            match tryParseDate str with
+            | Some value ->
+                Valid value
+            | None ->
+                if str = "" then
+                    Empty
+                else
+                    Invalid
         let cmd =
-            if nextParsed <> state.Parsed then
-                Cmd.Signal (ValueChanged nextParsed)
+            if nextValue <> state.Value then
+                Cmd.Signal (ValueChanged nextValue)
             else
                 Cmd.None
-        { state with Raw = str; Parsed = nextParsed }, cmd
+        { state with Raw = str; Value = nextValue }, cmd
     | EditSubmitted ->
         state, Cmd.None
     | ShowCalendar ->
@@ -89,9 +103,9 @@ let view (state: State) =
             Items = [ edit; button ])
     hbox :> ILayoutNode<Msg>
     
-type Node<'outerMsg>() =
+type DatePicker<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, genericDiffAttrs keyFunc)
-    let mutable onValueChanged: (DateTime option -> 'outerMsg) option = None
+    let mutable onValueChanged: (Value -> 'outerMsg) option = None
     member this.OnValueChanged with set value = onValueChanged <- Some value
     override this.SignalMap (s: Signal) =
         match s with
