@@ -23,7 +23,7 @@ let keyFunc = function
 type State = {
     Enabled: bool
     Raw: string
-    MaybeParsed: DateTime option
+    Parsed: Value
 }
 
 type Msg =
@@ -36,8 +36,8 @@ let init () =
         DateTime.Now
     let state = {
         Enabled = true
-        MaybeParsed = Some dt
-        Raw = string dt
+        Raw = dt.ToShortDateString()
+        Parsed = Valid dt
     }
     state, Cmd.None
     
@@ -45,15 +45,35 @@ let attrUpdate (state: State) (attr: Attr) =
     match attr with
     | Value dt ->
         { state with
-            MaybeParsed = Some dt
-            Raw = string dt }
+            Parsed = Valid dt
+            Raw = dt.ToShortDateString() }
     | Enabled value ->
         { state with Enabled = value }
+        
+let tryParseDate (str: string) =
+    match DateTime.TryParse str with // Exact(str, "MM/dd/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None)
+    | true, dt -> Some dt
+    | _ -> None
     
 let update (state: State) (msg: Msg) =
-    // attempt to parse raw text into date
-    // update background color of edit if bad
-    state, Cmd.None
+    match msg with
+    | EditChanged str ->
+        let nextParsed =
+            match tryParseDate str with
+            | Some value ->
+                Valid value
+            | None ->
+                Invalid
+        let cmd =
+            if nextParsed <> state.Parsed then
+                Cmd.Signal (ValueChanged nextParsed)
+            else
+                Cmd.None
+        { state with Raw = str; Parsed = nextParsed }, cmd
+    | EditSubmitted ->
+        state, Cmd.None
+    | ShowCalendar ->
+        state, Cmd.None
 
 let view (state: State) =
     let edit =
@@ -73,3 +93,10 @@ let view (state: State) =
     
 type Node<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, genericDiffAttrs keyFunc)
+    let mutable onValueChanged: (Value -> 'outerMsg) option = None
+    member this.OnValueChanged with set value = onValueChanged <- Some value
+    override this.SignalMap (s: Signal) =
+        match s with
+        | ValueChanged value ->
+            onValueChanged
+            |> Option.map (fun f -> f value)

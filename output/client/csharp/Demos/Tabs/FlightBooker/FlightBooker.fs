@@ -3,6 +3,7 @@
 open System
 open BuilderNode
 open SubReactor
+open Tabs.FlightBooker
 open Widgets
 
 type Signal = unit
@@ -18,8 +19,13 @@ type State = {
     ReturnDate: DateTime option
 }
 
+type WhichPicker =
+    | Depart
+    | Return
+
 type Msg =
     | ComboChanged of maybeIndex: int option
+    | PickerChanged of which: WhichPicker * value: DatePicker.Value
 
 let init() =
     { Mode = OneWay
@@ -28,6 +34,16 @@ let init() =
     
 let update (state: State) (msg: Msg) =
     match msg with
+    | PickerChanged (which, value) ->
+        let optValue =
+            match value with
+            | DatePicker.Valid dt -> Some dt
+            | DatePicker.Invalid -> None
+        match which with
+        | Depart ->
+            { state with DepartDate = optValue }, Cmd.None
+        | Return ->
+            { state with ReturnDate = optValue }, Cmd.None
     | ComboChanged maybeIndex ->
         let nextMode = 
             match maybeIndex with
@@ -63,9 +79,9 @@ let view (state: State) =
         // PushButton.Node(Attrs = [ PushButton.Label "just testing" ])
         ComboBox.Node(Attrs = [ ComboBox.Items items; ComboBox.SelectedIndex (Some selectedIndex) ], OnSelected = ComboChanged)
     let edit1 =
-        DatePicker.Node()
+        DatePicker.Node(OnValueChanged = (fun value -> PickerChanged (Depart, value)))
     let edit2 =
-        DatePicker.Node(Attrs = [ DatePicker.Enabled (state.Mode = RoundTrip) ])
+        DatePicker.Node(Attrs = [ DatePicker.Enabled (state.Mode = RoundTrip) ], OnValueChanged = (fun value -> PickerChanged (Return, value)))
     let bookButton =
         PushButton.Node(Attrs = [ PushButton.Label "Book Trip"; PushButton.Enabled canBook ])
     BoxLayout.Node(
