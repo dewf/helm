@@ -1,6 +1,7 @@
 ﻿module Tabs.FlightBooker.DatePicker
 
 open System
+open System.Globalization
 open BuilderNode
 open SubReactor
 open Widgets
@@ -52,7 +53,7 @@ let attrUpdate (state: State) (attr: Attr) =
         { state with Enabled = value }
         
 let tryParseDate (str: string) =
-    match DateTime.TryParse str with // Exact(str, "MM/dd/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None)
+    match DateTime.TryParseExact(str, "M/d/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None) with
     | true, dt -> Some dt
     | _ -> None
     
