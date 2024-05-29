@@ -11,6 +11,7 @@
         <Compile Include="Tabs\TempConverter.fs" />
         <Compile Include="Tabs\FlightBooker\DatePicker.fs" />
         <Compile Include="Tabs\FlightBooker\FlightBooker.fs" />
+        <Compile Include="Tabs\TimerPage.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

@@ -39,4 +39,4 @@ opaque Handle extends Layout.Handle {
     void addLayout(Layout.Handle layout, int stretch);
 }
 
-Handle create(Direction dir);
+Handle create();

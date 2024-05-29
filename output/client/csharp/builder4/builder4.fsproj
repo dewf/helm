@@ -27,6 +27,8 @@
         <Compile Include="Widgets\Timer.fs" />
         <Compile Include="Widgets\CustomWidget.fs" />
         <Compile Include="Widgets\Dialog.fs" />
+        <Compile Include="Widgets\Slider.fs" />
+        <Compile Include="Widgets\ProgressBar.fs" />
     </ItemGroup>
 
     <ItemGroup>

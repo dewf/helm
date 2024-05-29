@@ -39,41 +39,38 @@ let update (state: State) (msg: Msg) =
         nextState, Cmd.None
     
 let view (state: State) =
-    // let launchButton =
-    //     PushButton.Node(Attrs = [PushButton.Label "Launch Dialog"], OnClicked = OpenDialog)
-    // let combo =
-    //     ComboBox.Node(Attrs = [
-    //         ComboBox.Items [ "one"; "two"; "three" ]
-    //     ])
+    let launchButton =
+        PushButton.Node(Attrs = [PushButton.Label "Launch Dialog"], OnClicked = OpenDialog)
     let tabWidget =
         TabWidget.Node(
             Pages = [
                 "Counter", Counter.Node()
                 "TempConv", TempConverter.Node()
                 "FlightBooker", FlightBooker.Node()
-                // "Launch", launchButton
+                "Timer", TimerPage.Node()
+                "Launch", launchButton
                 // "COMBO", combo
             ])
-    // let dialog =
-    //     let button =
-    //         PushButton.Node(Attrs = [ PushButton.Label "Accept Me" ], OnClicked = Accept)
-    //     let button2 =
-    //         PushButton.Node(Attrs = [ PushButton.Label "Change Window Title" ], OnClicked = ChangeWindowTitle)
-    //     let layout =
-    //         BoxLayout.Node(
-    //             Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
-    //             Items = [ button; button2 ])
-    //     Dialog.Node(
-    //         Attrs = [ Dialog.Size (300, 200) ],
-    //         Layout = layout,
-    //         OnAccepted = DlgStatus "accepted",
-    //         OnRejected = DlgStatus "rejected")
+    let dialog =
+        let button =
+            PushButton.Node(Attrs = [ PushButton.Label "Accept Me" ], OnClicked = Accept)
+        let button2 =
+            PushButton.Node(Attrs = [ PushButton.Label "Change Window Title" ], OnClicked = ChangeWindowTitle)
+        let layout =
+            BoxLayout.Node(
+                Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
+                Items = [ button; button2 ])
+        Dialog.Node(
+            Attrs = [ Dialog.Size (300, 200) ],
+            Layout = layout,
+            OnAccepted = DlgStatus "accepted",
+            OnRejected = DlgStatus "rejected")
     MainWindow.Node(
         Attrs = [ MainWindow.Title state.WindowTitle ],
-        Content = tabWidget)
-        // Dialogs = [
-        //     "testing", dialog
-        // ])
+        Content = tabWidget,
+        Dialogs = [
+            "testing", dialog
+        ])
     :> IBuilderNode<Msg>
     
 [<EntryPoint>]

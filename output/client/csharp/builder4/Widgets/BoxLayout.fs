@@ -25,7 +25,7 @@ let private diffAttrs =
 
 type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable box = BoxLayout.Create(BoxLayout.Direction.TopToBottom)
+    let mutable box = BoxLayout.Create()
     do
         // no signals yet
         items

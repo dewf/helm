@@ -8,7 +8,8 @@ internal static class Program
     private static Widget.Handle CreatePage01()
     {
         var page = Widget.Create();
-        var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+        var layout = BoxLayout.Create();
+        layout.SetDirection(BoxLayout.Direction.TopToBottom);
         
         var list = ListWidget.Create();
         list.SetSelectionMode(ListWidget.SelectionMode.Extended);
@@ -38,7 +39,8 @@ internal static class Program
     private static Widget.Handle CreatePage02()
     {
         var page = Widget.Create();
-        var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+        var layout = BoxLayout.Create();
+        layout.SetDirection(BoxLayout.Direction.TopToBottom);
         
         var combo1 = ComboBox.Create();
         combo1.SetItems([ "one", "two", "three", "four", "five", "six"]);
@@ -58,7 +60,8 @@ internal static class Program
     private static Widget.Handle CreatePage03()
     {
         var page = Widget.Create();
-        var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+        var layout = BoxLayout.Create();
+        layout.SetDirection(BoxLayout.Direction.TopToBottom);
         
         var button2 = PushButton.Create("#2 !!!");
         button2.SetMaximumHeight(Widget.WIDGET_SIZE_MAX - 1);

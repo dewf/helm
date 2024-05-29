@@ -39,8 +39,7 @@ namespace BoxLayout
         delete THIS;
     }
 
-    HandleRef create(Direction dir) {
-        auto qDir = (QBoxLayout::Direction)dir;
-        return (HandleRef)new QBoxLayout(qDir);
+    HandleRef create() {
+        return (HandleRef)new QBoxLayout(QBoxLayout::TopToBottom);
     }
 }

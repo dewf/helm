@@ -13,7 +13,7 @@ type Attr = unit
 type Mode =
     | OneWay
     | RoundTrip
-
+    
 type State = {
     Mode: Mode
     DepartDate: DatePicker.Value
