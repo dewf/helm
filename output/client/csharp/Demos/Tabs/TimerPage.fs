@@ -1,6 +1,8 @@
 ﻿module Tabs.TimerPage
 
+open System
 open BuilderNode
+open NonVisual
 open SubReactor
 open Widgets
 
@@ -11,6 +13,7 @@ let TIMER_INTERVAL = 1000 / 20
 type State = {
     Duration: int
     Accumulated: int
+    LastTicks: int64
 }
 
 type Msg =
@@ -19,8 +22,9 @@ type Msg =
     | TimerTick
 
 let init() =
-    { Duration = 3000
-      Accumulated = 0 }, Cmd.None
+    { Duration = 1000
+      Accumulated = 0
+      LastTicks = DateTime.Now.Ticks }, Cmd.None
 
 let update (state: State) (msg: Msg) =
     match msg with
@@ -28,32 +32,55 @@ let update (state: State) (msg: Msg) =
         { state with Accumulated = 0 }, Cmd.None
     | SetDuration value ->
         let nextState =
-            { Duration = value; Accumulated = min state.Accumulated value }
+            { state with Duration = value; Accumulated = min state.Accumulated value }
         nextState, Cmd.None
     | TimerTick ->
+        // default QTimer is ridiculously inaccurate, so we compute our own elapsed time
+        let ticks =
+            DateTime.Now.Ticks
+        let millisSinceLast =
+            (ticks - state.LastTicks) / TimeSpan.TicksPerMillisecond
         let nextState =
-            { state with Accumulated = state.Accumulated + TIMER_INTERVAL }
+            { state with
+                Accumulated = min (state.Accumulated + int millisSinceLast) state.Duration
+                LastTicks = ticks }
         nextState, Cmd.None
        
 let view (state: State) =
     let progress =
+        let value =
+            (state.Accumulated * 1000) / state.Duration
+        let text =
+            sprintf "%.02fs" (float state.Accumulated / 1000.0)
         ProgressBar.Node(Attrs = [
-            ProgressBar.Range (0, 100)
-            ProgressBar.Value 56
-            ProgressBar.InnerText "Woot"
+            ProgressBar.Range (0, 1000) // using 1000 divisions ... setting duration directly here seemed to cause flickering
+            ProgressBar.Value value
+            ProgressBar.InnerText text
         ])
+    let label =
+        let text =
+            sprintf "%.02fs" (float state.Duration / 1000.0)
+        Label.Node(Attrs = [ Label.Text text ])
     let slider =
         Slider.Node(Attrs = [
             Slider.Orientation Slider.Horizontal
             Slider.Range (100, 10_000)
-            Slider.Value 1000
+            Slider.TickPosition Slider.Below
+            Slider.TickInterval 1000
+            Slider.Value state.Duration
         ], OnValueChanged = SetDuration)
+    let hbox =
+        BoxLayout.Node(Attrs = [ BoxLayout.Direction BoxLayout.Horizontal ], Items = [ label; slider ])
     let button =
         PushButton.Node(Attrs = [ PushButton.Label "Reset" ], OnClicked = Reset)
     let layout =
-        BoxLayout.Node(Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
-                       Items = [ progress; slider; button ])
-    layout :> ILayoutNode<Msg>
+        BoxLayout.Node(
+            Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
+            Items = [ progress; hbox; button ])
+    let timer =
+        Timer.Node(Attrs = [ Timer.Interval TIMER_INTERVAL; Timer.Running true ], OnTimeout = TimerTick)
+    LayoutWithNonVisual(layout, [ "timer", timer ]) :> ILayoutNode<Msg>
+    
 
 type Node<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, unit, unit>(init, nullAttrUpdate, update, view, nullDiffAttrs)

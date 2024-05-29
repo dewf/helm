@@ -9,8 +9,10 @@ type Signal =
     
 type TickPos =
     | NoTicks
-    | TopLeft
-    | BottomRight
+    | Above
+    | Left
+    | Below
+    | Right
     | BothSides
     
 type Orientation =
@@ -79,8 +81,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 let tickPos' =
                     match tickPos with
                     | NoTicks -> Slider.TickPosition.None
-                    | TopLeft -> Slider.TickPosition.Above
-                    | BottomRight -> Slider.TickPosition.Below
+                    | Above -> Slider.TickPosition.Above
+                    | Left -> Slider.TickPosition.Left
+                    | Below -> Slider.TickPosition.Below
+                    | Right -> Slider.TickPosition.Right
                     | BothSides -> Slider.TickPosition.BothSides
                 slider.SetTickPosition(tickPos')
             | TickInterval interval ->
