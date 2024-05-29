@@ -1,0 +1,19 @@
+module Slider;
+
+import AbstractSlider;
+
+enum TickPosition {
+    None = 0,
+    Above = 1,
+    Left = 1, // same as Above
+    Below = 2,
+    Right = 2, // same as Below
+    BothSides = 3
+}
+
+opaque Handle extends AbstractSlider.Handle {
+    void setTickPosition(TickPosition tpos);
+    void setTickInterval(int interval);
+}
+
+Handle create();

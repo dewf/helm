@@ -15,6 +15,10 @@ add_library(QtTestingImpl STATIC
     ../support/NativeImplServer.cpp
     ../generated/Library.cpp
 
+    ../generated/AbstractSlider.h
+    ../generated/AbstractSlider_wrappers.cpp
+    ../AbstractSlider.cpp
+
     ../generated/Action.h
     ../generated/Action_wrappers.cpp
     ../Action.cpp
@@ -80,6 +84,10 @@ add_library(QtTestingImpl STATIC
     ../generated/PlainTextEdit_wrappers.cpp
     ../PlainTextEdit.cpp
 
+    ../generated/ProgressBar.h
+    ../generated/ProgressBar_wrappers.cpp
+    ../ProgressBar.cpp
+
     ../generated/PushButton.h
     ../generated/PushButton_wrappers.cpp
     ../PushButton.cpp
@@ -87,6 +95,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Signal.h
     ../generated/Signal_wrappers.cpp
     ../Signal.cpp
+
+    ../generated/Slider.h
+    ../generated/Slider_wrappers.cpp
+    ../Slider.cpp
 
     ../generated/TabWidget.h
     ../generated/TabWidget_wrappers.cpp
