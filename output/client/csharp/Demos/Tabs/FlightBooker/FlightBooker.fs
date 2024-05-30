@@ -20,53 +20,46 @@ type State = {
     ReturnDate: DatePicker.Value
 }
 
-type WhichPicker =
-    | Depart
-    | Return
-
 type Msg =
-    | ComboChanged of maybeIndex: int option
-    | PickerChanged of which: WhichPicker * value: DatePicker.Value
+    | ModeChanged of mode: Mode
+    | DepartChanged of value: DatePicker.Value
+    | ReturnChanged of value: DatePicker.Value
 
 let init() =
     { Mode = OneWay
-      DepartDate = Valid DateTime.Today
+      DepartDate = Empty
       ReturnDate = Empty }, Cmd.None
     
 let update (state: State) (msg: Msg) =
     match msg with
-    | PickerChanged (which, value) ->
-        match which with
-        | Depart ->
-            { state with DepartDate = value }, Cmd.None
-        | Return ->
-            { state with ReturnDate = value }, Cmd.None
-    | ComboChanged maybeIndex ->
+    | DepartChanged value ->
+        { state with DepartDate = value }, Cmd.None
+    | ReturnChanged value ->
+        { state with ReturnDate = value }, Cmd.None
+    | ModeChanged mode ->
         let nextMode, nextReturn = 
-            match maybeIndex with
-            | Some 0 ->
+            match mode with
+            | OneWay ->
                 let nextReturn =
                     // clear out return date if it was invalid
                     match state.ReturnDate with
                     | Valid dt -> Valid dt
                     | _ -> Empty
                 OneWay, nextReturn
-            | Some 1 ->
+            | RoundTrip ->
                 let nextReturn =
                     match state.ReturnDate with
                     | Valid dt ->
                         // keep existing since it's OK
                         Valid dt
                     | _ ->
-                        // needs a suitable default - try copying from depart date
-                        match state.DepartDate with
-                        | Valid dt -> Valid dt
-                        | _ -> Empty
+                        // for demonstration purposes, force the user to enter something
+                        // but a suitable default would be copying from DepartDate
+                        Empty
                 RoundTrip, nextReturn
-            | _ -> failwith "nope"
         { state with Mode = nextMode; ReturnDate = nextReturn }, Cmd.None
         
-let computeStatus (state: State) =
+let canBookAndStatus (state: State) =
     match state.Mode with
     | OneWay ->
         match state.DepartDate with
@@ -100,31 +93,41 @@ let computeStatus (state: State) =
 
 let view (state: State) =
     let canBook, status =
-        computeStatus state
+        canBookAndStatus state
     let combo =
         let items = [
             "One Way"
             "Round Trip"
         ]
-        ComboBox.Node(Attrs = [ ComboBox.Items items ], OnSelected = ComboChanged)
-    let edit1 =
-        DatePicker(
-            Attrs = [ Value state.DepartDate ],
-            OnValueChanged = (fun value -> PickerChanged (Depart, value)))
-    let edit2 =
-        DatePicker(
-            Attrs = [
-                Value state.ReturnDate
-                Enabled (state.Mode = RoundTrip)
-            ],
-            OnValueChanged = (fun value -> PickerChanged (Return, value)))
+        let indexToMsg maybeIndex =
+            match maybeIndex with
+            | Some 0 -> ModeChanged OneWay
+            | Some 1 -> ModeChanged RoundTrip
+            | _ -> failwith "whoops"
+        ComboBox.Node(Attrs = [ ComboBox.Items items ], OnSelected = indexToMsg)
+    let labeledPicker label value changeMsg enabled =
+        let label =
+            Label.Node(Attrs = [ Label.Text label ])
+        let picker =
+            DatePicker(
+                Attrs = [ Value value; Enabled enabled ],
+                OnValueChanged = changeMsg)
+        BoxLayout.Node(Attrs = [
+            BoxLayout.Direction BoxLayout.Horizontal
+            BoxLayout.ContentsMargins (0, 0, 0, 0)
+            BoxLayout.Spacing 10
+        ], Items = [ label; picker ])
+    let depart =
+        labeledPicker "Depart" state.DepartDate DepartChanged true
+    let return_ =
+        labeledPicker "Return" state.ReturnDate ReturnChanged (state.Mode = RoundTrip)
     let status =
         Label.Node(Attrs = [ Label.Text status ])
     let bookButton =
         PushButton.Node(Attrs = [ PushButton.Label "Book Trip"; PushButton.Enabled canBook ])
     BoxLayout.Node(
         Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
-        Items = [ combo; edit1; edit2; status; bookButton ])
+        Items = [ combo; depart; return_; status; bookButton ])
     :> ILayoutNode<Msg>
     
 type Node<'outerMsg>() =
