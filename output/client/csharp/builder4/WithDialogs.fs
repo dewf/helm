@@ -21,8 +21,15 @@ type WithDialogs<'msg>(content: IBuilderNode<'msg>, dialogs: (string * IDialogNo
             // so call the virtual method and let window-based subclasses perform the attachment
             this.CreatedWithDialogs (dialogs |> List.map snd)
         member this.MigrateFrom left depsChanges =
-            if not depsChanges.IsEmpty then
-                printfn "WithDialogs.MigrateFrom - not yet implemented. need to attach added/swapped dialogs?"
+            let depsMap =
+                depsChanges |> Map.ofList
+            dialogs
+            |> List.choose (fun (id, dlg) ->
+                let key = "dlg_" + id
+                match depsMap[StrKey key] with
+                | Added | Swapped -> Some dlg
+                | _ -> None)
+            |> this.CreatedWithDialogs
         member this.Dispose() = ()
         member this.ContentKey = null // sensible? the dependencies should take care of themselves ...
         member this.AttachedToWindow window =

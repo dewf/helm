@@ -127,9 +127,13 @@ type IDialogParent<'msg> =
 //         override this.ContentKey = "!!empty!!"
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
-    for (_, node) in node.Dependencies() do
-        disposeTree node
-    node.Dispose()
+    match node with
+    | :? IDialogNode<'msg> ->
+        printfn "not destroying dialog or dependencies (owned by a window ... probably)"
+    | _ ->
+        for (_, node) in node.Dependencies() do
+            disposeTree node
+        node.Dispose()
 
 let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
     let leftList = a1 |> List.map (fun a -> keyFunc a, a)
