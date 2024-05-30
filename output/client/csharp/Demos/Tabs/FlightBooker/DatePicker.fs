@@ -18,15 +18,18 @@ type Signal =
 type Attr =
     | Value of value: Value
     | Enabled of value: bool
+    | DialogTitle of title: string
     
 let keyFunc = function
     | Value _ -> 0
     | Enabled _ -> 1
+    | DialogTitle _ -> 2
     
 type State = {
     Enabled: bool
     Raw: string
     Value: Value
+    DialogTitle: string
 }
 
 type Msg =
@@ -40,6 +43,7 @@ let init () =
         Enabled = true
         Raw = ""
         Value = Empty
+        DialogTitle = "Choose Date"
     }
     state, Cmd.None
     
@@ -60,6 +64,8 @@ let attrUpdate (state: State) (attr: Attr) =
             state
     | Enabled value ->
         { state with Enabled = value }
+    | DialogTitle title ->
+        { state with DialogTitle = title }
         
 let tryParseDate (str: string) =
     match DateTime.TryParseExact(str, "M/d/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None) with
@@ -113,7 +119,7 @@ let view (state: State) =
         let layout =
             BoxLayout.Node(Attrs = [ BoxLayout.Direction BoxLayout.Vertical ], Items = [ reject; accept ])
         Dialog.Node(
-            Attrs = [ Dialog.Size (320, 200) ],
+            Attrs = [ Dialog.Size (320, 200); Dialog.Title state.DialogTitle ],
             Layout = layout)
     LayoutWithDialogs(hbox, [ "calendar", dialog ])
     :> ILayoutNode<Msg>

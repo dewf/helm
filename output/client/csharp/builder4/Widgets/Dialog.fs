@@ -10,9 +10,11 @@ type Signal =
     
 type Attr =
     | Size of width: int * height: int
+    | Title of title: string
     
 let private keyFunc = function
     | Size _ -> 0
+    | Title _ -> 1
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -41,6 +43,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
             match attr with
             | Size (w, h) ->
                 dialog.Resize(w, h)
+            | Title title ->
+                dialog.SetWindowTitle title
     
     interface IDisposable with
         member this.Dispose() =

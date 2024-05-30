@@ -105,12 +105,12 @@ let view (state: State) =
             | Some 1 -> ModeChanged RoundTrip
             | _ -> failwith "whoops"
         ComboBox.Node(Attrs = [ ComboBox.Items items ], OnSelected = indexToMsg)
-    let labeledPicker label value changeMsg enabled =
+    let labeledPicker labelText value changeMsg enabled =
         let label =
-            Label.Node(Attrs = [ Label.Text label ])
+            Label.Node(Attrs = [ Label.Text labelText ])
         let picker =
             DatePicker(
-                Attrs = [ Value value; Enabled enabled ],
+                Attrs = [ Value value; Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
                 OnValueChanged = changeMsg)
         BoxLayout.Node(Attrs = [
             BoxLayout.Direction BoxLayout.Horizontal
