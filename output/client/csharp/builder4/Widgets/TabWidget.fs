@@ -127,3 +127,7 @@ type Node<'msg>() =
             
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
+            
+        override this.AttachedToWindow window =
+            ()
+            

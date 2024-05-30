@@ -36,6 +36,7 @@ type IBuilderNode<'msg> =
         abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
         abstract ContentKey: System.Object
+        abstract AttachedToWindow: Widget.Handle -> unit
     end
     
 type IWidgetNode<'msg> =
@@ -117,13 +118,13 @@ type IDialogParent<'msg> =
         abstract member AttachedDialogs: (string * IDialogNode<'msg>) list
     end
     
-type Empty<'msg>() =
-    interface IBuilderNode<'msg> with
-        override this.Dependencies() = []
-        override this.Create(dispatch: 'msg -> unit) = ()
-        override this.MigrateFrom (left: IBuilderNode<'msg>) (changed: (DepsKey * DepsChange) list) = ()
-        override this.Dispose() = ()
-        override this.ContentKey = "!!empty!!"
+// type Empty<'msg>() =
+//     interface IBuilderNode<'msg> with
+//         override this.Dependencies() = []
+//         override this.Create(dispatch: 'msg -> unit) = ()
+//         override this.MigrateFrom (left: IBuilderNode<'msg>) (changed: (DepsKey * DepsChange) list) = ()
+//         override this.Dispose() = ()
+//         override this.ContentKey = "!!empty!!"
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
     for (_, node) in node.Dependencies() do

@@ -66,6 +66,9 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
     
     member this.ProcessMsg (msg: 'msg) =
         dispatch msg
+        
+    member this.AttachedToWindow (window: Widget.Handle) =
+        root.AttachedToWindow window
 
     interface IDisposable with
         member this.Dispose() =
@@ -144,6 +147,9 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
             (this.reactor :> IDisposable).Dispose()
         override this.ContentKey =
             this.reactor.Root.ContentKey
+        override this.AttachedToWindow (window: Widget.Handle) =
+            this.reactor.AttachedToWindow window
+            
     
 [<AbstractClass>]
 type WidgetReactorNode<'outerMsg,'state,'msg,'attr,'signal>(

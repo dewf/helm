@@ -25,3 +25,7 @@ type Node<'msg>() =
         override this.ContentKey =
             // does this even make sense?
             windows
+            
+        override this.AttachedToWindow window =
+            failwith "WindowSet .AttachedToWindow??"
+            

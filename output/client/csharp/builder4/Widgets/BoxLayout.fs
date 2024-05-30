@@ -139,6 +139,10 @@ type Node<'msg>() =
                 widget.SetLayout((this :> ILayoutNode<'msg>).Layout)
                 maybeSyntheticParent <- Some widget
                 widget
+                
+        override this.AttachedToWindow window =
+            for item in items do
+                item.AttachedToWindow window
 
 let make (attrs: Attr list) (items: IWidgetNode<'msg> list) =
     Node(Attrs = attrs, Items = items)

@@ -90,6 +90,9 @@ type Node<'msg>() =
             
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
+            
+        override this.AttachedToWindow window =
+            ()
 
 // various easy constructors here
 let make (label: string) (onClick: 'msg) =

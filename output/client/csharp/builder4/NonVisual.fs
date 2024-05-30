@@ -21,6 +21,10 @@ type WithNonVisual<'msg>(content: IBuilderNode<'msg>, nonVisualItems: (string * 
         member this.MigrateFrom left depsChanges = ()
         member this.Dispose() = ()
         member this.ContentKey = null // sensible? the dependencies should take care of themselves ...
+        member this.AttachedToWindow window =
+            content.AttachedToWindow window
+            for _, node in nonVisualItems do
+                node.AttachedToWindow window
 
 type WidgetWithNonVisual<'msg>(content: IWidgetNode<'msg>, nonVisualItems: (string * INonVisualNode<'msg>) list) =
     inherit WithNonVisual<'msg>(content, nonVisualItems)

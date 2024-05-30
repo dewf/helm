@@ -55,8 +55,10 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
     member this.RemoveContent() =
         mainWindow.SetCentralWidget(null) // sufficient?
         
-    member this.AddContent(widget: Widget.Handle) =
-        mainWindow.SetCentralWidget(widget)
+    member this.AddContent(node: IWidgetNode<'msg>) =
+        mainWindow.SetCentralWidget(node.Widget)
+        // the below is for dialogs ... and probably nothing else! sigh
+        node.AttachedToWindow mainWindow
         
     member this.ReparentDialogs(dialogs: Dialog.Handle list) =
         dialogs
@@ -132,12 +134,12 @@ type Node<'msg>() =
             | Unchanged ->
                 ()
             | Added ->
-                this.model.AddContent(maybeContent.Value.Widget)
+                this.model.AddContent(maybeContent.Value)
             | Removed ->
                 this.model.RemoveContent()
             | Swapped ->
                 this.model.RemoveContent()
-                this.model.AddContent(maybeContent.Value.Widget)
+                this.model.AddContent(maybeContent.Value)
         | None ->
             // neither side had 'content'
             ()
@@ -197,6 +199,9 @@ type Node<'msg>() =
             this.model.Widget
         override this.ContentKey =
             (this :> IWindowNode<'msg>).WindowWidget
+            
+        override this.AttachedToWindow window =
+            failwith "MainWindow .AttachedToWindow??"
             
     interface IDialogParent<'msg> with
         override this.AttachedDialogs = attachedDialogs

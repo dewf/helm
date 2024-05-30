@@ -104,3 +104,7 @@ type Node<'msg>() =
             (this.model.Widget :> Widget.Handle)
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
+        override this.AttachedToWindow window =
+            ()
+            
+            

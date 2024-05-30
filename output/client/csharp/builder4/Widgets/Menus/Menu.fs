@@ -115,6 +115,9 @@ type Node<'msg>() =
             this.model.Menu
         override this.ContentKey =
             (this :> IMenuNode<'msg>).Menu
+        override this.AttachedToWindow window =
+            ()
+            
 
 let make (attrs: Attr list) (items: IActionNode<'msg> list) =
     Node(Attrs = attrs, Items = items)

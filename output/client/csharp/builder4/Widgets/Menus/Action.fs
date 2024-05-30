@@ -92,3 +92,6 @@ type Node<'msg>() =
             this.model.Action
         override this.ContentKey =
             (this :> IActionNode<'msg>).Action
+        override this.AttachedToWindow window =
+            ()
+            

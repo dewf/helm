@@ -113,6 +113,8 @@ type Node<'msg>() =
             this.model.MenuBar
         override this.ContentKey =
             (this :> IMenuBarNode<'msg>).MenuBar
+        override this.AttachedToWindow window =
+            ()
         
 let make (attrs: Attr list) (menus: IMenuNode<'msg> list) =
     Node(Attrs = attrs, Menus = menus)

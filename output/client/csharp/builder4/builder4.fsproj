@@ -10,6 +10,7 @@
         <Compile Include="AppReactor.fs" />
         <Compile Include="SubReactor.fs" />
         <Compile Include="NonVisual.fs" />
+        <Compile Include="WithDialogs.fs" />
         <Compile Include="Util.fs" />
         <Compile Include="Widgets\Widget.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />

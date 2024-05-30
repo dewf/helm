@@ -7,6 +7,7 @@ open AppReactor
 open Tabs
 open Tabs.FlightBooker
 open Widgets
+open WithDialogs
 
 type Msg =
     | OpenDialog
@@ -65,12 +66,11 @@ let view (state: State) =
             Layout = layout,
             OnAccepted = DlgStatus "accepted",
             OnRejected = DlgStatus "rejected")
-    MainWindow.Node(
-        Attrs = [ MainWindow.Title state.WindowTitle ],
-        Content = tabWidget,
-        Dialogs = [
-            "testing", dialog
-        ])
+    let window =
+        MainWindow.Node(
+            Attrs = [ MainWindow.Title state.WindowTitle ],
+            Content = tabWidget)
+    WindowWithDialogs(window, [ "testing", dialog ])
     :> IBuilderNode<Msg>
     
 [<EntryPoint>]

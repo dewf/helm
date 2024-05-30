@@ -86,7 +86,8 @@ type Node<'msg>() =
             // if we ever change NonVisualNode to explicitly represent QObjects, change this to:
             // (this :> INonVisualNode<'msg>).QObject
             this.model.QObject
-        
+        override this.AttachedToWindow window =
+            ()
         
         
           
