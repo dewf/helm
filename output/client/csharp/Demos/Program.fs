@@ -11,7 +11,7 @@ open WithDialogs
 
 type Msg =
     | OpenDialog
-    | Accept
+    | AcceptDialog
     | DlgStatus of string
     | ChangeWindowTitle
 
@@ -29,8 +29,8 @@ let update (state: State) (msg: Msg) =
     match msg with
     | OpenDialog ->
         state, Cmd.DialogOp ("testing", Exec)
-    | Accept ->
-        state, Cmd.DialogOp ("testing", DialogOp.Accept)
+    | AcceptDialog ->
+        state, Cmd.DialogOp ("testing", Accept)
     | DlgStatus status ->
         printfn "dlg status: [%A]" status
         state, Cmd.None
@@ -54,7 +54,7 @@ let view (state: State) =
             ])
     let dialog =
         let button =
-            PushButton.Node(Attrs = [ PushButton.Label "Accept Me" ], OnClicked = Accept)
+            PushButton.Node(Attrs = [ PushButton.Label "Accept Me" ], OnClicked = AcceptDialog)
         let button2 =
             PushButton.Node(Attrs = [ PushButton.Label "Change Window Title" ], OnClicked = ChangeWindowTitle)
         let layout =
