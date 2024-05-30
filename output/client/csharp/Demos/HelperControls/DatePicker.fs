@@ -1,4 +1,4 @@
-﻿module Tabs.FlightBooker.DatePicker
+﻿module HelperControls.DatePicker
 
 open System
 open System.Globalization

@@ -1,11 +1,11 @@
-﻿module Tabs.FlightBooker.FlightBooker
+﻿module Tabs.FlightBooker
 
 open System
 open BuilderNode
+open HelperControls
 open SubReactor
-open Tabs.FlightBooker
-open Tabs.FlightBooker.DatePicker
 open Widgets
+open HelperControls.DatePicker
 
 type Signal = unit
 type Attr = unit
