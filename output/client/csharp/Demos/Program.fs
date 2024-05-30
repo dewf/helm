@@ -5,7 +5,6 @@ open BuilderNode
 open Org.Whatever.QtTesting
 open AppReactor
 open Tabs
-open Tabs.FlightBooker
 open Widgets
 open WithDialogs
 

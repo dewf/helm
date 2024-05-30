@@ -4,10 +4,9 @@ open BuilderNode
 open SubReactor
 open Widgets
 
-type Msg =
-    | SetCelsius of text: string
-    | SetFahrenheit of text: string
-    
+type Attr = unit
+type Signal = unit
+
 type State = {
     CelsiusText: string
     FahrenText: string
@@ -16,6 +15,10 @@ type State = {
         CelsiusText = ""
         FahrenText = ""
     }
+    
+type Msg =
+    | SetCelsius of text: string
+    | SetFahrenheit of text: string
 
 let init () =
     State.Init, Cmd.None
@@ -78,4 +81,4 @@ let view (state: State) =
     :> ILayoutNode<Msg>
 
 type Node<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, unit, unit>(init, nullAttrUpdate, update, view, nullDiffAttrs)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)

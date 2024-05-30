@@ -4,12 +4,15 @@ open BuilderNode
 open SubReactor
 open Widgets
 
-type Msg =
-    | Increment
+type Attr = unit
+type Signal = unit
 
 type State = {
     Count: int
 }
+
+type Msg =
+    | Increment
 
 let init () =
     { Count = 0 }, Cmd.None
@@ -33,4 +36,4 @@ let view (state: State) =
     :> ILayoutNode<Msg>
 
 type Node<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, unit, unit>(init, nullAttrUpdate, update, view, nullDiffAttrs)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)
