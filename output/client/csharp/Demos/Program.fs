@@ -30,7 +30,7 @@ let update (state: State) (msg: Msg) =
     | OpenDialog ->
         state, Cmd.DialogOp ("testing", Exec)
     | Accept ->
-        state, Cmd.DialogOp ("testing", DialogOps.Accept)
+        state, Cmd.DialogOp ("testing", DialogOp.Accept)
     | DlgStatus status ->
         printfn "dlg status: [%A]" status
         state, Cmd.None

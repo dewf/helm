@@ -129,5 +129,5 @@ type Node<'msg>() =
             (this :> IWidgetNode<'msg>).Widget
             
         override this.AttachedToWindow window =
-            ()
-            
+            for _, page in pages do
+                page.AttachedToWindow window

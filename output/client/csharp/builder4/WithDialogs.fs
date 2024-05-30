@@ -44,6 +44,8 @@ type WindowWithDialogs<'msg>(window: IWindowNode<'msg>, dialogs: (string * IDial
     inherit WithDialogs<'msg>(window, dialogs)
     
     override this.CreatedWithDialogs dialogs =
+        // internal/nested dialogs are taken care of by MainWindow itself (triggering .AttachedToWindow)
+        // this is only for external/peer dialogs at a parallel level, that wouldn't otherwise be 'seen' by MainWindow
         for dlg in dialogs do
             dlg.AttachedToWindow window.WindowWidget
     

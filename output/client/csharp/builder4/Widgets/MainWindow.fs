@@ -20,7 +20,7 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeWidget: Widget.Handle option, dialogs: Dialog.Handle list) =
+type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeContentNode: IWidgetNode<'msg> option) = // we use node for content because we need to invoke 'attachedToWindow'
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable mainWindow = MainWindow.Create()
     do
@@ -33,14 +33,13 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         mainWindow.OnWindowTitleChanged (fun title ->
             signalDispatch (TitleChanged title))
         
-        maybeWidget
-        |> Option.iter mainWindow.SetCentralWidget
+        maybeContentNode
+        |> Option.iter (fun node ->
+            mainWindow.SetCentralWidget node.Widget
+            node.AttachedToWindow mainWindow)
         
         maybeMenuBar
         |> Option.iter mainWindow.SetMenuBar
-        
-        dialogs
-        |> List.iter (_.SetParentDialogFlags(mainWindow)) // special version of .setParent which also sets the Qt::Dialog window flags, without which window modals will not work
         
         // always show by default
         // hopefully this won't flicker if users want them hidden initially, but we can attend to that later
@@ -60,10 +59,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         // the below is for dialogs ... and probably nothing else! sigh
         node.AttachedToWindow mainWindow
         
-    member this.ReparentDialogs(dialogs: Dialog.Handle list) =
-        dialogs
-        |> List.iter (_.SetParentDialogFlags(mainWindow))
-
     member this.Widget with get() = mainWindow
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -79,8 +74,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         member this.Dispose() =
             mainWindow.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeMenuBar: MenuBar.Handle option) (maybeWidget: Widget.Handle option) (dialogs: Dialog.Handle list) =
-    let model = new Model<'msg>(dispatch, maybeMenuBar, maybeWidget, dialogs)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeMenuBar: MenuBar.Handle option) (maybeContentNode: IWidgetNode<'msg> option) =
+    let model = new Model<'msg>(dispatch, maybeMenuBar, maybeContentNode)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -96,7 +91,6 @@ let private dispose (model: Model<'msg>) =
 type Node<'msg>() =
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     let mutable maybeContent: IWidgetNode<'msg> option = None
-    let mutable attachedDialogs: (string * IDialogNode<'msg>) list = []
     let mutable onTitleChanged: (string -> 'msg) option = None
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -109,8 +103,6 @@ type Node<'msg>() =
     member this.OnTitleChanged with set value = onTitleChanged <- Some value
     member this.Content with set value = maybeContent <- Some value
     member this.MenuBar with set value = maybeMenuBar <- Some value
-    member this.Dialogs with set value = attachedDialogs <- value
-    
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "menu") with
         | Some change ->
@@ -143,20 +135,6 @@ type Node<'msg>() =
         | None ->
             // neither side had 'content'
             ()
-            
-        // removed dialogs should have been disposed (and therefore removed as children) already
-        // so I guess just set the parent on any that were added/swapped in
-        let toReparent =
-            attachedDialogs
-            |> List.choose (fun (name, node) ->
-                match changeMap.TryFind (StrKey $"dlg_{name}") with
-                | Some change ->
-                    match change with
-                    | Added | Swapped -> Some node.Dialog
-                    | _ -> None
-                | None ->
-                    None)
-        this.model.ReparentDialogs toReparent
         
     interface IWindowNode<'msg> with
         override this.Dependencies =
@@ -168,22 +146,13 @@ type Node<'msg>() =
                 maybeContent
                 |> Option.map (fun content -> (StrKey "content", content :> IBuilderNode<'msg>))
                 |> Option.toList
-            let dialogsList =
-                attachedDialogs
-                |> List.map (fun (name, node) -> (StrKey $"dlg_{name}", node :> IBuilderNode<'msg>)) // prefixed just so they don't collide with internal stuff (menu/content, if for some reason you named your dialogs that)
-            menuBarList @ contentList @ dialogsList
+            menuBarList @ contentList
 
         override this.Create(dispatch: 'msg -> unit) =
             let maybeMenuBarHandle =
                 maybeMenuBar
                 |> Option.map (_.MenuBar)
-            let maybeWidgetHandle =
-                maybeContent
-                |> Option.map (_.Widget)
-            let dialogHandles =
-                attachedDialogs
-                |> List.map (fun (_, node) -> node.Dialog)
-            this.model <- create this.Attrs this.SignalMap dispatch maybeMenuBarHandle maybeWidgetHandle dialogHandles
+            this.model <- create this.Attrs this.SignalMap dispatch maybeMenuBarHandle maybeContent
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Node<'msg>)
@@ -199,10 +168,12 @@ type Node<'msg>() =
             this.model.Widget
         override this.ContentKey =
             (this :> IWindowNode<'msg>).WindowWidget
-            
         override this.AttachedToWindow window =
-            failwith "MainWindow .AttachedToWindow??"
-            
-    interface IDialogParent<'msg> with
-        override this.AttachedDialogs = attachedDialogs
-            
+            // obviously a window isn't going to be contained in another window,
+            // but due to how the 'WithDialogs' type currently works, it manually calls this on top-level windows (with themselves as argument)
+            // so we need to propagate down to content, so dialogs declared internally to a window's content tree will be attached
+            match maybeContent with
+            | Some content ->
+                content.AttachedToWindow window
+            | None ->
+                ()

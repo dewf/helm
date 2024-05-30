@@ -4,12 +4,18 @@ open BuilderNode
 open System
 open Org.Whatever.QtTesting
 
+type DialogOp =
+    | Exec
+    | Accept
+    | Reject
+
 [<RequireQualifiedAccess>]
 type Cmd<'msg,'signal> =
     | None
     | OfMsg of 'msg
     | Signal of 'signal
     | Batch of commands: Cmd<'msg,'signal> list
+    | DialogOp of name: string * op: DialogOp
     
 let nullAttrUpdate (state: 'state) (attr: 'attr) =
     state
@@ -24,6 +30,22 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
     let mutable state = initState
     let mutable root = view state
     let mutable disableDispatch = false
+    let mutable dialogMap = Map.empty<string, IDialogNode<'msg>>
+    
+    let updateDialogMap() =
+        let rec recInner (soFar: Map<string, IDialogNode<'msg>>) (node: IBuilderNode<'msg>) =
+            // first process dependencies
+            let soFar =
+                (soFar, node.Dependencies)
+                ||> List.fold (fun acc (_, node) -> recInner acc node)
+            // now this node
+            match node with
+            | :? IDialogParent<'msg> as dlgParent ->
+                (soFar, dlgParent.AttachedDialogs)
+                ||> List.fold (fun acc (name, node) -> acc.Add (name, node))
+            | _ ->
+                soFar
+        dialogMap <- recInner Map.empty root
 
     // dispatch isn't actually (supposed to be) recursive, but we do pass it as a parameter because it gets injected into all the widget models for callbacks
     // but we need to protect against reentrance, which is the purpose of the 'inDispatch' flag
@@ -42,10 +64,13 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
             disableDispatch <- true
             diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>))
             disableDispatch <- false
+            //
+            updateDialogMap()
             // process command(s) after tree diff
             processCmd cmd
     do
         build dispatch root
+        updateDialogMap()
         processCmd initCmd
         
     member this.Root =
@@ -62,10 +87,22 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
         disableDispatch <- true
         diff dispatch (Some prevRoot) (Some root)
         disableDispatch <- false
+        //
+        updateDialogMap()
         // no commands allowed in attr update (for now)
     
     member this.ProcessMsg (msg: 'msg) =
         dispatch msg
+        
+    member this.DialogOp (name: string) (op: DialogOp) =
+        match dialogMap.TryFind name with
+        | Some node ->
+            match op with
+            | Exec -> node.Dialog.Exec()
+            | Accept -> node.Dialog.Accept()
+            | Reject -> node.Dialog.Reject()
+        | None ->
+            printfn "SubReactor.DialogOp: couldn't find dialog '%s'" name
         
     member this.AttachedToWindow (window: Widget.Handle) =
         root.AttachedToWindow window
@@ -136,6 +173,8 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                 | Cmd.Batch commands ->
                     commands
                     |> List.iter processCmd
+                | Cmd.DialogOp (name, op) ->
+                    this.reactor.DialogOp name op
             this.reactor <- new SubReactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
             this.reactor.ApplyAttrs(this.Attrs)
         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =

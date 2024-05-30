@@ -4,7 +4,7 @@ open System
 open BuilderNode
 open Org.Whatever.QtTesting
 
-type DialogOps =
+type DialogOp =
     | Exec
     | Accept
     | Reject
@@ -15,7 +15,7 @@ type Cmd<'msg> =
     | OfMsg of 'msg
     | QuitApplication
     | Batch of commands: Cmd<'msg> list
-    | DialogOp of name: string * op: DialogOps
+    | DialogOp of name: string * op: DialogOp
     
 type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> 'msg -> 'state * Cmd<'msg>, view: 'state -> IBuilderNode<'msg>, processCmd: Reactor<'state, 'msg> -> Cmd<'msg> -> unit) as this =
     let initState, initCmd = init()
@@ -68,7 +68,7 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
     member this.ProcessMsg (msg: 'msg) =
         dispatch msg
         
-    member this.DialogOp (name: string) (op: DialogOps) =
+    member this.DialogOp (name: string) (op: DialogOp) =
         match dialogMap.TryFind name with
         | Some node ->
             match op with
@@ -76,11 +76,11 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
             | Accept -> node.Dialog.Accept()
             | Reject -> node.Dialog.Reject()
         | None ->
-            printfn "Reactor.ExecDialog: couldn't find dialog '%s'" name
+            printfn "Reactor.DialogOp: couldn't find dialog '%s'" name
             
     interface IDisposable with
         member this.Dispose() =
-            printfn "Reactor type .Dispose()"
+            printfn "Reactor.Dispose()"
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
             
@@ -107,7 +107,7 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg>, update: 'state ->
         // reactor should be disposed, then app (QApplication instance)
     interface IDisposable with
         member this.Dispose() =
-            printfn "AppReactor .Dispose() (nothing to do, currently)"
+            printfn "AppReactor.Dispose() (nothing to do, currently)"
             
 let createApplication (init: unit -> 'state * Cmd<'msg>) (update: 'state -> 'msg -> 'state * Cmd<'msg>) (view: 'state -> IBuilderNode<'msg>) =
     new AppReactor<'msg,'state>(init, update, view)

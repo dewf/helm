@@ -5,6 +5,7 @@ open System.Globalization
 open BuilderNode
 open SubReactor
 open Widgets
+open WithDialogs
 
 type Value =
     | Empty
@@ -32,6 +33,7 @@ type Msg =
     | EditChanged of str: string
     | EditSubmitted
     | ShowCalendar
+    | CalendarOp of op: DialogOp
 
 let init () =
     let state = {
@@ -85,7 +87,9 @@ let update (state: State) (msg: Msg) =
     | EditSubmitted ->
         state, Cmd.None
     | ShowCalendar ->
-        state, Cmd.None
+        state, Cmd.DialogOp ("calendar", Exec)
+    | CalendarOp op ->
+        state, Cmd.DialogOp ("calendar", op)
 
 let view (state: State) =
     let edit =
@@ -101,7 +105,18 @@ let view (state: State) =
                 BoxLayout.ContentsMargins (0, 0, 0, 0)
             ],
             Items = [ edit; button ])
-    hbox :> ILayoutNode<Msg>
+    let dialog =
+        let reject =
+            PushButton.Node(Attrs = [ PushButton.Label "Reject" ], OnClicked = CalendarOp Reject)
+        let accept =
+            PushButton.Node(Attrs = [ PushButton.Label "Woot!" ], OnClicked = CalendarOp Accept)
+        let layout =
+            BoxLayout.Node(Attrs = [ BoxLayout.Direction BoxLayout.Vertical ], Items = [ reject; accept ])
+        Dialog.Node(
+            Attrs = [ Dialog.Size (320, 200) ],
+            Layout = layout)
+    LayoutWithDialogs(hbox, [ "calendar", dialog ])
+    :> ILayoutNode<Msg>
     
 type DatePicker<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, genericDiffAttrs keyFunc)
