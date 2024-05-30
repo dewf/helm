@@ -31,7 +31,7 @@ type DepsChange =
     
 type IBuilderNode<'msg> =
     interface
-        abstract Dependencies: unit -> (DepsKey * IBuilderNode<'msg>) list
+        abstract Dependencies: (DepsKey * IBuilderNode<'msg>) list
         abstract Create: ('msg -> unit) -> unit
         abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
@@ -131,7 +131,7 @@ let rec disposeTree(node: IBuilderNode<'msg>) =
     | :? IDialogNode<'msg> ->
         printfn "not destroying dialog or dependencies (owned by a window ... probably)"
     | _ ->
-        for (_, node) in node.Dependencies() do
+        for (_, node) in node.Dependencies do
             disposeTree node
         node.Dispose()
 
@@ -165,7 +165,7 @@ let nullDiffAttrs (a1: 'a list) (a2: 'a list) =
 let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) =
     let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =
         // realize dependencies
-        for (_, node) in right.Dependencies() do
+        for (_, node) in right.Dependencies do
             diff dispatch None (Some node)
         // now create
         right.Create dispatch
@@ -183,8 +183,8 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
     | Some left, Some right when left.GetType() = right.GetType() ->
         // neither side empty, but same type - diff and migrate
         // reconcile and order children via ID
-        let leftMap = Map.ofList (left.Dependencies())
-        let rightMap = Map.ofList (right.Dependencies())
+        let leftMap = Map.ofList (left.Dependencies)
+        let rightMap = Map.ofList (right.Dependencies)
         let uniqueIds = (Map.keys leftMap @ Map.keys rightMap) |> List.distinct |> List.sort
         let leftChildren = uniqueIds |> List.map leftMap.TryFind
         let rightChildren = uniqueIds |> List.map rightMap.TryFind

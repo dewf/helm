@@ -10,7 +10,7 @@ type Node<'msg>() =
         and set value = windows <- value
         
     interface ITopLevelNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             windows
             |> List.map (fun (key, window) -> key, window :> IBuilderNode<'msg>)
         override this.Create(dispatch: 'msg -> unit) =

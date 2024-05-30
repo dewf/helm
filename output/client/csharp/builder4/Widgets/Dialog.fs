@@ -104,7 +104,7 @@ type Node<'msg>() =
         // layout only - parent can't be changed after creation
     
     interface IDialogNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             // maybeParent not a dependency, would create circular problems (and is intended only for internal modal use)
             maybeLayout
             |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))

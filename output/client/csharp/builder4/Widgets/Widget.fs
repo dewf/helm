@@ -94,7 +94,7 @@ type Node<'msg>() =
             ()
     
     interface IWidgetNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             maybeLayout
             |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))
             |> Option.toList

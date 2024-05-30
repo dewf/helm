@@ -28,7 +28,7 @@ type Reactor<'state, 'msg>(init: unit -> 'state * Cmd<'msg>, update: 'state -> '
         let rec recInner (soFar: Map<string, IDialogNode<'msg>>) (node: IBuilderNode<'msg>) =
             // first process dependencies
             let soFar =
-                (soFar, node.Dependencies())
+                (soFar, node.Dependencies)
                 ||> List.fold (fun acc (_, node) -> recInner acc node)
             // now this node
             match node with

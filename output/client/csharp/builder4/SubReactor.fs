@@ -118,7 +118,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
     default this.SignalMap _ = None
     
     interface IBuilderNode<'outerMsg> with
-        override this.Dependencies() = []
+        override this.Dependencies = []
         override this.Create(dispatch: 'outerMsg -> unit) =
             let rec processCmd (cmd: Cmd<'msg, 'signal>) =
                 match cmd with

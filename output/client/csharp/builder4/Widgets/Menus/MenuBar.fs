@@ -91,7 +91,7 @@ type Node<'msg>() =
         else
             ()
     interface IMenuBarNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             // see long note on same BoxLayout method
             menus
             |> List.mapi (fun i menu -> (IntKey i, menu :> IBuilderNode<'msg>))

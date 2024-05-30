@@ -95,7 +95,7 @@ type Node<'msg>() =
             ()
         
     interface ILayoutNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             // because the indices are generated here, based on items order,
             // it prevents the possibility of the "user" (app developer) from being able to reorder existing items without them being destroyed/recreated entirely
             // but I don't think that's a very common use case, to be reordering anything in a vbox/hbox, except maybe adding things at the end (which should work fine)

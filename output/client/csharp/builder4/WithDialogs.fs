@@ -9,16 +9,16 @@ type WithDialogs<'msg>(content: IBuilderNode<'msg>, dialogs: (string * IDialogNo
     default this.CreatedWithDialogs dialogs = ()
     
     interface IBuilderNode<'msg> with
-        member this.Dependencies() =
+        member this.Dependencies =
             let dialogs' =
                 dialogs
                 |> List.map (fun (id, node) -> "dlg_" + id, node :> IBuilderNode<'msg>)
             ("content", content) :: dialogs'
             |> List.map (fun (id, node) -> StrKey id, node)
         member this.Create dispatch =
-            // in the case where 'content' is a top-level window,
-            // it won't be able to see 'dialogs' because they are at a parallel level here in this node (not children, as for example a LayoutWithDialogs would be)
-            // so call the virtual method and let window-based subclasses perform the attachment
+            // in some cases (eg LayoutWithDialogs) the dialogs would be attached when this node itself receives .AttachedToWindow invocation initiated from a higher level
+            // however if the 'content' of this node is the top-level window (eg WindowWithDialogs), there is no ancestral window to trigger .AttachedToWindow down the hierarchy
+            // so call the virtual method and let window-based subclasses (eg WindowWithDialogs) perform the attachment themselves
             this.CreatedWithDialogs (dialogs |> List.map snd)
         member this.MigrateFrom left depsChanges =
             let depsMap =

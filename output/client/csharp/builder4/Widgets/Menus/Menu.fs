@@ -93,7 +93,7 @@ type Node<'msg>() =
             ()
         
     interface IMenuNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             // see long note on same BoxLayout method
             items
             |> List.mapi (fun i item -> (IntKey i, item :> IBuilderNode<'msg>))

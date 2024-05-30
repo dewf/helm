@@ -159,7 +159,7 @@ type Node<'msg>() =
         this.model.ReparentDialogs toReparent
         
     interface IWindowNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             let menuBarList =
                 maybeMenuBar
                 |> Option.map (fun menuBar -> (StrKey "menu", menuBar :> IBuilderNode<'msg>))

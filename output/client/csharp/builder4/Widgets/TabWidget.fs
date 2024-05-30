@@ -96,7 +96,7 @@ type Node<'msg>() =
             ()
         
     interface IWidgetNode<'msg> with
-        override this.Dependencies() =
+        override this.Dependencies =
             // as usual, this is order-based (since the outside 'user' is not providing keys)
             // ... we should probably switch to string keys anyway, and/or rethink how widgets can survive reorderings
             // seems silly to needlessly destroy/create things just because the order changed and the user didn't provide keys,

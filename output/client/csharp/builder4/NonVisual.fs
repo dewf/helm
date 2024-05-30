@@ -11,7 +11,7 @@ type INonVisualNode<'msg> =
     
 type WithNonVisual<'msg>(content: IBuilderNode<'msg>, nonVisualItems: (string * INonVisualNode<'msg>) list) =
     interface IBuilderNode<'msg> with
-        member this.Dependencies() =
+        member this.Dependencies =
             let trayAsBuilderNodes =
                 nonVisualItems
                 |> List.map (fun (id, node) -> $"nv_{id}", node :> IBuilderNode<'msg>)

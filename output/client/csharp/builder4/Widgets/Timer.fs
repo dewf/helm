@@ -71,7 +71,7 @@ type Node<'msg>() =
             | Timeout -> onTimeout
 
     interface INonVisualNode<'msg> with
-        override this.Dependencies() = []
+        override this.Dependencies = []
         override this.Create(dispatch: 'msg -> unit) =
             this.model <- create this.Attrs this.SignalMap dispatch
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
