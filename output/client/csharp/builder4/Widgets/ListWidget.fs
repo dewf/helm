@@ -83,7 +83,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 
-type Node<'msg>() =
+type ListWidget<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     let mutable onCurrentRowChanged: (int option -> 'msg) option = None
@@ -104,7 +104,7 @@ type Node<'msg>() =
         override this.Create(dispatch: 'msg -> unit) =
             this.model <- create this.Attrs this.SignalMap dispatch
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> ListWidget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged

@@ -60,7 +60,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Node<'msg>() =
+type Menu<'msg>() =
     let mutable items: IActionNode<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -77,7 +77,7 @@ type Node<'msg>() =
         with get() = items
         and set value = items <- value
         
-    member private this.MigrateContent (leftMenu: Node<'msg>) =
+    member private this.MigrateContent (leftMenu: Menu<'msg>) =
         let leftItems =
             leftMenu.Items
             |> List.map (_.ContentKey)
@@ -103,7 +103,7 @@ type Node<'msg>() =
                 |> List.map (_.Action)
             this.model <- create this.Attrs actionHandles this.SignalMap dispatch
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let leftNode = (left :?> Node<'msg>)
+            let leftNode = (left :?> Menu<'msg>)
             let nextAttrs =
                 diffAttrs leftNode.Attrs this.Attrs
                 |> createdOrChanged
@@ -117,7 +117,3 @@ type Node<'msg>() =
             (this :> IMenuNode<'msg>).Menu
         override this.AttachedToWindow window =
             ()
-            
-
-let make (attrs: Attr list) (items: IActionNode<'msg> list) =
-    Node(Attrs = attrs, Items = items)

@@ -73,7 +73,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Node<'msg>() =
+type Dialog<'msg>() =
     let mutable maybeLayout: ILayoutNode<'msg> option = None
     let mutable onAccepted: 'msg option = None
     let mutable onRejected: 'msg option = None
@@ -121,7 +121,7 @@ type Node<'msg>() =
             this.model <- create this.Attrs this.SignalMap dispatch maybeLayoutHandle
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> Dialog<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged

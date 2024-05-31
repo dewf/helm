@@ -7,6 +7,9 @@ open SubReactor
 open Widgets
 open HelperControls.DatePicker
 open BoxLayout
+open Label
+open PushButton
+open ComboBox
 
 type Signal = unit
 type Attr = unit
@@ -105,13 +108,13 @@ let view (state: State) =
             | Some 0 -> ModeChanged OneWay
             | Some 1 -> ModeChanged RoundTrip
             | _ -> failwith "whoops"
-        ComboBox.Node(Attrs = [ ComboBox.Items items ], OnSelected = indexToMsg)
+        ComboBox(Attrs = [ Items items ], OnSelected = indexToMsg)
     let labeledPicker labelText value changeMsg enabled =
         let label =
-            Label.Node(Attrs = [ Label.Text labelText ])
+            Label(Attrs = [ Label.Text labelText ])
         let picker =
             DatePicker(
-                Attrs = [ Value value; Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
+                Attrs = [ Value value; DatePicker.Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
                 OnValueChanged = changeMsg)
         BoxLayout(Attrs = [
             Direction Horizontal
@@ -126,9 +129,9 @@ let view (state: State) =
     let return_ =
         labeledPicker "Return" state.ReturnDate ReturnChanged (state.Mode = RoundTrip)
     let status =
-        Label.Node(Attrs = [ Label.Text status ])
+        Label(Attrs = [ Label.Text status ])
     let bookButton =
-        PushButton.Node(Attrs = [ PushButton.Label "Book Trip"; PushButton.Enabled canBook ])
+        PushButton(Attrs = [ Text "Book Trip"; Enabled canBook ])
     BoxLayout(
         Attrs = [ Direction Vertical ],
         Items = [
@@ -140,5 +143,5 @@ let view (state: State) =
         ])
     :> ILayoutNode<Msg>
     
-type Node<'outerMsg>() =
+type FlightBooker<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)

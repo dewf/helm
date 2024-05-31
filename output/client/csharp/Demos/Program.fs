@@ -4,10 +4,18 @@ open System
 open BuilderNode
 open Org.Whatever.QtTesting
 open AppReactor
-open Tabs
 open Widgets
 open WithDialogs
 open BoxLayout
+open PushButton
+open Dialog
+open MainWindow
+open TabWidget
+open Tabs.Counter
+open Tabs.TempConverter
+open Tabs.FlightBooker
+open Tabs.TimerPage
+open Tabs.CRUD
 
 type Msg =
     | OpenDialog
@@ -41,23 +49,23 @@ let update (state: State) (msg: Msg) =
     
 let view (state: State) =
     let launchButton =
-        PushButton.Node(Attrs = [PushButton.Label "Launch Dialog"], OnClicked = OpenDialog)
+        PushButton(Attrs = [Text "Launch Dialog"], OnClicked = OpenDialog)
     let tabWidget =
-        TabWidget.Node(
+        TabWidget(
             Pages = [
-                "Counter", Counter.Node()
-                "TempConv", TempConverter.Node()
-                "FlightBooker", FlightBooker.Node()
-                "Timer", TimerPage.Node()
-                "CRUD", CRUD.Node()
+                "Counter", Counter()
+                "TempConv", TempConverter()
+                "FlightBooker", FlightBooker()
+                "Timer", TimerPage()
+                "CRUD", CRUDPage()
                 "Launch", launchButton
                 // "COMBO", combo
             ])
     let dialog =
         let button =
-            PushButton.Node(Attrs = [ PushButton.Label "Accept Me" ], OnClicked = AcceptDialog)
+            PushButton(Attrs = [ Text "Accept Me" ], OnClicked = AcceptDialog)
         let button2 =
-            PushButton.Node(Attrs = [ PushButton.Label "Change Window Title" ], OnClicked = ChangeWindowTitle)
+            PushButton(Attrs = [ Text "Change Window Title" ], OnClicked = ChangeWindowTitle)
         let layout =
             BoxLayout(
                 Attrs = [ Direction Vertical ],
@@ -65,14 +73,14 @@ let view (state: State) =
                     BoxItem.Create(button)
                     BoxItem.Create(button2)
                 ])
-        Dialog.Node(
+        Dialog(
             Attrs = [ Dialog.Size (300, 200) ],
             Layout = layout,
             OnAccepted = DlgStatus "accepted",
             OnRejected = DlgStatus "rejected")
     let window =
-        MainWindow.Node(
-            Attrs = [ MainWindow.Title state.WindowTitle ],
+        MainWindow(
+            Attrs = [ Title state.WindowTitle ],
             Content = tabWidget)
     WindowWithDialogs(window, [ "testing", dialog ])
     :> IBuilderNode<Msg>

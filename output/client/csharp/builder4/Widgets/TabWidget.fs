@@ -62,7 +62,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Node<'msg>() =
+type TabWidget<'msg>() =
     let mutable pages: (string * IWidgetNode<'msg>) list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -80,7 +80,7 @@ type Node<'msg>() =
         with get() = pages
         and set value = pages <- value
         
-    member private this.MigrateContent(leftTabWidget: Node<'msg>) =
+    member private this.MigrateContent(leftTabWidget: TabWidget<'msg>) =
         let leftContents =
             leftTabWidget.Pages
             |> List.map (fun (label, node) -> label, node.ContentKey)
@@ -112,7 +112,7 @@ type Node<'msg>() =
             this.model <- create this.Attrs pageLabelsAndHandles this.SignalMap dispatch
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> TabWidget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged

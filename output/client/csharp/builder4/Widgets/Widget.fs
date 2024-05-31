@@ -66,7 +66,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
             
  
-type Node<'msg>() =
+type Widget<'msg>() =
     let mutable maybeLayout: ILayoutNode<'msg> option = None
     member private this.MaybeLayout = maybeLayout // need to be able to access from migration (does this need to be a function?)
 
@@ -106,7 +106,7 @@ type Node<'msg>() =
             this.model <- create this.Attrs maybeLayoutHandle this.SignalMap dispatch
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> Widget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged

@@ -7,6 +7,10 @@ open SubReactor
 open Widgets
 open WithDialogs
 open BoxLayout
+open Dialog
+
+open LineEdit
+open PushButton
 
 type Value =
     | Empty
@@ -100,10 +104,10 @@ let update (state: State) (msg: Msg) =
 
 let view (state: State) =
     let edit =
-        LineEdit.Node(
+        LineEdit(
             Attrs = [ LineEdit.Value state.Raw; LineEdit.Enabled state.Enabled ], OnChanged = EditChanged, OnReturnPressed = EditSubmitted)
     let button =
-        PushButton.Node(Attrs = [ PushButton.Label "📅"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
+        PushButton(Attrs = [ Text "📅"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
     let hbox =
         BoxLayout(
             Attrs = [
@@ -117,17 +121,17 @@ let view (state: State) =
             ])
     let dialog =
         let reject =
-            PushButton.Node(Attrs = [ PushButton.Label "Reject" ], OnClicked = CalendarOp Reject)
+            PushButton(Attrs = [ Text "Reject" ], OnClicked = CalendarOp Reject)
         let accept =
-            PushButton.Node(Attrs = [ PushButton.Label "Woot!" ], OnClicked = CalendarOp Accept)
+            PushButton(Attrs = [ Text "Woot!" ], OnClicked = CalendarOp Accept)
         let layout =
             BoxLayout(Attrs = [ Direction Vertical ],
                       Items = [
                           BoxItem.Create(reject)
                           BoxItem.Create(accept)
                       ])
-        Dialog.Node(
-            Attrs = [ Dialog.Size (320, 200); Dialog.Title state.DialogTitle ],
+        Dialog(
+            Attrs = [ Size (320, 200); Title state.DialogTitle ],
             Layout = layout)
     LayoutWithDialogs(hbox, [ "calendar", dialog ])
     :> ILayoutNode<Msg>

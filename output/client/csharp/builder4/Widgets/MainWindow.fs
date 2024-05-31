@@ -88,7 +88,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Node<'msg>() =
+type MainWindow<'msg>() =
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     let mutable maybeContent: IWidgetNode<'msg> option = None
     let mutable onTitleChanged: (string -> 'msg) option = None
@@ -155,7 +155,7 @@ type Node<'msg>() =
             this.model <- create this.Attrs this.SignalMap dispatch maybeMenuBarHandle maybeContent
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> MainWindow<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged

@@ -4,6 +4,8 @@ open BuilderNode
 open SubReactor
 open Widgets
 open BoxLayout
+open Label
+open PushButton
 
 type Attr = unit
 type Signal = unit
@@ -25,12 +27,12 @@ let update (state: State) (msg: Msg) =
         
 let view (state: State) =
     let label =
-        Label.Node(Attrs = [
+        Label(Attrs = [
             Label.Text $"Count: {state.Count}"
-            Label.Alignment Label.Center
+            Alignment Center
         ])
     let button =
-        PushButton.Node(Attrs = [ PushButton.Label "Increment" ], OnClicked = Increment)
+        PushButton(Attrs = [ Text "Increment" ], OnClicked = Increment)
     BoxLayout(
         Attrs = [ Direction Horizontal ],
         Items = [
@@ -39,5 +41,5 @@ let view (state: State) =
         ])
     :> ILayoutNode<Msg>
 
-type Node<'outerMsg>() =
+type Counter<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)

@@ -8,12 +8,12 @@ type Signal =
     | Clicked
     
 type Attr =
-    | Label of string
+    | Text of string
     | Enabled of bool
     | AutoDefault of bool
 
 let private keyFunc = function
-    | Label _ -> 0
+    | Text _ -> 0
     | Enabled _ -> 1
     | AutoDefault _ -> 2
 
@@ -36,7 +36,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | Label text ->
+            | Text text ->
                 button.SetText(text)
             | Enabled state ->
                 button.SetEnabled(state)
@@ -60,7 +60,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Node<'msg>() =
+type PushButton<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     let mutable onClicked: 'msg option = None
@@ -78,7 +78,7 @@ type Node<'msg>() =
             this.model <- create this.Attrs this.SignalMap dispatch
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> PushButton<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
             this.model <- migrate left'.model nextAttrs this.SignalMap
 
@@ -93,7 +93,3 @@ type Node<'msg>() =
             
         override this.AttachedToWindow window =
             ()
-
-// various easy constructors here
-let make (label: string) (onClick: 'msg) =
-    Node(Attrs = [Label label], OnClicked = onClick)

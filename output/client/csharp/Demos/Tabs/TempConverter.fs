@@ -4,6 +4,8 @@ open BuilderNode
 open SubReactor
 open Widgets
 open BoxLayout
+open LineEdit
+open Label
 
 type Attr = unit
 type Signal = unit
@@ -69,13 +71,13 @@ let update (state: State) (msg: Msg) =
         
 let view (state: State) =
     let celsiusText =
-        LineEdit.Node(Attrs = [ LineEdit.Value state.CelsiusText ], OnChanged = SetCelsius)
+        LineEdit(Attrs = [ Value state.CelsiusText ], OnChanged = SetCelsius)
     let celsiusLabel =
-        Label.Node(Attrs = [ Label.Text "Celsius = " ])
+        Label(Attrs = [ Text "Celsius = " ])
     let fahrenText =
-        LineEdit.Node(Attrs = [ LineEdit.Value state.FahrenText ], OnChanged = SetFahrenheit)
+        LineEdit(Attrs = [ Value state.FahrenText ], OnChanged = SetFahrenheit)
     let fahrenLabel =
-        Label.Node(Attrs = [ Label.Text "Fahrenheit" ])
+        Label(Attrs = [ Text "Fahrenheit" ])
     BoxLayout(
         Attrs = [ Direction Horizontal ],
         Items = [
@@ -86,5 +88,5 @@ let view (state: State) =
         ])
     :> ILayoutNode<Msg>
 
-type Node<'outerMsg>() =
+type TempConverter<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)

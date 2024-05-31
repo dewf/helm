@@ -2,7 +2,7 @@
 
 open BuilderNode
 
-type Node<'msg>() =
+type WindowSet<'msg>() =
     let mutable windows: (DepsKey * IWindowNode<'msg>) list = []
     
     member this.Windows
@@ -28,4 +28,3 @@ type Node<'msg>() =
             
         override this.AttachedToWindow window =
             failwith "WindowSet .AttachedToWindow??"
-            

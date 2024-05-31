@@ -5,8 +5,12 @@ open BuilderNode
 open NonVisual
 open SubReactor
 open Widgets
-
 open BoxLayout
+open Label
+open PushButton
+open Slider
+open ProgressBar
+open Timer
 
 type Signal = unit
 type Attr = unit
@@ -54,43 +58,43 @@ let view (state: State) =
             (state.Accumulated * 1000) / state.Duration
         let text =
             sprintf "%.02fs" (float state.Accumulated / 1000.0)
-        ProgressBar.Node(Attrs = [
-            ProgressBar.Range (0, 1000) // using 1000 divisions ... setting duration directly here seemed to cause flickering
-            ProgressBar.Value value
-            ProgressBar.InnerText text
+        ProgressBar(Attrs = [
+            Range (0, 1000) // using 1000 divisions ... setting duration directly here seemed to cause flickering
+            Value value
+            InnerText text
         ])
     let label =
         let text =
             sprintf "%.02fs" (float state.Duration / 1000.0)
-        Label.Node(Attrs = [ Label.Text text ])
+        Label(Attrs = [ Label.Text text ])
     let slider =
-        Slider.Node(Attrs = [
-            Slider.Orientation Slider.Horizontal
+        Slider(Attrs = [
+            Orientation Horizontal
             Slider.Range (100, 10_000)
-            Slider.TickPosition Slider.Below
-            Slider.TickInterval 1000
+            TickPosition Below
+            TickInterval 1000
             Slider.Value state.Duration
         ], OnValueChanged = SetDuration)
     let hbox =
-        BoxLayout(Attrs = [ Direction Horizontal ],
+        BoxLayout(Attrs = [ Direction BoxLayout.Horizontal ],
                   Items = [
                       BoxItem.Create(label)
                       BoxItem.Create(slider)
                   ])
     let button =
-        PushButton.Node(Attrs = [ PushButton.Label "Reset" ], OnClicked = Reset)
+        PushButton(Attrs = [ Text "Reset" ], OnClicked = Reset)
     let layout =
-        BoxLayout(Attrs = [ Direction Vertical ],
+        BoxLayout(Attrs = [ Direction BoxLayout.Vertical ],
                   Items = [
                       BoxItem.Create(progress)
                       BoxItem.Create(hbox)
                       BoxItem.Create(button)
                   ])
     let timer =
-        Timer.Node(Attrs = [ Timer.Interval TIMER_INTERVAL; Timer.Running true ], OnTimeout = TimerTick)
+        Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)
     LayoutWithNonVisual(layout, [ "timer", timer ]) :> ILayoutNode<Msg>
     
 
-type Node<'outerMsg>() =
+type TimerPage<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)
     

@@ -3,9 +3,14 @@
 open BuilderNode
 open Org.Whatever.QtTesting
 open SubReactor
+
 open Widgets
+open Label
 open BoxLayout
 open GridLayout
+open PushButton
+open LineEdit
+open ListWidget
 
 type Attr = unit
 type Signal = unit
@@ -193,13 +198,13 @@ let update (state: State) (msg: Msg) =
         nextState, Cmd.None
         
 let view (state: State) =
-    let filterLabel = Label.Node(Attrs = [ Label.Text "Filter prefix:" ])
+    let filterLabel = Label(Attrs = [ Label.Text "Filter prefix:" ])
     let filterEdit =
         let value =
             match state.Mode with
             | Unfiltered -> ""
             | Filtered(filter, _) -> filter
-        LineEdit.Node(Attrs = [ LineEdit.Value value ], OnChanged = SetFilter)
+        LineEdit(Attrs = [ Value value ], OnChanged = SetFilter)
 
     let items =
         match state.Mode with
@@ -212,38 +217,38 @@ let view (state: State) =
                 let name = fname.Name
                 sprintf "%s, %s" name.Last name.First)
     let listBox =
-        ListWidget.Node(
+        ListWidget(
             Attrs = [
-                ListWidget.Items items
-                ListWidget.SelectionMode ListWidget.Single
-                ListWidget.CurrentRow state.SelectedIndex
+                Items items
+                SelectionMode Single
+                CurrentRow state.SelectedIndex
             ],
             OnCurrentRowChanged = SelectItem)
 
-    let firstLabel = Label.Node(Attrs = [ Label.Text "First:" ])
-    let firstEdit = LineEdit.Node(Attrs = [ LineEdit.Value state.FirstEdit ], OnChanged = SetFirst)
+    let firstLabel = Label(Attrs = [ Label.Text "First:" ])
+    let firstEdit = LineEdit(Attrs = [ Value state.FirstEdit ], OnChanged = SetFirst)
 
-    let lastLabel = Label.Node(Attrs = [ Label.Text "Last:" ])
-    let lastEdit = LineEdit.Node(Attrs = [ LineEdit.Value state.LastEdit ], OnChanged = SetLast)
+    let lastLabel = Label(Attrs = [ Label.Text "Last:" ])
+    let lastEdit = LineEdit(Attrs = [ Value state.LastEdit ], OnChanged = SetLast)
 
     let createButton =
         let enabled =
             state.FirstEdit.Length > 0 && state.LastEdit.Length > 0
-        PushButton.Node(Attrs = [ PushButton.Label "Create"; PushButton.Enabled enabled ], OnClicked = Create)
+        PushButton(Attrs = [ Text "Create"; PushButton.Enabled enabled ], OnClicked = Create)
 
     let updateButton =
         let enabled =
             match state.SelectedIndex, state.FirstEdit.Length, state.LastEdit.Length with
             | Some _, firstLen, lastLen when firstLen > 0 && lastLen > 0 -> true
             | _ -> false
-        PushButton.Node(Attrs = [ PushButton.Label "Update"; PushButton.Enabled enabled ], OnClicked = Update)
+        PushButton(Attrs = [ Text "Update"; PushButton.Enabled enabled ], OnClicked = Update)
         
     let deleteButton =
         let enabled =
             match state.SelectedIndex with
             | Some _ -> true
             | None -> false
-        PushButton.Node(Attrs = [ PushButton.Label "Delete"; PushButton.Enabled enabled ], OnClicked = Delete)
+        PushButton(Attrs = [ Text "Delete"; PushButton.Enabled enabled ], OnClicked = Delete)
     
     GridLayout(
         Attrs = [
@@ -262,7 +267,7 @@ let view (state: State) =
                 BoxLayout(
                     Attrs = [
                         Direction Horizontal
-                        BoxLayout.Attr.ContentsMargins (0, 0, 0, 0)
+                        BoxLayout.ContentsMargins (0, 0, 0, 0)
                     ],
                     Items = [
                         BoxItem.Create(createButton, stretch = 1)
@@ -274,5 +279,5 @@ let view (state: State) =
         ])
     :> ILayoutNode<Msg>
 
-type Node<'outerMsg>() =
+type CRUDPage<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)
