@@ -6,6 +6,8 @@ open NonVisual
 open SubReactor
 open Widgets
 
+open BoxLayout
+
 type Signal = unit
 type Attr = unit
 let TIMER_INTERVAL = 1000 / 20
@@ -70,13 +72,20 @@ let view (state: State) =
             Slider.Value state.Duration
         ], OnValueChanged = SetDuration)
     let hbox =
-        BoxLayout.Node(Attrs = [ BoxLayout.Direction BoxLayout.Horizontal ], Items = [ label; slider ])
+        BoxLayout(Attrs = [ Direction Horizontal ],
+                  Items = [
+                      BoxItem.Create(label)
+                      BoxItem.Create(slider)
+                  ])
     let button =
         PushButton.Node(Attrs = [ PushButton.Label "Reset" ], OnClicked = Reset)
     let layout =
-        BoxLayout.Node(
-            Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
-            Items = [ progress; hbox; button ])
+        BoxLayout(Attrs = [ Direction Vertical ],
+                  Items = [
+                      BoxItem.Create(progress)
+                      BoxItem.Create(hbox)
+                      BoxItem.Create(button)
+                  ])
     let timer =
         Timer.Node(Attrs = [ Timer.Interval TIMER_INTERVAL; Timer.Running true ], OnTimeout = TimerTick)
     LayoutWithNonVisual(layout, [ "timer", timer ]) :> ILayoutNode<Msg>

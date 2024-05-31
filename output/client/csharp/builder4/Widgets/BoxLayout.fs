@@ -22,14 +22,76 @@ let private keyFunc = function
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
+    
+type ItemInfo = {
+    Stretch: int option
+    Align: Common.Alignment option  // irrelevant for layout items
+}
 
-type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
+[<RequireQualifiedAccess>]
+type internal ItemKey<'msg> =
+    // used for internal comparisons, since we can't (meaningfully) compare builder nodes against each other, we need the inner handles
+    | WidgetItem of content: Object * info: ItemInfo
+    | LayoutItem of content: Object * info: ItemInfo
+    | Spacer of sp: int
+    | Stretch of stretch: int
+type BoxItem<'msg> =
+    | WidgetItem of w: IWidgetNode<'msg> * info: ItemInfo
+    | LayoutItem of l: ILayoutNode<'msg> * info: ItemInfo
+    | Spacer of sp: int
+    | Stretch of stretch: int
+with
+    member internal this.InternalKey =
+        match this with
+        | WidgetItem(w, info) ->
+            ItemKey.WidgetItem (w.ContentKey, info)
+        | LayoutItem(l, info) ->
+            ItemKey.LayoutItem (l.ContentKey, info)
+        | Spacer sp ->
+            ItemKey.Spacer sp
+        | Stretch stretch ->
+            ItemKey.Stretch stretch
+    static member Create(w: IWidgetNode<'msg>, ?stretch: int, ?align: Common.Alignment) =
+        let info =
+            { Stretch = defaultArg (Some stretch) None
+              Align = defaultArg (Some align) None }
+        WidgetItem (w, info)
+    static member Create(l: ILayoutNode<'msg>, ?stretch) =
+        let info =
+            { Stretch = defaultArg (Some stretch) None
+              Align = None }
+        LayoutItem (l, info)
+        
+let addItem (box: BoxLayout.Handle) (item: BoxItem<'msg>) =
+    match item with
+    | WidgetItem(w, info) ->
+        match info.Stretch, info.Align with
+        | None, None ->
+            box.AddWidget(w.Widget)
+        | None, Some align ->
+            box.AddWidget(w.Widget, 0, align)
+        | Some stretch, None ->
+            box.AddWidget(w.Widget, stretch)
+        | Some stretch, Some align ->
+            box.AddWidget(w.Widget, stretch, align)
+    | LayoutItem(l, info) ->
+        match info.Stretch with
+        | Some stretch ->
+            box.AddLayout(l.Layout, stretch)
+        | None ->
+            box.AddLayout(l.Layout)
+    | Spacer sp ->
+        box.AddSpacing(sp)
+    | Stretch stretch ->
+        box.AddStretch(stretch)
+
+type private Model<'msg>(dispatch: 'msg -> unit, items: BoxItem<'msg> list) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable box = BoxLayout.Create()
     do
         // no signals yet
-        items
-        |> List.iter box.AddWidget
+        for item in items do
+            addItem box item
     member this.Layout with get() = box
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -41,19 +103,19 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: Widget.Handle list) =
                     | Vertical -> BoxLayout.Direction.TopToBottom
                     | Horizontal -> BoxLayout.Direction.LeftToRight
                 box.SetDirection(dir)
-            | Spacing spacing ->
+            | Attr.Spacing spacing ->
                 box.SetSpacing(spacing)
             | ContentsMargins (left, top, right, bottom) ->
                 box.SetContentsMargins (left, top, right, bottom)
     interface IDisposable with
         member this.Dispose() =
             box.Dispose()
-    member this.Refill(items: Widget.Handle list) =
+    member this.Refill(items: BoxItem<'msg> list) =
         box.RemoveAll()
-        items
-        |> List.iter box.AddWidget
+        for item in items do
+            addItem box item
 
-let private create (attrs: Attr list) (items: Widget.Handle list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: Attr list) (items: BoxItem<'msg> list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch, items)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -67,30 +129,26 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
-type Node<'msg>() =
+type BoxLayout<'msg>() =
     let mutable maybeSyntheticParent: Widget.Handle option = None
-    let mutable items: IWidgetNode<'msg> list = []
+    let mutable items: BoxItem<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
-    
     member val Attrs: Attr list = [] with get, set
     member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
     member this.Items
         with get() = items
         and set value = items <- value
         
-    member private this.MigrateContent(leftBox: Node<'msg>) =
+    member private this.MigrateContent(leftBox: BoxLayout<'msg>) =
         let leftContents =
             leftBox.Items
-            |> List.map (_.ContentKey)
+            |> List.map (_.InternalKey)
         let thisContents =
             items
-            |> List.map (_.ContentKey)
+            |> List.map (_.InternalKey)
         if leftContents <> thisContents then
-            let widgets =
-                items
-                |> List.map (_.Widget)
-            this.model.Refill(widgets)
+            this.model.Refill(items)
         else
             ()
         
@@ -102,16 +160,25 @@ type Node<'msg>() =
             // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
             // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
             items
-            |> List.mapi (fun i item -> (IntKey i, item :> IBuilderNode<'msg>))
+            |> List.zipWithIndex
+            |> List.choose (fun (i, item) ->
+                match item with
+                | WidgetItem(w, _) ->
+                    (IntKey i, w :> IBuilderNode<'msg>)
+                    |> Some
+                | LayoutItem(l, _) ->
+                    (IntKey i, l :> IBuilderNode<'msg>)
+                    |> Some
+                | Spacer _ ->
+                    None
+                | Stretch _ ->
+                    None)
             
         override this.Create(dispatch: 'msg -> unit) =
-            let widgets =
-                items
-                |> List.map (_.Widget)
-            this.model <- create this.Attrs widgets this.SignalMap dispatch
+            this.model <- create this.Attrs items this.SignalMap dispatch
         
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> BoxLayout<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
@@ -142,7 +209,8 @@ type Node<'msg>() =
                 
         override this.AttachedToWindow window =
             for item in items do
-                item.AttachedToWindow window
-
-let make (attrs: Attr list) (items: IWidgetNode<'msg> list) =
-    Node(Attrs = attrs, Items = items)
+                match item with
+                | WidgetItem(w, _) -> w.AttachedToWindow window
+                | LayoutItem(l, _) -> l.AttachedToWindow window
+                | Spacer _ -> ()
+                | Stretch _ -> ()

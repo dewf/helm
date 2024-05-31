@@ -7,6 +7,7 @@ open AppReactor
 open Tabs
 open Widgets
 open WithDialogs
+open BoxLayout
 
 type Msg =
     | OpenDialog
@@ -58,9 +59,12 @@ let view (state: State) =
         let button2 =
             PushButton.Node(Attrs = [ PushButton.Label "Change Window Title" ], OnClicked = ChangeWindowTitle)
         let layout =
-            BoxLayout.Node(
-                Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
-                Items = [ button; button2 ])
+            BoxLayout(
+                Attrs = [ Direction Vertical ],
+                Items = [
+                    BoxItem.Create(button)
+                    BoxItem.Create(button2)
+                ])
         Dialog.Node(
             Attrs = [ Dialog.Size (300, 200) ],
             Layout = layout,

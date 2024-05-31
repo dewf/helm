@@ -1,6 +1,7 @@
 #include "generated/BoxLayout.h"
 
 #include <QBoxLayout>
+#include "util/convert.h"
 
 #define THIS ((QBoxLayout*)_this)
 
@@ -25,6 +26,10 @@ namespace BoxLayout
 
     void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t stretch) {
         THIS->addWidget((QWidget*)widget, stretch);
+    }
+
+    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t stretch, Alignment align) {
+        THIS->addWidget((QWidget*)widget, stretch, toQtAlign(align));
     }
 
     void Handle_addLayout(HandleRef _this, Layout::HandleRef layout) {

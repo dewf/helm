@@ -6,6 +6,7 @@ open BuilderNode
 open SubReactor
 open Widgets
 open WithDialogs
+open BoxLayout
 
 type Value =
     | Empty
@@ -104,20 +105,27 @@ let view (state: State) =
     let button =
         PushButton.Node(Attrs = [ PushButton.Label "📅"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
     let hbox =
-        BoxLayout.Node(
+        BoxLayout(
             Attrs = [
-                BoxLayout.Direction BoxLayout.Horizontal
-                BoxLayout.Spacing 4
-                BoxLayout.ContentsMargins (0, 0, 0, 0)
+                Direction Horizontal
+                Spacing 4
+                ContentsMargins (0, 0, 0, 0)
             ],
-            Items = [ edit; button ])
+            Items = [
+                BoxItem.Create(edit)
+                BoxItem.Create(button)
+            ])
     let dialog =
         let reject =
             PushButton.Node(Attrs = [ PushButton.Label "Reject" ], OnClicked = CalendarOp Reject)
         let accept =
             PushButton.Node(Attrs = [ PushButton.Label "Woot!" ], OnClicked = CalendarOp Accept)
         let layout =
-            BoxLayout.Node(Attrs = [ BoxLayout.Direction BoxLayout.Vertical ], Items = [ reject; accept ])
+            BoxLayout(Attrs = [ Direction Vertical ],
+                      Items = [
+                          BoxItem.Create(reject)
+                          BoxItem.Create(accept)
+                      ])
         Dialog.Node(
             Attrs = [ Dialog.Size (320, 200); Dialog.Title state.DialogTitle ],
             Layout = layout)

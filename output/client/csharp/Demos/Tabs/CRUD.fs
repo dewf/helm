@@ -4,6 +4,7 @@ open BuilderNode
 open Org.Whatever.QtTesting
 open SubReactor
 open Widgets
+open BoxLayout
 
 type Attr = unit
 type Signal = unit
@@ -257,15 +258,16 @@ let view (state: State) =
             GridLayout.WidgetItem (lastEdit, GridLayout.Location.Create(2, 3))
             // buttons:
             let hbox =
-                BoxLayout.Node(
+                BoxLayout(
                     Attrs = [
-                        BoxLayout.Direction BoxLayout.Horizontal
-                        BoxLayout.ContentsMargins (0, 0, 0, 0)
+                        Direction Horizontal
+                        ContentsMargins (0, 0, 0, 0)
                     ],
                     Items = [
-                        createButton
-                        updateButton
-                        deleteButton
+                        BoxItem.Create(createButton, stretch = 1)
+                        BoxItem.Create(updateButton, stretch = 1)
+                        BoxItem.Create(deleteButton, stretch = 1)
+                        BoxItem.Stretch 1
                     ])
             GridLayout.LayoutItem (hbox, GridLayout.Location.Create(5, 0, 1, 4))
         ])
@@ -273,5 +275,3 @@ let view (state: State) =
 
 type Node<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)
-
-

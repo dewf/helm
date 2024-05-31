@@ -1,24 +1,8 @@
 module BoxLayout;
 
+import Common;
 import Widget;
 import Layout;
-
-flags Alignment {
-    // horizontal
-    AlignLeft = 0x1,
-    AlignRight = 0x2,
-    AlignHCenter = 0x4,
-    AlignJustify = 0x8,
-
-    // vertical
-    AlignTop = 0x20,
-    AlignBottom = 0x40,
-    AlignVCenter = 0x80,
-    AlignBaseline = 0x100,
-
-    // both
-    AlignCenter = 0x84 // HCenter | VCenter
-}
 
 enum Direction {
     LeftToRight,
@@ -35,6 +19,7 @@ opaque Handle extends Layout.Handle {
     void addStretch(int stretch);
     void addWidget(Widget.Handle widget);
     void addWidget(Widget.Handle widget, int stretch);
+    void addWidget(Widget.Handle widget, int stretch, Alignment align);
     void addLayout(Layout.Handle layout);
     void addLayout(Layout.Handle layout, int stretch);
 }

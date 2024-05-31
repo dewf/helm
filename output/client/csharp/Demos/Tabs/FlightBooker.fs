@@ -6,6 +6,7 @@ open HelperControls
 open SubReactor
 open Widgets
 open HelperControls.DatePicker
+open BoxLayout
 
 type Signal = unit
 type Attr = unit
@@ -112,11 +113,14 @@ let view (state: State) =
             DatePicker(
                 Attrs = [ Value value; Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
                 OnValueChanged = changeMsg)
-        BoxLayout.Node(Attrs = [
-            BoxLayout.Direction BoxLayout.Horizontal
-            BoxLayout.ContentsMargins (0, 0, 0, 0)
-            BoxLayout.Spacing 10
-        ], Items = [ label; picker ])
+        BoxLayout(Attrs = [
+            Direction Horizontal
+            ContentsMargins (0, 0, 0, 0)
+            Spacing 10
+        ], Items = [
+            BoxItem.Create(label)
+            BoxItem.Create(picker)
+        ])
     let depart =
         labeledPicker "Depart" state.DepartDate DepartChanged true
     let return_ =
@@ -125,9 +129,15 @@ let view (state: State) =
         Label.Node(Attrs = [ Label.Text status ])
     let bookButton =
         PushButton.Node(Attrs = [ PushButton.Label "Book Trip"; PushButton.Enabled canBook ])
-    BoxLayout.Node(
-        Attrs = [ BoxLayout.Direction BoxLayout.Vertical ],
-        Items = [ combo; depart; return_; status; bookButton ])
+    BoxLayout(
+        Attrs = [ Direction Vertical ],
+        Items = [
+            BoxItem.Create(combo)
+            BoxItem.Create(depart)
+            BoxItem.Create(return_)
+            BoxItem.Create(status)
+            BoxItem.Create(bookButton)
+        ])
     :> ILayoutNode<Msg>
     
 type Node<'outerMsg>() =

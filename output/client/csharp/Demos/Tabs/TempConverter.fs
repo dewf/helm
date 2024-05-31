@@ -3,6 +3,7 @@
 open BuilderNode
 open SubReactor
 open Widgets
+open BoxLayout
 
 type Attr = unit
 type Signal = unit
@@ -75,9 +76,14 @@ let view (state: State) =
         LineEdit.Node(Attrs = [ LineEdit.Value state.FahrenText ], OnChanged = SetFahrenheit)
     let fahrenLabel =
         Label.Node(Attrs = [ Label.Text "Fahrenheit" ])
-    BoxLayout.Node(
-        Attrs = [ BoxLayout.Direction BoxLayout.Horizontal ],
-        Items = [ celsiusText; celsiusLabel; fahrenText; fahrenLabel ])
+    BoxLayout(
+        Attrs = [ Direction Horizontal ],
+        Items = [
+            BoxItem.Create(celsiusText)
+            BoxItem.Create(celsiusLabel)
+            BoxItem.Create(fahrenText)
+            BoxItem.Create(fahrenLabel)
+        ])
     :> ILayoutNode<Msg>
 
 type Node<'outerMsg>() =

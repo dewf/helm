@@ -3,6 +3,7 @@
 open BuilderNode
 open SubReactor
 open Widgets
+open BoxLayout
 
 type Attr = unit
 type Signal = unit
@@ -30,9 +31,12 @@ let view (state: State) =
         ])
     let button =
         PushButton.Node(Attrs = [ PushButton.Label "Increment" ], OnClicked = Increment)
-    BoxLayout.Node(
-        Attrs = [ BoxLayout.Direction BoxLayout.Horizontal ],
-        Items = [ label; button ])
+    BoxLayout(
+        Attrs = [ Direction Horizontal ],
+        Items = [
+            BoxItem.Create(label)
+            BoxItem.Create(button)
+        ])
     :> ILayoutNode<Msg>
 
 type Node<'outerMsg>() =
