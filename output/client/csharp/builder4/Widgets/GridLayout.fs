@@ -11,12 +11,16 @@ type Attr =
     | ContentsMargins of left: int * top: int * right: int * bottom: int
     | RowMinimumHeight of row: int * minHeight: int
     | ColumnMinimumWidth of col: int * minWidth: int
+    | RowStretch of row: int * stretch: int
+    | ColumnStretch of col: int * stretch: int
     
 let private keyFunc = function
     | Spacing _ -> 0
     | ContentsMargins _ -> 1
     | RowMinimumHeight _ -> 2
     | ColumnMinimumWidth _ -> 3
+    | RowStretch _ -> 4
+    | ColumnStretch _ -> 5
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -111,6 +115,11 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: GridItem<'msg> list) =
                 grid.SetRowMinimumHeight(row, minHeight)
             | ColumnMinimumWidth (col, minWidth) ->
                 grid.SetColumnMinimumWidth(col, minWidth)
+            | RowStretch (row, stretch) ->
+                grid.SetRowStretch(row, stretch)
+            | ColumnStretch (col, stretch) ->
+                grid.SetColumnStretch(col, stretch)
+                
     interface IDisposable with
         member this.Dispose() =
             grid.Dispose()
