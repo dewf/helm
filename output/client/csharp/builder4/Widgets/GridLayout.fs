@@ -44,7 +44,24 @@ type Location = {
 type GridItem<'msg> =
     | WidgetItem of w: IWidgetNode<'msg> * loc: Location
     | LayoutItem of l: ILayoutNode<'msg> * loc: Location
-
+with
+    static member Create(w: IWidgetNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
+        let loc =
+            { Row = row
+              Col = col
+              RowSpan = defaultArg (Some rowSpan) None
+              ColSpan = defaultArg (Some colSpan) None
+              Align = defaultArg (Some align) None }
+        WidgetItem (w, loc)
+    static member Create(l: ILayoutNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
+        let loc =
+            { Row = row
+              Col = col
+              RowSpan = defaultArg (Some rowSpan) None
+              ColSpan = defaultArg (Some colSpan) None
+              Align = defaultArg (Some align) None }
+        LayoutItem (l, loc)
+        
 type private Method =
     | Normal
     | WithAlignment of align: Common.Alignment
@@ -143,7 +160,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 
-type Node<'msg>() =
+type GridLayout<'msg>() =
     let mutable maybeSyntheticParent: Widget.Handle option = None
     let mutable items: GridItem<'msg> list = []
 
@@ -155,7 +172,7 @@ type Node<'msg>() =
         with get() = items
         and set value = items <- value
         
-    member private this.MigrateContent(leftBox: Node<'msg>) =
+    member private this.MigrateContent(leftBox: GridLayout<'msg>) =
         let leftContents =
             leftBox.Items
             |> List.map (function
@@ -190,7 +207,7 @@ type Node<'msg>() =
             this.model <- create this.Attrs items this.SignalMap dispatch
         
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Node<'msg>)
+            let left' = (left :?> GridLayout<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged

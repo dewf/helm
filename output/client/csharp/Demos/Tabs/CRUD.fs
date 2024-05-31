@@ -5,6 +5,7 @@ open Org.Whatever.QtTesting
 open SubReactor
 open Widgets
 open BoxLayout
+open GridLayout
 
 type Attr = unit
 type Signal = unit
@@ -244,24 +245,24 @@ let view (state: State) =
             | None -> false
         PushButton.Node(Attrs = [ PushButton.Label "Delete"; PushButton.Enabled enabled ], OnClicked = Delete)
     
-    GridLayout.Node(
+    GridLayout(
         Attrs = [
-            GridLayout.ColumnMinimumWidth (3, 120)
+            ColumnMinimumWidth (3, 120)
         ],
         Items = [
-            GridLayout.WidgetItem (filterLabel, GridLayout.Location.Create(0, 0))
-            GridLayout.WidgetItem (filterEdit, GridLayout.Location.Create(0, 1))
-            GridLayout.WidgetItem (listBox, GridLayout.Location.Create(1, 0, 4, 2))
-            GridLayout.WidgetItem (firstLabel, GridLayout.Location.Create(1, 2, align = Common.Alignment.Right))
-            GridLayout.WidgetItem (firstEdit, GridLayout.Location.Create(1, 3))
-            GridLayout.WidgetItem (lastLabel, GridLayout.Location.Create(2, 2, align = Common.Alignment.Right))
-            GridLayout.WidgetItem (lastEdit, GridLayout.Location.Create(2, 3))
+            GridItem.Create(filterLabel, 0, 0)
+            GridItem.Create(filterEdit, 0, 1)
+            GridItem.Create(listBox, 1, 0, 4, 2)
+            GridItem.Create(firstLabel, 1, 2, align = Common.Alignment.Right)
+            GridItem.Create(firstEdit, 1, 3)
+            GridItem.Create(lastLabel, 2, 2, align = Common.Alignment.Right)
+            GridItem.Create(lastEdit, 2, 3)
             // buttons:
             let hbox =
                 BoxLayout(
                     Attrs = [
                         Direction Horizontal
-                        ContentsMargins (0, 0, 0, 0)
+                        BoxLayout.Attr.ContentsMargins (0, 0, 0, 0)
                     ],
                     Items = [
                         BoxItem.Create(createButton, stretch = 1)
@@ -269,7 +270,7 @@ let view (state: State) =
                         BoxItem.Create(deleteButton, stretch = 1)
                         BoxItem.Stretch 1
                     ])
-            GridLayout.LayoutItem (hbox, GridLayout.Location.Create(5, 0, 1, 4))
+            GridItem.Create(hbox, 5, 0, 1, 4)
         ])
     :> ILayoutNode<Msg>
 
