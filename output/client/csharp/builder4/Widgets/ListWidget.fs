@@ -16,10 +16,12 @@ type SelectionMode =
 type Attr =
     | Items of items: string list
     | SelectionMode of mode: SelectionMode
+    | CurrentRow of maybeIndex: int option
     
 let private attrKey = function
     | Items _ -> 0
     | SelectionMode _ -> 1
+    | CurrentRow _ -> 2
 
 let private diffAttrs =
     genericDiffAttrs attrKey
@@ -49,7 +51,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
     member this.Widget with get() = listWidget
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
-        attrs |> List.iter (function
+        for attr in attrs do
+            match attr with
             | Items items ->
                 listWidget.SetItems (items |> Array.ofList)
             | SelectionMode mode ->
@@ -57,7 +60,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 | NotAllowed -> ListWidget.SelectionMode.None
                 | Single -> ListWidget.SelectionMode.Single
                 | Extended -> ListWidget.SelectionMode.Extended
-                |> listWidget.SetSelectionMode)
+                |> listWidget.SetSelectionMode
+            | CurrentRow maybeIndex ->
+                listWidget.SetCurrentRow(maybeIndex |> Option.defaultValue -1)
+                
     interface IDisposable with
         member this.Dispose() =
             listWidget.Dispose()

@@ -78,9 +78,9 @@ let update (state: State) (msg: Msg) =
     | SetFilter filter ->
         let nextState =
             if filter = "" then
-                { state with Mode = Unfiltered }
+                { state with Mode = Unfiltered; SelectedIndex = None; FirstEdit = ""; LastEdit = "" }
             else
-                { state with Mode = Filtered (filter, filterNames state.AllNames filter) }
+                { state with Mode = Filtered (filter, filterNames state.AllNames filter); SelectedIndex = None; FirstEdit = ""; LastEdit = "" }
         nextState, Cmd.None
     | SelectItem maybeIndex ->
         let nextFirstEdit, nextLastEdit =
@@ -118,11 +118,14 @@ let update (state: State) (msg: Msg) =
                 let nextMode =
                     match state.Mode with
                     | Unfiltered -> Unfiltered
-                    | Filtered(filter, names) ->
+                    | Filtered(filter, _) ->
                         Filtered(filter, filterNames nextNames filter)
                 { state with
                     Mode = nextMode
-                    AllNames = nextNames }
+                    AllNames = nextNames
+                    FirstEdit = ""
+                    LastEdit = ""
+                    SelectedIndex = None }
             else
                 state
         nextState, Cmd.None
@@ -136,7 +139,7 @@ let update (state: State) (msg: Msg) =
                         let nextNames =
                             state.AllNames
                             |> List.replaceAtIndex index (fun _ -> { First = state.FirstEdit; Last = state.LastEdit })
-                        { state with AllNames = nextNames }
+                        { state with AllNames = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
                     else
                         state
                 | Filtered(filter, filteredNames) ->
@@ -150,7 +153,7 @@ let update (state: State) (msg: Msg) =
                             |> List.replaceAtIndex originalIndex (fun _ -> { First = state.FirstEdit; Last = state.LastEdit })
                         let nextMode =
                             Filtered(filter, filterNames nextNames filter)
-                        { state with AllNames = nextNames; Mode = nextMode }
+                        { state with AllNames = nextNames; Mode = nextMode; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
                     else
                         state
             | _ ->
@@ -166,7 +169,7 @@ let update (state: State) (msg: Msg) =
                         let nextNames =
                             state.AllNames
                             |> List.removeAt index
-                        { state with AllNames = nextNames }
+                        { state with AllNames = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
                     else
                         state
                 | Filtered(filter, filteredNames) ->
@@ -180,7 +183,7 @@ let update (state: State) (msg: Msg) =
                             |> List.removeAt originalIndex
                         let nextMode =
                             Filtered(filter, filterNames nextNames filter)
-                        { state with AllNames = nextNames; Mode = nextMode }
+                        { state with AllNames = nextNames; Mode = nextMode; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
                     else
                         state
             | None ->
@@ -208,7 +211,11 @@ let view (state: State) =
                 sprintf "%s, %s" name.Last name.First)
     let listBox =
         ListWidget.Node(
-            Attrs = [ ListWidget.Items items ],
+            Attrs = [
+                ListWidget.Items items
+                ListWidget.SelectionMode ListWidget.Single
+                ListWidget.CurrentRow state.SelectedIndex
+            ],
             OnCurrentRowChanged = SelectItem)
 
     let firstLabel = Label.Node(Attrs = [ Label.Text "First:" ])
@@ -217,9 +224,25 @@ let view (state: State) =
     let lastLabel = Label.Node(Attrs = [ Label.Text "Last:" ])
     let lastEdit = LineEdit.Node(Attrs = [ LineEdit.Value state.LastEdit ], OnChanged = SetLast)
 
-    let createButton = PushButton.Node(Attrs = [ PushButton.Label "Create" ], OnClicked = Create)
-    let updateButton = PushButton.Node(Attrs = [ PushButton.Label "Update" ], OnClicked = Update)
-    let deleteButton = PushButton.Node(Attrs = [ PushButton.Label "Delete" ], OnClicked = Delete)
+    let createButton =
+        let enabled =
+            state.FirstEdit.Length > 0 && state.LastEdit.Length > 0
+        PushButton.Node(Attrs = [ PushButton.Label "Create"; PushButton.Enabled enabled ], OnClicked = Create)
+
+    let updateButton =
+        let enabled =
+            match state.SelectedIndex, state.FirstEdit.Length, state.LastEdit.Length with
+            | Some _, firstLen, lastLen when firstLen > 0 && lastLen > 0 -> true
+            | _ -> false
+        PushButton.Node(Attrs = [ PushButton.Label "Update"; PushButton.Enabled enabled ], OnClicked = Update)
+        
+    let deleteButton =
+        let enabled =
+            match state.SelectedIndex with
+            | Some _ -> true
+            | None -> false
+        PushButton.Node(Attrs = [ PushButton.Label "Delete"; PushButton.Enabled enabled ], OnClicked = Delete)
+    
     GridLayout.Node(
         Attrs = [
             GridLayout.ColumnMinimumWidth (3, 120)
