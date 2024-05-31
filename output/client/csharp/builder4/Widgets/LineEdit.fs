@@ -8,13 +8,17 @@ type Signal =
     | Changed of string
     | ReturnPressed
     | LostFocus
+    | Submitted of string   // return (and optionally lost focus)
     
 type Attr =
     | Value of string
     | Enabled of bool
+    | SubmitOnLostFocus of bool
+    
 let private attrKey = function
     | Value _ -> 0
     | Enabled _ -> 1
+    | SubmitOnLostFocus _ -> 2
 
 let private diffAttrs =
     genericDiffAttrs attrKey
@@ -23,6 +27,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable edit = LineEdit.Create()
     let mutable lastValue = ""
+    let mutable submitOnLostFocus = false
     do
         let dispatchSignal (s: Signal) =
             match signalMap s with
@@ -33,8 +38,13 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         edit.OnTextEdited (fun str ->
             lastValue <- str
             dispatchSignal (Changed str))
-        edit.OnReturnPressed (fun _ -> dispatchSignal ReturnPressed)
-        edit.OnLostFocus (fun _ -> dispatchSignal LostFocus)
+        edit.OnReturnPressed (fun _ ->
+            dispatchSignal ReturnPressed
+            dispatchSignal (Submitted lastValue))
+        edit.OnLostFocus (fun _ ->
+            dispatchSignal LostFocus
+            if submitOnLostFocus then
+                dispatchSignal (Submitted lastValue))
     member this.Widget with get() = edit
     member this.SignalMap with set value = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -50,6 +60,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                     lastValue <- str
             | Enabled value ->
                 edit.SetEnabled(value)
+            | SubmitOnLostFocus value ->
+                submitOnLostFocus <- value
     interface IDisposable with
         member this.Dispose() =
             edit.Dispose()
@@ -73,9 +85,11 @@ type Node<'msg>() =
     let mutable onChanged: (string -> 'msg) option = None
     let mutable onReturnPressed: 'msg option = None
     let mutable onLostFocus: 'msg option = None
+    let mutable onSubmitted: (string -> 'msg) option = None
     member this.OnChanged with set value = onChanged <- Some value
     member this.OnReturnPressed with set value = onReturnPressed <- Some value
     member this.OnLostFocus with set value = onLostFocus <- Some value
+    member this.OnSubmitted with set value = onSubmitted <- Some value
     member val Attrs: Attr list = [] with get, set
     member private this.SignalMap
         with get() = function
@@ -86,6 +100,9 @@ type Node<'msg>() =
                 onReturnPressed
             | LostFocus ->
                 onLostFocus
+            | Submitted value ->
+                onSubmitted
+                |> Option.map (fun f -> f value)
                 
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
