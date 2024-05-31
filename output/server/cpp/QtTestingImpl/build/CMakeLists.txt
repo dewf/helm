@@ -43,6 +43,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Dialog_wrappers.cpp
     ../Dialog.cpp
 
+    ../generated/GridLayout.h
+    ../generated/GridLayout_wrappers.cpp
+    ../GridLayout.cpp
+
     ../generated/Label.h
     ../generated/Label_wrappers.cpp
     ../Label.cpp

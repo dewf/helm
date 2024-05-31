@@ -48,6 +48,7 @@ let view (state: State) =
                 "TempConv", TempConverter.Node()
                 "FlightBooker", FlightBooker.Node()
                 "Timer", TimerPage.Node()
+                "CRUD", CRUD.Node()
                 "Launch", launchButton
                 // "COMBO", combo
             ])

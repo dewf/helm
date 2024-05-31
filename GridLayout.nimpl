@@ -1,0 +1,23 @@
+module GridLayout;
+
+import Common;
+import Widget;
+import Layout;
+
+opaque Handle extends Layout.Handle {
+    void addWidget(Widget.Handle widget, int row, int col);
+    void addWidget(Widget.Handle widget, int row, int col, Alignment align);
+    void addWidget(Widget.Handle widget, int row, int col, int rowSpan, int colSpan);
+    void addWidget(Widget.Handle widget, int row, int col, int rowSpan, int colSpan, Alignment align);
+    void addLayout(Layout.Handle layout, int row, int col);
+    void addLayout(Layout.Handle layout, int row, int col, Alignment align);
+    void addLayout(Layout.Handle layout, int row, int col, int rowSpan, int colSpan);
+    void addLayout(Layout.Handle layout, int row, int col, int rowSpan, int colSpan, Alignment align);
+
+    void setRowMinimumHeight(int row, int minHeight);
+    void setRowStretch(int row, int stretch);
+    void setColumnMinimumWidth(int column, int minWidth);
+    void setColumnStretch(int column, int stretch);
+}
+
+Handle create();

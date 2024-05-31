@@ -30,6 +30,7 @@
         <Compile Include="Widgets\Dialog.fs" />
         <Compile Include="Widgets\Slider.fs" />
         <Compile Include="Widgets\ProgressBar.fs" />
+        <Compile Include="Widgets\GridLayout.fs" />
     </ItemGroup>
 
     <ItemGroup>
