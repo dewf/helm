@@ -109,6 +109,12 @@ namespace PaintResources
 
     // brush ======================
     namespace Brush {
+        BrushRef create(Style style) {
+            return new __Brush {
+                QBrush((Qt::BrushStyle)style)
+            };
+        }
+
         BrushRef create(ColorRef color) {
             return new __Brush {
                     QBrush(color->qColor)

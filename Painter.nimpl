@@ -15,4 +15,11 @@ opaque Handle {
     void drawRect(Rect rect);
     void drawRect(RectF rect);
     void drawRect(int x, int y, int width, int height);
+
+    void drawEllipse(RectF rectangle);
+    void drawEllipse(Rect rectangle);
+    void drawEllipse(int x, int y, int width, int height);
+    void drawEllipse(PointF center, double rx, double ry);
+    void drawEllipse(Point center, int rx, int ry);
 }
+

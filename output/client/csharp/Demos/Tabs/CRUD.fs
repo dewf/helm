@@ -12,6 +12,8 @@ open PushButton
 open LineEdit
 open ListWidget
 
+open Extensions
+
 type Attr = unit
 type Signal = unit
 
@@ -59,18 +61,6 @@ let init () =
     }
     state, Cmd.None
     
-    
-module List =
-    let replaceAtIndex (index: int) (replaceFunc: 'a -> 'a) (xs: 'a list) =
-        let before, after =
-            List.splitAt index xs
-        match after with
-        | h :: etc ->
-            before @ replaceFunc h :: etc
-        | _ ->
-            failwith "replaceAtIndex fail"
-            
-            
 let filterNames (names: Name list) (filter: string) =
     names
     |> List.mapi (fun i name -> i, name)

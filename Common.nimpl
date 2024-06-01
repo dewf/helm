@@ -19,6 +19,11 @@ struct Point {
     int y;
 }
 
+struct PointF {
+    double x;
+    double y;
+}
+
 // these are flags on the C++ side, but to keep this simple for now we will use a simple enum,
 // because our flags handling is not yet as advanced as C++ (can't refer to prior values and 'or' them together etc)
 enum Alignment {

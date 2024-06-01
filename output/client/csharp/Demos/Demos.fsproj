@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Extensions.fs" />
         <Compile Include="HelperControls\DatePicker.fs" />
         <Compile Include="Tabs\Counter.fs" />
         <Compile Include="Tabs\TempConverter.fs" />

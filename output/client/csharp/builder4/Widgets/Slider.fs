@@ -70,7 +70,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             | Range(min, max) ->
                 slider.SetRange(min, max)
             | Value value ->
-                slider.SetValue(value)
+                if value <> lastValue then
+                    lastValue <- value
+                    slider.SetValue(value)
             | SingleStep step ->
                 slider.SetSingleStep(step)
             | PageStep pageStep ->

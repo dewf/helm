@@ -13,6 +13,8 @@ open Widgets.PushButton
 open Widgets.Slider
 open WithDialogs
 
+open Extensions
+
 type Signal = unit
 type Attr = unit
 
@@ -24,8 +26,13 @@ type Circle = {
 type State = {
     Circles: Circle list
     MaybeHoverIndex: int option
+    NowEditing: bool
     EditingRadius: int
 }
+
+let circleAtIndex (index: int) (state: State) =
+    state.Circles
+    |> List.item index
         
 type Msg =
     | NoOp
@@ -33,11 +40,14 @@ type Msg =
     | ShowDialog of loc: Common.Point
     | MouseMove of loc: Common.Point
     | SetRadius of radius: int
+    | ApplyEdit
+    | CancelEdit
         
 let init() =
     let state =
         { Circles = []
           MaybeHoverIndex = None
+          NowEditing = false 
           EditingRadius = 0 }
     state, Cmd.None
     
@@ -46,16 +56,20 @@ let update (state: State) = function
         state, Cmd.None
     | AddCircle loc ->
         let circle =
-            { Location = loc; Radius = 10 }
+            { Location = loc; Radius = 35 }
         let nextState =
-            { state with Circles = circle :: state.Circles }
+            { state with Circles = circle :: state.Circles; MaybeHoverIndex = Some 0 }
         nextState, Cmd.None
     | ShowDialog loc ->
-        printfn "show dialog @ %A" loc
-        state, Cmd.DialogOp ("edit", Exec)
+        match state.MaybeHoverIndex with
+        | Some index ->
+            let circle =
+                state |> circleAtIndex index
+            { state with NowEditing = true; EditingRadius = circle.Radius }, Cmd.DialogOp ("edit", Exec)
+        | None ->
+            state, Cmd.None
     | SetRadius value ->
-        printfn "set radius: %d" value
-        state, Cmd.None
+        { state with EditingRadius = value }, Cmd.None
     | MouseMove loc ->
         let dist (p1: Common.Point) (p2: Common.Point) =
             let a = Math.Pow(float (p1.X - p2.X), 2.0)
@@ -65,6 +79,19 @@ let update (state: State) = function
             state.Circles
             |> List.tryFindIndex (fun circle -> dist circle.Location loc < circle.Radius)
         { state with MaybeHoverIndex = nextHoverIndex }, Cmd.None
+    | ApplyEdit ->
+        let nextCircles =
+            match state.MaybeHoverIndex with
+            | Some index ->
+                state.Circles
+                |> List.replaceAtIndex index (fun cir -> { cir with Radius = state.EditingRadius })
+            | None ->
+                state.Circles
+        let nextState =
+            { state with Circles = nextCircles; NowEditing = false }
+        nextState, Cmd.DialogOp ("edit", Accept)
+    | CancelEdit ->
+        { state with NowEditing = false }, Cmd.DialogOp ("edit", Reject)
         
 type Woot(state: State) =
     inherit PaintStateBase<State>(state)
@@ -74,16 +101,26 @@ type Woot(state: State) =
         use bgColor = Color.Create(Color.Constant.DarkBlue)
         use fgColor = Color.Create(Color.Constant.Yellow)
         use hoverColor = Color.Create(Color.Constant.Magenta)
+        use bgBrush = Brush.Create(bgColor)
+        use clearBrush = Brush.Create(Brush.Style.NoBrush)
+        use hoverBrush = Brush.Create(hoverColor)
         use pen = Pen.Create(fgColor)
         painter.FillRect(widget.GetRect(), bgColor)
         painter.SetPen(pen)
-        for i, circle in state.Circles |> List.zipWithIndex do
-            let rect = Common.Rect(X = circle.Location.X - circle.Radius, Y = circle.Location.Y - circle.Radius, Width = circle.Radius * 2, Height = circle.Radius * 2)
-            match state.MaybeHoverIndex with
-            | Some index when i = index ->
-                painter.FillRect(rect, hoverColor)
-            | _ ->
-                painter.DrawRect(rect)
+        for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
+            let brush, radius =
+                match state.MaybeHoverIndex with
+                | Some index when i = index ->
+                    let radius =
+                        if state.NowEditing then
+                            state.EditingRadius
+                        else
+                            circle.Radius
+                    hoverBrush, radius
+                | _ ->
+                    bgBrush, circle.Radius
+            painter.SetBrush(brush)
+            painter.DrawEllipse(circle.Location, radius, radius)
 
 let view (state: State) =
     let undo =
@@ -117,12 +154,12 @@ let view (state: State) =
             Slider(Attrs = [
                 Orientation Horizontal
                 Range(5, 100)
-                Value 10
+                Value state.EditingRadius
             ], OnValueChanged = SetRadius )
         let cancel =
-            PushButton(Attrs = [ Text "Cancel" ])
+            PushButton(Attrs = [ Text "Cancel" ], OnClicked = CancelEdit)
         let apply =
-            PushButton(Attrs = [ Text "OK" ])
+            PushButton(Attrs = [ Text "OK" ], OnClicked = ApplyEdit)
         let vbox =
             let hbox =
                 BoxLayout(
@@ -134,7 +171,6 @@ let view (state: State) =
                         BoxItem.Stretch 1
                     ])
             BoxLayout(Items = [
-                // BoxItem.Create(label)
                 BoxItem.Create(slider)
                 BoxItem.Create(hbox)
             ])

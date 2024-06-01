@@ -45,6 +45,26 @@ namespace Painter
         THIS->drawRect(x, y, width, height);
     }
 
+    void Handle_drawEllipse(HandleRef _this, RectF rectangle) {
+        THIS->drawEllipse(toQRectF(rectangle));
+    }
+
+    void Handle_drawEllipse(HandleRef _this, Rect rectangle) {
+        THIS->drawEllipse(toQRect(rectangle));
+    }
+
+    void Handle_drawEllipse(HandleRef _this, int32_t x, int32_t y, int32_t width, int32_t height) {
+        THIS->drawEllipse(x, y, width, height);
+    }
+
+    void Handle_drawEllipse(HandleRef _this, PointF center, double rx, double ry) {
+        THIS->drawEllipse(toQPointF(center), rx, ry);
+    }
+
+    void Handle_drawEllipse(HandleRef _this, Point center, int32_t rx, int32_t ry) {
+        THIS->drawEllipse(toQPoint(center), rx, ry);
+    }
+
     void Handle_dispose(HandleRef _this) {
         // presently these will never be created (therefore owned) by the client side
         printf("QPainter handle dispose called - why?\n");

@@ -46,6 +46,14 @@ inline Point toPoint(const QPoint& qPoint) {
     return { qPoint.x(), qPoint.y() };
 }
 
+inline QPoint toQPoint(const Point& p) {
+    return QPoint(p.x, p.y);
+}
+
+inline QPointF toQPointF(const PointF& p) {
+    return QPointF(p.x, p.y);
+}
+
 inline Rect toRect(const QRect& qRect) {
     return { qRect.left(), qRect.top(), qRect.width(), qRect.height() };
 }
