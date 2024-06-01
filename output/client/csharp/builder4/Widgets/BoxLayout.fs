@@ -7,8 +7,8 @@ open Org.Whatever.QtTesting
 // no signals yet
 
 type DirectionValue =
-    | Vertical
-    | Horizontal
+    | TopToBottom
+    | LeftToRight
 
 type Attr =
     | Direction of dir: DirectionValue
@@ -100,8 +100,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: BoxItem<'msg> list) =
             | Direction ov ->
                 let dir =
                     match ov with
-                    | Vertical -> BoxLayout.Direction.TopToBottom
-                    | Horizontal -> BoxLayout.Direction.LeftToRight
+                    | TopToBottom -> BoxLayout.Direction.TopToBottom
+                    | LeftToRight -> BoxLayout.Direction.LeftToRight
                 box.SetDirection(dir)
             | Attr.Spacing spacing ->
                 box.SetSpacing(spacing)

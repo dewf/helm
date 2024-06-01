@@ -1,5 +1,6 @@
 ﻿module Widgets.CustomWidget
 
+open System.Collections.Generic
 open BuilderNode
 open System
 open Org.Whatever.QtTesting
@@ -49,8 +50,14 @@ type PaintStateBase<'state when 'state: equality>(state: 'state) =
         
 // begin widget proper =================================================
 
+type MousePressInfo = {
+    Position: Common.Point
+    Button: Widget.MouseButton
+    Modifiers: Set<Widget.Modifier>
+}
+
 type Signal =
-    | MousePress of ev: Widget.MouseEvent
+    | MousePress of info: MousePressInfo
     
 type Attr =
     | PaintState of ps: PaintState
@@ -76,9 +83,11 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
             maybePaintState
             |> Option.iter (fun ps -> ps.DoPaint widget painter rect)
-        override this.MousePressEvent(mouseEvent: Widget.MouseEvent) =
-            signalDispatch (MousePress mouseEvent)
-
+        override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
+            let info =
+                { Position = pos; Button = button; Modifiers = set modifiers }
+            signalDispatch (MousePress info)
+            
         // override this.Dispose() =
         //     // I forget why the generated method delegates have this ...
         //     ()
@@ -133,7 +142,7 @@ let private dispose (model: Model<'msg>) =
 type CustomWidget<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    let mutable onMousePress: (Widget.MouseEvent -> 'msg) option = None
+    let mutable onMousePress: (MousePressInfo -> 'msg) option = None
     member this.OnMousePress with set value = onMousePress <- Some value
     member private this.SignalMap
         with get() = function

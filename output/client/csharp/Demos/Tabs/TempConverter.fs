@@ -79,7 +79,7 @@ let view (state: State) =
     let fahrenLabel =
         Label(Attrs = [ Text "Fahrenheit" ])
     BoxLayout(
-        Attrs = [ Direction Horizontal ],
+        Attrs = [ Direction LeftToRight ],
         Items = [
             BoxItem.Create(celsiusText)
             BoxItem.Create(celsiusLabel)

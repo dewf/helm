@@ -266,7 +266,7 @@ let view (state: State) =
             let hbox =
                 BoxLayout(
                     Attrs = [
-                        Direction Horizontal
+                        Direction LeftToRight
                         BoxLayout.ContentsMargins (0, 0, 0, 0)
                     ],
                     Items = [

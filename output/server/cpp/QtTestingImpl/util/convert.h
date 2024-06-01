@@ -2,6 +2,7 @@
 
 #include <Qt>
 #include <QRect>
+
 #include "../generated/Common.h"
 
 #define STRUCT_CAST(b,a) *((b*)&a)
@@ -39,6 +40,10 @@ inline Qt::Alignment toQtAlign(Alignment align) {
             printf("toQtAlign() - unhandled case!!\n");
     }
     return Qt::AlignLeft;
+}
+
+inline Point toPoint(const QPoint& qPoint) {
+    return { qPoint.x(), qPoint.y() };
 }
 
 inline Rect toRect(const QRect& qRect) {

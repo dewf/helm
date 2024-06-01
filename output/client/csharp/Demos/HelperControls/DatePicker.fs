@@ -111,7 +111,7 @@ let view (state: State) =
     let hbox =
         BoxLayout(
             Attrs = [
-                Direction Horizontal
+                Direction LeftToRight
                 Spacing 4
                 ContentsMargins (0, 0, 0, 0)
             ],
@@ -125,7 +125,7 @@ let view (state: State) =
         let accept =
             PushButton(Attrs = [ Text "Woot!" ], OnClicked = CalendarOp Accept)
         let layout =
-            BoxLayout(Attrs = [ Direction Vertical ],
+            BoxLayout(Attrs = [ Direction TopToBottom ],
                       Items = [
                           BoxItem.Create(reject)
                           BoxItem.Create(accept)

@@ -34,7 +34,7 @@ let view (state: State) =
     let button =
         PushButton(Attrs = [ Text "Increment" ], OnClicked = Increment)
     BoxLayout(
-        Attrs = [ Direction Horizontal ],
+        Attrs = [ Direction LeftToRight ],
         Items = [
             BoxItem.Create(label)
             BoxItem.Create(button)

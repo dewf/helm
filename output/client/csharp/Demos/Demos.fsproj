@@ -12,6 +12,7 @@
         <Compile Include="Tabs\FlightBooker.fs" />
         <Compile Include="Tabs\TimerPage.fs" />
         <Compile Include="Tabs\CRUD.fs" />
+        <Compile Include="Tabs\CircleDrawer.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

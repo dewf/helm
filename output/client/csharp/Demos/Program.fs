@@ -4,6 +4,7 @@ open System
 open BuilderNode
 open Org.Whatever.QtTesting
 open AppReactor
+open Tabs.CircleDrawer
 open Widgets
 open WithDialogs
 open BoxLayout
@@ -58,8 +59,8 @@ let view (state: State) =
                 "FlightBooker", FlightBooker()
                 "Timer", TimerPage()
                 "CRUD", CRUDPage()
+                "CircleDrawer", CircleDrawer()
                 "Launch", launchButton
-                // "COMBO", combo
             ])
     let dialog =
         let button =
@@ -68,7 +69,7 @@ let view (state: State) =
             PushButton(Attrs = [ Text "Change Window Title" ], OnClicked = ChangeWindowTitle)
         let layout =
             BoxLayout(
-                Attrs = [ Direction Vertical ],
+                Attrs = [ Direction TopToBottom ],
                 Items = [
                     BoxItem.Create(button)
                     BoxItem.Create(button2)
@@ -80,7 +81,7 @@ let view (state: State) =
             OnRejected = DlgStatus "rejected")
     let window =
         MainWindow(
-            Attrs = [ Title state.WindowTitle ],
+            Attrs = [ Title state.WindowTitle; Size (800, 600) ],
             Content = tabWidget)
     WindowWithDialogs(window, [ "testing", dialog ])
     :> IBuilderNode<Msg>

@@ -45,15 +45,27 @@ flags MethodMask {
     MousePressEvent = 1 << 1
 }
 
-struct MouseEvent {
-    Point pos;
+enum Modifier {
+    None,
+    Shift,
+    Control,
+    Alt,
+    Meta
+}
+
+enum MouseButton {
+    None,
+    Left,
+    Right,
+    Middle,
+    Other
 }
 
 // sadly client will have to implement all of these, BUT empty methods / returning default values will be OK
 // because only those included in the "method mask" will actually be invoked
 interface MethodDelegate {
     void paintEvent(Painter.Handle painter, Rect rect);
-    void mousePressEvent(MouseEvent mouseEvent);
+    void mousePressEvent(Point pos, MouseButton button, Set<Modifier> modifiers);
 }
 
 Handle createSubclassed(MethodDelegate methodDelegate, MethodMask methodMask);
