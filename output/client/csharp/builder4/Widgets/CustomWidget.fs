@@ -82,17 +82,9 @@ let private diffAttrs =
 type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let widget = Widget.CreateSubclassed(self, methodMask)
-    let mutable contextMenu: IMenuNode<'msg> option = None
     let signalDispatch s =
         signalMap s
         |> Option.iter dispatch
-    do
-        widget.OnCustomContextMenuRequested(fun point ->
-            match contextMenu with
-            | Some node ->
-                node.Popup(widget.MapToGlobal(point))
-            | None ->
-                ())
         
     let mutable maybePaintState: PaintState option = None
         
@@ -144,17 +136,6 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
             | MouseTracking enabled ->
                 widget.SetMouseTracking(enabled)
                 
-    member this.SetContextMenu (menu: IMenuNode<'msg> option) =
-        contextMenu <- menu
-        let policy =
-            match menu with
-            | Some _ ->
-                // also set mutable var
-                Widget.ContextMenuPolicy.Custom
-            | None ->
-                Widget.ContextMenuPolicy.NoContextMenu
-        widget.SetContextMenuPolicy(policy)
-
     interface IDisposable with
         member this.Dispose() =
             widget.Dispose()
@@ -176,10 +157,10 @@ let private dispose (model: Model<'msg>) =
 type CustomWidget<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    let mutable contextMenu: IMenuNode<'msg> option = None
+    let mutable menus: (string * IMenuNode<'msg>) list = []
     let mutable onMousePress: (MousePressInfo -> 'msg) option = None
     let mutable onMouseMove: (MouseMoveInfo -> 'msg) option = None
-    member this.ContextMenu with set value = contextMenu <- Some value
+    member this.Menus with set value = menus <- value
     member this.OnMousePress with set value = onMousePress <- Some value
     member this.OnMouseMove with set value = onMouseMove <- Some value
     member private this.SignalMap
@@ -204,35 +185,18 @@ type CustomWidget<'msg>() =
             // always with PaintEvent, for now (else what's the point?)
             Widget.MethodMask.PaintEvent ||| mousePressValue ||| mouseMoveValue
             
-    member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
-        match changeMap.TryFind (StrKey "context") with
-        | Some change ->
-            match change with
-            | Unchanged ->
-                ()
-            | Added | Swapped ->
-                this.model.SetContextMenu(contextMenu)
-            | Removed ->
-                this.model.SetContextMenu(None)
-        | None ->
-            // neither side had a context menu
-            ()
-                
     interface IWidgetNode<'msg> with
         override this.Dependencies =
-            contextMenu
-            |> Option.map (fun menu -> StrKey "context", menu :> IBuilderNode<'msg>)
-            |> Option.toList
+            menus
+            |> List.map (fun (id, menu) -> StrKey ("menu_"+id), menu :> IBuilderNode<'msg>)
         override this.Create(dispatch: 'msg -> unit) =
             this.model <- create this.Attrs this.SignalMap dispatch this.MethodMask
-            this.model.SetContextMenu(contextMenu)
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> CustomWidget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
             this.model <- migrate left'.model nextAttrs this.SignalMap
-            this.MigrateContent(depsChanges |> Map.ofList)
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
         override this.Widget =
@@ -241,3 +205,7 @@ type CustomWidget<'msg>() =
             (this :> IWidgetNode<'msg>).Widget
         override this.AttachedToWindow window =
             ()
+            
+    interface IPopupMenuParent<'msg> with
+        override this.RelativeToWidget = this.model.Widget
+        override this.AttachedPopups = menus

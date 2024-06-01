@@ -39,6 +39,7 @@ let circleAtIndex (index: int) (state: State) =
 type Msg =
     | NoOp
     | AddCircle of loc: Common.Point
+    | ShowContext of loc: Common.Point
     | ShowDialog
     | MouseMove of loc: Common.Point
     | SetRadius of radius: int
@@ -63,6 +64,12 @@ let update (state: State) = function
         let nextState =
             { state with Circles = circle :: state.Circles; MaybeHoverIndex = Some 0 }
         nextState, Cmd.None
+    | ShowContext loc ->
+        match state.MaybeHoverIndex with
+        | Some _ ->
+            state, Cmd.PopMenu ("context", loc)
+        | None ->
+            state, Cmd.None
     | ShowDialog ->
         match state.MaybeHoverIndex with
         | Some index ->
@@ -106,6 +113,7 @@ type Woot(state: State) =
     // by default, without overriding .StateEquals, ANY change in our state from previous will trigger a redraw
     // .StateEquals gives you the ability to define a subset of state which is pertinent for repaints
     override this.DoPaint widget painter paintRect =
+        // TODO: come up with a mechanism for long-lived resources that will be destroyed if the custom widget gets destroyed
         use bgColor = Color.Create(Color.Constant.DarkBlue)
         use fgColor = Color.Create(Color.Constant.Yellow)
         use hoverColor = Color.Create(Color.Constant.Magenta)
@@ -113,6 +121,7 @@ type Woot(state: State) =
         use clearBrush = Brush.Create(Brush.Style.NoBrush)
         use hoverBrush = Brush.Create(hoverColor)
         use pen = Pen.Create(fgColor)
+        //
         painter.FillRect(widget.GetRect(), bgColor)
         painter.SetPen(pen)
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
@@ -147,7 +156,7 @@ let view (state: State) =
     let canvas =
         let contextMenu =
             let action =
-                MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't QAction.Text sufficient?
+                MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't MenuAction.Text sufficient?
             Menu(Items = [ action ])
         let moveFunc info =
             MouseMove info.Position
@@ -155,11 +164,13 @@ let view (state: State) =
             match info.Button with
             | Widget.MouseButton.Left ->
                 AddCircle info.Position
+            | Widget.MouseButton.Right ->
+                ShowContext info.Position
             | _ ->
                 NoOp
         CustomWidget(
             Attrs = [ PaintState(Woot(state)); MouseTracking true ],
-            ContextMenu = contextMenu,
+            Menus = [ "context", contextMenu ],
             OnMousePress = pressFunc,
             OnMouseMove = moveFunc) // tracking needed for move events without mouse down
     let dialog =

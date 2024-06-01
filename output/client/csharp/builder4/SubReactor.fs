@@ -16,9 +16,14 @@ type Cmd<'msg,'signal> =
     | Signal of 'signal
     | Batch of commands: Cmd<'msg,'signal> list
     | DialogOp of name: string * op: DialogOp
+    | PopMenu of name: string * loc: Common.Point
     
 let nullAttrUpdate (state: 'state) (attr: 'attr) =
     state
+    
+type Attachment<'msg> =
+    | AttachedDialog of node: IDialogNode<'msg>
+    | AttachedPopup of node: IMenuNode<'msg> * relativeTo: Widget.Handle
     
 type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                     init: unit -> 'state * Cmd<'msg,'signal>,
@@ -30,10 +35,10 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
     let mutable state = initState
     let mutable root = view state
     let mutable disableDispatch = false
-    let mutable dialogMap = Map.empty<string, IDialogNode<'msg>>
+    let mutable attachMap = Map.empty<string, Attachment<'msg>>
     
-    let updateDialogMap() =
-        let rec recInner (soFar: Map<string, IDialogNode<'msg>>) (node: IBuilderNode<'msg>) =
+    let updateAttachments() =
+        let rec recInner (soFar: Map<string, Attachment<'msg>>) (node: IBuilderNode<'msg>) =
             // first process dependencies
             let soFar =
                 (soFar, node.Dependencies)
@@ -42,10 +47,15 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
             match node with
             | :? IDialogParent<'msg> as dlgParent ->
                 (soFar, dlgParent.AttachedDialogs)
-                ||> List.fold (fun acc (name, node) -> acc.Add (name, node))
+                ||> List.fold (fun acc (name, node) -> acc.Add (name, AttachedDialog node))
+            | :? IPopupMenuParent<'msg> as popupParent ->
+                let widget =
+                    popupParent.RelativeToWidget
+                (soFar, popupParent.AttachedPopups)
+                ||> List.fold (fun acc (name, node) -> acc.Add (name, AttachedPopup (node, widget)))
             | _ ->
                 soFar
-        dialogMap <- recInner Map.empty root
+        attachMap <- recInner Map.empty root
 
     // dispatch isn't actually (supposed to be) recursive, but we do pass it as a parameter because it gets injected into all the widget models for callbacks
     // but we need to protect against reentrance, which is the purpose of the 'inDispatch' flag
@@ -65,12 +75,12 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
             diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>))
             disableDispatch <- false
             //
-            updateDialogMap()
+            updateAttachments()
             // process command(s) after tree diff
             processCmd cmd
     do
         build dispatch root
-        updateDialogMap()
+        updateAttachments()
         processCmd initCmd
         
     member this.Root =
@@ -88,21 +98,38 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
         diff dispatch (Some prevRoot) (Some root)
         disableDispatch <- false
         //
-        updateDialogMap()
+        updateAttachments()
         // no commands allowed in attr update (for now)
     
     member this.ProcessMsg (msg: 'msg) =
         dispatch msg
         
     member this.DialogOp (name: string) (op: DialogOp) =
-        match dialogMap.TryFind name with
+        match attachMap.TryFind name with
         | Some node ->
-            match op with
-            | Exec -> node.Dialog.Exec()
-            | Accept -> node.Dialog.Accept()
-            | Reject -> node.Dialog.Reject()
+            match node with
+            | AttachedDialog node ->
+                match op with
+                | Exec -> node.Dialog.Exec()
+                | Accept -> node.Dialog.Accept()
+                | Reject -> node.Dialog.Reject()
+            | _ ->
+                printfn "Cmd.DialogOp - found a node but it wasn't a dialog node (are you using the same name twice?)"
         | None ->
             printfn "SubReactor.DialogOp: couldn't find dialog '%s'" name
+            
+    member this.PopMenu (name: string) (loc: Common.Point) =
+        match attachMap.TryFind name with
+        | Some node ->
+            match node with
+            | AttachedPopup (node, relativeTo) ->
+                let loc' =
+                    relativeTo.MapToGlobal(loc)
+                node.Menu.Popup(loc')
+            | _ ->
+                printfn "Cmd.PopMenu - found a node but it wasn't a menu node (are you using the same name twice?)"
+        | None ->
+            printfn "SubReactor.PopMenu: couldn't find popup '%s'" name
         
     member this.AttachedToWindow (window: Widget.Handle) =
         root.AttachedToWindow window
@@ -175,6 +202,8 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                     |> List.iter processCmd
                 | Cmd.DialogOp (name, op) ->
                     this.reactor.DialogOp name op
+                | Cmd.PopMenu (name, loc) ->
+                    this.reactor.PopMenu name loc
             this.reactor <- new SubReactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
             this.reactor.ApplyAttrs(this.Attrs)
         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =

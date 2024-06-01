@@ -119,6 +119,12 @@ type IDialogParent<'msg> =
         abstract member AttachedDialogs: (string * IDialogNode<'msg>) list
     end
     
+type IPopupMenuParent<'msg> =
+    interface
+        abstract member RelativeToWidget: Widget.Handle  // for translating relative coords to global
+        abstract member AttachedPopups: (string * IMenuNode<'msg>) list
+    end
+    
 // type Empty<'msg>() =
 //     interface IBuilderNode<'msg> with
 //         override this.Dependencies() = []
