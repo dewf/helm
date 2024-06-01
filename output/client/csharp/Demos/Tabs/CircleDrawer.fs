@@ -7,7 +7,11 @@ open Org.Whatever.QtTesting
 open CustomWidget
 open type PaintResources
 open Widgets.BoxLayout
+open Widgets.Dialog
+open Widgets.Label
 open Widgets.PushButton
+open Widgets.Slider
+open WithDialogs
 
 type Signal = unit
 type Attr = unit
@@ -21,17 +25,20 @@ type State = {
     Circles: Circle list
     MaybeEditingIndex: int option
     EditingRadius: int
-} with
-    static member Init =
-        { Circles = []; MaybeEditingIndex = None; EditingRadius = 0 }
+}
         
 type Msg =
     | NoOp
     | AddCircle of loc: Common.Point
     | ShowDialog of loc: Common.Point
+    | SetRadius of radius: int
         
 let init() =
-    State.Init, Cmd.None
+    let state =
+        { Circles = []
+          MaybeEditingIndex = None
+          EditingRadius = 0 }
+    state, Cmd.None
     
 let update (state: State) = function
     | NoOp ->
@@ -44,6 +51,9 @@ let update (state: State) = function
         nextState, Cmd.None
     | ShowDialog loc ->
         printfn "show dialog @ %A" loc
+        state, Cmd.DialogOp ("edit", Exec)
+    | SetRadius value ->
+        printfn "set radius: %d" value
         state, Cmd.None
         
 type Woot(state: State) =
@@ -85,12 +95,40 @@ let view (state: State) =
                 NoOp
         CustomWidget(
             Attrs = [ PaintState(Woot(state)) ], OnMousePress = pressFunc)
+    let dialog =
+        let slider =
+            Slider(Attrs = [
+                Orientation Horizontal
+                Range(5, 100)
+                Value 10
+            ], OnValueChanged = SetRadius )
+        let cancel =
+            PushButton(Attrs = [ Text "Cancel" ])
+        let apply =
+            PushButton(Attrs = [ Text "OK" ])
+        let vbox =
+            let hbox =
+                BoxLayout(
+                    Attrs = [ Direction LeftToRight ],
+                    Items = [
+                        BoxItem.Stretch 1
+                        BoxItem.Create(cancel)
+                        BoxItem.Create(apply)
+                        BoxItem.Stretch 1
+                    ])
+            BoxLayout(Items = [
+                // BoxItem.Create(label)
+                BoxItem.Create(slider)
+                BoxItem.Create(hbox)
+            ])
+        Dialog(Attrs = [ Title "Edit Radius" ], Layout = vbox)
     let vbox =
         BoxLayout(Items = [
             BoxItem.Create(hbox)
             BoxItem.Create(canvas)
         ])
-    vbox :> ILayoutNode<Msg>
+    LayoutWithDialogs(vbox, [ "edit", dialog ])
+    :> ILayoutNode<Msg>
     
 type CircleDrawer<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)
