@@ -108,22 +108,46 @@ let update (state: State) = function
                 { state with NowEditing = false }
         nextState, Cmd.None
         
+type PaintResources = {
+    BgColor: Color
+    FgColor: Color
+    HoverColor: Color
+    BgBrush: Brush
+    ClearBrush: Brush
+    HoverBrush: Brush
+    Pen: Pen
+}
+
 type Woot(state: State) =
-    inherit PaintStateBase<State>(state)
+    inherit PaintStateBase<State, PaintResources>(state)
     // by default, without overriding .StateEquals, ANY change in our state from previous will trigger a redraw
     // .StateEquals gives you the ability to define a subset of state which is pertinent for repaints
-    override this.DoPaint widget painter paintRect =
-        // TODO: come up with a mechanism for long-lived resources that will be destroyed if the custom widget gets destroyed
-        use bgColor = Color.Create(Color.Constant.DarkBlue)
-        use fgColor = Color.Create(Color.Constant.Yellow)
-        use hoverColor = Color.Create(Color.Constant.Magenta)
-        use bgBrush = Brush.Create(bgColor)
-        use clearBrush = Brush.Create(Brush.Style.NoBrush)
-        use hoverBrush = Brush.Create(hoverColor)
-        use pen = Pen.Create(fgColor)
-        //
-        painter.FillRect(widget.GetRect(), bgColor)
-        painter.SetPen(pen)
+    override this.CreateResources() =
+        let bgColor = Color.Create(Color.Constant.DarkBlue)
+        let fgColor = Color.Create(Color.Constant.Yellow)
+        let hoverColor = Color.Create(Color.Constant.Magenta)
+        let bgBrush = Brush.Create(bgColor)
+        let clearBrush = Brush.Create(Brush.Style.NoBrush)
+        let hoverBrush = Brush.Create(hoverColor)
+        let pen = Pen.Create(fgColor)
+        { BgColor = bgColor
+          FgColor = fgColor
+          HoverColor = hoverColor
+          BgBrush = bgBrush
+          ClearBrush = clearBrush
+          HoverBrush = hoverBrush
+          Pen = pen }
+    override this.DestroyResources(res: PaintResources) =
+        res.BgColor.Dispose()
+        res.FgColor.Dispose()
+        res.HoverColor.Dispose()
+        res.BgBrush.Dispose()
+        res.ClearBrush.Dispose()
+        res.HoverBrush.Dispose()
+        res.Pen.Dispose()
+    override this.DoPaint resources widget painter paintRect =
+        painter.FillRect(widget.GetRect(), resources.BgColor)
+        painter.SetPen(resources.Pen)
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
             let brush, radius =
                 match state.MaybeHoverIndex with
@@ -133,9 +157,9 @@ type Woot(state: State) =
                             state.EditingRadius
                         else
                             circle.Radius
-                    hoverBrush, radius
+                    resources.HoverBrush, radius
                 | _ ->
-                    bgBrush, circle.Radius
+                    resources.BgBrush, circle.Radius
             painter.SetBrush(brush)
             painter.DrawEllipse(circle.Location, radius, radius)
 

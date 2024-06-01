@@ -16,9 +16,10 @@ type UpdateArea =
 type PaintState() =
     // implementing all this is a lot of annoying boilerplate,
     // ... so use PaintStateBase below instead.
-    // then you only have to implement 1 required method: DoPaint
-    // and optionally ComputeUpdateArea and StateEquals
-    abstract member DoPaint: Widget.Handle -> Painter.Handle -> Common.Rect -> unit // required
+    abstract member DoPaintInternal: Widget.Handle -> Painter.Handle -> Common.Rect -> unit
+    abstract member CreateResourcesInternal: unit -> unit                           // only called once
+    abstract member MigrateResources: PaintState -> unit
+    abstract member DestroyResourcesInternal: unit -> unit                          // called once on disposal
     abstract member ComputeAreaInternal: PaintState -> UpdateArea
     abstract member InternalEquals: PaintState -> bool
     abstract member InternalHashCode: int
@@ -30,20 +31,35 @@ type PaintState() =
         this.InternalHashCode
         
 [<AbstractClass>]
-type PaintStateBase<'state when 'state: equality>(state: 'state) =
+type PaintStateBase<'state, 'resources when 'state: equality>(state: 'state) =
     inherit PaintState()
+    [<DefaultValue>] val mutable private resources: 'resources
     member val state = state
+    abstract member CreateResources: unit -> 'resources
+    abstract member DestroyResources: 'resources -> unit
+    default this.DestroyResources(resources: 'resources) = ()
+    abstract member DoPaint: 'resources -> Widget.Handle -> Painter.Handle -> Common.Rect -> unit
+    override this.DoPaintInternal widget painter rect =
+        this.DoPaint this.resources widget painter rect
+    override this.CreateResourcesInternal() =
+        this.resources <- this.CreateResources()
+    override this.MigrateResources prev =
+        let prev' =
+            (prev :?> PaintStateBase<'state,'resources>)
+        this.resources <- prev'.resources
+    override this.DestroyResourcesInternal() =
+        this.DestroyResources(this.resources)
     abstract member ComputeUpdateArea: 'state -> UpdateArea // optional
     default this.ComputeUpdateArea _ =
         Everything
     override this.ComputeAreaInternal prevRaw =
-        let prev = prevRaw :?> PaintStateBase<'state>
+        let prev = prevRaw :?> PaintStateBase<'state,'resources>
         this.ComputeUpdateArea prev.state
     abstract member StateEquals: 'state -> bool             // optional
     default this.StateEquals otherState =
         state = otherState
     override this.InternalEquals (other: PaintState) =
-        let other' = other :?> PaintStateBase<'state>
+        let other' = other :?> PaintStateBase<'state,'resources>
         this.StateEquals other'.state
     override this.InternalHashCode with get() =
         state.GetHashCode()
@@ -91,7 +107,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
             maybePaintState
-            |> Option.iter (fun ps -> ps.DoPaint widget painter rect)
+            |> Option.iter (fun ps -> ps.DoPaintInternal widget painter rect)
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
             let info =
                 { Position = pos; Button = button; Modifiers = set modifiers }
@@ -116,8 +132,11 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 let updateArea =
                     match maybePaintState with
                     | Some last ->
+                        // in addition to binding 'updateArea', create/migrate resources while we're at it
+                        ps.MigrateResources(last)
                         ps.ComputeAreaInternal last
                     | None ->
+                        ps.CreateResourcesInternal()
                         // first incoming paintstate, must draw!
                         Everything
                 // assign now that we've checked
@@ -138,6 +157,8 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 
     interface IDisposable with
         member this.Dispose() =
+            maybePaintState
+            |> Option.iter (_.DestroyResourcesInternal())
             widget.Dispose()
 
 let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) =
