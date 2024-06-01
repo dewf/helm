@@ -65,7 +65,7 @@ let filterNames (names: Name list) (filter: string) =
     names
     |> List.mapi (fun i name -> i, name)
     |> List.choose (fun (index, name) ->
-        if name.First.ToLowerInvariant().StartsWith filter || name.Last.ToLowerInvariant().StartsWith filter then
+        if name.First.ToLower().StartsWith filter || name.Last.ToLower().StartsWith filter then
             Some { OriginalIndex = index; Name = name }
         else
             None)

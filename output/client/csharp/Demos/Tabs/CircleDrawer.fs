@@ -113,7 +113,7 @@ let update (state: State) = function
         // this also catches the case where the dialog is closed with the [X] and not via the cancel button
         // hence not changing any state in the CancelEdit handler
         // the other option would be to paramterize the CancelEdit msg to indicate its origin (cancel button vs. dialog [X]),
-        // to avoid invoking a Cmd.Dialog:Reject which would create a nasty feeback loop
+        // to avoid invoking a Cmd.Dialog:Reject which would create a feedback loop
         let nextState =
             match accepted, state.MaybeHoverIndex with
             | true, Some index ->
