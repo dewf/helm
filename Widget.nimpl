@@ -21,7 +21,6 @@ opaque Handle {
     void hide();
     void setVisible(bool state);
 
-    void setUpdatesEnabled(bool state);
     void update();
     void update(int x, int y, int width, int height);
     void update(Rect rect);
@@ -30,6 +29,10 @@ opaque Handle {
 
     void setLayout(Layout.Handle layout);
     Layout.Handle getLayout();
+
+    // things that probably only make sense for subclassed (but we haven't yet defined a separate opaque for that purpose)
+    void setUpdatesEnabled(bool enabled);
+    void setMouseTracking(bool enabled);
 
     // signals + event handling
     void onWindowTitleChanged(Signal.StringDelegate func);
@@ -42,7 +45,8 @@ Handle create();
 flags MethodMask {
     None = 0,                // F# giving us grief!
     PaintEvent = 1 << 0,
-    MousePressEvent = 1 << 1
+    MousePressEvent = 1 << 1,
+    MouseMoveEvent = 1 << 2
 }
 
 enum Modifier {
@@ -66,6 +70,7 @@ enum MouseButton {
 interface MethodDelegate {
     void paintEvent(Painter.Handle painter, Rect rect);
     void mousePressEvent(Point pos, MouseButton button, Set<Modifier> modifiers);
+    void mouseMoveEvent(Point pos, Set<MouseButton> buttons, Set<Modifier> modifiers);
 }
 
 Handle createSubclassed(MethodDelegate methodDelegate, MethodMask methodMask);

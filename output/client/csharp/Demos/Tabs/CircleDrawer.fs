@@ -1,5 +1,6 @@
 ﻿module Tabs.CircleDrawer
 
+open System
 open BuilderNode
 open SubReactor
 open Widgets
@@ -8,7 +9,6 @@ open CustomWidget
 open type PaintResources
 open Widgets.BoxLayout
 open Widgets.Dialog
-open Widgets.Label
 open Widgets.PushButton
 open Widgets.Slider
 open WithDialogs
@@ -23,7 +23,7 @@ type Circle = {
 
 type State = {
     Circles: Circle list
-    MaybeEditingIndex: int option
+    MaybeHoverIndex: int option
     EditingRadius: int
 }
         
@@ -31,12 +31,13 @@ type Msg =
     | NoOp
     | AddCircle of loc: Common.Point
     | ShowDialog of loc: Common.Point
+    | MouseMove of loc: Common.Point
     | SetRadius of radius: int
         
 let init() =
     let state =
         { Circles = []
-          MaybeEditingIndex = None
+          MaybeHoverIndex = None
           EditingRadius = 0 }
     state, Cmd.None
     
@@ -55,6 +56,15 @@ let update (state: State) = function
     | SetRadius value ->
         printfn "set radius: %d" value
         state, Cmd.None
+    | MouseMove loc ->
+        let dist (p1: Common.Point) (p2: Common.Point) =
+            let a = Math.Pow(float (p1.X - p2.X), 2.0)
+            let b = Math.Pow(float (p1.Y - p2.Y), 2.0)
+            sqrt (a + b)
+        let nextHoverIndex =
+            state.Circles
+            |> List.tryFindIndex (fun circle -> dist circle.Location loc < circle.Radius)
+        { state with MaybeHoverIndex = nextHoverIndex }, Cmd.None
         
 type Woot(state: State) =
     inherit PaintStateBase<State>(state)
@@ -63,12 +73,17 @@ type Woot(state: State) =
     override this.DoPaint widget painter paintRect =
         use bgColor = Color.Create(Color.Constant.DarkBlue)
         use fgColor = Color.Create(Color.Constant.Yellow)
+        use hoverColor = Color.Create(Color.Constant.Magenta)
         use pen = Pen.Create(fgColor)
         painter.FillRect(widget.GetRect(), bgColor)
         painter.SetPen(pen)
-        for circle in state.Circles do
+        for i, circle in state.Circles |> List.zipWithIndex do
             let rect = Common.Rect(X = circle.Location.X - circle.Radius, Y = circle.Location.Y - circle.Radius, Width = circle.Radius * 2, Height = circle.Radius * 2)
-            painter.DrawRect(rect)
+            match state.MaybeHoverIndex with
+            | Some index when i = index ->
+                painter.FillRect(rect, hoverColor)
+            | _ ->
+                painter.DrawRect(rect)
 
 let view (state: State) =
     let undo =
@@ -85,6 +100,8 @@ let view (state: State) =
                 BoxItem.Stretch 1
             ])
     let canvas =
+        let moveFunc info =
+            MouseMove info.Position
         let pressFunc (info: MousePressInfo) =
             match info.Button with
             | Widget.MouseButton.Left ->
@@ -94,7 +111,7 @@ let view (state: State) =
             | _ ->
                 NoOp
         CustomWidget(
-            Attrs = [ PaintState(Woot(state)) ], OnMousePress = pressFunc)
+            Attrs = [ PaintState(Woot(state)); MouseTracking true ], OnMousePress = pressFunc, OnMouseMove = moveFunc) // tracking needed for move events without mouse down
     let dialog =
         let slider =
             Slider(Attrs = [

@@ -56,16 +56,25 @@ type MousePressInfo = {
     Modifiers: Set<Widget.Modifier>
 }
 
+type MouseMoveInfo = {
+    Position: Common.Point
+    Buttons: Set<Widget.MouseButton>
+    Modifiers: Set<Widget.Modifier>
+}
+
 type Signal =
     | MousePress of info: MousePressInfo
+    | MouseMove of info: MouseMoveInfo
     
 type Attr =
     | PaintState of ps: PaintState
-    | UpdatesEnabled of state: bool
+    | UpdatesEnabled of enabled: bool
+    | MouseTracking of enabled: bool
     
 let private attrKey = function
     | PaintState _ -> 0
     | UpdatesEnabled _ -> 1
+    | MouseTracking _ -> 2
     
 let private diffAttrs =
     genericDiffAttrs attrKey
@@ -87,6 +96,10 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
             let info =
                 { Position = pos; Button = button; Modifiers = set modifiers }
             signalDispatch (MousePress info)
+        override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Widget.Modifier>) =
+            let info =
+                { Position = pos; Buttons = set buttons; Modifiers = set modifiers }
+            signalDispatch (MouseMove info)
             
         // override this.Dispose() =
         //     // I forget why the generated method delegates have this ...
@@ -118,8 +131,10 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 | Rects rects ->
                     for rect in rects do
                         widget.Update(rect)
-            | UpdatesEnabled state ->
-                widget.SetUpdatesEnabled(state)
+            | UpdatesEnabled enabled ->
+                widget.SetUpdatesEnabled(enabled)
+            | MouseTracking enabled ->
+                widget.SetMouseTracking(enabled)
 
     interface IDisposable with
         member this.Dispose() =
@@ -143,11 +158,16 @@ type CustomWidget<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     let mutable onMousePress: (MousePressInfo -> 'msg) option = None
+    let mutable onMouseMove: (MouseMoveInfo -> 'msg) option = None
     member this.OnMousePress with set value = onMousePress <- Some value
+    member this.OnMouseMove with set value = onMouseMove <- Some value
     member private this.SignalMap
         with get() = function
             | MousePress ev ->
                 onMousePress
+                |> Option.map (fun f -> f ev)
+            | MouseMove ev ->
+                onMouseMove
                 |> Option.map (fun f -> f ev)
     
     member private this.MethodMask
@@ -156,8 +176,12 @@ type CustomWidget<'msg>() =
                 match onMousePress with
                 | Some _ -> Widget.MethodMask.MousePressEvent
                 | None -> Widget.MethodMask.None
+            let mouseMoveValue =
+                match onMouseMove with
+                | Some _ -> Widget.MethodMask.MouseMoveEvent
+                | None -> Widget.MethodMask.None
             // always with PaintEvent, for now (else what's the point?)
-            mousePressValue ||| Widget.MethodMask.PaintEvent
+            Widget.MethodMask.PaintEvent ||| mousePressValue ||| mouseMoveValue
                 
     interface IWidgetNode<'msg> with
         override this.Dependencies = []

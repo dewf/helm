@@ -56,10 +56,6 @@ namespace Widget
         THIS->setVisible(state);
     }
 
-    void Handle_setUpdatesEnabled(HandleRef _this, bool state) {
-        THIS->setUpdatesEnabled(state);
-    }
-
     void Handle_update(HandleRef _this) {
         THIS->update();
     }
@@ -82,6 +78,14 @@ namespace Widget
 
     Layout::HandleRef Handle_getLayout(HandleRef _this) {
         return (Layout::HandleRef)THIS->layout();
+    }
+
+    void Handle_setUpdatesEnabled(HandleRef _this, bool enabled) {
+        THIS->setUpdatesEnabled(enabled);
+    }
+
+    void Handle_setMouseTracking(HandleRef _this, bool enabled) {
+        THIS->setMouseTracking(enabled);
     }
 
     void Handle_onWindowTitleChanged(HandleRef _this, std::function<StringDelegate> func) {
@@ -176,11 +180,23 @@ namespace Widget
                 auto button = fromQtButton(event->button());
                 auto modifiers = fromQtModifiers(event->modifiers());
                 methodDelegate->mousePressEvent(pos, button, modifiers);
-                // prevent from propagating:
-                // do we allow this from the method delegate somehow?
+                // prevent from propagating, see notes above
                 event->accept();
             } else {
                 QWidget::mousePressEvent(event);
+            }
+        }
+
+        void mouseMoveEvent(QMouseEvent *event) override {
+            if (methodMask & MethodMask::MouseMoveEvent) {
+                auto pos = toPoint(event->pos());
+                auto buttons = fromQtButtons(event->buttons());
+                auto modifiers = fromQtModifiers(event->modifiers());
+                methodDelegate->mouseMoveEvent(pos, buttons, modifiers);
+                // prevent from propagating, see notes above
+                event->accept();
+            } else {
+                QWidget::mouseMoveEvent(event);
             }
         }
     };
