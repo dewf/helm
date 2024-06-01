@@ -3,6 +3,8 @@
 #include <QObject>
 #include <QMenu>
 
+#include "util/convert.h"
+
 #define THIS ((QMenu*)_this)
 
 namespace Menu
@@ -17,6 +19,10 @@ namespace Menu
 
     void Handle_addAction(HandleRef _this, Action::HandleRef action) {
         THIS->addAction((QAction*)action);
+    }
+
+    void Handle_popup(HandleRef _this, Point p) {
+        THIS->popup(toQPoint(p));
     }
 
     void Handle_onAboutToShow(HandleRef _this, std::function<VoidDelegate> handler) {

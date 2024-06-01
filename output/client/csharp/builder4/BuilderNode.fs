@@ -87,6 +87,7 @@ type IMenuNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
             abstract member Menu: Menu.Handle
+            abstract member Popup: Common.Point -> unit
     end
     
 type IActionNode<'msg> =

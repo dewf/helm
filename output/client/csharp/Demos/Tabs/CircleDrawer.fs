@@ -9,6 +9,8 @@ open CustomWidget
 open type PaintResources
 open Widgets.BoxLayout
 open Widgets.Dialog
+open Widgets.Menus.MenuAction
+open Widgets.Menus.Menu
 open Widgets.PushButton
 open Widgets.Slider
 open WithDialogs
@@ -37,7 +39,7 @@ let circleAtIndex (index: int) (state: State) =
 type Msg =
     | NoOp
     | AddCircle of loc: Common.Point
-    | ShowDialog of loc: Common.Point
+    | ShowDialog
     | MouseMove of loc: Common.Point
     | SetRadius of radius: int
     | ApplyEdit
@@ -61,7 +63,7 @@ let update (state: State) = function
         let nextState =
             { state with Circles = circle :: state.Circles; MaybeHoverIndex = Some 0 }
         nextState, Cmd.None
-    | ShowDialog loc ->
+    | ShowDialog ->
         match state.MaybeHoverIndex with
         | Some index ->
             let circle =
@@ -143,18 +145,23 @@ let view (state: State) =
                 BoxItem.Stretch 1
             ])
     let canvas =
+        let contextMenu =
+            let action =
+                MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't QAction.Text sufficient?
+            Menu(Items = [ action ])
         let moveFunc info =
             MouseMove info.Position
         let pressFunc (info: MousePressInfo) =
             match info.Button with
             | Widget.MouseButton.Left ->
                 AddCircle info.Position
-            | Widget.MouseButton.Right ->
-                ShowDialog info.Position
             | _ ->
                 NoOp
         CustomWidget(
-            Attrs = [ PaintState(Woot(state)); MouseTracking true ], OnMousePress = pressFunc, OnMouseMove = moveFunc) // tracking needed for move events without mouse down
+            Attrs = [ PaintState(Woot(state)); MouseTracking true ],
+            ContextMenu = contextMenu,
+            OnMousePress = pressFunc,
+            OnMouseMove = moveFunc) // tracking needed for move events without mouse down
     let dialog =
         let slider =
             Slider(Attrs = [
@@ -180,7 +187,7 @@ let view (state: State) =
                 BoxItem.Create(slider)
                 BoxItem.Create(hbox)
             ])
-        Dialog(Attrs = [ Title "Edit Radius" ], Layout = vbox, OnClosed = DialogClosed)
+        Dialog(Attrs = [ Dialog.Title "Edit Radius" ], Layout = vbox, OnClosed = DialogClosed)
     let vbox =
         BoxLayout(Items = [
             BoxItem.Create(hbox)

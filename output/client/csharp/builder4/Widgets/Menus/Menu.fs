@@ -30,7 +30,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: Action.Handle list) =
                 ()
         menu.OnAboutToShow (fun _ ->
             signalDispatch AboutToShow)
-    member this.Menu with get() = menu
+    member this.Menu = menu
     member this.SignalMap with set value = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
@@ -117,3 +117,5 @@ type Menu<'msg>() =
             (this :> IMenuNode<'msg>).Menu
         override this.AttachedToWindow window =
             ()
+        override this.Popup point =
+            this.model.Menu.Popup point

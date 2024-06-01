@@ -7,6 +7,14 @@ import Painter;
 
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
+enum ContextMenuPolicy {
+    NoContextMenu = 0,
+    Prevent = 4,
+    Default = 1,
+    Actions = 2,
+    Custom = 3
+}
+
 opaque Handle {
     void setParent(Handle parent);
     Handle getWindow();
@@ -30,12 +38,16 @@ opaque Handle {
     void setLayout(Layout.Handle layout);
     Layout.Handle getLayout();
 
+    void setContextMenuPolicy(ContextMenuPolicy policy);
+    Point mapToGlobal(Point p);
+
     // things that probably only make sense for subclassed (but we haven't yet defined a separate opaque for that purpose)
     void setUpdatesEnabled(bool enabled);
     void setMouseTracking(bool enabled);
 
     // signals + event handling
     void onWindowTitleChanged(Signal.StringDelegate func);
+    void onCustomContextMenuRequested(Signal.PointDelegate func);
 }
 
 Handle create();

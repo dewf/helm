@@ -80,6 +80,15 @@ namespace Widget
         return (Layout::HandleRef)THIS->layout();
     }
 
+    void Handle_setContextMenuPolicy(HandleRef _this, ContextMenuPolicy policy) {
+        THIS->setContextMenuPolicy((Qt::ContextMenuPolicy)policy);
+    }
+
+    Point Handle_mapToGlobal(HandleRef _this, Point p) {
+        auto p2 = THIS->mapToGlobal(toQPoint(p));
+        return toPoint(p2);
+    }
+
     void Handle_setUpdatesEnabled(HandleRef _this, bool enabled) {
         THIS->setUpdatesEnabled(enabled);
     }
@@ -96,6 +105,16 @@ namespace Widget
             [func](const QString& title) {
                 func(title.toStdString());
             });
+    }
+
+    void Handle_onCustomContextMenuRequested(HandleRef _this, std::function<PointDelegate> func) {
+        QObject::connect(
+                THIS,
+                &QWidget::customContextMenuRequested,
+                THIS,
+                [func](const QPoint& point) {
+                    func(toPoint(point));
+                });
     }
 
     void Handle_dispose(HandleRef _this) {

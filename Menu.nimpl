@@ -1,5 +1,6 @@
 module Menu;
 
+import Common;
 import Widget;
 import Signal;
 import Action;
@@ -8,6 +9,8 @@ opaque Handle extends Widget.Handle {
     void clear();
     void setTitle(string title);
     void addAction(Action.Handle action);
+
+    void popup(Point p);
 
     void onAboutToShow(Signal.VoidDelegate handler);
 }

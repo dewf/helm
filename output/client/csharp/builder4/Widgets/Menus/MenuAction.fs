@@ -1,11 +1,12 @@
-﻿module Widgets.Menus.Action
+﻿module Widgets.Menus.MenuAction
 
 open System
 open BuilderNode
 open Org.Whatever.QtTesting
 
 type Signal =
-    | Triggered of checked_: bool
+    | Triggered
+    | CheckTriggered of checked_: bool
     
 type Attr =
     | Text of text: string
@@ -31,7 +32,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             | None ->
                 ()
         action.OnTriggered (fun checked_ ->
-            signalDispatch (Triggered checked_))
+            signalDispatch Triggered
+            signalDispatch (CheckTriggered checked_))
         
     member this.Action with get() = action
     member this.SignalMap with set value = signalMap <- value
@@ -62,25 +64,27 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
             
-type Action<'msg>() =
+type MenuAction<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    let mutable onTriggered: (bool -> 'msg) option = None
-    member this.OnTriggered
-        with set value =
-            onTriggered <- Some value
+    let mutable onTriggered: 'msg option = None
+    let mutable onCheckTriggered: (bool -> 'msg) option = None
+    member this.OnTriggered with set value = onTriggered <- Some value
+    member this.CheckOnTriggered with set value = onCheckTriggered <- Some value
     member private this.SignalMap
         with get() = function
-            | Triggered checked_ ->
-                onTriggered
+            | CheckTriggered checked_ ->
+                onCheckTriggered
                 |> Option.map (fun f -> f checked_)
+            | Triggered ->
+                onTriggered
                 
     interface IActionNode<'msg> with
         override this.Dependencies = []
         override this.Create(dispatch: 'msg -> unit) =
             this.model <- create this.Attrs this.SignalMap dispatch
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Action<'msg>)
+            let left' = (left :?> MenuAction<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
