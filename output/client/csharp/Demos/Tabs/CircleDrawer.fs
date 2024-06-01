@@ -25,11 +25,17 @@ type Circle = {
     Radius: int
 }
 
+type UndoItem =
+    | CircleAdded of circle: Circle
+    | RadiusChanged of index: int * oldRadius: int * newRadius: int
+    
 type State = {
     Circles: Circle list
     MaybeHoverIndex: int option
     NowEditing: bool
     EditingRadius: int
+    UndoStack: UndoItem list
+    RedoStack: UndoItem list
 }
 
 let circleAtIndex (index: int) (state: State) =
@@ -46,13 +52,17 @@ type Msg =
     | ApplyEdit
     | CancelEdit
     | DialogClosed of accepted: bool
-        
+    | Undo
+    | Redo
+    
 let init() =
     let state =
         { Circles = []
           MaybeHoverIndex = None
           NowEditing = false 
-          EditingRadius = 0 }
+          EditingRadius = 0
+          UndoStack = []
+          RedoStack = [] }
     state, Cmd.None
     
 let update (state: State) = function
@@ -61,8 +71,14 @@ let update (state: State) = function
     | AddCircle loc ->
         let circle =
             { Location = loc; Radius = 35 }
+        let nextUndoStack =
+            CircleAdded circle :: state.UndoStack
         let nextState =
-            { state with Circles = circle :: state.Circles; MaybeHoverIndex = Some 0 }
+            { state with
+                Circles = circle :: state.Circles
+                UndoStack = nextUndoStack
+                RedoStack = []
+                MaybeHoverIndex = Some 0 }
         nextState, Cmd.None
     | ShowContext loc ->
         match state.MaybeHoverIndex with
@@ -94,18 +110,76 @@ let update (state: State) = function
     | CancelEdit ->
         state, Cmd.DialogOp ("edit", Reject)
     | DialogClosed accepted ->
+        // this also catches the case where the dialog is closed with the [X] and not via the cancel button
+        // hence not changing any state in the CancelEdit handler
+        // the other option would be to paramterize the CancelEdit msg to indicate its origin (cancel button vs. dialog [X]),
+        // to avoid invoking a Cmd.Dialog:Reject which would create a nasty feeback loop
         let nextState =
-            if accepted then
-                let nextCircles =
-                    match state.MaybeHoverIndex with
-                    | Some index ->
+            match accepted, state.MaybeHoverIndex with
+            | true, Some index ->
+                // apply change ================
+                let nextCircles, nextUndoStack =
+                    let mutable oldRadius: int = -1 // 😮
+                    let nextCircles =
                         state.Circles
-                        |> List.replaceAtIndex index (fun cir -> { cir with Radius = state.EditingRadius })
-                    | None ->
-                        state.Circles
-                { state with Circles = nextCircles; NowEditing = false }
-            else
+                        |> List.replaceAtIndex index (fun cir ->
+                            oldRadius <- cir.Radius
+                            { cir with Radius = state.EditingRadius })
+                    let nextUndoStack =
+                        RadiusChanged (index, oldRadius, state.EditingRadius) :: state.UndoStack
+                    nextCircles, nextUndoStack
+                { state with
+                    Circles = nextCircles
+                    UndoStack = nextUndoStack
+                    RedoStack = []
+                    NowEditing = false }
+            | _ ->
+                // ignore/revert ================
                 { state with NowEditing = false }
+        nextState, Cmd.None
+    | Undo ->
+        let nextState =
+            match state.UndoStack with
+            | item :: etc ->
+                match item with
+                | CircleAdded _ ->
+                    let nextCircles =
+                        state.Circles |> List.skip 1
+                    let nextRedoStack =
+                        item :: state.RedoStack
+                    { state with Circles = nextCircles; UndoStack = etc; RedoStack = nextRedoStack }
+                | RadiusChanged (index, oldRadius, _) ->
+                    let nextCircles =
+                        state.Circles
+                        |> List.replaceAtIndex index (fun cir -> { cir with Radius = oldRadius })
+                    let nextRedoStack =
+                        item :: state.RedoStack
+                    { state with Circles = nextCircles; UndoStack = etc; RedoStack = nextRedoStack }
+            | [] ->
+                // nothing to undo 
+                state
+        nextState, Cmd.None
+    | Redo ->
+        let nextState =
+            match state.RedoStack with
+            | item :: etc ->
+                match item with
+                | CircleAdded circle ->
+                    let nextCircles =
+                        circle :: state.Circles
+                    let nextUndoStack =
+                        item :: state.UndoStack
+                    { state with Circles = nextCircles; UndoStack = nextUndoStack; RedoStack = etc }
+                | RadiusChanged (index, _, newRadius) ->
+                    let nextCircles =
+                        state.Circles
+                        |> List.replaceAtIndex index (fun cir -> { cir with Radius = newRadius })
+                    let nextUndoStack =
+                        item :: state.UndoStack
+                    { state with Circles = nextCircles; UndoStack = nextUndoStack; RedoStack = etc }
+            | [] ->
+                // nothing to redo
+                state
         nextState, Cmd.None
         
 type PaintResources = {
@@ -166,11 +240,15 @@ type DrawerPaintState(state: State) =
             painter.DrawEllipse(circle.Location, radius, radius)
 
 let view (state: State) =
-    let undo =
-        PushButton(Attrs = [ Text "Undo" ])
-    let redo =
-        PushButton(Attrs = [ Text "Redo" ])
-    let hbox =
+    let undoRedoButtons =
+        let undo =
+            let enabled =
+                not state.UndoStack.IsEmpty
+            PushButton(Attrs = [ Text "Undo"; Enabled enabled ], OnClicked = Undo)
+        let redo =
+            let enabled =
+                not state.RedoStack.IsEmpty
+            PushButton(Attrs = [ Text "Redo"; Enabled enabled ], OnClicked = Redo)
         BoxLayout(
             Attrs = [ Direction LeftToRight ],
             Items = [
@@ -228,7 +306,7 @@ let view (state: State) =
         Dialog(Attrs = [ Dialog.Title "Edit Radius" ], Layout = vbox, OnClosed = DialogClosed)
     let vbox =
         BoxLayout(Items = [
-            BoxItem.Create(hbox)
+            BoxItem.Create(undoRedoButtons)
             BoxItem.Create(canvas)
         ])
     LayoutWithDialogs(vbox, [ "edit", dialog ])
