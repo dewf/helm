@@ -42,6 +42,7 @@ type Msg =
     | SetRadius of radius: int
     | ApplyEdit
     | CancelEdit
+    | DialogClosed of accepted: bool
         
 let init() =
     let state =
@@ -80,18 +81,23 @@ let update (state: State) = function
             |> List.tryFindIndex (fun circle -> dist circle.Location loc < circle.Radius)
         { state with MaybeHoverIndex = nextHoverIndex }, Cmd.None
     | ApplyEdit ->
-        let nextCircles =
-            match state.MaybeHoverIndex with
-            | Some index ->
-                state.Circles
-                |> List.replaceAtIndex index (fun cir -> { cir with Radius = state.EditingRadius })
-            | None ->
-                state.Circles
-        let nextState =
-            { state with Circles = nextCircles; NowEditing = false }
-        nextState, Cmd.DialogOp ("edit", Accept)
+        state, Cmd.DialogOp ("edit", Accept)
     | CancelEdit ->
-        { state with NowEditing = false }, Cmd.DialogOp ("edit", Reject)
+        state, Cmd.DialogOp ("edit", Reject)
+    | DialogClosed accepted ->
+        let nextState =
+            if accepted then
+                let nextCircles =
+                    match state.MaybeHoverIndex with
+                    | Some index ->
+                        state.Circles
+                        |> List.replaceAtIndex index (fun cir -> { cir with Radius = state.EditingRadius })
+                    | None ->
+                        state.Circles
+                { state with Circles = nextCircles; NowEditing = false }
+            else
+                { state with NowEditing = false }
+        nextState, Cmd.None
         
 type Woot(state: State) =
     inherit PaintStateBase<State>(state)
@@ -174,7 +180,7 @@ let view (state: State) =
                 BoxItem.Create(slider)
                 BoxItem.Create(hbox)
             ])
-        Dialog(Attrs = [ Title "Edit Radius" ], Layout = vbox)
+        Dialog(Attrs = [ Title "Edit Radius" ], Layout = vbox, OnClosed = DialogClosed)
     let vbox =
         BoxLayout(Items = [
             BoxItem.Create(hbox)

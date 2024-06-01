@@ -5,8 +5,7 @@ open BuilderNode
 open Org.Whatever.QtTesting
 
 type Signal =
-    | Accepted
-    | Rejected
+    | Closed of accepted: bool
     
 type Attr =
     | Size of width: int * height: int
@@ -30,8 +29,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
             | None ->
                 ()
         
-        dialog.OnAccepted(fun _ -> signalDispatch Accepted)
-        dialog.OnRejected(fun _ -> signalDispatch Rejected)
+        dialog.OnAccepted(fun _ -> signalDispatch (Closed true))
+        dialog.OnRejected(fun _ -> signalDispatch (Closed false))
         
         maybeLayout
         |> Option.iter dialog.SetLayout
@@ -75,19 +74,17 @@ let private dispose (model: Model<'msg>) =
 
 type Dialog<'msg>() =
     let mutable maybeLayout: ILayoutNode<'msg> option = None
-    let mutable onAccepted: 'msg option = None
-    let mutable onRejected: 'msg option = None
+    let mutable onClosed: (bool -> 'msg) option = None
     member private this.MaybeLayout = maybeLayout
     member this.Layout with set value = maybeLayout <- Some value
-    member this.OnAccepted with set value = onAccepted <- Some value
-    member this.OnRejected with set value = onRejected <- Some value
+    member this.OnClosed with set value = onClosed <- Some value
     
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap
-        with get() = function
-            | Accepted -> onAccepted
-            | Rejected -> onRejected
+    member private this.SignalMap = function
+        | Closed accepted ->
+            onClosed
+            |> Option.map (fun f -> f accepted)
             
     member private this.MigrateContent (chamgeMap: Map<DepsKey, DepsChange>) =
         match chamgeMap.TryFind (StrKey "layout") with

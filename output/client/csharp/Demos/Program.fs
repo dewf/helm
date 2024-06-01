@@ -21,7 +21,7 @@ open Tabs.CRUD
 type Msg =
     | OpenDialog
     | AcceptDialog
-    | DlgStatus of string
+    | DialogClosed of accepted: bool
     | ChangeWindowTitle
 
 type State = {
@@ -40,8 +40,8 @@ let update (state: State) (msg: Msg) =
         state, Cmd.DialogOp ("testing", Exec)
     | AcceptDialog ->
         state, Cmd.DialogOp ("testing", Accept)
-    | DlgStatus status ->
-        printfn "dlg status: [%A]" status
+    | DialogClosed accepted ->
+        printfn "dlg accepted: [%A]" accepted
         state, Cmd.None
     | ChangeWindowTitle ->
         let nextState =
@@ -77,8 +77,7 @@ let view (state: State) =
         Dialog(
             Attrs = [ Dialog.Size (300, 200) ],
             Layout = layout,
-            OnAccepted = DlgStatus "accepted",
-            OnRejected = DlgStatus "rejected")
+            OnClosed = DialogClosed)
     let window =
         MainWindow(
             Attrs = [ Title state.WindowTitle; Size (800, 600) ],
