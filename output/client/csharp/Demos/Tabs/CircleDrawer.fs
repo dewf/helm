@@ -118,10 +118,8 @@ type PaintResources = {
     Pen: Pen
 }
 
-type Woot(state: State) =
+type DrawerPaintState(state: State) =
     inherit PaintStateBase<State, PaintResources>(state)
-    // by default, without overriding .StateEquals, ANY change in our state from previous will trigger a redraw
-    // .StateEquals gives you the ability to define a subset of state which is pertinent for repaints
     override this.CreateResources() =
         let bgColor = Color.Create(Color.Constant.DarkBlue)
         let fgColor = Color.Create(Color.Constant.Yellow)
@@ -145,6 +143,10 @@ type Woot(state: State) =
         res.ClearBrush.Dispose()
         res.HoverBrush.Dispose()
         res.Pen.Dispose()
+
+    // by default, without overriding .StateEquals, ANY change in our state from previous will trigger a redraw
+    // .StateEquals gives you the ability to define a subset of state which is pertinent for repaints
+        
     override this.DoPaint resources widget painter paintRect =
         painter.FillRect(widget.GetRect(), resources.BgColor)
         painter.SetPen(resources.Pen)
@@ -193,7 +195,7 @@ let view (state: State) =
             | _ ->
                 NoOp
         CustomWidget(
-            Attrs = [ PaintState(Woot(state)); MouseTracking true ],
+            Attrs = [ PaintState(DrawerPaintState(state)); MouseTracking true ],
             Menus = [ "context", contextMenu ],
             OnMousePress = pressFunc,
             OnMouseMove = moveFunc) // tracking needed for move events without mouse down
@@ -220,6 +222,7 @@ let view (state: State) =
                     ])
             BoxLayout(Items = [
                 BoxItem.Create(slider)
+                BoxItem.Spacer 10
                 BoxItem.Create(hbox)
             ])
         Dialog(Attrs = [ Dialog.Title "Edit Radius" ], Layout = vbox, OnClosed = DialogClosed)
