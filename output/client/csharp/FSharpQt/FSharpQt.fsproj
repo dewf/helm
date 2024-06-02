@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RootNamespace>builder4</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="BuilderNode.fs" />
+        <Compile Include="AppReactor.fs" />
+        <Compile Include="SubReactor.fs" />
+        <Compile Include="NonVisual.fs" />
+        <Compile Include="WithDialogs.fs" />
+        <Compile Include="Widgets\Widget.fs" />
+        <Compile Include="Widgets\BoxLayout.fs" />
+        <Compile Include="Widgets\Label.fs" />
+        <Compile Include="Widgets\PushButton.fs" />
+        <Compile Include="Widgets\LineEdit.fs" />
+        <Compile Include="Widgets\ComboBox.fs" />
+        <Compile Include="Widgets\ListWidget.fs" />
+        <Compile Include="Widgets\Menus\MenuAction.fs" />
+        <Compile Include="Widgets\Menus\Menu.fs" />
+        <Compile Include="Widgets\Menus\MenuBar.fs" />
+        <Compile Include="Widgets\TabWidget.fs" />
+        <Compile Include="Widgets\MainWindow.fs" />
+        <Compile Include="Widgets\WindowSet.fs" />
+        <Compile Include="Widgets\Timer.fs" />
+        <Compile Include="Widgets\CustomWidget.fs" />
+        <Compile Include="Widgets\Dialog.fs" />
+        <Compile Include="Widgets\Slider.fs" />
+        <Compile Include="Widgets\ProgressBar.fs" />
+        <Compile Include="Widgets\GridLayout.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\QtTestingClient\QtTestingClient.csproj" />
+    </ItemGroup>
+
+</Project>
