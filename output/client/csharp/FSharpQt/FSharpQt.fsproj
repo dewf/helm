@@ -12,6 +12,7 @@
         <Compile Include="SubReactor.fs" />
         <Compile Include="NonVisual.fs" />
         <Compile Include="WithDialogs.fs" />
+        <Compile Include="Painting.fs" />
         <Compile Include="Widgets\Widget.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />
         <Compile Include="Widgets\Label.fs" />

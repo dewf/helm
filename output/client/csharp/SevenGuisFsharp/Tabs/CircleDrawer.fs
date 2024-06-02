@@ -1,8 +1,8 @@
 ﻿module Tabs.CircleDrawer
 
-open System
-
 open FSharpQt
+open Painting
+
 open BuilderNode
 open SubReactor
 open FSharpQt.Widgets
@@ -18,7 +18,6 @@ open WithDialogs
 open Extensions
 
 open Org.Whatever.QtTesting
-open type PaintResources
 
 type Signal = unit
 type Attr = unit
@@ -101,8 +100,8 @@ let update (state: State) = function
         { state with EditingRadius = value }, Cmd.None
     | MouseMove loc ->
         let dist (p1: Common.Point) (p2: Common.Point) =
-            let a = Math.Pow(float (p1.X - p2.X), 2.0)
-            let b = Math.Pow(float (p1.Y - p2.Y), 2.0)
+            let a = System.Math.Pow(float (p1.X - p2.X), 2.0)
+            let b = System.Math.Pow(float (p1.Y - p2.Y), 2.0)
             sqrt (a + b)
         let nextHoverIndex =
             state.Circles
@@ -185,48 +184,24 @@ let update (state: State) = function
                 state
         nextState, Cmd.None
         
-type PaintResources = {
-    BgColor: Color
-    FgColor: Color
-    HoverColor: Color
-    BgBrush: Brush
-    ClearBrush: Brush
-    HoverBrush: Brush
-    Pen: Pen
-}
+let private bgColor = Color.DarkBlue
+let private fgColor = Color.Yellow
+let private hoverColor = Color.Magenta
+let private bgBrush = Brush(bgColor)
+let private clearBrush = Brush.NoBrush
+let private hoverBrush = Brush(hoverColor)
+let private pen = Pen(fgColor)
 
 type DrawerPaintState(state: State) =
-    inherit PaintStateBase<State, PaintResources>(state)
-    override this.CreateResources() =
-        let bgColor = Color.Create(Color.Constant.DarkBlue)
-        let fgColor = Color.Create(Color.Constant.Yellow)
-        let hoverColor = Color.Create(Color.Constant.Magenta)
-        let bgBrush = Brush.Create(bgColor)
-        let clearBrush = Brush.Create(Brush.Style.NoBrush)
-        let hoverBrush = Brush.Create(hoverColor)
-        let pen = Pen.Create(fgColor)
-        { BgColor = bgColor
-          FgColor = fgColor
-          HoverColor = hoverColor
-          BgBrush = bgBrush
-          ClearBrush = clearBrush
-          HoverBrush = hoverBrush
-          Pen = pen }
-    override this.DestroyResources(res: PaintResources) =
-        res.BgColor.Dispose()
-        res.FgColor.Dispose()
-        res.HoverColor.Dispose()
-        res.BgBrush.Dispose()
-        res.ClearBrush.Dispose()
-        res.HoverBrush.Dispose()
-        res.Pen.Dispose()
+    inherit PaintStateBase<State, int>(state)
+    override this.CreateResources() = 0 // we're just using 'int' as a placeholder since we're not using paintresources right now 
 
     // by default, without overriding .StateEquals, ANY change in our state from previous will trigger a redraw
     // .StateEquals gives you the ability to define a subset of state which is pertinent for repaints
         
     override this.DoPaint resources widget painter paintRect =
-        painter.FillRect(widget.GetRect(), resources.BgColor)
-        painter.SetPen(resources.Pen)
+        painter.FillRect(widget.GetRect(), bgColor)
+        painter.Pen <- pen
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
             let brush, radius =
                 match state.MaybeHoverIndex with
@@ -236,10 +211,10 @@ type DrawerPaintState(state: State) =
                             state.EditingRadius
                         else
                             circle.Radius
-                    resources.HoverBrush, radius
+                    hoverBrush, radius
                 | _ ->
-                    resources.BgBrush, circle.Radius
-            painter.SetBrush(brush)
+                    bgBrush, circle.Radius
+            painter.Brush <- brush
             painter.DrawEllipse(circle.Location, radius, radius)
 
 let view (state: State) =

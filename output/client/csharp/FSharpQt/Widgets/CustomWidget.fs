@@ -5,7 +5,6 @@ open FSharpQt.BuilderNode
 open System
 open Org.Whatever.QtTesting
 
-
 // PaintState stuff -- required for custom drawing ====================
 type UpdateArea =
     | NotRequired
@@ -38,8 +37,10 @@ type PaintStateBase<'state, 'resources when 'state: equality>(state: 'state) =
     abstract member CreateResources: unit -> 'resources
     abstract member DestroyResources: 'resources -> unit
     default this.DestroyResources(resources: 'resources) = ()
-    abstract member DoPaint: 'resources -> Widget.Handle -> Painter.Handle -> Common.Rect -> unit
-    override this.DoPaintInternal widget painter rect =
+    abstract member DoPaint: 'resources -> Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
+    override this.DoPaintInternal widget qtPainter rect =
+        let painter =
+            FSharpQt.Painting.Painter(qtPainter)
         this.DoPaint this.resources widget painter rect
     override this.CreateResourcesInternal() =
         this.resources <- this.CreateResources()
