@@ -116,6 +116,7 @@ type IDialogNode<'msg> =
     
 type IDialogParent<'msg> =
     interface
+        abstract member RelativeToWidget: Widget.Handle option              // for showing dialogs relative to a point
         abstract member AttachedDialogs: (string * IDialogNode<'msg>) list
     end
     

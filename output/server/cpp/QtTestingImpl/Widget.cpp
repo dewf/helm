@@ -44,6 +44,14 @@ namespace Widget
         THIS->resize(width, height);
     }
 
+    void Handle_move(HandleRef _this, Point p) {
+        THIS->move(toQPoint(p));
+    }
+
+    void Handle_move(HandleRef _this, int32_t x, int32_t y) {
+        THIS->move(x, y);
+    }
+
     void Handle_show(HandleRef _this) {
         THIS->show();
     }

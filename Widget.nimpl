@@ -25,6 +25,8 @@ opaque Handle {
     Rect getRect();
     void resize(int width, int height);
 
+    void move(Point p);
+    void move(int x, int y);
     void show();
     void hide();
     void setVisible(bool state);

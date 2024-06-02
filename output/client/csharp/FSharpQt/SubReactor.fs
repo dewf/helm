@@ -6,6 +6,9 @@ open Org.Whatever.QtTesting
 
 type DialogOp =
     | Exec
+    | ExecAt of p: Common.Point
+    | Show
+    | ShowAt of p: Common.Point
     | Accept
     | Reject
 
@@ -22,7 +25,7 @@ let nullAttrUpdate (state: 'state) (attr: 'attr) =
     state
     
 type Attachment<'msg> =
-    | AttachedDialog of node: IDialogNode<'msg>
+    | AttachedDialog of node: IDialogNode<'msg> * relativeTo: Widget.Handle option
     | AttachedPopup of node: IMenuNode<'msg> * relativeTo: Widget.Handle
     
 type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
@@ -46,8 +49,10 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
             // now this node
             match node with
             | :? IDialogParent<'msg> as dlgParent ->
+                let maybeWidget =
+                    dlgParent.RelativeToWidget
                 (soFar, dlgParent.AttachedDialogs)
-                ||> List.fold (fun acc (name, node) -> acc.Add (name, AttachedDialog node))
+                ||> List.fold (fun acc (name, node) -> acc.Add (name, AttachedDialog (node, maybeWidget)))
             | :? IPopupMenuParent<'msg> as popupParent ->
                 let widget =
                     popupParent.RelativeToWidget
@@ -108,9 +113,25 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
         match attachMap.TryFind name with
         | Some node ->
             match node with
-            | AttachedDialog node ->
+            | AttachedDialog (node, maybeWidget) ->
+                let moveTo p =
+                    match maybeWidget with
+                    | Some widget ->
+                        let abs = widget.MapToGlobal(p)
+                        node.Dialog.Move(abs)
+                    | None ->
+                        ()
                 match op with
-                | Exec -> node.Dialog.Exec()
+                | Exec ->
+                    node.Dialog.Exec()
+                | ExecAt p ->
+                    moveTo p
+                    node.Dialog.Exec()
+                | Show ->
+                    node.Dialog.Show()
+                | ShowAt p ->
+                    moveTo p
+                    node.Dialog.Show()
                 | Accept -> node.Dialog.Accept()
                 | Reject -> node.Dialog.Reject()
             | _ ->

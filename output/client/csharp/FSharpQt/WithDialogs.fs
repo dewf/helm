@@ -1,12 +1,16 @@
 ﻿module FSharpQt.WithDialogs
 
 open BuilderNode
+open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
 [<AbstractClass>]
 type WithDialogs<'msg>(content: IBuilderNode<'msg>, dialogs: (string * IDialogNode<'msg>) list) =
     abstract member CreatedWithDialogs: IDialogNode<'msg> list -> unit
     default this.CreatedWithDialogs dialogs = ()
+    
+    abstract member RelativeToWidgetAbstract: Widget.Handle option
+    default this.RelativeToWidgetAbstract = None
     
     interface IBuilderNode<'msg> with
         member this.Dependencies =
@@ -38,6 +42,7 @@ type WithDialogs<'msg>(content: IBuilderNode<'msg>, dialogs: (string * IDialogNo
                 dlg.AttachedToWindow window
         
     interface IDialogParent<'msg> with
+        member this.RelativeToWidget = this.RelativeToWidgetAbstract
         member this.AttachedDialogs = dialogs
 
 type WindowWithDialogs<'msg>(window: IWindowNode<'msg>, dialogs: (string * IDialogNode<'msg>) list) =
@@ -48,6 +53,9 @@ type WindowWithDialogs<'msg>(window: IWindowNode<'msg>, dialogs: (string * IDial
         // this is only for external/peer dialogs at a parallel level, that wouldn't otherwise be 'seen' by MainWindow
         for dlg in dialogs do
             dlg.AttachedToWindow window.WindowWidget
+            
+    override this.RelativeToWidgetAbstract =
+        Some window.WindowWidget
     
     interface IWindowNode<'msg> with
         member this.WindowWidget = window.WindowWidget
@@ -66,3 +74,12 @@ type LayoutWithDialogs<'msg>(layout: ILayoutNode<'msg>, dialogs: (string * IDial
                 widget.SetLayout(layout.Layout)
                 maybeSyntheticParent <- Some widget
                 widget
+
+type WidgetWithDialogs<'msg>(widget: IWidgetNode<'msg>, dialogs: (string * IDialogNode<'msg>) list) =
+    inherit WithDialogs<'msg>(widget, dialogs)
+    
+    override this.RelativeToWidgetAbstract =
+        Some widget.Widget
+    
+    interface IWidgetNode<'msg> with
+        member this.Widget = widget.Widget

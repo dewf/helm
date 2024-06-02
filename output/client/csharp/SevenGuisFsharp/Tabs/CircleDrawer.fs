@@ -93,7 +93,7 @@ let update (state: State) = function
         | Some index ->
             let circle =
                 state |> circleAtIndex index
-            { state with NowEditing = true; EditingRadius = circle.Radius }, Cmd.DialogOp ("edit", Exec)
+            { state with NowEditing = true; EditingRadius = circle.Radius }, Cmd.DialogOp ("edit", ExecAt circle.Location)
         | None ->
             state, Cmd.None
     | SetRadius value ->
@@ -282,13 +282,17 @@ let view (state: State) =
                 BoxItem.Create(hbox)
             ])
         Dialog(Attrs = [ Dialog.Title "Edit Radius" ], Layout = vbox, OnClosed = DialogClosed)
+    // we attach the dialog to the canvas,
+    // so that there's a valid widget for relative dialog popups
+    let canvasWithDialogs =
+        WidgetWithDialogs(canvas, [ "edit", dialog ])
     let vbox =
         BoxLayout(Items = [
             BoxItem.Create(undoRedoButtons)
-            BoxItem.Create(canvas)
+            BoxItem.Create(canvasWithDialogs)
         ])
-    LayoutWithDialogs(vbox, [ "edit", dialog ])
-    :> ILayoutNode<Msg>
+    // LayoutWithDialogs(vbox, [ "edit", dialog ])
+    vbox :> ILayoutNode<Msg>
     
 type CircleDrawer<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)
