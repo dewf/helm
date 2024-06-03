@@ -5,7 +5,7 @@ open System
 open FSharpQt
 open BuilderNode
 open HelperControls
-open SubReactor
+open Reactor
 open FSharpQt.Widgets
 open HelperControls.DatePicker
 open BoxLayout

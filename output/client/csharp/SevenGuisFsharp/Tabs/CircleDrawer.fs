@@ -4,7 +4,7 @@ open FSharpQt
 open Painting
 
 open BuilderNode
-open SubReactor
+open Reactor
 open FSharpQt.Widgets
 open CustomWidget
 open Widgets.BoxLayout

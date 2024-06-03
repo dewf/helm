@@ -5,7 +5,7 @@ open System
 open FSharpQt
 open BuilderNode
 open NonVisual
-open SubReactor
+open Reactor
 open FSharpQt.Widgets
 open BoxLayout
 open Label

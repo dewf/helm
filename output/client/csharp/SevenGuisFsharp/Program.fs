@@ -4,7 +4,7 @@ open System
 
 open FSharpQt
 open BuilderNode
-open AppReactor
+open Reactor
 open FSharpQt.Widgets.WindowSet
 open FSharpQt.Widgets
 open BoxLayout
@@ -54,7 +54,7 @@ let init () =
 let update (state: State) (msg: Msg) =
     match msg with
     | MainWindowClosed ->
-        state, Cmd.QuitApplication
+        state, Cmd.Signal QuitApplication
     | LaunchInstance kind ->
         let nextState =
             let nextInstances =

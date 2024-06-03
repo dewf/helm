@@ -5,7 +5,7 @@ open System.Globalization
 
 open FSharpQt
 open BuilderNode
-open SubReactor
+open Reactor
 open FSharpQt.Widgets
 open WithDialogs
 open BoxLayout

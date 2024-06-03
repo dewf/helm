@@ -9,8 +9,7 @@
     <ItemGroup>
         <Compile Include="MiscTypes.fs" />
         <Compile Include="BuilderNode.fs" />
-        <Compile Include="AppReactor.fs" />
-        <Compile Include="SubReactor.fs" />
+        <Compile Include="Reactor.fs" />
         <Compile Include="NonVisual.fs" />
         <Compile Include="WithDialogs.fs" />
         <Compile Include="Painting.fs" />

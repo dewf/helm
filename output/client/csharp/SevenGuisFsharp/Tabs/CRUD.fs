@@ -2,7 +2,7 @@
 
 open FSharpQt
 open BuilderNode
-open SubReactor
+open Reactor
 
 open FSharpQt.Widgets
 open Label

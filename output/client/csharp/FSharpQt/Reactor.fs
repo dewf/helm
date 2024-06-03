@@ -1,4 +1,4 @@
-﻿module FSharpQt.SubReactor
+﻿module FSharpQt.Reactor
 
 open BuilderNode
 open System
@@ -28,7 +28,7 @@ type Attachment<'msg> =
     | AttachedDialog of node: IDialogNode<'msg> * relativeTo: Widget.Handle option
     | AttachedPopup of node: IMenuNode<'msg> * relativeTo: Widget.Handle
     
-type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
+type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                     init: unit -> 'state * Cmd<'msg,'signal>,
                     attrUpdate: 'state -> 'attr -> 'state,
                     update: 'state -> 'msg -> 'state * Cmd<'msg,'signal>,
@@ -160,35 +160,6 @@ type SubReactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
             
-// below was some test code written to check the plausibility of making AppReactor just a specialization of SubReactor (which doesn't need attributes or signals)
-// however for the moment we're still keeping them in separate modules, so the respective Cmd types can be more specialized
-// eg components need signals but the top level app doesn't, and components probably don't have a need to quit the application
-// and more distinctions maybe be discovered in time
-// ... but maybe it will prove silly and we'll ultimately just use a single reactor for both the app and component levels
-
-// type AppReactor2<'msg,'state>(init: unit -> 'state * SubCmd<'msg,unit>, update: 'state -> 'msg -> 'state * SubCmd<'msg,unit>, view: 'state -> IBuilderNode<'msg>) =
-//     [<DefaultValue>] val mutable reactor: SubReactor<'state,unit,'msg,unit,IBuilderNode<'msg>>
-//     member this.Run(argv: string array) =
-//         use app =
-//             Application.Create(argv)
-//         Application.SetStyle("Fusion")
-//         let rec processCmd = function
-//             | SubCmd.None ->
-//                 ()
-//             | SubCmd.OfMsg msg ->
-//                 this.reactor.ProcessMsg msg
-//             | SubCmd.Signal _ ->
-//                 ()
-//             | SubCmd.Batch commands ->
-//                 commands
-//                 |> List.iter processCmd
-//         this.reactor <-
-//             new SubReactor<'state,unit,'msg,unit,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
-//         Application.Exec()
-//     interface IDisposable with
-//         member this.Dispose() =
-//             (this.reactor :> IDisposable).Dispose()
-
 [<AbstractClass>]    
 type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBuilderNode<'msg>>(
                 init: unit -> 'state * Cmd<'msg, 'signal>,
@@ -197,7 +168,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                 view: 'state -> 'root,
                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
                 ) =
-    [<DefaultValue>] val mutable reactor: SubReactor<'state,'attr,'msg,'signal,'root>
+    [<DefaultValue>] val mutable reactor: Reactor<'state,'attr,'msg,'signal,'root>
     member val Attrs: 'attr list = [] with get, set
     abstract member SignalMap: 'signal -> 'outerMsg option
     default this.SignalMap _ = None
@@ -225,7 +196,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                     this.reactor.DialogOp name op
                 | Cmd.PopMenu (name, loc) ->
                     this.reactor.PopMenu name loc
-            this.reactor <- new SubReactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
+            this.reactor <- new Reactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
             this.reactor.ApplyAttrs(this.Attrs)
         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root>)
@@ -278,3 +249,42 @@ type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
     interface IWindowNode<'outerMsg> with
         override this.WindowWidget =
             this.reactor.Root.WindowWidget
+
+// root-level AppReactor stuff ============================================================
+
+type AppSignal =
+    | QuitApplication
+
+type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>, view: 'state -> IBuilderNode<'msg>) =
+    [<DefaultValue>] val mutable reactor: Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>
+    member this.Run(argv: string array) =
+        use app =
+            Application.Create(argv)
+        Application.SetStyle("Fusion")
+        let rec processCmd (cmd: Cmd<'msg,AppSignal>) =
+            match cmd with
+            | Cmd.None ->
+                ()
+            | Cmd.OfMsg msg ->
+                this.reactor.ProcessMsg msg
+            | Cmd.Signal signal ->
+                // thoroughly chuffed, this worked out well!
+                match signal with
+                | QuitApplication ->
+                    Application.Quit()
+            | Cmd.Batch commands ->
+                commands
+                |> List.iter processCmd
+            | Cmd.DialogOp (name, op) ->
+                this.reactor.DialogOp name op
+            | Cmd.PopMenu (name, loc) ->
+                this.reactor.PopMenu name loc
+        this.reactor <-
+            new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
+        Application.Exec()
+    interface IDisposable with
+        member this.Dispose() =
+            (this.reactor :> IDisposable).Dispose()
+            
+let createApplication (init: unit -> 'state * Cmd<'msg,AppSignal>) (update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>) (view: 'state -> IBuilderNode<'msg>) =
+    new AppReactor<'msg,'state>(init, update, view)
