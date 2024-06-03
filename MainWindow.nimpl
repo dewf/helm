@@ -1,12 +1,16 @@
 module MainWindow;
 
 import Widget;
+import Signal;
 import Layout;
 import MenuBar;
 
 opaque Handle extends Widget.Handle {
     void setCentralWidget(Widget.Handle widget);
     void setMenuBar(MenuBar.Handle menubar);
+
+    // signals
+    void onClosed(Signal.VoidDelegate handler);
 }
 
 Handle create();

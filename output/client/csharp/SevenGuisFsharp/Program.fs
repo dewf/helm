@@ -6,26 +6,28 @@ open FSharpQt
 open BuilderNode
 open AppReactor
 open FSharpQt.Widgets.WindowSet
-open Tabs.CircleDrawer
 open FSharpQt.Widgets
 open BoxLayout
 open PushButton
 open MainWindow
+
 open Tabs.Counter
 open Tabs.TempConverter
 open Tabs.FlightBooker
 open Tabs.TimerPage
 open Tabs.CRUD
+open Tabs.CircleDrawer
 
 open Org.Whatever.QtTesting
 
+[<RequireQualifiedAccess>]
 type GuiKind =
-    | Counter2
-    | TempConverter2
-    | FlightBooker2
-    | TimerPage2
-    | CRUD2
-    | CircleDrawer2
+    | Counter
+    | TempConverter
+    | FlightBooker
+    | TimerPage
+    | CRUD
+    | CircleDrawer
     
 type GuiInstance = {
     Key: int
@@ -38,10 +40,9 @@ type State = {
 }
 
 type Msg =
-    | OpenDialog
-    | AcceptDialog
-    | DialogClosed of accepted: bool
+    | MainWindowClosed
     | LaunchInstance of kind: GuiKind
+    | InstanceClosed of key: int
 
 let init () =
     let nextState = {
@@ -52,13 +53,8 @@ let init () =
 
 let update (state: State) (msg: Msg) =
     match msg with
-    | OpenDialog ->
-        state, Cmd.DialogOp ("testing", Exec)
-    | AcceptDialog ->
-        state, Cmd.DialogOp ("testing", Accept)
-    | DialogClosed accepted ->
-        printfn "dlg accepted: [%A]" accepted
-        state, Cmd.None
+    | MainWindowClosed ->
+        state, Cmd.QuitApplication
     | LaunchInstance kind ->
         let nextState =
             let nextInstances =
@@ -67,47 +63,58 @@ let update (state: State) (msg: Msg) =
                 instance :: state.Instances
             { state with Instances = nextInstances; NextKey = state.NextKey + 1 }
         nextState, Cmd.None
+    | InstanceClosed key ->
+        let nextState =
+            let nextInstances =
+                let index =
+                    state.Instances
+                    |> List.findIndex (fun inst -> inst.Key = key)
+                printfn "removing window key %A at index %d" key index
+                state.Instances
+                |> List.removeAt index
+            { state with Instances = nextInstances }
+        nextState, Cmd.None
     
 let view (state: State) =
-    let pairs = [
-        "Counter", Counter2
-        "TempConv", TempConverter2
-        "FlightBooker", FlightBooker2
-        "Timer", TimerPage2
-        "CRUD", CRUD2
-        "CircleDrawer", CircleDrawer2
-    ]
     let buttons =
-        pairs
+        [ "Counter", GuiKind.Counter
+          "TempConv", GuiKind.TempConverter
+          "FlightBooker", GuiKind.FlightBooker
+          "Timer", GuiKind.TimerPage
+          "CRUD", GuiKind.CRUD
+          "CircleDrawer", GuiKind.CircleDrawer ]
         |> List.map (fun (name, kind) ->
             PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind))
+
     let vbox =
         let items =
             buttons
             |> List.map BoxItem.Create
         BoxLayout(Attrs = [ Direction TopToBottom ], Items = items)
+        
     let mainWindow =
         let window =
-            // TODO: close entire app on main window close
             MainWindow(
                 Attrs = [ Title "7GUIs in F#/Qt" ],
-                Content = vbox)
+                Content = vbox,
+                OnClosed = MainWindowClosed)
         IntKey 0, window :> IWindowNode<Msg>
+        
     let instanceWindows =
         state.Instances
         |> List.map (fun inst ->
             let title, node =
                 match inst.Kind with
-                | Counter2 -> "Counter", Counter() :> ILayoutNode<Msg>
-                | TempConverter2 -> "Temperature Converter", TempConverter()
-                | FlightBooker2 -> "Flight Booker", FlightBooker()
-                | TimerPage2 -> "Timer", TimerPage()
-                | CRUD2 -> "CRUD", CRUDPage()
-                | CircleDrawer2 -> "Circle Drawer", CircleDrawer()
+                | GuiKind.Counter -> "Counter", Counter() :> ILayoutNode<Msg>
+                | GuiKind.TempConverter -> "Temperature Converter", TempConverter()
+                | GuiKind.FlightBooker -> "Flight Booker", FlightBooker()
+                | GuiKind.TimerPage -> "Timer", TimerPage()
+                | GuiKind.CRUD -> "CRUD", CRUDPage()
+                | GuiKind.CircleDrawer -> "Circle Drawer", CircleDrawer()
             let window =
-                // TODO: close/hide event needs to remove window from instance list
-                MainWindow(Attrs = [ Title title ], Content = node)
+                MainWindow(Attrs = [ Title title ], Content = node, OnClosed = InstanceClosed inst.Key)
             IntKey inst.Key, window :> IWindowNode<Msg>)
+        
     WindowSet(Windows = mainWindow :: instanceWindows)
     :> IBuilderNode<Msg>
     

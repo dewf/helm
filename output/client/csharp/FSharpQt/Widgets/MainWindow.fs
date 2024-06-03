@@ -6,6 +6,7 @@ open Org.Whatever.QtTesting
 
 type Signal =
     | TitleChanged of title: string
+    | Closed
     
 type Attr =
     | Title of title: string
@@ -30,8 +31,12 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
                 dispatch msg
             | None ->
                 ()
+                
         mainWindow.OnWindowTitleChanged (fun title ->
             signalDispatch (TitleChanged title))
+        
+        mainWindow.OnClosed (fun _ ->
+            signalDispatch Closed)
         
         maybeContentNode
         |> Option.iter (fun node ->
@@ -91,7 +96,9 @@ let private dispose (model: Model<'msg>) =
 type MainWindow<'msg>() =
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     let mutable maybeContent: IWidgetNode<'msg> option = None
+
     let mutable onTitleChanged: (string -> 'msg) option = None
+    let mutable onClosed: 'msg option = None
 
     [<DefaultValue>] val mutable private model: Model<'msg>
     member private this.SignalMap
@@ -99,10 +106,15 @@ type MainWindow<'msg>() =
             | TitleChanged title ->
                 onTitleChanged
                 |> Option.map (fun f -> f title)
-    member val Attrs: Attr list = [] with get, set
-    member this.OnTitleChanged with set value = onTitleChanged <- Some value
+            | Closed ->
+                onClosed
+                
     member this.Content with set value = maybeContent <- Some value
     member this.MenuBar with set value = maybeMenuBar <- Some value
+    member this.OnTitleChanged with set value = onTitleChanged <- Some value
+    member this.OnClosed with set value = onClosed <- Some value
+                
+    member val Attrs: Attr list = [] with get, set
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "menu") with
         | Some change ->
