@@ -42,6 +42,10 @@ inline Qt::Alignment toQtAlign(Alignment align) {
     return Qt::AlignLeft;
 }
 
+inline QSize toQSize(const Size& sz) {
+    return {sz.width, sz.height };
+}
+
 inline Point toPoint(const QPoint& qPoint) {
     return { qPoint.x(), qPoint.y() };
 }

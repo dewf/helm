@@ -226,6 +226,15 @@ namespace Widget
                 QWidget::mouseMoveEvent(event);
             }
         }
+    public:
+        [[nodiscard]] QSize sizeHint() const override {
+            if (methodMask & MethodMask::SizeHint) {
+                auto size = methodDelegate->sizeHint();
+                return toQSize(size);
+            } else {
+                return QWidget::sizeHint();
+            }
+        }
     };
 
     HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, uint32_t methodMask) {

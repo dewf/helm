@@ -117,6 +117,8 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
             let info =
                 { Position = pos; Buttons = set buttons; Modifiers = set modifiers }
             signalDispatch (MouseMove info)
+        override this.SizeHint() =
+            Common.Size(640, 480)
             
         // override this.Dispose() =
         //     // I forget why the generated method delegates have this ...
@@ -204,8 +206,10 @@ type CustomWidget<'msg>() =
                 match onMouseMove with
                 | Some _ -> Widget.MethodMask.MouseMoveEvent
                 | None -> Widget.MethodMask.None
-            // always with PaintEvent, for now (else what's the point?)
-            Widget.MethodMask.PaintEvent ||| mousePressValue ||| mouseMoveValue
+            Widget.MethodMask.PaintEvent |||
+            Widget.MethodMask.SizeHint |||
+            mousePressValue |||
+            mouseMoveValue
             
     interface IWidgetNode<'msg> with
         override this.Dependencies =
