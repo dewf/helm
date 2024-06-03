@@ -17,10 +17,11 @@ type Attr =
 let private keyFunc = function
     | Spacing _ -> 0
     | ContentsMargins _ -> 1
-    | RowMinimumHeight _ -> 2
-    | ColumnMinimumWidth _ -> 3
-    | RowStretch _ -> 4
-    | ColumnStretch _ -> 5
+    // a little more complicated, to allow for a single Attrs with multiple row/columns:
+    | RowMinimumHeight (row, _) -> (row * 4) + 2      // 2, 6, 10 ...
+    | ColumnMinimumWidth (col, _) -> (col * 4) + 3    // 3, 7, 11 ...
+    | RowStretch (row, _) -> (row * 4) + 4            // 4, 8, 12 ...
+    | ColumnStretch (col, _) -> (col * 4) + 5         // 5, 9, 13 ...
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
