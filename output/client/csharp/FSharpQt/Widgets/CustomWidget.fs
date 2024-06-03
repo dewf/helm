@@ -87,11 +87,13 @@ type Attr =
     | PaintState of ps: PaintState
     | UpdatesEnabled of enabled: bool
     | MouseTracking of enabled: bool
+    | SizeHint of width: int * height: int
     
 let private attrKey = function
     | PaintState _ -> 0
     | UpdatesEnabled _ -> 1
     | MouseTracking _ -> 2
+    | SizeHint _ -> 3
     
 let private diffAttrs =
     genericDiffAttrs attrKey
@@ -104,6 +106,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
         |> Option.iter dispatch
         
     let mutable maybePaintState: PaintState option = None
+    let mutable maybeSizeHint: Common.Size option = None
         
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
@@ -118,7 +121,12 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 { Position = pos; Buttons = set buttons; Modifiers = set modifiers }
             signalDispatch (MouseMove info)
         override this.SizeHint() =
-            Common.Size(640, 480)
+            match maybeSizeHint with
+            | Some sizeHint ->
+                sizeHint
+            | None ->
+                // invalid size = no recommendation
+                Common.Size(-1, -1)
             
         // override this.Dispose() =
         //     // I forget why the generated method delegates have this ...
@@ -157,6 +165,8 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 widget.SetUpdatesEnabled(enabled)
             | MouseTracking enabled ->
                 widget.SetMouseTracking(enabled)
+            | SizeHint (width, height) ->
+                maybeSizeHint <- Common.Size(width, height) |> Some
                 
     interface IDisposable with
         member this.Dispose() =

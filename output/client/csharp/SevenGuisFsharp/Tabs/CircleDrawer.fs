@@ -251,7 +251,7 @@ let view (state: State) =
             | _ ->
                 NoOp
         CustomWidget(
-            Attrs = [ PaintState(DrawerPaintState(state)); MouseTracking true ],
+            Attrs = [ PaintState(DrawerPaintState(state)); MouseTracking true; SizeHint (400, 300) ],
             Menus = [ "context", contextMenu ],
             OnMousePress = pressFunc,
             OnMouseMove = moveFunc) // tracking needed for move events without mouse down
