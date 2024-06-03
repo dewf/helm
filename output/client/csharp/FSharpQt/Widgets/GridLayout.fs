@@ -161,7 +161,6 @@ let private dispose (model: Model<'msg>) =
 
 
 type GridLayout<'msg>() =
-    let mutable maybeSyntheticParent: Widget.Handle option = None
     let mutable items: GridItem<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -216,9 +215,6 @@ type GridLayout<'msg>() =
                 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
-            // not sure if this order is correct / safe ...
-            maybeSyntheticParent
-            |> Option.iter (_.Dispose())
 
         override this.Layout =
             (this.model.Layout :> Layout.Handle)
@@ -226,16 +222,6 @@ type GridLayout<'msg>() =
         override this.ContentKey =
             (this :> ILayoutNode<'msg>).Layout
             
-        override this.Widget =
-            match maybeSyntheticParent with
-            | Some widget ->
-                widget
-            | None ->
-                let widget = Widget.Create()
-                widget.SetLayout((this :> ILayoutNode<'msg>).Layout)
-                maybeSyntheticParent <- Some widget
-                widget
-                
         override this.AttachedToWindow window =
             for item in items do
                 match item with

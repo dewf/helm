@@ -249,7 +249,6 @@ type WidgetReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
                 ) =
     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWidgetNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
-    
     interface IWidgetNode<'outerMsg> with
         override this.Widget =
             this.reactor.Root.Widget
@@ -263,22 +262,9 @@ type LayoutReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
                 ) =
     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,ILayoutNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
-    let mutable maybeSyntheticParent: Widget.Handle option = None
-
     interface ILayoutNode<'outerMsg> with
         override this.Layout =
             this.reactor.Root.Layout
-        override this.Widget =
-            match maybeSyntheticParent with
-            | Some widget ->
-                widget
-            | None ->
-                let widget = Widget.Create()
-                widget.SetLayout((this :> ILayoutNode<'outerMsg>).Layout)
-                maybeSyntheticParent <- Some widget
-                widget
-                
-        // TODO: still need a Dispose mechanism that works up the hierarchy ...
         
 [<AbstractClass>]
 type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
@@ -289,7 +275,6 @@ type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
                 ) =
     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWindowNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
-    
     interface IWindowNode<'outerMsg> with
         override this.WindowWidget =
             this.reactor.Root.WindowWidget

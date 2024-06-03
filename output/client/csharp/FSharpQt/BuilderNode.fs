@@ -38,19 +38,24 @@ type IBuilderNode<'msg> =
         abstract ContentKey: System.Object
         abstract AttachedToWindow: Widget.Handle -> unit
     end
-    
-type IWidgetNode<'msg> =
+
+// this will allow certain widgets (eg MainWindow) to accept either type
+// also removes the burden of implementing IWidgetNode from every single ILayoutNode implementation (the former approach), which was annoying
+type IWidgetOrLayoutNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
+    end
+
+type IWidgetNode<'msg> =
+    interface
+        inherit IWidgetOrLayoutNode<'msg>
         abstract Widget: Widget.Handle
     end
     
 type ILayoutNode<'msg> =
     interface
-        // layout nodes inherit widgetnode, because they need to be capable of creating a parent widget on demand
-        // just makes things a little easier, so you can always add a layout where a widget is expected
-        inherit IWidgetNode<'msg>
-            abstract member Layout: Layout.Handle
+        inherit IWidgetOrLayoutNode<'msg>
+        abstract member Layout: Layout.Handle
     end
     
 // leaving this below for future reference, in case fancier inheritance (eg default interface methods / traits) ever comes to F#

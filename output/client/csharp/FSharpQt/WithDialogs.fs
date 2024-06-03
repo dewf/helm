@@ -1,7 +1,6 @@
 ﻿module FSharpQt.WithDialogs
 
 open BuilderNode
-open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
 [<AbstractClass>]
@@ -62,18 +61,8 @@ type WindowWithDialogs<'msg>(window: IWindowNode<'msg>, dialogs: (string * IDial
 
 type LayoutWithDialogs<'msg>(layout: ILayoutNode<'msg>, dialogs: (string * IDialogNode<'msg>) list) =
     inherit WithDialogs<'msg>(layout, dialogs)
-    let mutable maybeSyntheticParent: Widget.Handle option = None
     interface ILayoutNode<'msg> with
         member this.Layout = layout.Layout
-        member this.Widget =
-            match maybeSyntheticParent with
-            | Some widget ->
-                widget
-            | None ->
-                let widget = Widget.Create()
-                widget.SetLayout(layout.Layout)
-                maybeSyntheticParent <- Some widget
-                widget
 
 type WidgetWithDialogs<'msg>(widget: IWidgetNode<'msg>, dialogs: (string * IDialogNode<'msg>) list) =
     inherit WithDialogs<'msg>(widget, dialogs)

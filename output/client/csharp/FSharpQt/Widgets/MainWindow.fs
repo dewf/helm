@@ -21,9 +21,10 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeContentNode: IWidgetNode<'msg> option) = // we use node for content because we need to invoke 'attachedToWindow'
+type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeContentNode: IWidgetOrLayoutNode<'msg> option) = // we use node for content because we need to invoke 'attachedToWindow'
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable mainWindow = MainWindow.Create()
+    let mutable syntheticLayoutWidget: Widget.Handle option = None
     do
         let signalDispatch (s: Signal) =
             match signalMap s with
@@ -40,7 +41,16 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         
         maybeContentNode
         |> Option.iter (fun node ->
-            mainWindow.SetCentralWidget node.Widget
+            match node with
+            | :? IWidgetNode<'msg> as widgetNode ->
+                mainWindow.SetCentralWidget widgetNode.Widget
+            | :? ILayoutNode<'msg> as layoutNode ->
+                let widget = Widget.Create()
+                widget.SetLayout(layoutNode.Layout)
+                mainWindow.SetCentralWidget(widget)
+                syntheticLayoutWidget <- Some widget
+            | _ ->
+                failwith "MainWindow.Model 'do' block - unknown node type"
             node.AttachedToWindow mainWindow)
         
         maybeMenuBar
@@ -57,11 +67,29 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         mainWindow.SetMenuBar(menuBar)
         
     member this.RemoveContent() =
-        mainWindow.SetCentralWidget(null) // sufficient?
+        // TODO: need to do some serious testing with all this
+        match syntheticLayoutWidget with
+        | Some widget ->
+            widget.GetLayout().RemoveAll() // detach any children just in case
+            widget.SetLayout(null)
+            widget.Dispose()
+            // deleting should automatically remove from the parent mainWindow, right?
+            syntheticLayoutWidget <- None
+        | None ->
+            mainWindow.SetCentralWidget(null) // sufficient?
         
-    member this.AddContent(node: IWidgetNode<'msg>) =
-        mainWindow.SetCentralWidget(node.Widget)
-        // the below is for dialogs ... and probably nothing else! sigh
+    member this.AddContent(node: IWidgetOrLayoutNode<'msg>) =
+        match node with
+        | :? IWidgetNode<'msg> as widgetNode ->
+            mainWindow.SetCentralWidget(widgetNode.Widget)
+        | :? ILayoutNode<'msg> as layout ->
+            let widget = Widget.Create()
+            widget.SetLayout(layout.Layout)
+            mainWindow.SetCentralWidget(widget)
+            syntheticLayoutWidget <- Some widget
+        | _ ->
+            failwith "MainWindow.Model.AddContent - unknown node type"
+        // below is for dialogs or anything else that needs to know what window it's ultimately attached to
         node.AttachedToWindow mainWindow
         
     member this.Widget with get() = mainWindow
@@ -79,7 +107,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         member this.Dispose() =
             mainWindow.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeMenuBar: MenuBar.Handle option) (maybeContentNode: IWidgetNode<'msg> option) =
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeMenuBar: MenuBar.Handle option) (maybeContentNode: IWidgetOrLayoutNode<'msg> option) =
     let model = new Model<'msg>(dispatch, maybeMenuBar, maybeContentNode)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -94,13 +122,17 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type MainWindow<'msg>() =
+    [<DefaultValue>] val mutable private model: Model<'msg>
+    
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
-    let mutable maybeContent: IWidgetNode<'msg> option = None
-
+    let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     let mutable onTitleChanged: (string -> 'msg) option = None
     let mutable onClosed: 'msg option = None
-
-    [<DefaultValue>] val mutable private model: Model<'msg>
+    member this.Content with set value = maybeContent <- Some value
+    member this.MenuBar with set value = maybeMenuBar <- Some value
+    member this.OnTitleChanged with set value = onTitleChanged <- Some value
+    member this.OnClosed with set value = onClosed <- Some value
+    
     member private this.SignalMap
         with get() = function
             | TitleChanged title ->
@@ -109,12 +141,8 @@ type MainWindow<'msg>() =
             | Closed ->
                 onClosed
                 
-    member this.Content with set value = maybeContent <- Some value
-    member this.MenuBar with set value = maybeMenuBar <- Some value
-    member this.OnTitleChanged with set value = onTitleChanged <- Some value
-    member this.OnClosed with set value = onClosed <- Some value
-                
     member val Attrs: Attr list = [] with get, set
+    
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "menu") with
         | Some change ->

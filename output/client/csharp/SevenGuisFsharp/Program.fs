@@ -69,7 +69,6 @@ let update (state: State) (msg: Msg) =
                 let index =
                     state.Instances
                     |> List.findIndex (fun inst -> inst.Key = key)
-                printfn "removing window key %A at index %d" key index
                 state.Instances
                 |> List.removeAt index
             { state with Instances = nextInstances }

@@ -1,7 +1,6 @@
 ﻿module FSharpQt.NonVisual
 
 open BuilderNode
-open Org.Whatever.QtTesting
 
 type INonVisualNode<'msg> =
     interface
@@ -33,18 +32,8 @@ type WidgetWithNonVisual<'msg>(content: IWidgetNode<'msg>, nonVisualItems: (stri
 
 type LayoutWithNonVisual<'msg>(content: ILayoutNode<'msg>, nonVisualItems: (string * INonVisualNode<'msg>) list) =
     inherit WithNonVisual<'msg>(content, nonVisualItems)
-    let mutable maybeSyntheticParent: Widget.Handle option = None
     interface ILayoutNode<'msg> with
         override this.Layout = content.Layout
-        override this.Widget =
-            match maybeSyntheticParent with
-            | Some widget ->
-                widget
-            | None ->
-                let widget = Widget.Create()
-                widget.SetLayout((this :> ILayoutNode<'msg>).Layout)
-                maybeSyntheticParent <- Some widget
-                widget
 
 type TopLevelWithNonVisual<'msg>(content: ITopLevelNode<'msg>, nonVisualItems: (string * INonVisualNode<'msg>) list) =
     inherit WithNonVisual<'msg>(content, nonVisualItems)
