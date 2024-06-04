@@ -79,6 +79,8 @@ type MouseMoveInfo = {
     Modifiers: Set<Widget.Modifier>
 }
 
+type CanDropFunc = Widget.DropAction option -> unit
+
 type DragMoveInfo = {
     IsEnterEvent: bool
     Position: Common.Point
@@ -252,7 +254,7 @@ type CustomWidget<'msg>() =
     let mutable menus: (string * IMenuNode<'msg>) list = []
     let mutable onMousePress: (MousePressInfo -> 'msg) option = None
     let mutable onMouseMove: (MouseMoveInfo -> 'msg) option = None
-    let mutable onDragMove: (DragMoveInfo * (Widget.DropAction option -> unit) -> 'msg) option = None
+    let mutable onDragMove: (DragMoveInfo * CanDropFunc -> 'msg) option = None
     let mutable onDragLeave: 'msg option = None
     let mutable onDrop: (DropInfo -> 'msg) option = None
     

@@ -15,6 +15,7 @@
         <Compile Include="Tabs\TimerPage.fs" />
         <Compile Include="Tabs\CRUD.fs" />
         <Compile Include="Tabs\CircleDrawer.fs" />
+        <Compile Include="Tabs\DropTesting.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

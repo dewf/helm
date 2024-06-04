@@ -45,7 +45,7 @@ type Style =
     | DashDotDotLine
     | CustomDashLine
 with
-    member this.QtValue =
+    member internal this.QtValue =
         match this with
         | NoPen -> PaintResources.Pen.Style.NoPen
         | SolidLine -> PaintResources.Pen.Style.SolidLine
@@ -60,7 +60,7 @@ type CapStyle =
     | Square
     | Round
 with
-    member this.QtValue =
+    member internal this.QtValue =
         match this with
         | Flat -> PaintResources.Pen.CapStyle.Flat
         | Square -> PaintResources.Pen.CapStyle.Square
@@ -72,7 +72,7 @@ type JoinStyle =
     | Round
     | SvgMiter
 with
-    member this.QtValue =
+    member internal this.QtValue =
         match this with
         | Miter -> PaintResources.Pen.JoinStyle.Miter
         | Bevel -> PaintResources.Pen.JoinStyle.Bevel
@@ -91,10 +91,35 @@ type Pen private(qtPen: PaintResources.Pen) =
         Pen(PaintResources.Pen.Create(brush.qtBrush, width, style.QtValue, cap.QtValue, join.QtValue))
     override this.Finalize() =
         qtPen.Dispose()
-        
+       
+type Weight =
+    | Thin
+    | ExtraLight
+    | Light
+    | Normal
+    | Medium
+    | DemiBold
+    | Bold
+    | ExtraBold
+    | Black
+with
+    member internal this.QtValue =
+        match this with
+        | Thin -> PaintResources.Font.Weight.Thin
+        | ExtraLight -> PaintResources.Font.Weight.ExtraLight
+        | Light -> PaintResources.Font.Weight.Light
+        | Normal -> PaintResources.Font.Weight.Normal
+        | Medium -> PaintResources.Font.Weight.Medium
+        | DemiBold -> PaintResources.Font.Weight.DemiBold
+        | Bold -> PaintResources.Font.Weight.Bold
+        | ExtraBold -> PaintResources.Font.Weight.ExtraBold
+        | Black -> PaintResources.Font.Weight.Black
+    
 type Font private(qtFont: PaintResources.Font) =
     member val internal qtFont = qtFont
-    // TODO
+    new (family: string, pointSize: int) = Font(PaintResources.Font.Create(family, pointSize))
+    new (family: string, pointSize: int, weight: Weight) = Font(PaintResources.Font.Create(family, pointSize, weight.QtValue))
+    new (family: string, pointSize: int, weight: Weight, italic: bool) = Font(PaintResources.Font.Create(family, pointSize, weight.QtValue, italic))
     override this.Finalize() =
         qtFont.Dispose()
 

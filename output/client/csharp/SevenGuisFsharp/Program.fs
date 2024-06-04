@@ -13,6 +13,7 @@ open PushButton
 open MainWindow
 
 open Tabs.Counter
+open Tabs.DropTesting
 open Tabs.TempConverter
 open Tabs.FlightBooker
 open Tabs.TimerPage
@@ -145,8 +146,7 @@ let view (state: State) =
                 | GuiKind.CircleDrawer -> "Circle Drawer", CircleDrawer()
                 | GuiKind.Spreadsheet ->
                     failwith "not yet implemented"
-                | GuiKind.DropTesting ->
-                    failwith "not yet implemented"
+                | GuiKind.DropTesting -> "Drop Testing", DropTesting()
             let window =
                 MainWindow(Attrs = [ Title title ], Content = node, OnClosed = InstanceClosed inst.Key)
             IntKey inst.Key, window :> IWindowNode<Msg>)
