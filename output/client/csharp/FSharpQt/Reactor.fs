@@ -257,6 +257,9 @@ type AppSignal =
 
 type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>, view: 'state -> IBuilderNode<'msg>) =
     [<DefaultValue>] val mutable reactor: Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>
+    do
+        Library.Init()
+        
     member this.Run(argv: string array) =
         use app =
             Application.Create(argv)
@@ -282,9 +285,12 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
         this.reactor <-
             new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
         Application.Exec()
+        
     interface IDisposable with
         member this.Dispose() =
             (this.reactor :> IDisposable).Dispose()
+            Library.DumpTables()
+            Library.Shutdown()
             
 let createApplication (init: unit -> 'state * Cmd<'msg,AppSignal>) (update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>) (view: 'state -> IBuilderNode<'msg>) =
     new AppReactor<'msg,'state>(init, update, view)
