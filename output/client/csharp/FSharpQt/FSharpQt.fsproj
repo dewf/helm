@@ -15,6 +15,7 @@
         <Compile Include="Painting.fs" />
         <Compile Include="Widgets\Widget.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />
+        <Compile Include="Widgets\Frame.fs" />
         <Compile Include="Widgets\Label.fs" />
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\LineEdit.fs" />

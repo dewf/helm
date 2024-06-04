@@ -8,6 +8,7 @@ open Reactor
 open FSharpQt.Widgets.WindowSet
 open FSharpQt.Widgets
 open BoxLayout
+open Label
 open PushButton
 open MainWindow
 
@@ -22,12 +23,16 @@ open Org.Whatever.QtTesting
 
 [<RequireQualifiedAccess>]
 type GuiKind =
+    // 7guis
     | Counter
     | TempConverter
     | FlightBooker
     | TimerPage
     | CRUD
     | CircleDrawer
+    | Spreadsheet
+    // misc
+    | DropTesting
     
 type GuiInstance = {
     Key: int
@@ -75,19 +80,33 @@ let update (state: State) (msg: Msg) =
         nextState, Cmd.None
     
 let view (state: State) =
-    let buttons =
+    let topLabel =
+        Label(Attrs = [ Label.Text "7GUIs"; Alignment Left ]) :> IWidgetNode<Msg>
+        
+    let topButtons =
         [ "Counter", GuiKind.Counter
           "TempConv", GuiKind.TempConverter
           "FlightBooker", GuiKind.FlightBooker
           "Timer", GuiKind.TimerPage
           "CRUD", GuiKind.CRUD
-          "CircleDrawer", GuiKind.CircleDrawer ]
+          "CircleDrawer", GuiKind.CircleDrawer
+          "Spreadsheet", GuiKind.Spreadsheet ]
         |> List.map (fun (name, kind) ->
-            PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind))
+            let enabled =
+                kind <> GuiKind.Spreadsheet
+            PushButton(Attrs = [ Text name; Enabled enabled ], OnClicked = LaunchInstance kind) :> IWidgetNode<Msg>)
+        
+    let bottomLabel =
+        Label(Attrs = [ Label.Text "Misc"; Alignment Left ])
+        
+    let bottomButtons =
+        [ "DropTesting", GuiKind.DropTesting ]
+        |> List.map (fun (name, kind) ->
+            PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind) :> IWidgetNode<Msg>)
 
     let vbox =
         let items =
-            buttons
+            ([ topLabel ] @ topButtons @ [ bottomLabel ] @ bottomButtons)
             |> List.map BoxItem.Create
         BoxLayout(Attrs = [ Direction TopToBottom ], Items = items)
         
@@ -110,6 +129,10 @@ let view (state: State) =
                 | GuiKind.TimerPage -> "Timer", TimerPage()
                 | GuiKind.CRUD -> "CRUD", CRUDPage()
                 | GuiKind.CircleDrawer -> "Circle Drawer", CircleDrawer()
+                | GuiKind.Spreadsheet ->
+                    failwith "not yet implemented"
+                | GuiKind.DropTesting ->
+                    failwith "not yet implemented"
             let window =
                 MainWindow(Attrs = [ Title title ], Content = node, OnClosed = InstanceClosed inst.Key)
             IntKey inst.Key, window :> IWindowNode<Msg>)

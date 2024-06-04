@@ -1,0 +1,32 @@
+module Frame;
+
+import Widget;
+
+enum Shape {
+    NoFrame = 0,
+    Box = 0x1,
+    Panel = 0x2,
+    StyledPanel = 0x6,
+    HLine = 0x4,
+    VLine = 0x5,
+    WinPanel = 0x3
+}
+
+enum Shadow {
+    Plain = 0x10,
+    Raised = 0x20,
+    Sunken = 0x30
+}
+
+// enum Style
+// Qt's frame style is just a bitwise-OR between shape and shadow
+
+opaque Handle extends Widget.Handle {
+    void setFrameShadow(Shadow shadow);
+    void setFrameShape(Shape shape);
+    void setFrameStyle(Shape shape, Shadow shadow);
+    void setLineWidth(int width);
+    void setMidLineWidth(int width);
+}
+
+Handle create();

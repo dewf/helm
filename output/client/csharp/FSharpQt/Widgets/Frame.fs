@@ -1,4 +1,4 @@
-﻿module FSharpQt.Widgets.Label
+﻿module FSharpQt.Widgets.Frame
 
 open FSharpQt.BuilderNode
 open System
@@ -6,73 +6,66 @@ open Org.Whatever.QtTesting
 
 type Signal = unit
 
-type Align =
-    | Left
-    | HCenter
-    | Right
-    | Top
-    | VCenter
-    | Bottom
-    | Center
+type Shape =
+    | NoFrame
+    | Box
+    | Panel
+    | StyledPanel
+    | HLine
+    | VLine
+    | WinPanel
+with
+    member this.QtShape =
+        match this with
+        | NoFrame -> Frame.Shape.NoFrame
+        | Box -> Frame.Shape.Box
+        | Panel -> Frame.Shape.Panel
+        | StyledPanel -> Frame.Shape.StyledPanel
+        | HLine -> Frame.Shape.HLine
+        | VLine -> Frame.Shape.VLine
+        | WinPanel -> Frame.Shape.WinPanel
+    
+type Shadow =
+    | Plain
+    | Raised
+    | Sunken
+with
+    member this.QtShadow =
+        match this with
+        | Plain -> Frame.Shadow.Plain
+        | Raised -> Frame.Shadow.Raised
+        | Sunken -> Frame.Shadow.Sunken
 
 type Attr =
-    | FrameShape of shape: FSharpQt.Widgets.Frame.Shape
-    | FrameShadow of shadow: FSharpQt.Widgets.Frame.Shadow
-    | FrameStyle of shape: FSharpQt.Widgets.Frame.Shape * shadow: FSharpQt.Widgets.Frame.Shadow
-    | FrameLineWidth of width: int
-    | FrameMidLineWidth of midWidth: int
-    | Text of text: string
-    | Alignment of align: Align
+    | Shape of shape: Shape
+    | Shadow of shadow: Shadow
+    | Style of shape: Shape * shadow: Shadow
     
-let keyFunc = function
-    | FrameShape _ -> 0
-    | FrameShadow _ -> 1
-    | FrameStyle _ -> 2
-    | FrameLineWidth _ -> 3
-    | FrameMidLineWidth _ -> 4
-    | Text _ -> 5
-    | Alignment _ -> 6
-
 let private diffAttrs =
-    genericDiffAttrs keyFunc
-
+    genericDiffAttrs (function
+        | Shape _ -> 0
+        | Shadow _ -> 1
+        | Style _ -> 2)
+    
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable label = Label.Create()
+    let mutable frame = Frame.Create()
     // no 'do' block currently since no signals
-    member this.Widget with get() = label
+    member this.Widget with get() = frame
     member this.SignalMap with set value = signalMap <- value
     member this.ApplyAttrs (attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | Text text ->
-                label.SetText(text)
-            | Alignment align ->
-                let qAlign =
-                    match align with
-                    | Left -> Common.Alignment.Left
-                    | HCenter -> Common.Alignment.HCenter
-                    | Right -> Common.Alignment.Right
-                    | Top -> Common.Alignment.Top
-                    | VCenter -> Common.Alignment.VCenter
-                    | Bottom -> Common.Alignment.Bottom
-                    | Center -> Common.Alignment.Center
-                label.SetAlignment(qAlign)
-            | FrameShape shape ->
-                label.SetFrameShape(shape.QtShape)
-            | FrameShadow shadow ->
-                label.SetFrameShadow(shadow.QtShadow)
-            | FrameStyle(shape, shadow) ->
-                label.SetFrameStyle(shape.QtShape, shadow.QtShadow)
-            | FrameLineWidth width ->
-                label.SetLineWidth(width)
-            | FrameMidLineWidth midWidth ->
-                label.SetMidLineWidth(midWidth)
-                
+            | Shape shape ->
+                frame.SetFrameShape(shape.QtShape)
+            | Shadow shadow ->
+                frame.SetFrameShadow(shadow.QtShadow)
+            | Style(shape, shadow) ->
+                frame.SetFrameStyle(shape.QtShape, shadow.QtShadow)
     interface IDisposable with
         member this.Dispose() =
-            label.Dispose()
-            
+            frame.Dispose()
+
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
@@ -87,7 +80,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Label<'msg>() =
+type Frame<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     member private this.SignalMap = (fun _ -> None)
@@ -99,7 +92,7 @@ type Label<'msg>() =
             this.model <- create this.Attrs this.SignalMap dispatch
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> Label<'msg>)
+            let left' = (left :?> Frame<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
             this.model <- migrate left'.model nextAttrs this.SignalMap
             
