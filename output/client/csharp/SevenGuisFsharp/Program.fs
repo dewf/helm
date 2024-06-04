@@ -84,30 +84,44 @@ let view (state: State) =
         Label(Attrs = [ Label.Text "7GUIs"; Alignment Left ]) :> IWidgetNode<Msg>
         
     let topButtons =
-        [ "Counter", GuiKind.Counter
-          "TempConv", GuiKind.TempConverter
-          "FlightBooker", GuiKind.FlightBooker
-          "Timer", GuiKind.TimerPage
-          "CRUD", GuiKind.CRUD
-          "CircleDrawer", GuiKind.CircleDrawer
-          "Spreadsheet", GuiKind.Spreadsheet ]
-        |> List.map (fun (name, kind) ->
-            let enabled =
-                kind <> GuiKind.Spreadsheet
-            PushButton(Attrs = [ Text name; Enabled enabled ], OnClicked = LaunchInstance kind) :> IWidgetNode<Msg>)
+        let buttons =
+            [ "Counter", GuiKind.Counter
+              "TempConv", GuiKind.TempConverter
+              "FlightBooker", GuiKind.FlightBooker
+              "Timer", GuiKind.TimerPage
+              "CRUD", GuiKind.CRUD
+              "CircleDrawer", GuiKind.CircleDrawer
+              "Spreadsheet", GuiKind.Spreadsheet ]
+            |> List.map (fun (name, kind) ->
+                let enabled =
+                    kind <> GuiKind.Spreadsheet
+                PushButton(Attrs = [ Text name; Enabled enabled ], OnClicked = LaunchInstance kind))
+        let items =
+            buttons
+            |> List.map BoxItem.Create
+        BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
         
     let bottomLabel =
         Label(Attrs = [ Label.Text "Misc"; Alignment Left ])
         
     let bottomButtons =
-        [ "DropTesting", GuiKind.DropTesting ]
-        |> List.map (fun (name, kind) ->
-            PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind) :> IWidgetNode<Msg>)
-
-    let vbox =
+        let buttons =
+            [ "DropTesting", GuiKind.DropTesting ]
+            |> List.map (fun (name, kind) ->
+                PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind))
         let items =
-            ([ topLabel ] @ topButtons @ [ bottomLabel ] @ bottomButtons)
+            buttons
             |> List.map BoxItem.Create
+        BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
+        
+    let vbox =
+        let items = [
+            // listed explicitly (vs. List.map) to avoid casting to :> IWidgetNode above
+            BoxItem.Create(topLabel)
+            BoxItem.Create(topButtons)
+            BoxItem.Create(bottomLabel)
+            BoxItem.Create(bottomButtons)
+        ]
         BoxLayout(Attrs = [ Direction TopToBottom ], Items = items)
         
     let mainWindow =
