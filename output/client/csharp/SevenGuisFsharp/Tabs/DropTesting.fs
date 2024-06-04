@@ -12,20 +12,25 @@ open Org.Whatever.QtTesting
 type Signal = unit
 type Attr = unit
 
-type TextFragment = {
+[<RequireQualifiedAccess>]
+type Payload =
+    | Text of string
+    | Files of string list
+    
+type Fragment = {
     Location: Common.Point
-    Text: string
+    Payload: Payload
 }
 
 type State = {
     MaybeDropPosition: Common.Point option
-    Fragments: TextFragment list
+    Fragments: Fragment list
 }
 
 type Msg =
-    | DragMove of info: DragMoveInfo * canDrop: CanDropFunc
-    | DragLeave
-    | Drop of info: DropInfo
+    | DropPreview of loc: Common.Point
+    | PerformDrop of fragment: Fragment
+    | DropCanceled
 
 let init() =
     { MaybeDropPosition = None
@@ -34,31 +39,43 @@ let init() =
     
 let update (state: State) (msg: Msg) =
     match msg with
-    | DragMove(info, canDrop) ->
-        let nextState =
-            if info.MimeTypes |> List.contains "text/plain" then
-                canDrop (Some info.ProposedAction)
-                { state with MaybeDropPosition = Some info.Position }
-            else
-                canDrop None
-                { state with MaybeDropPosition = None }
-        nextState, Cmd.None
-    | DragLeave ->
-        { state with MaybeDropPosition = None }, Cmd.None
-    | Drop info ->
-        let fragment = {
-            Location = info.Position
-            Text = info.MimeData.Text() 
-        }
+    | DropPreview loc ->
+        { state with MaybeDropPosition = Some loc }, Cmd.None
+    | PerformDrop fragment ->
         let nextFragments =
             fragment :: state.Fragments
-        { state with MaybeDropPosition = None; Fragments = nextFragments }, Cmd.None
+        { state with Fragments = nextFragments; MaybeDropPosition = None }, Cmd.None
+    | DropCanceled ->
+        { state with MaybeDropPosition = None }, Cmd.None
         
-let private orangeBrush = Brush(Color(1.0, 0.5, 0))
+type MyDropState(state: State) =
+    inherit DropStateBase<Msg,State>(state)
+    override this.AcceptsDrops = true
+    override this.DragMove loc modifiers mimeData proposedAction possibleActions isEnterEvent =
+        if mimeData.HasFormat("text/plain") && possibleActions.Contains(Widget.DropAction.Copy) then
+            Some (Widget.DropAction.Copy, DropPreview loc)
+        elif mimeData.HasFormat("text/uri-list") && possibleActions.Contains(Widget.DropAction.Copy) then
+            Some (Widget.DropAction.Copy, DropPreview loc)
+        else
+            None
+    override this.DragLeave() =
+        Some DropCanceled
+    override this.Drop loc modifiers mimeData dropAction =
+        let payload =
+            if mimeData.HasFormat("text/plain") then
+                mimeData.Text() |> Payload.Text 
+            else
+                mimeData.Urls() |> Array.toList |> Payload.Files
+        let fragment =
+            { Location = loc; Payload = payload }
+        Some (PerformDrop fragment)
+        
+let private orangeBrush = Brush(Color(1.0, 0.5, 0.5))
 let private yellowPen = Pen(Color.Yellow)
 let private font = Font("Helvetica", 10)
+let private noPen = Pen(NoPen)
 
-type DrawerPaintState(state: State) =
+type MyPaintState(state: State) =
     inherit PaintStateBase<State, int>(state)
     override this.CreateResources() = 0 // we're just using 'int' as a placeholder since we're not using paintresources right now 
 
@@ -72,11 +89,19 @@ type DrawerPaintState(state: State) =
         // existing fragments
         for fragment in state.Fragments do
             let rect =
-                Common.Rect(X = fragment.Location.X, Y = fragment.Location.Y, Width = 150, Height = 400)
-            painter.DrawText(rect, Common.Alignment.Left, fragment.Text)
-        // drop preview pos
+                Common.Rect(X = fragment.Location.X, Y = fragment.Location.Y, Width = 1000, Height = 1000)
+            match fragment.Payload with
+            | Payload.Text text ->
+                painter.DrawText(rect, Common.Alignment.Left, text)
+            | Payload.Files files ->
+                let text =
+                    files
+                    |> String.concat "\n"
+                painter.DrawText(rect, Common.Alignment.Leading, text)
+        // preview pos
         match state.MaybeDropPosition with
         | Some pos ->
+            painter.Pen <- noPen
             painter.Brush <- orangeBrush
             painter.DrawEllipse(pos, 20, 20)
         | None ->
@@ -86,10 +111,10 @@ let view (state: State) =
     let custom =
         CustomWidget(
             Attrs = [
-                PaintState(DrawerPaintState(state))
-                AcceptDrops true
+                PaintState(MyPaintState(state))
+                DropState(MyDropState(state))
                 SizeHint (640, 480)
-            ], OnDragMove = DragMove, OnDragLeave = DragLeave, OnDrop = Drop)
+            ])
     BoxLayout(Items = [
         BoxItem.Create(custom)
     ]) :> ILayoutNode<Msg>

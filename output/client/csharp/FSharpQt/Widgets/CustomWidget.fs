@@ -62,9 +62,47 @@ type PaintStateBase<'state, 'resources when 'state: equality>(state: 'state) =
     override this.InternalEquals (other: PaintState) =
         let other' = other :?> PaintStateBase<'state,'resources>
         this.StateEquals other'.state
-    override this.InternalHashCode with get() =
+    override this.InternalHashCode =
         state.GetHashCode()
         
+// DropState stuff =====================================================
+
+[<AbstractClass>]
+type DropState() =
+    // internal stuff, implemented by DropStateBase
+    abstract member InternalEquals: DropState -> bool
+    abstract member InternalHashCode: int
+    override this.Equals(other: Object) =
+        match other with
+        | :? DropState as otherPS -> this.InternalEquals(otherPS)
+        | _ -> false
+    override this.GetHashCode() =
+        this.InternalHashCode
+        
+[<AbstractClass>]
+type DropStateMsg<'msg>() =
+    // this intermediate (between DropState and DropStateBase<'state>) is necessary because we need something paramaterized on 'msg,
+    //   but don't want to infect the Attr type (with DropState<'msg>),
+    //   nor infect the Model type with 'state
+    inherit DropState()
+    // must implement:
+    abstract member AcceptsDrops: bool
+    abstract member DragMove: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> Set<Widget.DropAction> -> bool -> (Widget.DropAction * 'msg) option
+    abstract member DragLeave: unit -> 'msg option
+    abstract member Drop: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> 'msg option
+        
+[<AbstractClass>]
+type DropStateBase<'msg, 'state when 'state: equality>(state: 'state) =
+    inherit DropStateMsg<'msg>()
+    member val state = state
+    // internal stuff
+    override this.InternalEquals other =
+        match other with
+        | :? DropStateBase<'msg,'state> as other' -> state = other'.state
+        | _ -> false
+    override this.InternalHashCode =
+        state.GetHashCode()
+
 // begin widget proper =================================================
 
 type MousePressInfo = {
@@ -79,45 +117,23 @@ type MouseMoveInfo = {
     Modifiers: Set<Widget.Modifier>
 }
 
-type CanDropFunc = Widget.DropAction option -> unit
-
-type DragMoveInfo = {
-    IsEnterEvent: bool
-    Position: Common.Point
-    Modifiers: Set<Widget.Modifier>
-    MimeTypes: string list
-    ProposedAction: Widget.DropAction
-    PossibleActions: Set<Widget.DropAction>
-}
-
-type DropInfo = {
-    Position: Common.Point
-    Modifiers: Set<Widget.Modifier>
-    DropAction: Widget.DropAction
-    // TODO: come up with a cleaner mechanism to avoid having to deal with mimedata directly
-    MimeData: Widget.MimeData
-}
-
 type Signal =
     | MousePress of info: MousePressInfo
     | MouseMove of info: MouseMoveInfo
-    | DragMove of info: DragMoveInfo * canDropFunc: (Widget.DropAction option -> unit)
-    | DragLeave
-    | Drop of info: DropInfo
     
 type Attr =
     | PaintState of ps: PaintState
     | UpdatesEnabled of enabled: bool
     | MouseTracking of enabled: bool
     | SizeHint of width: int * height: int
-    | AcceptDrops of enabled: bool
+    | DropState of ps: DropState
     
 let private attrKey = function
     | PaintState _ -> 0
     | UpdatesEnabled _ -> 1
     | MouseTracking _ -> 2
     | SizeHint _ -> 3
-    | AcceptDrops _ -> 4
+    | DropState _ -> 4
     
 let private diffAttrs =
     genericDiffAttrs attrKey
@@ -132,6 +148,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
         |> Option.iter dispatch
         
     let mutable maybePaintState: PaintState option = None
+    let mutable maybeDropState: DropStateMsg<'msg> option = None
     let mutable maybeSizeHint: Common.Size option = None
         
     interface Widget.MethodDelegate with
@@ -158,32 +175,38 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 Common.Size(-1, -1)
                 
         override this.DragMoveEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, moveEvent: Widget.DragMoveEvent, isEnterEvent: bool) =
-            // pos + modifiers + mime list + proposed drop action + possible drop actions -> [drop action list]
-            let canDropFunc (maybeDropAction: Widget.DropAction option) =
-                match maybeDropAction with
-                | Some dropAction ->
+            match maybeDropState with
+            | Some dropState ->
+                match dropState.DragMove pos (set modifiers) mimeData (moveEvent.ProposedAction()) (moveEvent.PossibleActions() |> set) isEnterEvent with
+                | Some (dropAction, msg) ->
                     moveEvent.AcceptDropAction(dropAction)
+                    dispatch msg
                 | None ->
                     moveEvent.Ignore()
-            let info =
-                { IsEnterEvent = isEnterEvent
-                  Position = pos
-                  Modifiers = set modifiers
-                  MimeTypes = mimeData.Formats() |> Array.toList
-                  ProposedAction = moveEvent.ProposedAction()
-                  PossibleActions = moveEvent.PossibleActions() |> set }
-            signalDispatch (DragMove (info, canDropFunc))
+            | None ->
+                moveEvent.Ignore()
                 
         override this.DragLeaveEvent() =
-            signalDispatch DragLeave
+            match maybeDropState with
+            | Some dropState ->
+                match dropState.DragLeave() with
+                | Some msg ->
+                    dispatch msg
+                | None ->
+                    ()
+            | None ->
+                ()
             
         override this.DropEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
-            let info =
-                { Position = pos
-                  Modifiers = set modifiers
-                  DropAction = dropAction
-                  MimeData = mimeData }
-            signalDispatch (Drop info)
+            match maybeDropState with
+            | Some dropState ->
+                match dropState.Drop pos (set modifiers) mimeData dropAction with
+                | Some msg ->
+                    dispatch msg
+                | None ->
+                    ()
+            | None ->
+                ()
             
         // override this.Dispose() =
         //     // I forget why the generated method delegates have this ...
@@ -218,14 +241,20 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 | Rects rects ->
                     for rect in rects do
                         widget.Update(rect)
+            | DropState ds ->
+                // we have to cast it because we're avoiding infecting Attr with 'msg (weren't able to get Attr<'msg> working)
+                match ds with
+                | :? DropStateMsg<'msg> as ds' ->
+                    maybeDropState <- Some ds'
+                    widget.SetAcceptDrops(ds'.AcceptsDrops)
+                | _ ->
+                    failwith "CustomWidget.Model.ApplyAttrs - DropState not a subclass of DropStateMsg - should never happen"
             | UpdatesEnabled enabled ->
                 widget.SetUpdatesEnabled(enabled)
             | MouseTracking enabled ->
                 widget.SetMouseTracking(enabled)
             | SizeHint (width, height) ->
                 maybeSizeHint <- Common.Size(width, height) |> Some
-            | AcceptDrops enabled ->
-                widget.SetAcceptDrops(enabled)
                 
     interface IDisposable with
         member this.Dispose() =
@@ -254,16 +283,9 @@ type CustomWidget<'msg>() =
     let mutable menus: (string * IMenuNode<'msg>) list = []
     let mutable onMousePress: (MousePressInfo -> 'msg) option = None
     let mutable onMouseMove: (MouseMoveInfo -> 'msg) option = None
-    let mutable onDragMove: (DragMoveInfo * CanDropFunc -> 'msg) option = None
-    let mutable onDragLeave: 'msg option = None
-    let mutable onDrop: (DropInfo -> 'msg) option = None
-    
     member this.Menus with set value = menus <- value
     member this.OnMousePress with set value = onMousePress <- Some value
     member this.OnMouseMove with set value = onMouseMove <- Some value
-    member this.OnDragMove with set value = onDragMove <- Some value
-    member this.OnDragLeave with set value = onDragLeave <- Some value
-    member this.OnDrop with set value = onDrop <- Some value
     
     member private this.SignalMap
         with get() = function
@@ -272,14 +294,6 @@ type CustomWidget<'msg>() =
                 |> Option.map (fun f -> f info)
             | MouseMove info ->
                 onMouseMove
-                |> Option.map (fun f -> f info)
-            | DragMove (info, canDropFunc) ->
-                onDragMove
-                |> Option.map (fun f -> f (info, canDropFunc))
-            | DragLeave ->
-                onDragLeave
-            | Drop info ->
-                onDrop
                 |> Option.map (fun f -> f info)
     
     member private this.MethodMask
