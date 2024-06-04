@@ -79,28 +79,52 @@ type MouseMoveInfo = {
     Modifiers: Set<Widget.Modifier>
 }
 
+type DragMoveInfo = {
+    IsEnterEvent: bool
+    Position: Common.Point
+    Modifiers: Set<Widget.Modifier>
+    MimeTypes: string list
+    ProposedAction: Widget.DropAction
+    PossibleActions: Set<Widget.DropAction>
+}
+
+type DropInfo = {
+    Position: Common.Point
+    Modifiers: Set<Widget.Modifier>
+    DropAction: Widget.DropAction
+    // TODO: come up with a cleaner mechanism to avoid having to deal with mimedata directly
+    MimeData: Widget.MimeData
+}
+
 type Signal =
     | MousePress of info: MousePressInfo
     | MouseMove of info: MouseMoveInfo
+    | DragMove of info: DragMoveInfo * canDropFunc: (Widget.DropAction option -> unit)
+    | DragLeave
+    | Drop of info: DropInfo
     
 type Attr =
     | PaintState of ps: PaintState
     | UpdatesEnabled of enabled: bool
     | MouseTracking of enabled: bool
     | SizeHint of width: int * height: int
+    | AcceptDrops of enabled: bool
     
 let private attrKey = function
     | PaintState _ -> 0
     | UpdatesEnabled _ -> 1
     | MouseTracking _ -> 2
     | SizeHint _ -> 3
+    | AcceptDrops _ -> 4
     
 let private diffAttrs =
     genericDiffAttrs attrKey
 
 type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+    
     let widget = Widget.CreateSubclassed(self, methodMask)
+    
     let signalDispatch s =
         signalMap s
         |> Option.iter dispatch
@@ -112,14 +136,17 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
             maybePaintState
             |> Option.iter (fun ps -> ps.DoPaintInternal widget painter rect)
+            
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
             let info =
                 { Position = pos; Button = button; Modifiers = set modifiers }
             signalDispatch (MousePress info)
+            
         override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Widget.Modifier>) =
             let info =
                 { Position = pos; Buttons = set buttons; Modifiers = set modifiers }
             signalDispatch (MouseMove info)
+            
         override this.SizeHint() =
             match maybeSizeHint with
             | Some sizeHint ->
@@ -127,6 +154,34 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
             | None ->
                 // invalid size = no recommendation
                 Common.Size(-1, -1)
+                
+        override this.DragMoveEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, moveEvent: Widget.DragMoveEvent, isEnterEvent: bool) =
+            // pos + modifiers + mime list + proposed drop action + possible drop actions -> [drop action list]
+            let canDropFunc (maybeDropAction: Widget.DropAction option) =
+                match maybeDropAction with
+                | Some dropAction ->
+                    moveEvent.AcceptDropAction(dropAction)
+                | None ->
+                    moveEvent.Ignore()
+            let info =
+                { IsEnterEvent = isEnterEvent
+                  Position = pos
+                  Modifiers = set modifiers
+                  MimeTypes = mimeData.Formats() |> Array.toList
+                  ProposedAction = moveEvent.ProposedAction()
+                  PossibleActions = moveEvent.PossibleActions() |> set }
+            signalDispatch (DragMove (info, canDropFunc))
+                
+        override this.DragLeaveEvent() =
+            signalDispatch DragLeave
+            
+        override this.DropEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
+            let info =
+                { Position = pos
+                  Modifiers = set modifiers
+                  DropAction = dropAction
+                  MimeData = mimeData }
+            signalDispatch (Drop info)
             
         // override this.Dispose() =
         //     // I forget why the generated method delegates have this ...
@@ -167,6 +222,8 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
                 widget.SetMouseTracking(enabled)
             | SizeHint (width, height) ->
                 maybeSizeHint <- Common.Size(width, height) |> Some
+            | AcceptDrops enabled ->
+                widget.SetAcceptDrops(enabled)
                 
     interface IDisposable with
         member this.Dispose() =
@@ -191,20 +248,37 @@ let private dispose (model: Model<'msg>) =
 type CustomWidget<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
+    
     let mutable menus: (string * IMenuNode<'msg>) list = []
     let mutable onMousePress: (MousePressInfo -> 'msg) option = None
     let mutable onMouseMove: (MouseMoveInfo -> 'msg) option = None
+    let mutable onDragMove: (DragMoveInfo * (Widget.DropAction option -> unit) -> 'msg) option = None
+    let mutable onDragLeave: 'msg option = None
+    let mutable onDrop: (DropInfo -> 'msg) option = None
+    
     member this.Menus with set value = menus <- value
     member this.OnMousePress with set value = onMousePress <- Some value
     member this.OnMouseMove with set value = onMouseMove <- Some value
+    member this.OnDragMove with set value = onDragMove <- Some value
+    member this.OnDragLeave with set value = onDragLeave <- Some value
+    member this.OnDrop with set value = onDrop <- Some value
+    
     member private this.SignalMap
         with get() = function
-            | MousePress ev ->
+            | MousePress info ->
                 onMousePress
-                |> Option.map (fun f -> f ev)
-            | MouseMove ev ->
+                |> Option.map (fun f -> f info)
+            | MouseMove info ->
                 onMouseMove
-                |> Option.map (fun f -> f ev)
+                |> Option.map (fun f -> f info)
+            | DragMove (info, canDropFunc) ->
+                onDragMove
+                |> Option.map (fun f -> f (info, canDropFunc))
+            | DragLeave ->
+                onDragLeave
+            | Drop info ->
+                onDrop
+                |> Option.map (fun f -> f info)
     
     member private this.MethodMask
         with get() = 
@@ -218,6 +292,7 @@ type CustomWidget<'msg>() =
                 | None -> Widget.MethodMask.None
             Widget.MethodMask.PaintEvent |||
             Widget.MethodMask.SizeHint |||
+            Widget.MethodMask.DropEvents |||
             mousePressValue |||
             mouseMoveValue
             

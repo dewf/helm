@@ -7,6 +7,12 @@
 #include <QPainter>
 #include <QPaintEvent>
 
+#include <QMimeData>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDragLeaveEvent>
+#include <QDropEvent>
+
 #include "util/convert.h"
 
 #define THIS ((QWidget*)_this)
@@ -105,6 +111,10 @@ namespace Widget
         THIS->setMouseTracking(enabled);
     }
 
+    void Handle_setAcceptDrops(HandleRef _this, bool enabled) {
+        THIS->setAcceptDrops(enabled);
+    }
+
     void Handle_onWindowTitleChanged(HandleRef _this, std::function<StringDelegate> func) {
         QObject::connect(
             THIS,
@@ -131,6 +141,98 @@ namespace Widget
 
     HandleRef create() {
         return (HandleRef)new QWidget();
+    }
+
+    // =========================================================================
+
+#define EVENTTHIS ((QEvent*)_this)
+
+    void Event_accept(EventRef _this) {
+        EVENTTHIS->accept();
+    }
+
+    void Event_ignore(EventRef _this) {
+        EVENTTHIS->ignore();
+    }
+
+    void Event_dispose(EventRef _this) {
+        // not owned, do nothing
+    }
+
+#define MIMETHIS ((QMimeData*)_this)
+
+    std::vector<std::string> MimeData_formats(MimeDataRef _this) {
+        std::vector<std::string> result;
+        for (auto & fmt : MIMETHIS->formats()) {
+            result.push_back(fmt.toStdString());
+        }
+        return result;
+    }
+
+    bool MimeData_hasFormat(MimeDataRef _this, std::string mimeType) {
+        return MIMETHIS->hasFormat(mimeType.c_str());
+    }
+
+    std::string MimeData_text(MimeDataRef _this) {
+        return MIMETHIS->text().toStdString();
+    }
+
+    std::vector<std::string> MimeData_urls(MimeDataRef _this) {
+        std::vector<std::string> result;
+        for (auto & url : MIMETHIS->urls()) {
+            result.push_back(url.toString().toStdString());
+        }
+        return result;
+    }
+
+    void MimeData_dispose(MimeDataRef _this) {
+        // not owned, do nothing
+    }
+
+#define DRAGMOVETHIS ((QDragMoveEvent*)_this)
+
+    DropAction DragMoveEvent_proposedAction(DragMoveEventRef _this) {
+        return (DropAction) DRAGMOVETHIS->proposedAction();
+    }
+
+    void DragMoveEvent_acceptProposedAction(DragMoveEventRef _this) {
+        DRAGMOVETHIS->acceptProposedAction();
+    }
+
+    std::set<DropAction> DragMoveEvent_possibleActions(DragMoveEventRef _this) {
+        std::set<DropAction> result;
+        auto possible = DRAGMOVETHIS->possibleActions();
+        if (possible.testFlag(Qt::CopyAction)) {
+            result.emplace(DropAction::Copy);
+        }
+        if (possible.testFlag(Qt::MoveAction)) {
+            result.emplace(DropAction::Move);
+        }
+        if (possible.testFlag(Qt::LinkAction)) {
+            result.emplace(DropAction::Link);
+        }
+        if (possible.testFlag(Qt::TargetMoveAction)) {
+            result.emplace(DropAction::TargetMoveAction);
+        }
+        return result;
+    }
+
+    void DragMoveEvent_acceptDropAction(DragMoveEventRef _this, DropAction action) {
+        auto qtAction = (Qt::DropAction)action;
+        if (qtAction == DRAGMOVETHIS->proposedAction()) {
+            DRAGMOVETHIS->acceptProposedAction();
+        } else {
+            if (DRAGMOVETHIS->possibleActions().testFlag(qtAction)) {
+                DRAGMOVETHIS->setDropAction(qtAction);
+                DRAGMOVETHIS->accept();
+            } else {
+                printf("DragMoveEvent_acceptDropAction: specified action was not in allowed set\n");
+            }
+        }
+    }
+
+    void DragMoveEvent_dispose(DragMoveEventRef _this) {
+        // not owned
     }
 
     // subclass stuff ==========================================================
@@ -226,6 +328,55 @@ namespace Widget
                 QWidget::mouseMoveEvent(event);
             }
         }
+
+        void dragEnterEvent(QDragEnterEvent *event) override {
+            if (methodMask & MethodMask::DropEvents) {
+                auto pos = toPoint(event->position().toPoint());
+                auto modifiers = fromQtModifiers(event->modifiers());
+                auto mimeOpaque = (MimeDataRef)event->mimeData();
+                auto moveEvent = (DragMoveEventRef)event;
+                methodDelegate->dragMoveEvent(pos, modifiers, mimeOpaque, moveEvent, true);
+                // other side needs to call acceptProposedAction if it's OK, otherwise ... .ignore?
+            } else {
+                QWidget::dragEnterEvent(event);
+            }
+        }
+
+        void dragMoveEvent(QDragMoveEvent *event) override {
+            if (methodMask & MethodMask::DropEvents) {
+                auto pos = toPoint(event->position().toPoint());
+                auto modifiers = fromQtModifiers(event->modifiers());
+                auto mimeOpaque = (MimeDataRef)event->mimeData();
+                auto moveEvent = (DragMoveEventRef)event;
+                methodDelegate->dragMoveEvent(pos, modifiers, mimeOpaque, moveEvent, false);
+                // other side needs to call acceptProposedAction if it's OK, otherwise ... .ignore?
+            } else {
+                QWidget::dragMoveEvent(event);
+            }
+        }
+
+        void dragLeaveEvent(QDragLeaveEvent *event) override {
+            if (methodMask & MethodMask::DropEvents) {
+                methodDelegate->dragLeaveEvent();
+                event->accept();
+            } else {
+                QWidget::dragLeaveEvent(event);
+            }
+        }
+
+        void dropEvent(QDropEvent *event) override {
+            if (methodMask & MethodMask::DropEvents) {
+                auto pos = toPoint(event->position().toPoint());
+                auto modifiers = fromQtModifiers(event->modifiers());
+                auto mimeOpaque = (MimeDataRef)event->mimeData();
+                auto action = (DropAction)event->proposedAction();
+                methodDelegate->dropEvent(pos, modifiers, mimeOpaque, action);
+                event->acceptProposedAction();
+            } else {
+                QWidget::dropEvent(event);
+            }
+        }
+
     public:
         [[nodiscard]] QSize sizeHint() const override {
             if (methodMask & MethodMask::SizeHint) {

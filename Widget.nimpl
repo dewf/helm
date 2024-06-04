@@ -46,6 +46,7 @@ opaque Handle {
     // things that probably only make sense for subclassed (but we haven't yet defined a separate opaque for that purpose)
     void setUpdatesEnabled(bool enabled);
     void setMouseTracking(bool enabled);
+    void setAcceptDrops(bool enabled);
 
     // signals + event handling
     void onWindowTitleChanged(Signal.StringDelegate func);
@@ -55,14 +56,6 @@ opaque Handle {
 Handle create();
 
 // SUBCLASSING ===========================================================
-
-flags MethodMask {
-    None = 0,                // F# giving us grief!
-    PaintEvent = 1 << 0,
-    MousePressEvent = 1 << 1,
-    MouseMoveEvent = 1 << 2,
-    SizeHint = 1 << 3
-}
 
 enum Modifier {
     None,
@@ -80,13 +73,57 @@ enum MouseButton {
     Other
 }
 
+enum DropAction {
+    Ignore = 0,
+    Copy = 0x1,
+    Move = 0x2,
+    Link = 0x4,
+    ActionMask = 0xff,
+    TargetMoveAction = 0x8002 // windows only stuff
+}
+
+opaque Event {
+    void accept();
+    void ignore();
+}
+
+opaque MimeData {
+    Array<string> formats();
+    bool hasFormat(string mimeType);
+    string text();
+    Array<string> urls();
+}
+
+opaque DragMoveEvent extends Event {
+    DropAction proposedAction();
+    void acceptProposedAction();
+    Set<DropAction> possibleActions();
+
+    // slight variation on the real methods:
+    void acceptDropAction(DropAction action); // will internally call either .acceptProposedAction or .accept() after setting drop action
+}
+
 // sadly client will have to implement all of these, BUT empty methods / returning default values will be OK
 // because only those included in the "method mask" will actually be invoked
+
+flags MethodMask {
+    None = 0,                // F# giving us grief!
+    PaintEvent = 1 << 0,
+    MousePressEvent = 1 << 1,
+    MouseMoveEvent = 1 << 2,
+    SizeHint = 1 << 3,
+    DropEvents = 1 << 4 // dragenter, dragmove, dragleave
+}
+
 interface MethodDelegate {
+    Size sizeHint();
     void paintEvent(Painter.Handle painter, Rect rect);
     void mousePressEvent(Point pos, MouseButton button, Set<Modifier> modifiers);
     void mouseMoveEvent(Point pos, Set<MouseButton> buttons, Set<Modifier> modifiers);
-    Size sizeHint();
+    // dragMove does double duty, also an 'enter' event - check isEnterEvent flag
+    void dragMoveEvent(Point pos, Set<Modifier> modifiers, MimeData mimeData, DragMoveEvent moveEvent, bool isEnterEvent);
+    void dragLeaveEvent();
+    void dropEvent(Point pos, Set<Modifier> modifiers, MimeData mimeData, DropAction action);
 }
 
 Handle createSubclassed(MethodDelegate methodDelegate, MethodMask methodMask);

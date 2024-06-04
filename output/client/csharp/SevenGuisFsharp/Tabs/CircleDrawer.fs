@@ -240,8 +240,6 @@ let view (state: State) =
             let action =
                 MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't MenuAction.Text sufficient?
             Menu(Items = [ action ])
-        let moveFunc info =
-            MouseMove info.Position
         let pressFunc (info: MousePressInfo) =
             match info.Button with
             | Widget.MouseButton.Left ->
@@ -254,7 +252,7 @@ let view (state: State) =
             Attrs = [ PaintState(DrawerPaintState(state)); MouseTracking true; SizeHint (400, 300) ],
             Menus = [ "context", contextMenu ],
             OnMousePress = pressFunc,
-            OnMouseMove = moveFunc) // tracking needed for move events without mouse down
+            OnMouseMove = (fun info -> MouseMove info.Position)) // tracking needed for move events without mouse down
     let dialog =
         let slider =
             Slider(Attrs = [

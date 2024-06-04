@@ -50,6 +50,10 @@ inline Point toPoint(const QPoint& qPoint) {
     return { qPoint.x(), qPoint.y() };
 }
 
+inline PointF toPointF(const QPointF& qPointF) {
+    return { qPointF.x(), qPointF.y() };
+}
+
 inline QPoint toQPoint(const Point& p) {
     return QPoint(p.x, p.y);
 }
