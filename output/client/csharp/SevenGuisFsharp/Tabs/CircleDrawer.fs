@@ -100,9 +100,9 @@ let update (state: State) = function
         { state with EditingRadius = value }, Cmd.None
     | MouseMove loc ->
         let dist (p1: Common.Point) (p2: Common.Point) =
-            let a = System.Math.Pow(float (p1.X - p2.X), 2.0)
-            let b = System.Math.Pow(float (p1.Y - p2.Y), 2.0)
-            sqrt (a + b)
+            let dx = p1.X - p2.X
+            let dy = p1.Y - p2.Y
+            (dx * dx + dy * dy) |> float |> sqrt
         let nextHoverIndex =
             state.Circles
             |> List.tryFindIndex (fun circle -> dist circle.Location loc < circle.Radius)

@@ -12,9 +12,10 @@ type UpdateArea =
     | NotRequired
     | Everything
     | Rects of Common.Rect list
-
+    
 [<AbstractClass>]
 type EventDelegate<'msg>() =
+    abstract member Widget: Widget.Handle with set
     abstract member SizeHint: Common.Size
     default this.SizeHint = Common.Size(-1, -1) // invalid size = no recommendation
     abstract member NeedsPaintInternal: EventDelegate<'msg> -> UpdateArea
@@ -24,6 +25,8 @@ type EventDelegate<'msg>() =
     default this.MousePress _ _ _ = None
     abstract member MouseMove: Common.Point -> Set<Widget.MouseButton> -> Set<Widget.Modifier> -> 'msg option
     default this.MouseMove _ _ _ = None
+    abstract member MouseRelease: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
+    default this.MouseRelease _ _ _ = None
     abstract member DragMove: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> Set<Widget.DropAction> -> bool -> (Widget.DropAction * 'msg) option
     default this.DragMove _ _ _ _ _ _ = None
     abstract member DragLeave: unit -> 'msg option
@@ -31,10 +34,18 @@ type EventDelegate<'msg>() =
     abstract member Drop: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> 'msg option
     default this.Drop _ _ _ _ = None
     
+type DragPayload =
+    | Text of text: string
+    | Urls of urls: string list
+
 [<AbstractClass>]
 type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
     inherit EventDelegate<'msg>()
+    
+    let mutable widget: Widget.Handle = null
     member val private state = state
+    
+    override this.Widget with set value = widget <- value
 
     abstract member NeedsPaint: 'state -> UpdateArea
     default this.NeedsPaint _ = NotRequired
@@ -45,6 +56,21 @@ type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
             this.NeedsPaint prev'.state
         | _ ->
             failwith "nope"
+            
+    member this.BeginDrag (payload: DragPayload) (supported: Widget.DropAction list) (defaultAction: Widget.DropAction) =
+        let drag =
+            Widget.CreateDrag(widget)
+        let mimeData =
+            Widget.CreateMimeData()
+        match payload with
+        | Text text ->
+            mimeData.SetText(text)
+        | Urls urls ->
+            mimeData.SetUrls(urls |> Array.ofList)
+        drag.SetMimeData(mimeData)
+        drag.Exec(HashSet(supported), defaultAction)
+        // we're not responsible for either the mimeData nor the drag, as long as the drag was created with an owner
+            
 
 // begin widget proper =================================================
 
@@ -93,6 +119,13 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
                 dispatch msg
             | None ->
                 ()
+                
+        override this.MouseReleaseEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
+            match eventDelegate.MouseRelease pos button (set modifiers) with
+            | Some msg ->
+                dispatch msg
+            | None ->
+                ()
             
         override this.SizeHint() =
             eventDelegate.SizeHint
@@ -127,6 +160,9 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
     member this.SignalMap with set value = signalMap <- value
     
     member this.EventDelegate with set (newDelegate: EventDelegate<'msg>) =
+        // for now just the widget, maybe 'this' (the Model) in the future?
+        newDelegate.Widget <- widget
+        
         // check if it needs painting (by comparing to previous - for now the implementer will have to extract the previous state themselves, but we'll get to it
         match newDelegate.NeedsPaintInternal(eventDelegate) with
         | NotRequired ->
@@ -174,6 +210,7 @@ let private dispose (model: Model<'msg>) =
 type EventMaskItem =
     | MousePressEvent
     | MouseMoveEvent
+    | MouseReleaseEvent
     | PaintEvent
     | SizeHint
     | DropEvents
@@ -194,6 +231,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegate<'msg>, eventMaskItems: Even
                 match item with
                 | MousePressEvent -> Widget.MethodMask.MousePressEvent
                 | MouseMoveEvent -> Widget.MethodMask.MouseMoveEvent
+                | MouseReleaseEvent -> Widget.MethodMask.MouseReleaseEvent
                 | PaintEvent -> Widget.MethodMask.PaintEvent
                 | SizeHint -> Widget.MethodMask.SizeHint
                 | DropEvents -> Widget.MethodMask.DropEvents

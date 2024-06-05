@@ -8,6 +8,7 @@
 #include <QPaintEvent>
 
 #include <QMimeData>
+#include <QDrag>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDragLeaveEvent>
@@ -177,6 +178,10 @@ namespace Widget
         return MIMETHIS->text().toStdString();
     }
 
+    void MimeData_setText(MimeDataRef _this, std::string text) {
+        MIMETHIS->setText(text.c_str());
+    }
+
     std::vector<std::string> MimeData_urls(MimeDataRef _this) {
         std::vector<std::string> result;
         for (auto & url : MIMETHIS->urls()) {
@@ -185,8 +190,58 @@ namespace Widget
         return result;
     }
 
+    void MimeData_setUrls(MimeDataRef _this, std::vector<std::string> urls) {
+        QList<QUrl> qUrls;
+        for (auto & url : urls) {
+            qUrls.append(QUrl(url.c_str()));
+        }
+        MIMETHIS->setUrls(qUrls);
+    }
+
     void MimeData_dispose(MimeDataRef _this) {
-        // not owned, do nothing
+        // if it was created on a drop, we're not responsible for it
+        // if we created it for a drag, we're also not responsible for releasing it
+    }
+
+    MimeDataRef createMimeData() {
+        return (MimeDataRef) new QMimeData();
+    }
+
+#define DRAGTHIS ((QDrag*)_this)
+
+    inline QFlags<Qt::DropAction> toQDropActions(const std::set<DropAction>& supportedActions) {
+        QFlags<Qt::DropAction> result;
+        if (supportedActions.contains(DropAction::Copy)) {
+            result.setFlag(Qt::CopyAction);
+        }
+        if (supportedActions.contains(DropAction::Move)) {
+            result.setFlag(Qt::MoveAction);
+        }
+        if (supportedActions.contains(DropAction::Link)) {
+            result.setFlag(Qt::LinkAction);
+        }
+        if (supportedActions.contains(DropAction::TargetMoveAction)) {
+            result.setFlag(Qt::TargetMoveAction);
+        }
+        return result;
+    }
+
+    void Drag_setMimeData(DragRef _this, MimeDataRef data) {
+        DRAGTHIS->setMimeData((QMimeData*)data);
+    }
+
+    DropAction Drag_exec(DragRef _this, std::set<DropAction> supportedActions, DropAction defaultAction) {
+        auto qDefault = (Qt::DropAction)defaultAction;
+        QFlags<Qt::DropAction> qSupported = toQDropActions(supportedActions);
+        return (DropAction) DRAGTHIS->exec(qSupported, qDefault);
+    }
+
+    void Drag_dispose(DragRef _this) {
+        // we're not responsible for deleting these (if they are exec'ed)
+    }
+
+    DragRef createDrag(HandleRef parent) {
+        return (DragRef) new QDrag((QObject*)parent);
     }
 
 #define DRAGMOVETHIS ((QDragMoveEvent*)_this)
@@ -326,6 +381,18 @@ namespace Widget
                 event->accept();
             } else {
                 QWidget::mouseMoveEvent(event);
+            }
+        }
+
+        void mouseReleaseEvent(QMouseEvent *event) override {
+            if (methodMask & MethodMask::MouseReleaseEvent) {
+                auto pos = toPoint(event->pos());
+                auto button = fromQtButton(event->button());
+                auto modifiers = fromQtModifiers(event->modifiers());
+                methodDelegate->mouseReleaseEvent(pos, button, modifiers);
+                event->accept();
+            } else {
+                QWidget::mouseReleaseEvent(event);
             }
         }
 
