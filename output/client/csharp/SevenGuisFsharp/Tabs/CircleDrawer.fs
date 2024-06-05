@@ -216,6 +216,18 @@ type DrawerPaintState(state: State) =
                     bgBrush, circle.Radius
             painter.Brush <- brush
             painter.DrawEllipse(circle.Location, radius, radius)
+            
+type DrawerDelegate(state: State) =
+    inherit EventDelegate<Msg>()
+    override this.MousePress loc button modifiers =
+        match button with
+        | Widget.MouseButton.Left -> Some (AddCircle loc)
+        | Widget.MouseButton.Right -> Some (ShowContext loc)
+        | _ -> None
+    override this.MouseMove loc buttons modifiers =
+        Some (MouseMove loc)
+    override this.SizeHint =
+        Common.Size (400, 300)
 
 let view (state: State) =
     let undoRedoButtons =
@@ -240,19 +252,11 @@ let view (state: State) =
             let action =
                 MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't MenuAction.Text sufficient?
             Menu(Items = [ action ])
-        let pressFunc (info: MousePressInfo) =
-            match info.Button with
-            | Widget.MouseButton.Left ->
-                AddCircle info.Position
-            | Widget.MouseButton.Right ->
-                ShowContext info.Position
-            | _ ->
-                NoOp
         CustomWidget(
-            Attrs = [ PaintState(DrawerPaintState(state)); MouseTracking true; SizeHint (400, 300) ],
-            Menus = [ "context", contextMenu ],
-            OnMousePress = pressFunc,
-            OnMouseMove = (fun info -> MouseMove info.Position)) // tracking needed for move events without mouse down
+            // first 2 args required
+            DrawerDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
+            Attrs = [ PaintState(DrawerPaintState(state)); MouseTracking true ], // tracking needed for move events without mouse down
+            Menus = [ "context", contextMenu ])
     let dialog =
         let slider =
             Slider(Attrs = [

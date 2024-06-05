@@ -48,9 +48,9 @@ let update (state: State) (msg: Msg) =
     | DropCanceled ->
         { state with MaybeDropPosition = None }, Cmd.None
         
-type MyDropState(state: State) =
-    inherit DropStateBase<Msg,State>(state)
-    override this.AcceptsDrops = true
+type DropDelegate(state: State) =
+    inherit EventDelegate<Msg>()
+    override this.SizeHint = Common.Size (640, 480)
     override this.DragMove loc modifiers mimeData proposedAction possibleActions isEnterEvent =
         if mimeData.HasFormat("text/plain") && possibleActions.Contains(Widget.DropAction.Copy) then
             Some (Widget.DropAction.Copy, DropPreview loc)
@@ -110,10 +110,10 @@ type MyPaintState(state: State) =
 let view (state: State) =
     let custom =
         CustomWidget(
+            DropDelegate(state), [ PaintEvent; DropEvents; SizeHint ],
             Attrs = [
                 PaintState(MyPaintState(state))
-                DropState(MyDropState(state))
-                SizeHint (640, 480)
+                AcceptDrops true
             ])
     BoxLayout(Items = [
         BoxItem.Create(custom)
