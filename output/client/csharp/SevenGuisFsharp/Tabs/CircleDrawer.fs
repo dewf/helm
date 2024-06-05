@@ -49,7 +49,6 @@ type Msg =
     | ShowContext of loc: Common.Point
     | ShowDialog
     | MouseMove of loc: Common.Point
-    | MouseLeft
     | SetRadius of radius: int
     | ApplyEdit
     | CancelEdit
@@ -105,8 +104,6 @@ let update (state: State) = function
             state.Circles
             |> List.tryFindIndex (fun circle -> dist circle.Location loc < circle.Radius)
         { state with MaybeHoverIndex = nextHoverIndex }, Cmd.None
-    | MouseLeft ->
-        { state with MaybeHoverIndex = None }, Cmd.None
     | ApplyEdit ->
         state, Cmd.DialogOp ("edit", Accept)
     | CancelEdit ->
@@ -221,9 +218,6 @@ type DrawerDelegate(state: State) =
         | _ -> None
     override this.MouseMove loc buttons modifiers =
         Some (MouseMove loc)
-    override this.Leave() =
-        // important to clear the hover index if there's a circle at the edge of the widget, and the mouse doesn't touch empty space before leaving (you'll notice during undo/redo when seemingly random circles get highlighted)
-        Some MouseLeft
     override this.SizeHint =
         Common.Size (400, 300)
 
@@ -252,7 +246,7 @@ let view (state: State) =
             Menu(Items = [ action ])
         CustomWidget(
             // first 2 args required
-            DrawerDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint; LeaveEvent ],
+            DrawerDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
             Attrs = [ MouseTracking true ], // tracking needed for move events without mouse down
             Menus = [ "context", contextMenu ])
     let dialog =

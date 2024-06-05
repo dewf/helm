@@ -120,7 +120,7 @@ type DropDelegate(state: State) =
         // existing fragments
         for fragment in state.Fragments do
             let rect =
-                Common.Rect(X = fragment.Location.X, Y = fragment.Location.Y, Width = 1000, Height = 1000)
+                Common.Rect(fragment.Location.X, fragment.Location.Y, 1000, 1000)
             match fragment.Payload with
             | Payload.Text text ->
                 painter.DrawText(rect, Common.Alignment.Left, text)
