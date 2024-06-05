@@ -53,42 +53,11 @@ let private yellowPen = Pen(Color.Yellow)
 let private font = Font("Helvetica", 10)
 let private noPen = Pen(NoPen)
 
-// type MyPaintState(state: State) =
-//     inherit PaintStateBase<State, int>(state)
-//     override this.CreateResources() = 0 // we're just using 'int' as a placeholder since we're not using paintresources right now 
-//
-//     // by default, without overriding .StateEquals, ANY change in our state from previous will trigger a redraw
-//     // .StateEquals gives you the ability to define a subset of state which is pertinent for repaints
-//         
-//     override this.DoPaint resources widget painter paintRect =
-//         painter.FillRect(widget.GetRect(), Color.DarkBlue)
-//         painter.Pen <- yellowPen
-//         painter.Font <- font
-//         // existing fragments
-//         for fragment in state.Fragments do
-//             let rect =
-//                 Common.Rect(X = fragment.Location.X, Y = fragment.Location.Y, Width = 1000, Height = 1000)
-//             match fragment.Payload with
-//             | Payload.Text text ->
-//                 painter.DrawText(rect, Common.Alignment.Left, text)
-//             | Payload.Files files ->
-//                 let text =
-//                     files
-//                     |> String.concat "\n"
-//                 painter.DrawText(rect, Common.Alignment.Leading, text)
-//         // preview pos
-//         match state.MaybeDropPosition with
-//         | Some pos ->
-//             painter.Pen <- noPen
-//             painter.Brush <- orangeBrush
-//             painter.DrawEllipse(pos, 20, 20)
-//         | None ->
-//             ()
-            
 type DropDelegate(state: State) =
-    inherit EventDelegate<Msg>()
+    inherit EventDelegateBase<Msg,State>(state)
     override this.SizeHint = Common.Size (640, 480)
-    override this.NeedsPaint _ = Everything
+    override this.NeedsPaint prev =
+        Everything
     override this.DoPaint widget painter paintRect =
         painter.FillRect(widget.GetRect(), Color.DarkBlue)
         painter.Pen <- yellowPen

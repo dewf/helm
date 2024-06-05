@@ -6,74 +6,18 @@ open System
 open FSharpQt.Painting
 open Org.Whatever.QtTesting
 
-// PaintState stuff -- required for custom drawing ====================
+// EventDelegate stuff =====================================================
+
 type UpdateArea =
     | NotRequired
     | Everything
     | Rects of Common.Rect list
-    
-[<AbstractClass>]
-type PaintState() =
-    // implementing all this is a lot of annoying boilerplate,
-    // ... so use PaintStateBase below instead.
-    abstract member DoPaintInternal: Widget.Handle -> Painter.Handle -> Common.Rect -> unit
-    abstract member CreateResourcesInternal: unit -> unit                           // only called once
-    abstract member MigrateResources: PaintState -> unit
-    abstract member DestroyResourcesInternal: unit -> unit                          // called once on disposal
-    abstract member ComputeAreaInternal: PaintState -> UpdateArea
-    abstract member InternalEquals: PaintState -> bool
-    abstract member InternalHashCode: int
-    override this.Equals(other: Object) =
-        match other with
-        | :? PaintState as otherPS -> this.InternalEquals(otherPS)
-        | _ -> false
-    override this.GetHashCode() =
-        this.InternalHashCode
-        
-[<AbstractClass>]
-type PaintStateBase<'state, 'resources when 'state: equality>(state: 'state) =
-    inherit PaintState()
-    [<DefaultValue>] val mutable private resources: 'resources
-    member val state = state
-    abstract member CreateResources: unit -> 'resources
-    abstract member DestroyResources: 'resources -> unit
-    default this.DestroyResources(resources: 'resources) = ()
-    abstract member DoPaint: 'resources -> Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
-    override this.DoPaintInternal widget qtPainter rect =
-        let painter =
-            FSharpQt.Painting.Painter(qtPainter)
-        this.DoPaint this.resources widget painter rect
-    override this.CreateResourcesInternal() =
-        this.resources <- this.CreateResources()
-    override this.MigrateResources prev =
-        let prev' =
-            (prev :?> PaintStateBase<'state,'resources>)
-        this.resources <- prev'.resources
-    override this.DestroyResourcesInternal() =
-        this.DestroyResources(this.resources)
-    abstract member ComputeUpdateArea: 'state -> UpdateArea // optional
-    default this.ComputeUpdateArea _ =
-        Everything
-    override this.ComputeAreaInternal prevRaw =
-        let prev = prevRaw :?> PaintStateBase<'state,'resources>
-        this.ComputeUpdateArea prev.state
-    abstract member StateEquals: 'state -> bool             // optional
-    default this.StateEquals otherState =
-        state = otherState
-    override this.InternalEquals (other: PaintState) =
-        let other' = other :?> PaintStateBase<'state,'resources>
-        this.StateEquals other'.state
-    override this.InternalHashCode =
-        state.GetHashCode()
-        
-// EventDelegate stuff =====================================================
 
 [<AbstractClass>]
 type EventDelegate<'msg>() =
     abstract member SizeHint: Common.Size
     default this.SizeHint = Common.Size(-1, -1) // invalid size = no recommendation
-    abstract member NeedsPaint: EventDelegate<'msg> -> UpdateArea
-    default this.NeedsPaint _ = NotRequired
+    abstract member NeedsPaintInternal: EventDelegate<'msg> -> UpdateArea
     abstract member DoPaint: Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
     default this.DoPaint _ _ _ = ()
     abstract member MousePress: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
@@ -86,6 +30,21 @@ type EventDelegate<'msg>() =
     default this.DragLeave () = None
     abstract member Drop: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> 'msg option
     default this.Drop _ _ _ _ = None
+    
+[<AbstractClass>]
+type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
+    inherit EventDelegate<'msg>()
+    member val private state = state
+
+    abstract member NeedsPaint: 'state -> UpdateArea
+    default this.NeedsPaint _ = NotRequired
+    
+    override this.NeedsPaintInternal prevDelegate =
+        match prevDelegate with
+        | :? EventDelegateBase<'msg,'state> as prev' ->
+            this.NeedsPaint prev'.state
+        | _ ->
+            failwith "nope"
 
 // begin widget proper =================================================
 
@@ -169,7 +128,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
     
     member this.EventDelegate with set (newDelegate: EventDelegate<'msg>) =
         // check if it needs painting (by comparing to previous - for now the implementer will have to extract the previous state themselves, but we'll get to it
-        match newDelegate.NeedsPaint(eventDelegate) with
+        match newDelegate.NeedsPaintInternal(eventDelegate) with
         | NotRequired ->
             ()
         | Everything ->
@@ -178,6 +137,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             for rect in rects do
                 widget.Update(rect)
         eventDelegate <- newDelegate
+        // if we ever decide to add back in the 'paintresources', we will need to migrate it here (and create them in the ctor/do block of the model)
     
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
@@ -188,31 +148,6 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
                 widget.SetUpdatesEnabled(enabled)
             | MouseTracking enabled ->
                 widget.SetMouseTracking(enabled)
-            // | PaintState ps ->
-            //     ()
-                // // raw paintstate changed, but do we actually need a redraw?
-                // // the provided PaintState can perform more precise checking
-                // let updateArea =
-                //     match maybePaintState with
-                //     | Some last ->
-                //         // in addition to binding 'updateArea', create/migrate resources while we're at it
-                //         ps.MigrateResources(last)
-                //         ps.ComputeAreaInternal last
-                //     | None ->
-                //         ps.CreateResourcesInternal()
-                //         // first incoming paintstate, must draw!
-                //         Everything
-                // // assign now that we've checked
-                // maybePaintState <- Some ps
-                // // then perform any invalidations requested
-                // match updateArea with
-                // | NotRequired ->
-                //     ()
-                // | Everything ->
-                //     widget.Update()
-                // | Rects rects ->
-                //     for rect in rects do
-                //         widget.Update(rect)
                 
     interface IDisposable with
         member this.Dispose() =

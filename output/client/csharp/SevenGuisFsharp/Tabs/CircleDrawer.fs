@@ -192,40 +192,11 @@ let private clearBrush = Brush.NoBrush
 let private hoverBrush = Brush(hoverColor)
 let private pen = Pen(fgColor)
 
-// type DrawerPaintState(state: State) =
-//     inherit PaintStateBase<State, int>(state)
-//     override this.CreateResources() = 0 // we're just using 'int' as a placeholder since we're not using paintresources right now 
-//
-//     // by default, without overriding .StateEquals, ANY change in our state from previous will trigger a redraw
-//     // .StateEquals gives you the ability to define a subset of state which is pertinent for repaints
-//         
-//     override this.DoPaint resources widget painter paintRect =
-//         painter.FillRect(widget.GetRect(), bgColor)
-//         painter.Pen <- pen
-//         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
-//             let brush, radius =
-//                 match state.MaybeHoverIndex with
-//                 | Some index when i = index ->
-//                     let radius =
-//                         if state.NowEditing then
-//                             state.EditingRadius
-//                         else
-//                             circle.Radius
-//                     hoverBrush, radius
-//                 | _ ->
-//                     bgBrush, circle.Radius
-//             painter.Brush <- brush
-//             painter.DrawEllipse(circle.Location, radius, radius)
-            
 type DrawerDelegate(state: State) =
-    inherit EventDelegate<Msg>()
+    inherit EventDelegateBase<Msg, State>(state)
     override this.NeedsPaint prev =
-        match prev with
-        | :? DrawerDelegate as prev' ->
-            // we could compare states here, to determine smaller (or no) update regions, if we wanted
-            Everything
-        | _ ->
-            failwith "uhhhh"
+        // we could compare states here, to determine smaller (or no) update regions, if we wanted
+        Everything
     override this.DoPaint widget painter paintRect =
         painter.FillRect(widget.GetRect(), bgColor)
         painter.Pen <- pen
