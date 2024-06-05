@@ -17,20 +17,34 @@ type UpdateArea =
 type EventDelegate<'msg>() =
     abstract member Widget: Widget.Handle with set
     abstract member SizeHint: Common.Size
+
     default this.SizeHint = Common.Size(-1, -1) // invalid size = no recommendation
     abstract member NeedsPaintInternal: EventDelegate<'msg> -> UpdateArea
+
     abstract member DoPaint: Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
     default this.DoPaint _ _ _ = ()
+
     abstract member MousePress: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MousePress _ _ _ = None
+
     abstract member MouseMove: Common.Point -> Set<Widget.MouseButton> -> Set<Widget.Modifier> -> 'msg option
     default this.MouseMove _ _ _ = None
+
     abstract member MouseRelease: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MouseRelease _ _ _ = None
+    
+    abstract member Enter: Common.Point -> 'msg option
+    default this.Enter _ = None
+    
+    abstract member Leave: unit -> 'msg option
+    default this.Leave() = None
+    
     abstract member DragMove: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> Set<Widget.DropAction> -> bool -> (Widget.DropAction * 'msg) option
     default this.DragMove _ _ _ _ _ _ = None
+
     abstract member DragLeave: unit -> 'msg option
     default this.DragLeave () = None
+
     abstract member Drop: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> 'msg option
     default this.Drop _ _ _ _ = None
     
@@ -126,6 +140,20 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
                 dispatch msg
             | None ->
                 ()
+                
+        override this.EnterEvent(pos: Common.Point) =
+            match eventDelegate.Enter pos with
+            | Some msg ->
+                dispatch msg
+            | None ->
+                ()
+                
+        override this.LeaveEvent() =
+            match eventDelegate.Leave() with
+            | Some msg ->
+                dispatch msg
+            | None ->
+                ()
             
         override this.SizeHint() =
             eventDelegate.SizeHint
@@ -211,6 +239,8 @@ type EventMaskItem =
     | MousePressEvent
     | MouseMoveEvent
     | MouseReleaseEvent
+    | EnterEvent
+    | LeaveEvent
     | PaintEvent
     | SizeHint
     | DropEvents
@@ -232,6 +262,8 @@ type CustomWidget<'msg>(eventDelegate: EventDelegate<'msg>, eventMaskItems: Even
                 | MousePressEvent -> Widget.MethodMask.MousePressEvent
                 | MouseMoveEvent -> Widget.MethodMask.MouseMoveEvent
                 | MouseReleaseEvent -> Widget.MethodMask.MouseReleaseEvent
+                | EnterEvent -> Widget.MethodMask.EnterEvent
+                | LeaveEvent -> Widget.MethodMask.LeaveEvent
                 | PaintEvent -> Widget.MethodMask.PaintEvent
                 | SizeHint -> Widget.MethodMask.SizeHint
                 | DropEvents -> Widget.MethodMask.DropEvents

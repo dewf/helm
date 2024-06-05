@@ -13,6 +13,7 @@
 #include <QDragMoveEvent>
 #include <QDragLeaveEvent>
 #include <QDropEvent>
+#include <QEnterEvent>
 
 #include "util/convert.h"
 
@@ -393,6 +394,25 @@ namespace Widget
                 event->accept();
             } else {
                 QWidget::mouseReleaseEvent(event);
+            }
+        }
+
+        void enterEvent(QEnterEvent *event) override {
+            if (methodMask & MethodMask::EnterEvent) {
+                auto pos = toPoint(event->position().toPoint());
+                methodDelegate->enterEvent(pos);
+                event->accept();
+            } else {
+                QWidget::enterEvent(event);
+            }
+        }
+
+        void leaveEvent(QEvent *event) override {
+            if (methodMask & MethodMask::LeaveEvent) {
+                methodDelegate->leaveEvent();
+                event->accept();
+            } else {
+                QWidget::leaveEvent(event);
             }
         }
 
