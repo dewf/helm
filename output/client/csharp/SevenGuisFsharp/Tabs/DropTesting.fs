@@ -15,6 +15,8 @@ type Attr = unit
 let DRAG_SOURCE_RECT =
     Common.Rect(20, 20, 100, 100)
 
+let DRAG_THRESH_PIXELS = 5
+
 [<RequireQualifiedAccess>]
 type Payload =
     | Text of string
@@ -36,7 +38,7 @@ type Msg =
     | PerformDrop of fragment: Fragment
     | DropCanceled
     | BeginPotentialDrag of loc: Common.Point
-    | EndPotentialDrag
+    | EndDrag
 
 let init() =
     { MaybeDropPosition = None
@@ -56,7 +58,7 @@ let update (state: State) (msg: Msg) =
         { state with MaybeDropPosition = None }, Cmd.None
     | BeginPotentialDrag loc ->
         { state with PotentiallyDraggingFrom = Some loc }, Cmd.None
-    | EndPotentialDrag ->
+    | EndDrag ->
         { state with PotentiallyDraggingFrom = None }, Cmd.None
         
 let private orangeBrush = Brush(Color(1.0, 0.5, 0.5, 0.25))
@@ -83,9 +85,10 @@ type DropDelegate(state: State) =
             None
         
     override this.MouseMove loc buttons modifiers =
+        // we don't have tracking enabled so move events will only be received when a button is held
         match state.PotentiallyDraggingFrom with
         | Some p ->
-            if dist loc p > 5 then
+            if dist loc p > DRAG_THRESH_PIXELS then
                 printfn "beginning drag!"
                 match this.BeginDrag (Text "WOOOOOOOOOOOOOOOOOOOOT") [Widget.DropAction.Copy; Widget.DropAction.Move] Widget.DropAction.Copy with
                 | Widget.DropAction.Copy ->
@@ -94,14 +97,15 @@ type DropDelegate(state: State) =
                     printfn "data moved"
                 | _ ->
                     printfn "(some other outcome)"
-                Some EndPotentialDrag
+                Some EndDrag
             else
                 None
         | None ->
             None
         
     override this.MouseRelease loc button modifiers =
-        Some EndPotentialDrag
+        state.MaybeDropPosition
+        |> Option.map (fun _ -> EndDrag)
         
     override this.NeedsPaint prev =
         Everything
@@ -133,6 +137,8 @@ type DropDelegate(state: State) =
             painter.DrawEllipse(pos, 20, 20)
         | None ->
             ()
+            
+    // drop stuff -------------------------------------------------
             
     override this.DragMove loc modifiers mimeData proposedAction possibleActions isEnterEvent =
         if mimeData.HasFormat("text/plain") && possibleActions.Contains(Widget.DropAction.Copy) then
