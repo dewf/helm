@@ -3,6 +3,7 @@
 open System.Collections.Generic
 open FSharpQt.BuilderNode
 open System
+open FSharpQt.Painting
 open Org.Whatever.QtTesting
 
 // PaintState stuff -- required for custom drawing ====================
@@ -71,6 +72,10 @@ type PaintStateBase<'state, 'resources when 'state: equality>(state: 'state) =
 type EventDelegate<'msg>() =
     abstract member SizeHint: Common.Size
     default this.SizeHint = Common.Size(-1, -1) // invalid size = no recommendation
+    abstract member NeedsPaint: EventDelegate<'msg> -> UpdateArea
+    default this.NeedsPaint _ = NotRequired
+    abstract member DoPaint: Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
+    default this.DoPaint _ _ _ = ()
     abstract member MousePress: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MousePress _ _ _ = None
     abstract member MouseMove: Common.Point -> Set<Widget.MouseButton> -> Set<Widget.Modifier> -> 'msg option
@@ -87,13 +92,13 @@ type EventDelegate<'msg>() =
 type Signal = unit
     
 type Attr =
-    | PaintState of ps: PaintState
+    // | PaintState of ps: PaintState
     | UpdatesEnabled of enabled: bool
     | MouseTracking of enabled: bool
     | AcceptDrops of enabled: bool
     
 let private attrKey = function
-    | PaintState _ -> 0
+    // | PaintState _ -> 0
     | UpdatesEnabled _ -> 1
     | MouseTracking _ -> 2
     | AcceptDrops _ -> 3
@@ -101,7 +106,7 @@ let private attrKey = function
 let private diffAttrs =
     genericDiffAttrs attrKey
 
-type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self =
+type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegate<'msg>) as self =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     
     let widget = Widget.CreateSubclassed(self, methodMask)
@@ -110,13 +115,11 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
         signalMap s
         |> Option.iter dispatch
         
-    let mutable maybePaintState: PaintState option = None
-    let mutable eventDelegate = Unchecked.defaultof<EventDelegate<'msg>> // will always be set
+    let mutable eventDelegate = eventDelegate
         
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
-            maybePaintState
-            |> Option.iter (fun ps -> ps.DoPaintInternal widget painter rect)
+            eventDelegate.DoPaint widget (Painter(painter)) rect
             
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
             match eventDelegate.MousePress pos button (set modifiers) with
@@ -163,53 +166,65 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask) as self 
 
     member this.Widget with get() = widget
     member this.SignalMap with set value = signalMap <- value
-    member this.EventDelegate with set value = eventDelegate <- value
+    
+    member this.EventDelegate with set (newDelegate: EventDelegate<'msg>) =
+        // check if it needs painting (by comparing to previous - for now the implementer will have to extract the previous state themselves, but we'll get to it
+        match newDelegate.NeedsPaint(eventDelegate) with
+        | NotRequired ->
+            ()
+        | Everything ->
+            widget.Update()
+        | Rects rects ->
+            for rect in rects do
+                widget.Update(rect)
+        eventDelegate <- newDelegate
     
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | PaintState ps ->
-                // raw paintstate changed, but do we actually need a redraw?
-                // the provided PaintState can perform more precise checking
-                let updateArea =
-                    match maybePaintState with
-                    | Some last ->
-                        // in addition to binding 'updateArea', create/migrate resources while we're at it
-                        ps.MigrateResources(last)
-                        ps.ComputeAreaInternal last
-                    | None ->
-                        ps.CreateResourcesInternal()
-                        // first incoming paintstate, must draw!
-                        Everything
-                // assign now that we've checked
-                maybePaintState <- Some ps
-                // then perform any invalidations requested
-                match updateArea with
-                | NotRequired ->
-                    ()
-                | Everything ->
-                    widget.Update()
-                | Rects rects ->
-                    for rect in rects do
-                        widget.Update(rect)
             | AcceptDrops enabled ->
                 widget.SetAcceptDrops(enabled)
             | UpdatesEnabled enabled ->
                 widget.SetUpdatesEnabled(enabled)
             | MouseTracking enabled ->
                 widget.SetMouseTracking(enabled)
+            // | PaintState ps ->
+            //     ()
+                // // raw paintstate changed, but do we actually need a redraw?
+                // // the provided PaintState can perform more precise checking
+                // let updateArea =
+                //     match maybePaintState with
+                //     | Some last ->
+                //         // in addition to binding 'updateArea', create/migrate resources while we're at it
+                //         ps.MigrateResources(last)
+                //         ps.ComputeAreaInternal last
+                //     | None ->
+                //         ps.CreateResourcesInternal()
+                //         // first incoming paintstate, must draw!
+                //         Everything
+                // // assign now that we've checked
+                // maybePaintState <- Some ps
+                // // then perform any invalidations requested
+                // match updateArea with
+                // | NotRequired ->
+                //     ()
+                // | Everything ->
+                //     widget.Update()
+                // | Rects rects ->
+                //     for rect in rects do
+                //         widget.Update(rect)
                 
     interface IDisposable with
         member this.Dispose() =
-            maybePaintState
-            |> Option.iter (_.DestroyResourcesInternal())
+            // maybePaintState
+            // |> Option.iter (_.DestroyResourcesInternal())
             widget.Dispose()
 
 let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegate<'msg>) =
-    let model = new Model<'msg>(dispatch, methodMask)
+    let model = new Model<'msg>(dispatch, methodMask, eventDelegate)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
-    model.EventDelegate <- eventDelegate
+    // model.EventDelegate <- eventDelegate
     model
 
 let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegate<'msg>) =
