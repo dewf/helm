@@ -10,6 +10,7 @@ open BoxLayout
 open GroupBox
 open PushButton
 open MainWindow
+open Tabs.PathStroking.PathStroking
 open WindowSet
 
 open Tabs.Counter

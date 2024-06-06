@@ -1,4 +1,4 @@
-﻿module Tabs.PathStroking
+﻿module Tabs.PathStroking.PathStroking
 
 open FSharpQt.BuilderNode
 open FSharpQt.Reactor
@@ -8,31 +8,10 @@ open FSharpQt.Widgets.PushButton
 open FSharpQt.Widgets.RadioButton
 open FSharpQt.Widgets.Slider
 
+open Renderer
+
 type Signal = unit
 type Attr = unit
-
-type CapStyle =
-    | Flat
-    | Square
-    | Round
-    
-type JoinStyle =
-    | Bevel
-    | Miter
-    | SvgMiter
-    | Round
-    
-type PenStyle =
-    | Solid
-    | Dash
-    | Dot
-    | DashDot
-    | DashDotDot
-    | CustomDash
-    
-type LineStyle =
-    | Curves
-    | Lines
 
 type State = {
     CapStyle: CapStyle
@@ -49,14 +28,14 @@ type Msg =
     | SetPenStyle of style: PenStyle
     | SetPenWidth of width: int
     | SetLineStyle of style: LineStyle
-    | SetAnimateState of value: bool
+    | SetAnimating of value: bool
 
 let init() =
     let state = {
         CapStyle = Flat
         JoinStyle = Bevel
         PenStyle = Solid
-        PenWidth = 50
+        PenWidth = 1
         LineStyle = Curves
         Animating = true
     }
@@ -75,7 +54,7 @@ let update (state: State) (msg: Msg) =
             { state with PenWidth = width }
         | SetLineStyle style ->
             { state with LineStyle = style }
-        | SetAnimateState value ->
+        | SetAnimating value ->
             { state with Animating = value }
     nextState, Cmd.None
     
@@ -122,7 +101,12 @@ let view (state: State) =
         
     let penWidthGroup =
         let slider =
-            Slider(Attrs = [ Orientation Horizontal; Range (0, 500) ], OnValueChanged = SetPenWidth)
+            Slider(
+                Attrs = [
+                    Orientation Horizontal
+                    Range (0, 500)
+                    Value state.PenWidth
+                ], OnValueChanged = SetPenWidth)
         let vbox =
             BoxLayout(Attrs = [ Direction TopToBottom ], Items = [ BoxItem.Create(slider) ])
         GroupBox(Attrs = [ Title "Pen Width" ], Layout = vbox)
@@ -139,17 +123,34 @@ let view (state: State) =
                 Checkable true
                 FSharpQt.Widgets.PushButton.Text (if state.Animating then "Animating" else "Not Animating")
                 FSharpQt.Widgets.PushButton.Checked state.Animating
-            ], OnClickedWithState = SetAnimateState)
+            ], OnClickedWithState = SetAnimating)
         
-    BoxLayout(Attrs = [ Direction TopToBottom ],
+    let rightPanel =
+        BoxLayout(Attrs = [ Direction TopToBottom ],
+                  Items = [
+                      BoxItem.Create(capStyleGroup)
+                      BoxItem.Create(joinStyleGroup)
+                      BoxItem.Create(penStyleGroup)
+                      BoxItem.Create(penWidthGroup)
+                      BoxItem.Create(lineStyleGroup)
+                      BoxItem.Create(animateButton)
+                      BoxItem.Stretch 1
+                  ])
+    let renderer =
+        PathStrokeRenderer(
+            Attrs = [
+                CapStyle state.CapStyle
+                JoinStyle state.JoinStyle
+                PenStyle state.PenStyle
+                PenWidth state.PenWidth
+                LineStyle state.LineStyle
+                Animating state.Animating
+            ])
+    
+    BoxLayout(Attrs = [ Direction LeftToRight ],
               Items = [
-                  BoxItem.Create(capStyleGroup)
-                  BoxItem.Create(joinStyleGroup)
-                  BoxItem.Create(penStyleGroup)
-                  BoxItem.Create(penWidthGroup)
-                  BoxItem.Create(lineStyleGroup)
-                  BoxItem.Create(animateButton)
-                  BoxItem.Stretch 1
+                  BoxItem.Create(renderer, 1)
+                  BoxItem.Create(rightPanel)
               ])
     :> ILayoutNode<Msg>
 

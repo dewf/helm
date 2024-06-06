@@ -35,6 +35,10 @@ type Point = {
     X: int
     Y: int
 } with
+    static member From (x, y) =
+        { X = x; Y = y }
+    static member From(p: Common.Point) =
+        { X = p.X; Y = p.Y }
     member this.QtValue =
         Common.Point(X = this.X, Y = this.Y)
         
@@ -42,6 +46,10 @@ type PointF = {
     X: double
     Y: double
 } with
+    static member From (x, y) =
+        { X = x; Y = y }
+    static member From(p: Common.PointF) =
+        { X = p.X; Y = p.Y }
     member this.QtValue =
         Common.PointF(X = this.X, Y = this.Y)
         
@@ -51,10 +59,12 @@ type Rect = {
     Width: int
     Height: int
 } with
+    static member From (x, y, width, height) =
+        { X = x; Y = y; Width = width; Height = height }
+    static member From(rect: Common.Rect) =
+        { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member this.QtValue =
         Common.Rect(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
-    static member FromQtRect(rect: Common.Rect) =
-        { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
 
 type RectF = {
     X: double
@@ -62,6 +72,10 @@ type RectF = {
     Width: double
     Height: double
 } with
+    static member From (x, y, width, height) =
+        { X = x; Y = y; Width = width; Height = height }
+    static member From(rect: Common.RectF) =
+        { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
 
