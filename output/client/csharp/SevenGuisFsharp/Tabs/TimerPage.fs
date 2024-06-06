@@ -1,7 +1,5 @@
 ﻿module Tabs.TimerPage
 
-open System
-
 open FSharpQt
 open BuilderNode
 open NonVisual
@@ -21,18 +19,16 @@ let TIMER_INTERVAL = 1000 / 20
 type State = {
     Duration: int
     Accumulated: int
-    LastTicks: int64
 }
 
 type Msg =
     | Reset
     | SetDuration of value: int
-    | TimerTick
+    | TimerTick of elapsed: double
 
 let init() =
     { Duration = 1000
-      Accumulated = 0
-      LastTicks = DateTime.Now.Ticks }, Cmd.None
+      Accumulated = 0 }, Cmd.None
 
 let update (state: State) (msg: Msg) =
     match msg with
@@ -42,16 +38,9 @@ let update (state: State) (msg: Msg) =
         let nextState =
             { state with Duration = value; Accumulated = min state.Accumulated value }
         nextState, Cmd.None
-    | TimerTick ->
-        // default QTimer is ridiculously inaccurate, so we compute our own elapsed time
-        let ticks =
-            DateTime.Now.Ticks
-        let millisSinceLast =
-            (ticks - state.LastTicks) / TimeSpan.TicksPerMillisecond
+    | TimerTick elapsed ->
         let nextState =
-            { state with
-                Accumulated = min (state.Accumulated + int millisSinceLast) state.Duration
-                LastTicks = ticks }
+            { state with Accumulated = min (state.Accumulated + int elapsed) state.Duration }
         nextState, Cmd.None
        
 let view (state: State) =

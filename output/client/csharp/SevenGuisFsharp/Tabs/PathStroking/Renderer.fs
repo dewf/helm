@@ -60,11 +60,10 @@ type State = {
     PenWidth: int
     LineStyle: LineStyle
     Animating: bool
-    LastTicks: int64
 }
 
 type Msg =
-    | TimerTick
+    | TimerTick of elapsed: double
 
 let init() =
     let points = [
@@ -94,7 +93,6 @@ let init() =
         PenWidth = 5
         LineStyle = Curves
         Animating = true
-        LastTicks = DateTime.Now.Ticks
     }
     state, Cmd.None
 
@@ -135,26 +133,16 @@ let stepAnchors (elapsed: double) (anchors: LineAnchor list) (bounds: RectF) =
     let right = bounds.Width - pad
     let top = pad
     let bottom = bounds.Height - pad
-    
+
     anchors
     |> List.map (stepPoint elapsed left right top bottom)
-    
 
 let update (state: State) (msg: Msg) =
     match msg with
-    | TimerTick ->
-        let nextTicks =
-            DateTime.Now.Ticks
-        let elapsed =
-            (nextTicks - state.LastTicks) / TimeSpan.TicksPerMillisecond
-            |> double
+    | TimerTick elapsed ->
         let nextAnchors =
             stepAnchors elapsed state.Anchors (RectF.From(0, 0, 600, 600)) // hmm, how can we get the actual widget rect here? need to handle a size event I think
-        let nextState =
-            { state with
-                Anchors = nextAnchors
-                LastTicks = nextTicks }
-        nextState, Cmd.None
+        { state with Anchors = nextAnchors }, Cmd.None
 
         
 let private bgColor = Color.DarkGray
@@ -178,15 +166,6 @@ type EventDelegate(state: State) =
         for anchor in state.Anchors do
             painter.DrawEllipse(anchor.Pos.QtValue, POINT_SIZE, POINT_SIZE)
         
-        // // Draw the control points
-        // painter->setPen(QColor(50, 100, 120, 200));
-        // painter->setBrush(QColor(200, 200, 210, 120));
-        // for (int i=0; i<m_points.size(); ++i) {
-        //     QPointF pos = m_points.at(i);
-        //     painter->drawEllipse(QRectF(pos.x() - m_pointSize,
-        //                                pos.y() - m_pointSize,
-        //                                m_pointSize*2, m_pointSize*2));
-        // }
         // painter->setPen(QPen(Qt::lightGray, 0, Qt::SolidLine));
         // painter->setBrush(Qt::NoBrush);
         // painter->drawPolyline(m_points);
