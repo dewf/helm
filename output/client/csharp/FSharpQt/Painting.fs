@@ -161,9 +161,11 @@ type PainterPathStroker internal(qtStroker: PaintResources.PainterPathStroker) =
         qtStroker.Dispose()
     new() = PainterPathStroker(PaintResources.PainterPathStroker.Create())
     member this.Width with set value = qtStroker.SetWidth(value)
-    member this.JoinStyle with set value = qtStroker.SetJoinStyle(value)
-    member this.CapStyle with set value = qtStroker.SetCapStyle(value)
+    member this.JoinStyle with set (value: JoinStyle) = qtStroker.SetJoinStyle(value.QtValue)
+    member this.CapStyle with set (value: CapStyle) = qtStroker.SetCapStyle(value.QtValue)
     member this.DashPattern with set (value: double array) = qtStroker.SetDashPattern(value)
+    member this.CreateStroke(path: PainterPath) =
+        PainterPath(qtStroker.CreateStroke(path.qtPainterPath))
         
 type RenderHint =
     | Antialiasing

@@ -157,7 +157,6 @@ type EventDelegate(state: State) =
         painter.SetRenderHint Antialiasing true
         painter.FillRect(widgetRect, bgColor)
         
-        // draw path
         painter.Pen <- noPen
 
         // construct path        
@@ -178,8 +177,19 @@ type EventDelegate(state: State) =
                 i <- i + 1
 
         // draw path
-        let pen = Pen(lineColorBrush, state.PenWidth, state.PenStyle, state.CapStyle, state.JoinStyle)
-        painter.StrokePath(path, pen)
+        match state.PenStyle with
+        | CustomDashLine ->
+            let stroker =
+                PainterPathStroker(Width = state.PenWidth, JoinStyle = state.JoinStyle, CapStyle = state.CapStyle)
+            let dashes =
+                let space = 4
+                [| 1.0; space; 3; space; 9; space; 27; space; 9; space; 3; space |]
+            stroker.DashPattern <- dashes
+            let stroke = stroker.CreateStroke(path)
+            painter.FillPath(stroke, lineColorBrush)
+        | _ ->
+            let pen = Pen(lineColorBrush, state.PenWidth, state.PenStyle, state.CapStyle, state.JoinStyle)
+            painter.StrokePath(path, pen)
         
         // draw control points
         painter.Pen <- controlPointPen
