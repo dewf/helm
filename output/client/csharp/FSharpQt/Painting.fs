@@ -1,5 +1,6 @@
 ﻿module FSharpQt.Painting
 
+open System.Collections.Generic
 open Org.Whatever.QtTesting
 
 type Color private(qtColor: PaintResources.Color) =
@@ -89,6 +90,10 @@ type Pen private(qtPen: PaintResources.Pen) =
         Pen(PaintResources.Pen.Create(color.qtColor))
     new (brush: Brush, width: double, style: Style, cap: CapStyle, join: JoinStyle) =
         Pen(PaintResources.Pen.Create(brush.qtBrush, width, style.QtValue, cap.QtValue, join.QtValue))
+    
+    member this.Width with set (value: int) = this.qtPen.SetWidth(value)
+    member this.Width with set (value: double) = this.qtPen.SetWidth(value)
+        
     override this.Finalize() =
         qtPen.Dispose()
        
@@ -122,6 +127,23 @@ type Font private(qtFont: PaintResources.Font) =
     new (family: string, pointSize: int, weight: Weight, italic: bool) = Font(PaintResources.Font.Create(family, pointSize, weight.QtValue, italic))
     override this.Finalize() =
         qtFont.Dispose()
+        
+type RenderHint =
+    | Antialiasing
+    | TextAntialiasing
+    | SmoothPixmapTransform
+    | VerticalSubpixelPositioning
+    | LosslessImageRendering
+    | NonCosmeticBrushPatterns
+with
+    member this.QtValue =
+        match this with
+        | Antialiasing -> Painter.RenderHint.Antialiasing
+        | TextAntialiasing -> Painter.RenderHint.TextAntialiasing
+        | SmoothPixmapTransform -> Painter.RenderHint.SmoothPixmapTransform
+        | VerticalSubpixelPositioning -> Painter.RenderHint.VerticalSubpixelPositioning
+        | LosslessImageRendering -> Painter.RenderHint.LosslessImageRendering
+        | NonCosmeticBrushPatterns -> Painter.RenderHint.NonCosmeticBrushPatterns
 
 type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
     member val qtPainter = qtPainter
@@ -129,6 +151,15 @@ type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
     member this.Pen with set (value: Pen) = qtPainter.SetPen(value.qtPen)
     member this.Brush with set (value: Brush) = qtPainter.SetBrush(value.qtBrush)
     member this.Font with set (value: Font) = qtPainter.SetFont(value.qtFont)
+    
+    member this.SetRenderHint (hint: RenderHint) (state: bool) =
+        qtPainter.SetRenderHint(hint.QtValue, state)
+        
+    member this.SetRenderHints (hints: Set<RenderHint>) (state: bool) =
+        let qHints =
+            hints |> Set.map (_.QtValue)
+        qtPainter.SetRenderHints(HashSet(qHints), state)
+    
     member this.DrawText(rect: Common.Rect, align: Common.Alignment, text: string) =
         qtPainter.DrawText(rect, align, text)
         

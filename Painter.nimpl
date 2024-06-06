@@ -3,7 +3,19 @@ module Painter;
 import Common;
 import PaintResources;
 
+enum RenderHint {
+    Antialiasing = 0x01,
+    TextAntialiasing = 0x02,
+    SmoothPixmapTransform = 0x04,
+    VerticalSubpixelPositioning = 0x08,
+    LosslessImageRendering = 0x40,
+    NonCosmeticBrushPatterns = 0x80
+}
+
 opaque Handle {
+    void setRenderHint(RenderHint hint, bool on);
+    void setRenderHints(Set<RenderHint> hints, bool on);
+
     void setPen(Pen pen);
     void setBrush(Brush brush);
     void setFont(Font font);

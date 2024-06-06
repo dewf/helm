@@ -173,6 +173,14 @@ namespace PaintResources
         _this->qPen.setBrush(brush->qBrush);
     }
 
+    void Pen_setWidth(PenRef _this, int32_t width) {
+        _this->qPen.setWidth(width);
+    }
+
+    void Pen_setWidth(PenRef _this, double width) {
+        _this->qPen.setWidthF(width);
+    }
+
     void Pen_dispose(PenRef _this) {
         delete _this;
     }

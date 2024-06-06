@@ -97,6 +97,8 @@ opaque Pen {
         Pen create(Brush brush, double width, Style style, CapStyle cap, JoinStyle join);
     }
     void setBrush(Brush brush);
+    void setWidth(int width);
+    void setWidth(double width);
 }
 
 opaque Font {

@@ -187,7 +187,7 @@ let private hoverColor = Color.Magenta
 let private bgBrush = Brush(bgColor)
 let private clearBrush = Brush.NoBrush
 let private hoverBrush = Brush(hoverColor)
-let private pen = Pen(fgColor)
+let private pen = Pen(fgColor, Width = 2)
 
 type DrawerDelegate(state: State) =
     inherit EventDelegateBase<Msg, State>(state)
@@ -195,6 +195,7 @@ type DrawerDelegate(state: State) =
         // we could compare states here, to determine smaller (or no) update regions, if we wanted
         Everything
     override this.DoPaint widget painter paintRect =
+        painter.SetRenderHint Antialiasing true
         painter.FillRect(widget.GetRect(), bgColor)
         painter.Pen <- pen
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
