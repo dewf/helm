@@ -2,8 +2,6 @@ module RadioButton;
 
 import AbstractButton;
 
-opaque Handle extends AbstractButton.Handle {
-    void setChecked(bool checked_);             // C# conflict, need to fix code generator to check against reserved words for any identifiers
-}
+opaque Handle extends AbstractButton.Handle;
 
 Handle create();

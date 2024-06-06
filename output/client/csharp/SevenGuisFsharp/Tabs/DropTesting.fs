@@ -171,4 +171,4 @@ let view (state: State) =
     ]) :> ILayoutNode<Msg>
     
 type DropTesting<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, nullAttrUpdate, update, view, nullDiffAttrs)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)

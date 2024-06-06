@@ -5,15 +5,16 @@ open System
 open FSharpQt
 open BuilderNode
 open Reactor
-open FSharpQt.Widgets.WindowSet
 open FSharpQt.Widgets
 open BoxLayout
-open Label
+open GroupBox
 open PushButton
 open MainWindow
+open WindowSet
 
 open Tabs.Counter
 open Tabs.DropTesting
+open Tabs.PathStroking
 open Tabs.TempConverter
 open Tabs.FlightBooker
 open Tabs.TimerPage
@@ -32,6 +33,7 @@ type GuiKind =
     | Spreadsheet
     // misc
     | DropTesting
+    | PathStroking
     
 type GuiInstance = {
     Key: int
@@ -79,10 +81,7 @@ let update (state: State) (msg: Msg) =
         nextState, Cmd.None
     
 let view (state: State) =
-    let topLabel =
-        Label(Attrs = [ Label.Text "7GUIs"; Alignment Left ]) :> IWidgetNode<Msg>
-        
-    let topButtons =
+    let topGroup =
         let buttons =
             [ "Counter", GuiKind.Counter
               "TempConv", GuiKind.TempConverter
@@ -93,33 +92,36 @@ let view (state: State) =
               "Spreadsheet", GuiKind.Spreadsheet ]
             |> List.map (fun (name, kind) ->
                 let enabled =
-                    kind <> GuiKind.Spreadsheet
+                    match kind with
+                    | GuiKind.Spreadsheet -> false
+                    | _ -> true
                 PushButton(Attrs = [ Text name; Enabled enabled ], OnClicked = LaunchInstance kind))
         let items =
             buttons
             |> List.map BoxItem.Create
-        BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
+        let vbox =
+            BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
+        GroupBox(Attrs = [ GroupBox.Title "7GUIs" ], Layout = vbox)
         
-    let bottomLabel =
-        Label(Attrs = [ Label.Text "Misc"; Alignment Left ])
-        
-    let bottomButtons =
+    let bottomGroup =
         let buttons =
-            [ "DropTesting", GuiKind.DropTesting ]
+            [ "DropTesting", GuiKind.DropTesting
+              "PathStroking", GuiKind.PathStroking ]
             |> List.map (fun (name, kind) ->
                 PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind))
         let items =
             buttons
             |> List.map BoxItem.Create
-        BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
+        let vbox =
+            BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
+        GroupBox(Attrs = [ GroupBox.Title "Misc" ], Layout = vbox)
         
     let vbox =
         let items = [
             // listed explicitly (vs. List.map) to avoid casting to :> IWidgetNode above
-            BoxItem.Create(topLabel)
-            BoxItem.Create(topButtons)
-            BoxItem.Create(bottomLabel)
-            BoxItem.Create(bottomButtons)
+            BoxItem.Create(topGroup)
+            BoxItem.Create(bottomGroup)
+            BoxItem.Stretch(1)
         ]
         BoxLayout(Attrs = [ Direction TopToBottom ], Items = items)
         
@@ -142,9 +144,9 @@ let view (state: State) =
                 | GuiKind.TimerPage -> "Timer", TimerPage()
                 | GuiKind.CRUD -> "CRUD", CRUDPage()
                 | GuiKind.CircleDrawer -> "Circle Drawer", CircleDrawer()
-                | GuiKind.Spreadsheet ->
-                    failwith "not yet implemented"
+                | GuiKind.Spreadsheet -> failwith "not yet implemented"
                 | GuiKind.DropTesting -> "Drop Testing", DropTesting()
+                | GuiKind.PathStroking -> "Path Stroking", PathStroking()
             let window =
                 MainWindow(Attrs = [ Title title ], Content = node, OnClosed = InstanceClosed inst.Key)
             IntKey inst.Key, window :> IWindowNode<Msg>)

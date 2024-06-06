@@ -33,6 +33,8 @@
         <Compile Include="Widgets\Slider.fs" />
         <Compile Include="Widgets\ProgressBar.fs" />
         <Compile Include="Widgets\GridLayout.fs" />
+        <Compile Include="Widgets\GroupBox.fs" />
+        <Compile Include="Widgets\RadioButton.fs" />
     </ItemGroup>
 
     <ItemGroup>

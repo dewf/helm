@@ -1,5 +1,4 @@
 ﻿using Org.Whatever.QtTesting;
-using Action = Org.Whatever.QtTesting.Action;
 
 namespace AppRunner;
 
@@ -10,9 +9,10 @@ internal static class Program
     {
         Library.Init();
         
+        // Environment.SetEnvironmentVariable("QT_QPA_PLATFORM", "windows:darkmode=0");
         using (var app = Application.Create(args))
         {
-            Application.SetStyle("Fusion");
+            Application.SetStyle("Windows11");
             
             using (var window = MainWindow.Create())
             {
@@ -30,6 +30,11 @@ internal static class Program
                 var radio2 = RadioButton.Create();
                 radio2.SetText("Secondary Item OK");
                 vbox.AddWidget(radio2);
+
+                var button1 = PushButton.Create();
+                button1.SetText("Errhghgh");
+                button1.SetCheckable(true);
+                vbox.AddWidget(button1);
                 
                 vbox.AddStretch(1);
                 

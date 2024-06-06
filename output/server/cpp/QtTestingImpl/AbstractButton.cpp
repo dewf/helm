@@ -11,6 +11,14 @@ namespace AbstractButton
         THIS->setText(text.c_str());
     }
 
+    void Handle_setCheckable(HandleRef _this, bool checkable) {
+        THIS->setCheckable(checkable);
+    }
+
+    void Handle_setChecked(HandleRef _this, bool checkState) {
+        THIS->setChecked(checkState);
+    }
+
     void Handle_onClicked(HandleRef _this, std::function<BoolDelegate> handler) {
         QObject::connect(
                 THIS,

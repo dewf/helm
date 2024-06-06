@@ -220,6 +220,8 @@ type WidgetReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
                 ) =
     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWidgetNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
+    new(init, update, view) =
+        WidgetReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
     interface IWidgetNode<'outerMsg> with
         override this.Widget =
             this.reactor.Root.Widget
@@ -233,6 +235,8 @@ type LayoutReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
                 ) =
     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,ILayoutNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
+    new(init, update, view) =
+        LayoutReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
     interface ILayoutNode<'outerMsg> with
         override this.Layout =
             this.reactor.Root.Layout
@@ -246,6 +250,8 @@ type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
                 ) =
     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWindowNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
+    new(init, update, view) =
+        WindowReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
     interface IWindowNode<'outerMsg> with
         override this.WindowWidget =
             this.reactor.Root.WindowWidget

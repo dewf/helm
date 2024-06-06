@@ -5,6 +5,8 @@ import Signal;
 
 opaque Handle extends Widget.Handle {
     void setText(string text);
+    void setCheckable(bool checkable);
+    void setChecked(bool checkState);       // 'checked' is a C# keyword
 
     // signals
     void onClicked(Signal.BoolDelegate handler); // arg: checked
