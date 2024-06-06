@@ -20,6 +20,8 @@ opaque Handle {
     Handle getWindow();
     
     void setEnabled(bool state);
+    void setMinimumWidth(int minWidth);
+    void setMinimumHeight(int minHeight);
     void setMaximumWidth(int maxWidth);
     void setMaximumHeight(int maxHeight);
 

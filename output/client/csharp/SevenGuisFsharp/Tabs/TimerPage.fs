@@ -65,6 +65,7 @@ let view (state: State) =
             TickPosition Below
             TickInterval 1000
             Slider.Value state.Duration
+            MinimumWidth 250
         ], OnValueChanged = SetDuration)
     let hbox =
         BoxLayout(Attrs = [ Direction LeftToRight ],

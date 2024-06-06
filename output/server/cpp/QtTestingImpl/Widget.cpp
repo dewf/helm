@@ -30,6 +30,14 @@ namespace Widget
         THIS->setEnabled(state);
     }
 
+    void Handle_setMinimumWidth(HandleRef _this, int32_t minWidth) {
+        THIS->setMinimumWidth(minWidth);
+    }
+
+    void Handle_setMinimumHeight(HandleRef _this, int32_t minHeight) {
+        THIS->setMinimumHeight(minHeight);
+    }
+
     void Handle_setMaximumWidth(HandleRef _this, int32_t maxWidth) {
         THIS->setMaximumWidth(maxWidth);
     }

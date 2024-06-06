@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-set(CMAKE_PREFIX_PATH "C:/Qt/6.7.1/msvc2019_64/lib/cmake")
+set(CMAKE_PREFIX_PATH "C:/Qt/6.6.3/msvc2019_64/lib/cmake")
 
 project(QtTestingServer LANGUAGES CXX)
 

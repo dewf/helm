@@ -28,6 +28,8 @@ type Attr =
     | Tracking of track: bool
     | TickPosition of tickPos: TickPos
     | TickInterval of interval: int
+    | MinimumWidth of width: int
+    | MinimumHeight of height: int
     
 let private attrKey = function
     | Orientation _ -> 0
@@ -38,6 +40,8 @@ let private attrKey = function
     | Tracking _ -> 5
     | TickPosition _ -> 6
     | TickInterval _ -> 7
+    | MinimumWidth _ -> 8
+    | MinimumHeight _ -> 9
     
 let diffAttrs =
     genericDiffAttrs attrKey
@@ -91,6 +95,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 slider.SetTickPosition(tickPos')
             | TickInterval interval ->
                 slider.SetTickInterval(interval)
+            | MinimumWidth width ->
+                slider.SetMinimumWidth(width)
+            | MinimumHeight height ->
+                slider.SetMaximumHeight(height)
     interface IDisposable with
         member this.Dispose() =
             slider.Dispose()
