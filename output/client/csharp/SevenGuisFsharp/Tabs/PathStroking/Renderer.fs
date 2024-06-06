@@ -47,6 +47,17 @@ type Attr =
     | LineStyle of style: LineStyle
     | Animating of value: bool
     
+let private attrKey = function
+    | CapStyle _ -> 0
+    | JoinStyle _ -> 1
+    | PenStyle _ -> 2
+    | PenWidth _ -> 3
+    | LineStyle _ -> 4
+    | Animating _ -> 5
+
+let private diffAttrs =
+    genericDiffAttrs attrKey
+    
 type LineAnchor = {
     Pos: PointF
     Vector: PointF
@@ -140,10 +151,14 @@ let stepAnchors (elapsed: double) (anchors: LineAnchor list) (bounds: RectF) =
 let update (state: State) (msg: Msg) =
     match msg with
     | TimerTick elapsed ->
-        let nextAnchors =
-            stepAnchors elapsed state.Anchors (RectF.From(0, 0, 600, 600)) // hmm, how can we get the actual widget rect here? need to handle a size event I think
-        { state with Anchors = nextAnchors }, Cmd.None
-
+        let nextState =
+            if state.Animating then
+                let nextAnchors =
+                    stepAnchors elapsed state.Anchors (RectF.From(0, 0, 600, 600)) // hmm, how can we get the actual widget rect here? need to handle a size event I think
+                { state with Anchors = nextAnchors }
+            else
+                state
+        nextState, Cmd.None
         
 let private bgColor = Color.DarkGray
 let private controlPointPen = Pen(Color(50, 100, 120, 200))
@@ -180,5 +195,4 @@ let view (state: State) =
     :> IWidgetNode<Msg>
     
 type PathStrokeRenderer<'outerMsg>() =
-    inherit WidgetReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
- 
+    inherit WidgetReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)
