@@ -9,11 +9,6 @@
 
 #include <QMimeData>
 #include <QDrag>
-#include <QDragEnterEvent>
-#include <QDragMoveEvent>
-#include <QDragLeaveEvent>
-#include <QDropEvent>
-#include <QEnterEvent>
 
 #include "util/convert.h"
 
@@ -48,8 +43,24 @@ namespace Widget
         return toRect(x);
     }
 
+    Size Handle_getSize(HandleRef _this) {
+        return toSize(THIS->size());
+    }
+
     void Handle_resize(HandleRef _this, int32_t width, int32_t height) {
         THIS->resize(width, height);
+    }
+
+    void Handle_setFixedWidth(HandleRef _this, int32_t width) {
+        THIS->setFixedWidth(width);
+    }
+
+    void Handle_setFixedHeight(HandleRef _this, int32_t height) {
+        THIS->setFixedHeight(height);
+    }
+
+    void Handle_setFixedSize(HandleRef _this, int32_t width, int32_t height) {
+        THIS->setFixedSize(width, height);
     }
 
     void Handle_move(HandleRef _this, Point p) {

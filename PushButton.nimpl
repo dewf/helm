@@ -1,13 +1,9 @@
 module PushButton;
 
-import Widget;
-import Signal;
+import AbstractButton;
 
-opaque Handle extends Widget.Handle {
-    void setText(string label);
+opaque Handle extends AbstractButton.Handle {
     void setAutoDefault(bool value);
-    void onClicked(Signal.VoidDelegate handler);
 }
 
 Handle create();
-Handle create(string label);

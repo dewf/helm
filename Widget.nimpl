@@ -22,8 +22,15 @@ opaque Handle {
     void setEnabled(bool state);
     void setMaximumWidth(int maxWidth);
     void setMaximumHeight(int maxHeight);
+
     Rect getRect();
+    Size getSize();
+
     void resize(int width, int height);
+
+    void setFixedWidth(int width);
+    void setFixedHeight(int height);
+    void setFixedSize(int width, int height);
 
     void move(Point p);
     void move(int x, int y);

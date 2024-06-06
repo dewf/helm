@@ -1,0 +1,9 @@
+module GroupBox;
+
+import Widget;
+
+opaque Handle extends Widget.Handle {
+    void setTitle(string title);
+}
+
+Handle create();

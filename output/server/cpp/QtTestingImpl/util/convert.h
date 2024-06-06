@@ -46,6 +46,10 @@ inline QSize toQSize(const Size& sz) {
     return {sz.width, sz.height };
 }
 
+inline Size toSize(const QSize& sz) {
+    return { sz.width(), sz.height() };
+}
+
 inline Point toPoint(const QPoint& qPoint) {
     return { qPoint.x(), qPoint.y() };
 }

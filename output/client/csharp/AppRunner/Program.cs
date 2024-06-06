@@ -5,72 +5,6 @@ namespace AppRunner;
 
 internal static class Program
 {
-    private static Widget.Handle CreatePage01()
-    {
-        var page = Widget.Create();
-        var layout = BoxLayout.Create();
-        layout.SetDirection(BoxLayout.Direction.TopToBottom);
-        
-        var list = ListWidget.Create();
-        list.SetSelectionMode(ListWidget.SelectionMode.Extended);
-        list.SetItems(Enumerable.Range(0, 1000).Select(i => $"Item {i}").ToArray());
-        list.OnItemSelectionChanged(() =>
-        {
-            Console.WriteLine("List selection:");
-            foreach (var index in list.SelectedIndices())
-            {
-                Console.WriteLine($" - {index}");
-            }
-        });
-        layout.AddWidget(list);
-
-        var button = PushButton.Create("Scroll to #634");
-        button.OnClicked(() =>
-        {
-            list.SetCurrentRow(634);
-            list.ScrollToRow(634, ListWidget.ScrollHint.PositionAtCenter);
-        });
-        layout.AddWidget(button);
-        
-        page.SetLayout(layout);
-        return page;
-    }
-
-    private static Widget.Handle CreatePage02()
-    {
-        var page = Widget.Create();
-        var layout = BoxLayout.Create();
-        layout.SetDirection(BoxLayout.Direction.TopToBottom);
-        
-        var combo1 = ComboBox.Create();
-        combo1.SetItems([ "one", "two", "three", "four", "five", "six"]);
-        layout.AddWidget(combo1);
-
-        var edit1 = PlainTextEdit.Create();
-        layout.AddWidget(edit1);
-                
-        var button1 = PushButton.Create($"Wahoo!! {Widget.WIDGET_SIZE_MAX}");
-        button1.SetMaximumHeight(300);
-        layout.AddWidget(button1, 1);
-        
-        page.SetLayout(layout);
-        return page;
-    }
-
-    private static Widget.Handle CreatePage03()
-    {
-        var page = Widget.Create();
-        var layout = BoxLayout.Create();
-        layout.SetDirection(BoxLayout.Direction.TopToBottom);
-        
-        var button2 = PushButton.Create("#2 !!!");
-        button2.SetMaximumHeight(Widget.WIDGET_SIZE_MAX - 1);
-        layout.AddWidget(button2);
-        
-        page.SetLayout(layout);
-        return page;
-    }
-
     [STAThread]
     private static void Main(string[] args)
     {
@@ -83,33 +17,34 @@ internal static class Program
             using (var window = MainWindow.Create())
             {
                 window.SetWindowTitle("Haloooo");
-                window.Resize(800, 600);
+                window.Resize(640, 480);
 
-                var central = Widget.Create();
-                // var layout = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
-
-                var tabs = TabWidget.Create();
-                tabs.AddTab(CreatePage01(), "Page 1");
-                tabs.AddTab(CreatePage02(), "Page 2");
-                tabs.AddTab(CreatePage03(), "Page 3");
-                // layout.AddWidget(tabs);
-                //
-                // central.SetLayout(layout);
-                window.SetCentralWidget(tabs);
-
-                var action = Action.Create("E&xit");
-                action.OnTriggered(_ =>
-                {
-                    Console.WriteLine("Exit triggered!");
-                    Application.Quit();
-                });
+                var vbox = BoxLayout.Create();
+                vbox.SetDirection(BoxLayout.Direction.TopToBottom);
                 
-                var menu = Menu.Create("&File");
-                menu.AddAction(action);
-                var menuBar = MenuBar.Create();
-                menuBar.AddMenu(menu);
-                window.SetMenuBar(menuBar);
+                var radio1 = RadioButton.Create();
+                radio1.SetText("Cool beans 1");
+                radio1.SetChecked(true);
+                vbox.AddWidget(radio1);
+
+                var radio2 = RadioButton.Create();
+                radio2.SetText("Secondary Item OK");
+                vbox.AddWidget(radio2);
                 
+                vbox.AddStretch(1);
+                
+                var group = GroupBox.Create();
+                group.SetTitle("My Cool Group");
+                group.SetLayout(vbox);
+
+                var outerLayout = BoxLayout.Create();
+                outerLayout.SetDirection(BoxLayout.Direction.TopToBottom);
+                outerLayout.AddWidget(group);
+
+                var w = Widget.Create();
+                w.SetLayout(outerLayout);
+                
+                window.SetCentralWidget(w);
                 window.Show();
                 
                 // runloop, before window destroyed plz

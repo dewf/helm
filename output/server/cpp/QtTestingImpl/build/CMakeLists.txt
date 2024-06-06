@@ -15,6 +15,10 @@ add_library(QtTestingImpl STATIC
     ../support/NativeImplServer.cpp
     ../generated/Library.cpp
 
+    ../generated/AbstractButton.h
+    ../generated/AbstractButton_wrappers.cpp
+    ../AbstractButton.cpp
+
     ../generated/AbstractSlider.h
     ../generated/AbstractSlider_wrappers.cpp
     ../AbstractSlider.cpp
@@ -50,6 +54,10 @@ add_library(QtTestingImpl STATIC
     ../generated/GridLayout.h
     ../generated/GridLayout_wrappers.cpp
     ../GridLayout.cpp
+
+    ../generated/GroupBox.h
+    ../generated/GroupBox_wrappers.cpp
+    ../GroupBox.cpp
 
     ../generated/Label.h
     ../generated/Label_wrappers.cpp
@@ -99,6 +107,10 @@ add_library(QtTestingImpl STATIC
     ../generated/PushButton.h
     ../generated/PushButton_wrappers.cpp
     ../PushButton.cpp
+
+    ../generated/RadioButton.h
+    ../generated/RadioButton_wrappers.cpp
+    ../RadioButton.cpp
 
     ../generated/Signal.h
     ../generated/Signal_wrappers.cpp
