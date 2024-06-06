@@ -9,10 +9,13 @@ internal static class Program
     {
         Library.Init();
         
-        // Environment.SetEnvironmentVariable("QT_QPA_PLATFORM", "windows:darkmode=0");
         using (var app = Application.Create(args))
         {
-            Application.SetStyle("Windows11");
+            foreach (var style in Application.AvailableStyles())
+            {
+                Console.WriteLine($"style: {style}");
+            }
+            // Application.SetStyle("Windows");
             
             using (var window = MainWindow.Create())
             {

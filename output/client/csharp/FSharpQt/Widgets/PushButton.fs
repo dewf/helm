@@ -6,16 +6,21 @@ open Org.Whatever.QtTesting
 
 type Signal =
     | Clicked
+    | ClickedWithState of state: bool
     
 type Attr =
     | Text of string
+    | Checked of bool
     | Enabled of bool
+    | Checkable of bool
     | AutoDefault of bool
 
 let private keyFunc = function
     | Text _ -> 0
-    | Enabled _ -> 1
-    | AutoDefault _ -> 2
+    | Checked _ -> 1
+    | Enabled _ -> 2
+    | Checkable _ -> 3
+    | AutoDefault _ -> 4
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -30,7 +35,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 dispatch msg
             | None ->
                 ()
-        button.OnClicked (fun _ -> dispatcher Clicked)
+        button.OnClicked (fun checkState ->
+            dispatcher (ClickedWithState checkState)
+            dispatcher Clicked)
     member this.Widget with get() = button
     member this.SignalMap with set(value) = signalMap <- value
     member this.ApplyAttrs(attrs: Attr list) =
@@ -38,10 +45,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             match attr with
             | Text text ->
                 button.SetText(text)
+            | Checked state ->
+                button.SetChecked(state)
             | Enabled state ->
                 button.SetEnabled(state)
-            | AutoDefault value ->
-                button.SetAutoDefault(value)
+            | Checkable state ->
+                button.SetCheckable(state)
+            | AutoDefault state ->
+                button.SetAutoDefault(state)
     interface IDisposable with
         member this.Dispose() =
             button.Dispose()
@@ -63,13 +74,18 @@ let private dispose (model: Model<'msg>) =
 type PushButton<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
+    
     let mutable onClicked: 'msg option = None
-    member this.OnClicked
-        with set value = onClicked <- Some value
+    let mutable onClickedWithState: (bool -> 'msg) option = None
+    member this.OnClicked with set value = onClicked <- Some value
+    member this.OnClickedWithState with set value = onClickedWithState <- Some value
         
     member private this.SignalMap
         with get() = function
             | Clicked -> onClicked
+            | ClickedWithState checkState ->
+                onClickedWithState
+                |> Option.map (fun f -> f checkState)
             
     interface IWidgetNode<'msg> with
         override this.Dependencies = []

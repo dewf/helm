@@ -100,7 +100,7 @@ let view (state: State) =
             buttons
             |> List.map BoxItem.Create
         let vbox =
-            BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
+            BoxLayout(Attrs = [ Direction TopToBottom ], Items = items)
         GroupBox(Attrs = [ GroupBox.Title "7GUIs" ], Layout = vbox)
         
     let bottomGroup =
@@ -113,7 +113,7 @@ let view (state: State) =
             buttons
             |> List.map BoxItem.Create
         let vbox =
-            BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (0, 0, 0, 0) ], Items = items)
+            BoxLayout(Attrs = [ Direction TopToBottom ], Items = items)
         GroupBox(Attrs = [ GroupBox.Title "Misc" ], Layout = vbox)
         
     let vbox =

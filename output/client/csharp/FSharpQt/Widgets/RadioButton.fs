@@ -10,11 +10,13 @@ type Signal =
 
 type Attr =
     | Text of text: string
+    | Checked of state: bool
     | Enabled of enabled: bool
 
 let private keyFunc = function
     | Text _ -> 0
-    | Enabled _ -> 1
+    | Checked _ -> 1
+    | Enabled _ -> 2
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -22,6 +24,7 @@ let private diffAttrs =
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable radioButton = RadioButton.Create()
+    let mutable lastState = false
     do
         let dispatcher (s: Signal) =
             match signalMap s with
@@ -30,6 +33,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             | None ->
                 ()
         radioButton.OnClicked (fun state ->
+            lastState <- state
             dispatcher (ClickedWithState state)
             dispatcher Clicked)
         
@@ -41,6 +45,11 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             match attr with
             | Text text ->
                 radioButton.SetText(text)
+            | Checked state ->
+                // 2-way binding guard
+                if state <> lastState then
+                    radioButton.SetChecked(state)
+                    lastState <- state
             | Enabled state ->
                 radioButton.SetEnabled(state)
                 
