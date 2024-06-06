@@ -5,6 +5,8 @@ open Org.Whatever.QtTesting
 
 type Color private(qtColor: PaintResources.Color) =
     member val internal qtColor = qtColor
+    override this.Finalize() =
+        qtColor.Dispose()
     new (r: int, g: int, b: int) = Color(PaintResources.Color.Create(r, g, b))
     new (r: int, g: int, b: int, a: int) = Color(PaintResources.Color.Create(r, g, b, a))
     new (r: float, g: float, b: float) = Color(PaintResources.Color.Create(float32 r, float32 g, float32 b))
@@ -27,17 +29,15 @@ type Color private(qtColor: PaintResources.Color) =
     static member DarkMagenta = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkMagenta))
     static member DarkYellow = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkYellow))
     static member Transparent = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Transparent))
-    override this.Finalize() =
-        qtColor.Dispose()
 
 type Brush private(qtBrush: PaintResources.Brush) =
     member val internal qtBrush = qtBrush
-    new (color: Color) = Brush(PaintResources.Brush.Create(color.qtColor))
-    static member NoBrush = Brush(PaintResources.Brush.Create(PaintResources.Brush.Style.NoBrush))
     override this.Finalize() =
         qtBrush.Dispose()
+    new (color: Color) = Brush(PaintResources.Brush.Create(color.qtColor))
+    static member NoBrush = Brush(PaintResources.Brush.Create(PaintResources.Brush.Style.NoBrush))
 
-type Style =
+type PenStyle =
     | NoPen
     | SolidLine
     | DashLine
@@ -83,19 +83,33 @@ with
 
 type Pen private(qtPen: PaintResources.Pen) =
     member val internal qtPen = qtPen
+    override this.Finalize() =
+        qtPen.Dispose()
     new () = Pen(PaintResources.Pen.Create())
-    new (style: Style) =
+    new (style: PenStyle) =
         Pen(PaintResources.Pen.Create(style.QtValue))
     new (color: Color) =
         Pen(PaintResources.Pen.Create(color.qtColor))
-    new (brush: Brush, width: double, style: Style, cap: CapStyle, join: JoinStyle) =
-        Pen(PaintResources.Pen.Create(brush.qtBrush, width, style.QtValue, cap.QtValue, join.QtValue))
+    new (brush: Brush, width: double, ?style: PenStyle, ?cap: CapStyle, ?join: JoinStyle) =
+        let useStyle =
+            defaultArg style SolidLine
+        let useCap =
+            defaultArg cap Square
+        let useJoin =
+            defaultArg join Bevel
+        Pen(PaintResources.Pen.Create(brush.qtBrush, width, useStyle.QtValue, useCap.QtValue, useJoin.QtValue))
+    new (color: Color, width: double, ?style: PenStyle, ?cap: CapStyle, ?join: JoinStyle) =
+        let useStyle =
+            defaultArg style SolidLine
+        let useCap =
+            defaultArg cap Square
+        let useJoin =
+            defaultArg join Bevel
+        Pen(Brush(color), width, useStyle, useCap, useJoin)
     
     member this.Width with set (value: int) = this.qtPen.SetWidth(value)
     member this.Width with set (value: double) = this.qtPen.SetWidth(value)
         
-    override this.Finalize() =
-        qtPen.Dispose()
        
 type Weight =
     | Thin
@@ -122,11 +136,34 @@ with
     
 type Font private(qtFont: PaintResources.Font) =
     member val internal qtFont = qtFont
+    override this.Finalize() =
+        qtFont.Dispose()
     new (family: string, pointSize: int) = Font(PaintResources.Font.Create(family, pointSize))
     new (family: string, pointSize: int, weight: Weight) = Font(PaintResources.Font.Create(family, pointSize, weight.QtValue))
     new (family: string, pointSize: int, weight: Weight, italic: bool) = Font(PaintResources.Font.Create(family, pointSize, weight.QtValue, italic))
+        
+        
+type PainterPath internal(qtPainterPath: PaintResources.PainterPath) =
+    member val qtPainterPath = qtPainterPath
     override this.Finalize() =
-        qtFont.Dispose()
+        qtPainterPath.Dispose()
+    new() = PainterPath(PaintResources.PainterPath.Create())
+    member this.MoveTo(p: Common.PointF) =
+        qtPainterPath.MoveTo(p)
+    member this.LineTo(p: Common.PointF) =
+        qtPainterPath.Lineto(p)
+    member this.CubicTo(c1: Common.PointF, c2: Common.PointF, endPoint: Common.PointF) =
+        qtPainterPath.CubicTo(c1, c2, endPoint)
+        
+type PainterPathStroker internal(qtStroker: PaintResources.PainterPathStroker) =
+    member val qtStroker = qtStroker
+    override this.Finalize() =
+        qtStroker.Dispose()
+    new() = PainterPathStroker(PaintResources.PainterPathStroker.Create())
+    member this.Width with set value = qtStroker.SetWidth(value)
+    member this.JoinStyle with set value = qtStroker.SetJoinStyle(value)
+    member this.CapStyle with set value = qtStroker.SetCapStyle(value)
+    member this.DashPattern with set (value: double array) = qtStroker.SetDashPattern(value)
         
 type RenderHint =
     | Antialiasing
@@ -192,4 +229,12 @@ type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
         
     member this.DrawEllipse(center: Common.Point, rx: int, ry: int) =
         qtPainter.DrawEllipse(center, rx, ry)
-    
+        
+    member this.FillPath(path: PainterPath, brush: Brush) =
+        qtPainter.FillPath(path.qtPainterPath, brush.qtBrush)
+        
+    member this.StrokePath(path: PainterPath, pen: Pen) =
+        qtPainter.StrokePath(path.qtPainterPath, pen.qtPen)
+        
+    member this.DrawPolyline(points: Common.PointF array) =
+        qtPainter.DrawPolyline(points)

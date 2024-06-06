@@ -37,6 +37,14 @@ namespace Painter
         THIS->drawText(toQRect(rect), toQtAlign(align), text.c_str());
     }
 
+    void Handle_fillPath(HandleRef _this, PainterPathRef path, BrushRef brush) {
+        THIS->fillPath(path->qPath, brush->qBrush);
+    }
+
+    void Handle_strokePath(HandleRef _this, PainterPathRef path, PenRef pen) {
+        THIS->strokePath(path->qPath, pen->qPen);
+    }
+
     void Handle_fillRect(HandleRef _this, Rect rect, BrushRef brush) {
         THIS->fillRect(toQRect(rect), brush->qBrush);
     }
@@ -75,6 +83,22 @@ namespace Painter
 
     void Handle_drawEllipse(HandleRef _this, Point center, int32_t rx, int32_t ry) {
         THIS->drawEllipse(toQPoint(center), rx, ry);
+    }
+
+    void Handle_drawPolyline(HandleRef _this, std::vector<PointF> points) {
+        std::vector<QPointF> qPoints;
+        for (auto &p : points) {
+            qPoints.push_back(toQPointF(p));
+        }
+        THIS->drawPolyline(qPoints.data(), (int)qPoints.size());
+    }
+
+    void Handle_drawPolyline(HandleRef _this, std::vector<Point> points) {
+        std::vector<QPoint> qPoints;
+        for (auto &p : points) {
+            qPoints.push_back(toQPoint(p));
+        }
+        THIS->drawPolyline(qPoints.data(), (int)qPoints.size());
     }
 
     void Handle_dispose(HandleRef _this) {

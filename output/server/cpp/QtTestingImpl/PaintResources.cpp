@@ -2,6 +2,8 @@
 
 #include "PaintResourcesInternal.h"
 
+#include "util/convert.h"
+
 namespace PaintResources
 {
     // color ========================
@@ -212,6 +214,80 @@ namespace PaintResources
     }
 
     void Font_dispose(FontRef _this) {
+        delete _this;
+    }
+
+    // painter path =========================================
+    namespace PainterPath {
+        PainterPathRef create() {
+            return new __PainterPath();
+        }
+    }
+
+    void PainterPath_moveTo(PainterPathRef _this, PointF p) {
+        _this->qPath.moveTo(toQPointF(p));
+    }
+
+    void PainterPath_moveTo(PainterPathRef _this, double x, double y) {
+        _this->qPath.moveTo(x, y);
+    }
+
+    void PainterPath_lineto(PainterPathRef _this, PointF p) {
+        _this->qPath.lineTo(toQPointF(p));
+    }
+
+    void PainterPath_lineTo(PainterPathRef _this, double x, double y) {
+        _this->qPath.lineTo(x, y);
+    }
+
+    void PainterPath_cubicTo(PainterPathRef _this, PointF c1, PointF c2, PointF endPoint) {
+        _this->qPath.cubicTo(toQPointF(c1), toQPointF(c2), toQPointF(endPoint));
+    }
+
+    void PainterPath_cubicTo(PainterPathRef _this, double c1X, double c1Y, double c2X, double c2Y, double endPointX, double endPointY) {
+        _this->qPath.cubicTo(c1X, c1Y, c2X, c2Y, endPointX, endPointY);
+    }
+
+    void PainterPath_dispose(PainterPathRef _this) {
+        delete _this;
+    }
+
+    // painter path stroker ==================================
+    namespace PainterPathStroker {
+        PainterPathStrokerRef create() {
+            return new __PainterPathStroker();
+        }
+    }
+
+    void PainterPathStroker_setWidth(PainterPathStrokerRef _this, double width) {
+        _this->qStroker.setWidth(width);
+    }
+
+    void PainterPathStroker_setJoinStyle(PainterPathStrokerRef _this, Pen::JoinStyle style) {
+        _this->qStroker.setJoinStyle(Pen::toQtJoinStyle(style));
+    }
+
+    void PainterPathStroker_setCapStyle(PainterPathStrokerRef _this, Pen::CapStyle style) {
+        _this->qStroker.setCapStyle(Pen::toQtCapStyle(style));
+    }
+
+    void PainterPathStroker_setDashPattern(PainterPathStrokerRef _this, Pen::Style style) {
+        _this->qStroker.setDashPattern(Pen::toQtStyle(style));
+    }
+
+    void PainterPathStroker_setDashPattern(PainterPathStrokerRef _this, std::vector<double> dashPattern) {
+        QList<qreal> qPattern;
+        for (auto &x : dashPattern) {
+            qPattern.push_back(x);
+        }
+        _this->qStroker.setDashPattern(qPattern);
+    }
+
+    PainterPathRef PainterPathStroker_createStroke(PainterPathStrokerRef _this, PainterPathRef path) {
+        return new __PainterPath { _this->qStroker.createStroke(path->qPath) };
+    }
+
+    void PainterPathStroker_dispose(PainterPathStrokerRef _this) {
         delete _this;
     }
 }

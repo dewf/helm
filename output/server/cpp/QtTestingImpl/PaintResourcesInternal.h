@@ -6,6 +6,8 @@
 #include <QBrush>
 #include <QPen>
 #include <QFont>
+#include <QPainterPath>
+#include <QPainterPathStroker>
 
 namespace PaintResources
 {
@@ -31,5 +33,13 @@ namespace PaintResources
 
     struct __Font {
         QFont qFont;
+    };
+
+    struct __PainterPath {
+        QPainterPath qPath;
+    };
+
+    struct __PainterPathStroker {
+        QPainterPathStroker qStroker;
     };
 }

@@ -21,6 +21,9 @@ opaque Handle {
     void setFont(Font font);
     void drawText(Rect rect, Alignment align, string text);
 
+    void fillPath(PainterPath path, Brush brush);
+    void strokePath(PainterPath path, Pen pen);
+
     void fillRect(Rect rect, Brush brush);
     void fillRect(Rect rect, Color color);
 
@@ -33,5 +36,7 @@ opaque Handle {
     void drawEllipse(int x, int y, int width, int height);
     void drawEllipse(PointF center, double rx, double ry);
     void drawEllipse(Point center, int rx, int ry);
-}
 
+    void drawPolyline(Array<PointF> points);
+    void drawPolyline(Array<Point> points);
+}

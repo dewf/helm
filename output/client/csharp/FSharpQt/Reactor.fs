@@ -269,7 +269,6 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
     member this.Run(argv: string array) =
         use app =
             Application.Create(argv)
-        Application.SetStyle("Fusion")
         let rec processCmd (cmd: Cmd<'msg,AppSignal>) =
             match cmd with
             | Cmd.None ->

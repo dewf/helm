@@ -1,5 +1,6 @@
 ﻿module Tabs.PathStroking.PathStroking
 
+open FSharpQt
 open FSharpQt.BuilderNode
 open FSharpQt.Reactor
 open FSharpQt.Widgets.BoxLayout
@@ -8,6 +9,7 @@ open FSharpQt.Widgets.PushButton
 open FSharpQt.Widgets.RadioButton
 open FSharpQt.Widgets.Slider
 
+open Painting
 open Renderer
 
 type Signal = unit
@@ -34,8 +36,8 @@ let init() =
     let state = {
         CapStyle = Flat
         JoinStyle = Bevel
-        PenStyle = Solid
-        PenWidth = 1
+        PenStyle = SolidLine
+        PenWidth = 2
         LineStyle = Curves
         Animating = true
     }
@@ -91,12 +93,12 @@ let view (state: State) =
         
     let penStyleGroup =
         let items =
-            [ "Solid", Solid
-              "Dash", Dash
-              "Dot", Dot
-              "DashDot", DashDot
-              "DashDotDot", DashDotDot
-              "Custom", CustomDash ]
+            [ "Solid", SolidLine
+              "Dash", DashLine
+              "Dot", DotLine
+              "DashDot", DashDotLine
+              "DashDotDot", DashDotDotLine
+              "Custom", CustomDashLine ]
         radioGroup "Join Style" items SetPenStyle state.PenStyle
         
     let penWidthGroup =
@@ -104,7 +106,7 @@ let view (state: State) =
             Slider(
                 Attrs = [
                     Orientation Horizontal
-                    Range (0, 500)
+                    Range (1, 20)
                     Value state.PenWidth
                 ], OnValueChanged = SetPenWidth)
         let vbox =

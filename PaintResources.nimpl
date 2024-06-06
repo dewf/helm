@@ -1,5 +1,7 @@
 module PaintResources;
 
+import Common;
+
 opaque Color {
     static {
         enum Constant {
@@ -118,4 +120,31 @@ opaque Font {
         Font create(string family, int pointSize, Weight weight);
         Font create(string family, int pointSize, Weight weight, bool italic);
     }
+}
+
+opaque PainterPath {
+    static {
+        PainterPath create();
+    }
+    void moveTo(PointF p);
+    void moveTo(double x, double y);
+    void lineto(PointF p);
+    void lineTo(double x, double y);
+    
+    void cubicTo(PointF c1, PointF c2, PointF endPoint);
+    void cubicTo(double c1X, double c1Y, double c2X, double c2Y, double endPointX, double endPointY);
+}
+
+opaque PainterPathStroker {
+    static {
+        PainterPathStroker create();
+    }
+    void setWidth(double width);
+    void setJoinStyle(Pen.JoinStyle style);
+    void setCapStyle(Pen.CapStyle style);
+
+    void setDashPattern(Pen.Style style);
+    void setDashPattern(Array<double> dashPattern);
+
+    PainterPath createStroke(PainterPath path);
 }
