@@ -37,13 +37,14 @@ let private diffAttrs =
         | Animating _ -> 5
     genericDiffAttrs attrKey
     
-type LineAnchor = {
-    Pos: PointF
-    Vector: PointF
+type PathPoint = {
+    Position: PointF
+    Velocity: PointF
 }
 
 type State = {
-    Anchors: LineAnchor array
+    ViewRect: RectF
+    Points: PathPoint array
     CapStyle: CapStyle
     JoinStyle: JoinStyle
     PenStyle: PenStyle
@@ -53,6 +54,7 @@ type State = {
 }
 
 type Msg =
+    | Resized of rect: RectF
     | TimerTick of elapsed: double
 
 let init() =
@@ -64,7 +66,7 @@ let init() =
         (293.38, 262.90)
         (347.49, 330.74)
         (328.18, 415.34) |] |> Array.map PointF.From
-    let vectors = [|
+    let velocities = [|
         (1.800, 0.449)
         (1.005, 1.101)
         (-0.546, 0.923)
@@ -73,10 +75,11 @@ let init() =
         (-0.254, -1.123)
         (1.239, -0.540) |] |> Array.map PointF.From
     let anchors =
-        Array.zip points vectors
-        |> Array.map (fun (pos, vec) -> { Pos = pos; Vector = vec })
+        Array.zip points velocities
+        |> Array.map (fun (pos, vel) -> { Position = pos; Velocity = vel })
     let state = {
-        Anchors = anchors
+        ViewRect = RectF.From(0, 0, 0, 0)
+        Points = anchors
         CapStyle = Flat
         JoinStyle = Bevel
         PenStyle = SolidLine
@@ -95,29 +98,28 @@ let attrUpdate (state: State) (attr: Attr) =
     | LineStyle style -> { state with LineStyle = style }
     | Animating value -> { state with Animating = value }
     
-let stepPoint elapsedMillis left right top bottom { Pos = p; Vector = v } =
+let stepSinglePoint elapsedMillis left right top bottom { Position = pos; Velocity = vel } =
     let xDeltaAdjusted =
-        (v.X * elapsedMillis) / (double TIMER_INTERVAL)
+        (vel.X * elapsedMillis) / (double TIMER_INTERVAL)
     let yDeltaAdjusted =
-        (v.Y * elapsedMillis) / (double TIMER_INTERVAL)
+        (vel.Y * elapsedMillis) / (double TIMER_INTERVAL)
     let projected =
-        { X = p.X + xDeltaAdjusted
-          Y = p.Y + yDeltaAdjusted }
+        { X = pos.X + xDeltaAdjusted
+          Y = pos.Y + yDeltaAdjusted }
     let nextPoint, nextVector =
         if projected.X < left then
-            { projected with X = left }, { v with X = -v.X }
+            { projected with X = left }, { vel with X = -vel.X }
         elif projected.X > right then
-            { projected with X = right }, { v with X = -v.X }
+            { projected with X = right }, { vel with X = -vel.X }
         elif projected.Y < top then
-            { projected with Y = top }, { v with Y = -v.Y }
+            { projected with Y = top }, { vel with Y = -vel.Y }
         elif projected.Y > bottom then
-            { projected with Y = bottom }, { v with Y = -v.Y }
+            { projected with Y = bottom }, { vel with Y = -vel.Y }
         else
-            projected, v
-    { Pos = nextPoint; Vector = nextVector }
+            projected, vel
+    { Position = nextPoint; Velocity = nextVector }
     
-    
-let stepAnchors (elapsed: double) (anchors: LineAnchor array) (bounds: RectF) =
+let stepPoints (elapsed: double) (anchors: PathPoint array) (bounds: RectF) =
     let pad = float POINT_SIZE
     let left = pad
     let right = bounds.Width - pad
@@ -125,16 +127,18 @@ let stepAnchors (elapsed: double) (anchors: LineAnchor array) (bounds: RectF) =
     let bottom = bounds.Height - pad
 
     anchors
-    |> Array.map (stepPoint elapsed left right top bottom)
+    |> Array.map (stepSinglePoint elapsed left right top bottom)
 
 let update (state: State) (msg: Msg) =
     match msg with
+    | Resized rect ->
+        { state with ViewRect = rect }, Cmd.None
     | TimerTick elapsed ->
         let nextState =
             if state.Animating then
                 let nextAnchors =
-                    stepAnchors elapsed state.Anchors (RectF.From(0, 0, 600, 600)) // hmm, how can we get the actual widget rect here? need to handle a size event I think
-                { state with Anchors = nextAnchors }
+                    stepPoints elapsed state.Points state.ViewRect
+                { state with Points = nextAnchors }
             else
                 state
         nextState, Cmd.None
@@ -150,10 +154,15 @@ type EventDelegate(state: State) =
     
     override this.SizeHint = Common.Size (600, 600)
     
-    override this.NeedsPaint prev =
+    override this.NeedsPaint _ =
         Everything
+
+    override this.Resize _ newSize =
+        RectF.From(0, 0, newSize.Width, newSize.Height)
+        |> Resized
+        |> Some
     
-    override this.DoPaint widget painter widgetRect =
+    override this.DoPaint _ painter widgetRect =
         painter.SetRenderHint Antialiasing true
         painter.FillRect(widgetRect, bgColor)
         
@@ -161,19 +170,19 @@ type EventDelegate(state: State) =
 
         // construct path        
         let path = PainterPath()
-        path.MoveTo(state.Anchors[0].Pos.QtValue)
+        path.MoveTo(state.Points[0].Position.QtValue)
         match state.LineStyle with
         | Lines ->
-            seq { 1 .. state.Anchors.Length - 1 }
+            seq { 1 .. state.Points.Length - 1 }
             |> Seq.iter (fun i ->
-                path.LineTo(state.Anchors[i].Pos.QtValue))
+                path.LineTo(state.Points[i].Position.QtValue))
         | Curves ->
             let mutable i = 1
-            while i + 2 < state.Anchors.Length do
-                path.CubicTo(state.Anchors[i].Pos.QtValue, state.Anchors[i+1].Pos.QtValue, state.Anchors[i+2].Pos.QtValue)
+            while i + 2 < state.Points.Length do
+                path.CubicTo(state.Points[i].Position.QtValue, state.Points[i+1].Position.QtValue, state.Points[i+2].Position.QtValue)
                 i <- i + 3
-            while i < state.Anchors.Length do
-                path.LineTo(state.Anchors[i].Pos.QtValue)
+            while i < state.Points.Length do
+                path.LineTo(state.Points[i].Position.QtValue)
                 i <- i + 1
 
         // draw path
@@ -194,19 +203,19 @@ type EventDelegate(state: State) =
         // draw control points
         painter.Pen <- controlPointPen
         painter.Brush <- controlPointBrush
-        for anchor in state.Anchors do
-            painter.DrawEllipse(anchor.Pos.QtValue, POINT_SIZE, POINT_SIZE)
+        for anchor in state.Points do
+            painter.DrawEllipse(anchor.Position.QtValue, POINT_SIZE, POINT_SIZE)
         painter.Pen <- Pen(Color.LightGray, 0, SolidLine)
         painter.Brush <- Brush.NoBrush
         let points =
-            state.Anchors
-            |> Array.map (_.Pos.QtValue)
+            state.Points
+            |> Array.map (_.Position.QtValue)
         painter.DrawPolyline(points)
 
         
 let view (state: State) =
     let custom =
-        CustomWidget(EventDelegate(state), [ PaintEvent; SizeHint ])
+        CustomWidget(EventDelegate(state), [ PaintEvent; SizeHint; ResizeEvent ])
     let timer =
         Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)
     WidgetWithNonVisual(custom, [ "timer", timer ])

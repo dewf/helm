@@ -74,12 +74,13 @@ type RectF = {
 } with
     static member From (x, y, width, height) =
         { X = x; Y = y; Width = width; Height = height }
+    static member From(rect: Common.Rect) =
+        { X = double rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     static member From(rect: Common.RectF) =
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
-
-
+        
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace / C# shit
 type WidgetProxy internal(widget: Widget.Handle) =
     member val widget = widget

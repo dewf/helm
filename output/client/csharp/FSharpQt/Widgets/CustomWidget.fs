@@ -39,6 +39,9 @@ type EventDelegate<'msg>() =
     abstract member Leave: unit -> 'msg option
     default this.Leave() = None
     
+    abstract member Resize: Common.Size -> Common.Size -> 'msg option
+    default this.Resize _ _ = None
+    
     abstract member DragMove: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> Set<Widget.DropAction> -> bool -> (Widget.DropAction * 'msg) option
     default this.DragMove _ _ _ _ _ _ = None
 
@@ -121,39 +124,28 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             eventDelegate.DoPaint widget (Painter(painter)) rect
             
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
-            match eventDelegate.MousePress pos button (set modifiers) with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
+            eventDelegate.MousePress pos button (set modifiers)
+            |> Option.iter dispatch
             
         override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Widget.Modifier>) =
-            match eventDelegate.MouseMove pos (set buttons) (set modifiers) with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
+            eventDelegate.MouseMove pos (set buttons) (set modifiers)
+            |> Option.iter dispatch
                 
         override this.MouseReleaseEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
-            match eventDelegate.MouseRelease pos button (set modifiers) with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
+            eventDelegate.MouseRelease pos button (set modifiers)
+            |> Option.iter dispatch
                 
         override this.EnterEvent(pos: Common.Point) =
-            match eventDelegate.Enter pos with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
+            eventDelegate.Enter pos
+            |> Option.iter dispatch
                 
         override this.LeaveEvent() =
-            match eventDelegate.Leave() with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
+            eventDelegate.Leave()
+            |> Option.iter dispatch
+                
+        override this.ResizeEvent(oldSize: Common.Size, newSize: Common.Size) =
+            eventDelegate.Resize oldSize newSize
+            |> Option.iter dispatch
             
         override this.SizeHint() =
             eventDelegate.SizeHint
@@ -167,18 +159,12 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
                 moveEvent.Ignore()
                 
         override this.DragLeaveEvent() =
-            match eventDelegate.DragLeave() with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
+            eventDelegate.DragLeave()
+            |> Option.iter dispatch
             
         override this.DropEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
-            match eventDelegate.Drop pos (set modifiers) mimeData dropAction with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
+            eventDelegate.Drop pos (set modifiers) mimeData dropAction
+            |> Option.iter dispatch
             
         // override this.Dispose() =
         //     // I forget why the generated method delegates have this ...
@@ -243,6 +229,7 @@ type EventMaskItem =
     | LeaveEvent
     | PaintEvent
     | SizeHint
+    | ResizeEvent
     | DropEvents
 
 type CustomWidget<'msg>(eventDelegate: EventDelegate<'msg>, eventMaskItems: EventMaskItem list) =
@@ -266,6 +253,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegate<'msg>, eventMaskItems: Even
                 | LeaveEvent -> Widget.MethodMask.LeaveEvent
                 | PaintEvent -> Widget.MethodMask.PaintEvent
                 | SizeHint -> Widget.MethodMask.SizeHint
+                | ResizeEvent -> Widget.MethodMask.ResizeEvent
                 | DropEvents -> Widget.MethodMask.DropEvents
             acc ||| value)
             

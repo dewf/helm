@@ -135,7 +135,9 @@ flags MethodMask {
     EnterEvent = 1 << 4,
     LeaveEvent = 1 << 5,
     SizeHint = 1 << 6,
-    DropEvents = 1 << 7 // dragenter, dragmove, dragleave
+    ResizeEvent = 1 << 7,
+
+    DropEvents = 1 << 8      // dragenter, dragmove, dragleave
 }
 
 interface MethodDelegate {
@@ -146,6 +148,7 @@ interface MethodDelegate {
     void mouseReleaseEvent(Point pos, MouseButton button, Set<Modifier> modifiers);
     void enterEvent(Point pos);
     void leaveEvent();
+    void resizeEvent(Size oldSize, Size newSize);
 
     // dragMove does double duty, also an 'enter' event - check isEnterEvent flag
     void dragMoveEvent(Point pos, Set<Modifier> modifiers, MimeData mimeData, DragMoveEvent moveEvent, bool isEnterEvent);

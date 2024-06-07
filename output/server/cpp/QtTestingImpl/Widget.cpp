@@ -435,6 +435,15 @@ namespace Widget
             }
         }
 
+        void resizeEvent(QResizeEvent *event) override {
+            if (methodMask & MethodMask::ResizeEvent) {
+                methodDelegate->resizeEvent(toSize(event->oldSize()), toSize(event->size()));
+                event->accept();
+            } else {
+                QWidget::resizeEvent(event);
+            }
+        }
+
         void dragEnterEvent(QDragEnterEvent *event) override {
             if (methodMask & MethodMask::DropEvents) {
                 auto pos = toPoint(event->position().toPoint());
