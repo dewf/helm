@@ -99,7 +99,7 @@ let view (state: State) =
               "DashDot", DashDotLine
               "DashDotDot", DashDotDotLine
               "Custom", CustomDashLine ]
-        radioGroup "Join Style" items SetPenStyle state.PenStyle
+        radioGroup "Pen Style" items SetPenStyle state.PenStyle
         
     let penWidthGroup =
         let slider =
