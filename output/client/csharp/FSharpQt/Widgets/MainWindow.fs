@@ -51,6 +51,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
                 syntheticLayoutWidget <- Some widget
             | _ ->
                 failwith "MainWindow.Model 'do' block - unknown node type"
+            // !!
             node.AttachedToWindow mainWindow)
         
         maybeMenuBar
@@ -68,6 +69,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         
     member this.RemoveContent() =
         // TODO: need to do some serious testing with all this
+        // scrollArea too
         match syntheticLayoutWidget with
         | Some widget ->
             widget.GetLayout().RemoveAll() // detach any children just in case

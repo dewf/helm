@@ -14,6 +14,9 @@
         <Compile Include="NonVisual.fs" />
         <Compile Include="WithDialogs.fs" />
         <Compile Include="Painting.fs" />
+        <Compile Include="Widgets\Menus\MenuAction.fs" />
+        <Compile Include="Widgets\Menus\Menu.fs" />
+        <Compile Include="Widgets\Menus\MenuBar.fs" />
         <Compile Include="Widgets\Widget.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />
         <Compile Include="Widgets\Frame.fs" />
@@ -22,9 +25,6 @@
         <Compile Include="Widgets\LineEdit.fs" />
         <Compile Include="Widgets\ComboBox.fs" />
         <Compile Include="Widgets\ListWidget.fs" />
-        <Compile Include="Widgets\Menus\MenuAction.fs" />
-        <Compile Include="Widgets\Menus\Menu.fs" />
-        <Compile Include="Widgets\Menus\MenuBar.fs" />
         <Compile Include="Widgets\TabWidget.fs" />
         <Compile Include="Widgets\MainWindow.fs" />
         <Compile Include="Widgets\WindowSet.fs" />
@@ -36,6 +36,7 @@
         <Compile Include="Widgets\GridLayout.fs" />
         <Compile Include="Widgets\GroupBox.fs" />
         <Compile Include="Widgets\RadioButton.fs" />
+        <Compile Include="Widgets\ScrollArea.fs" />
     </ItemGroup>
 
     <ItemGroup>

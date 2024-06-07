@@ -55,5 +55,6 @@ namespace AbstractButton
         // we'll always be using this through another subtype (QPushButton, QRadioButton, etc)
         // soooo kind of odd to be deleting directly
         printf("suspicious Handle_dispose of AbstractButton\n");
+        delete THIS;
     }
 }

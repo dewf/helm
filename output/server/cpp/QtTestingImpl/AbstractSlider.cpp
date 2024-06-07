@@ -40,6 +40,7 @@ namespace AbstractSlider
     }
 
     void Handle_dispose(HandleRef _this) {
+        printf("AbstractSlider deleted directly (vs. via sublcass), why?\n");
         delete THIS;
     }
 }

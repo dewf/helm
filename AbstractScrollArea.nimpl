@@ -1,0 +1,16 @@
+module AbstractScrollArea;
+
+import Frame;
+
+enum ScrollBarPolicy {
+    AsNeeded = 0,
+    AlwaysOff = 1,
+    AlwaysOn = 2
+}
+
+opaque Handle extends Frame.Handle {
+    void setHorizontalScrollBarPolicy(ScrollBarPolicy policy);
+    void setVerticalScrollBarPolicy(ScrollBarPolicy policy);
+}
+
+// no create

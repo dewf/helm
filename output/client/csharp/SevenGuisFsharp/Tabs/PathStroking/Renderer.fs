@@ -236,7 +236,7 @@ let private hoverPointBrush = Brush(Color.Yellow)
 type EventDelegate(state: State) =
     inherit EventDelegateBase<Msg,State>(state)
     
-    override this.SizeHint = Common.Size (600, 600)
+    override this.SizeHint = Common.Size (600, 700)
     
     override this.NeedsPaint _ =
         Everything

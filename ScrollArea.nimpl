@@ -1,0 +1,10 @@
+module ScrollArea;
+
+import Widget;
+import AbstractScrollArea;
+
+opaque Handle extends AbstractScrollArea.Handle {
+    void setWidget(Widget.Handle widget);
+}
+
+Handle create();

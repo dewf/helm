@@ -8,6 +8,7 @@ open FSharpQt.Widgets.GroupBox
 open FSharpQt.Widgets.PushButton
 open FSharpQt.Widgets.RadioButton
 open FSharpQt.Widgets.Slider
+open FSharpQt.Widgets.ScrollArea
 
 open Painting
 open Renderer
@@ -138,6 +139,10 @@ let view (state: State) =
                       BoxItem.Create(animateButton)
                       BoxItem.Stretch 1
                   ])
+        
+    let scrollArea =
+        ScrollArea(Attrs = [ VPolicy AlwaysOn ], Content = rightPanel)
+        
     let renderer =
         PathStrokeRenderer(
             Attrs = [
@@ -152,7 +157,7 @@ let view (state: State) =
     BoxLayout(Attrs = [ Direction LeftToRight ],
               Items = [
                   BoxItem.Create(renderer, 1)
-                  BoxItem.Create(rightPanel)
+                  BoxItem.Create(scrollArea)
               ])
     :> ILayoutNode<Msg>
 

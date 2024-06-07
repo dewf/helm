@@ -19,6 +19,10 @@ add_library(QtTestingImpl STATIC
     ../generated/AbstractButton_wrappers.cpp
     ../AbstractButton.cpp
 
+    ../generated/AbstractScrollArea.h
+    ../generated/AbstractScrollArea_wrappers.cpp
+    ../AbstractScrollArea.cpp
+
     ../generated/AbstractSlider.h
     ../generated/AbstractSlider_wrappers.cpp
     ../AbstractSlider.cpp
@@ -111,6 +115,10 @@ add_library(QtTestingImpl STATIC
     ../generated/RadioButton.h
     ../generated/RadioButton_wrappers.cpp
     ../RadioButton.cpp
+
+    ../generated/ScrollArea.h
+    ../generated/ScrollArea_wrappers.cpp
+    ../ScrollArea.cpp
 
     ../generated/Signal.h
     ../generated/Signal_wrappers.cpp
