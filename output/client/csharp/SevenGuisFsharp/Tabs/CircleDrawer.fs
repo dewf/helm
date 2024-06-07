@@ -272,7 +272,7 @@ let view (state: State) =
                 BoxItem.Spacer 10
                 BoxItem.Create(hbox)
             ])
-        Dialog(Attrs = [ Dialog.Title "Edit Radius" ], Layout = vbox, OnClosed = DialogClosed)
+        Dialog(Attrs = [ Dialog.Title "Edit Radius"; Modality WindowModal ], Layout = vbox, OnClosed = DialogClosed)
     // we attach the dialog to the canvas,
     // so that there's a valid widget for relative dialog popups
     let canvasWithDialogs =

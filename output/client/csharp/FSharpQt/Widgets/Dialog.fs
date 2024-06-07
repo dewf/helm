@@ -7,13 +7,19 @@ open Org.Whatever.QtTesting
 type Signal =
     | Closed of accepted: bool
     
+type Modality =
+    | WindowModal
+    | AppModal
+    
 type Attr =
     | Size of width: int * height: int
     | Title of title: string
+    | Modality of modality: Modality
     
 let private keyFunc = function
     | Size _ -> 0
     | Title _ -> 1
+    | Modality _ -> 2
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -44,6 +50,12 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
                 dialog.Resize(w, h)
             | Title title ->
                 dialog.SetWindowTitle title
+            | Modality modality ->
+                let qModality =
+                    match modality with
+                    | WindowModal -> Widget.WindowModality.WindowModal
+                    | AppModal -> Widget.WindowModality.ApplicationModal
+                dialog.SetWindowModality(qModality)
     
     interface IDisposable with
         member this.Dispose() =

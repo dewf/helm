@@ -15,6 +15,12 @@ enum ContextMenuPolicy {
     Custom = 3
 }
 
+enum WindowModality {
+    NonModal = 0,
+    WindowModal = 1,
+    ApplicationModal = 2
+}
+
 opaque Handle {
     void setParent(Handle parent);
     Handle getWindow();
@@ -45,6 +51,7 @@ opaque Handle {
     void update(Rect rect);
 
     void setWindowTitle(string title);
+    void setWindowModality(WindowModality modality);
 
     void setLayout(Layout.Handle layout);
     Layout.Handle getLayout();

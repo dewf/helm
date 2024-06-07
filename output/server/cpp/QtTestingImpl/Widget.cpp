@@ -107,6 +107,10 @@ namespace Widget
         THIS->setWindowTitle(title.c_str());
     }
 
+    void Handle_setWindowModality(HandleRef _this, WindowModality modality) {
+        THIS->setWindowModality((Qt::WindowModality)modality);
+    }
+
     void Handle_setLayout(HandleRef _this, Layout::HandleRef layout) {
         THIS->setLayout((QLayout*)layout);
     }
