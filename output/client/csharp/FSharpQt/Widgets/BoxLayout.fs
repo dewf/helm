@@ -3,6 +3,7 @@
 open System
 open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
+open FSharpQt.Extensions
 
 // no signals yet
 

@@ -1,14 +1,7 @@
 ﻿module FSharpQt.BuilderNode
 
 open Org.Whatever.QtTesting
-
-module List =
-    let zipWithIndex (xs: 'a list) =
-        xs |> List.mapi (fun i x -> (i, x))
-
-module Map =
-    let keys (map: Map<'a,'b>) =
-        map |> Map.toList |> List.map fst
+open Extensions
 
 type AttrChange<'a> =
     | Created of 'a

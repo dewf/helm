@@ -96,13 +96,9 @@ let update (state: State) = function
     | SetRadius value ->
         { state with EditingRadius = value }, Cmd.None
     | MouseMove loc ->
-        let dist (p1: Common.Point) (p2: Common.Point) =
-            let dx = p1.X - p2.X
-            let dy = p1.Y - p2.Y
-            (dx * dx + dy * dy) |> float |> sqrt
         let nextHoverIndex =
             state.Circles
-            |> List.tryFindIndex (fun circle -> dist circle.Location loc < circle.Radius)
+            |> List.tryFindIndex (fun circle -> Util.dist circle.Location loc < circle.Radius)
         { state with MaybeHoverIndex = nextHoverIndex }, Cmd.None
     | ApplyEdit ->
         state, Cmd.DialogOp ("edit", Accept)

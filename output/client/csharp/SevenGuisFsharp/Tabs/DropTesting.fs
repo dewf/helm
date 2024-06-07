@@ -69,11 +69,6 @@ let private noPen = Pen(NoPen)
 let rectContains (r: Common.Rect) (p: Common.Point) =
     p.X >= r.X && p.X < (r.X + r.Width) && p.Y >= r.Y && p.Y < (r.Y + r.Height)
     
-let dist (p1: Common.Point) (p2: Common.Point) =
-    let dx = p1.X - p2.X
-    let dy = p1.Y - p2.Y
-    (dx * dx + dy * dy) |> float |> sqrt
-
 type DropDelegate(state: State) =
     inherit EventDelegateBase<Msg,State>(state)
     override this.SizeHint = Common.Size (640, 480)
@@ -88,7 +83,7 @@ type DropDelegate(state: State) =
         // we don't have tracking enabled so move events will only be received when a button is held
         match state.PotentiallyDraggingFrom with
         | Some p ->
-            if dist loc p > DRAG_THRESH_PIXELS then
+            if Util.dist loc p > DRAG_THRESH_PIXELS then
                 printfn "beginning drag!"
                 match this.BeginDrag (Text "WOOOOOOOOOOOOOOOOOOOOT") [Widget.DropAction.Copy; Widget.DropAction.Move] Widget.DropAction.Copy with
                 | Widget.DropAction.Copy ->

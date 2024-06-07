@@ -9,8 +9,10 @@ open FSharpQt.Widgets.Timer
 open Org.Whatever.QtTesting
 
 open FSharpQt.MiscTypes
+open FSharpQt.Extensions
 
-let POINT_SIZE = 10.0
+let CONTROL_POINT_RADIUS = 10.0
+let MAX_GRAB_DIST = 30.0
 let TIMER_INTERVAL = 25 // millis
 
 type LineStyle =
@@ -42,9 +44,18 @@ type PathPoint = {
     Velocity: PointF
 }
 
+type DragState =
+    | NotDragging
+    | Dragging of grabOffset: PointF
+
 type State = {
     ViewRect: RectF
-    Points: PathPoint array
+    ControlPoints: PathPoint array
+    
+    MousePos: PointF option         // changes via event handler
+    MouseHoverIndex: int option     // checked after movement computation
+    DragState: DragState
+    
     CapStyle: CapStyle
     JoinStyle: JoinStyle
     PenStyle: PenStyle
@@ -56,9 +67,13 @@ type State = {
 type Msg =
     | Resized of rect: RectF
     | TimerTick of elapsed: double
+    | MouseMove of pos: Point
+    | MouseLeave
+    | BeginDrag of grabOffs: PointF
+    | EndDrag
 
 let init() =
-    let points = [|
+    let positions = [|
         (250.0, 453.0)
         (171.81, 415.34)
         (152.50, 330.74)
@@ -74,12 +89,15 @@ let init() =
         (-1.556, -0.861)
         (-0.254, -1.123)
         (1.239, -0.540) |] |> Array.map PointF.From
-    let anchors =
-        Array.zip points velocities
+    let controlPoints =
+        Array.zip positions velocities
         |> Array.map (fun (pos, vel) -> { Position = pos; Velocity = vel })
     let state = {
         ViewRect = RectF.From(0, 0, 0, 0)
-        Points = anchors
+        ControlPoints = controlPoints
+        MousePos = None
+        MouseHoverIndex = None
+        DragState = NotDragging
         CapStyle = Flat
         JoinStyle = Bevel
         PenStyle = SolidLine
@@ -119,35 +137,101 @@ let stepSinglePoint elapsedMillis left right top bottom { Position = pos; Veloci
             projected, vel
     { Position = nextPoint; Velocity = nextVector }
     
-let stepPoints (elapsed: double) (anchors: PathPoint array) (bounds: RectF) =
-    let pad = float POINT_SIZE
+let stepPoints (elapsed: double) (points: PathPoint array) (bounds: RectF) (skipIndex: int option) =
+    let pad = float CONTROL_POINT_RADIUS
     let left = pad
     let right = bounds.Width - pad
     let top = pad
     let bottom = bounds.Height - pad
 
-    anchors
-    |> Array.map (stepSinglePoint elapsed left right top bottom)
+    points
+    |> Array.mapi (fun i point ->
+        match skipIndex with
+        | Some index when i = index ->
+            // manual dragging, don't advance
+            point
+        | _ ->
+            stepSinglePoint elapsed left right top bottom point)
+    
+let nearestIndex (points: PathPoint array) (mousePos: PointF) =
+    // of all the points within MAX_HOVER_DIST pixels (might be none),
+    // we want the nearest one
+    let withinRange =
+        points
+        |> Array.mapi (fun i pp -> i, Util.dist2 pp.Position mousePos)
+        |> Array.filter (fun (_, dist) -> dist <= MAX_GRAB_DIST)
+        |> Array.sortBy snd
+    if withinRange.Length > 0 then
+        Some (fst withinRange[0])
+    else
+        None
 
 let update (state: State) (msg: Msg) =
     match msg with
     | Resized rect ->
         { state with ViewRect = rect }, Cmd.None
     | TimerTick elapsed ->
-        let nextState =
+        let nextPoints =
             if state.Animating then
-                let nextAnchors =
-                    stepPoints elapsed state.Points state.ViewRect
-                { state with Points = nextAnchors }
+                let skipIndex =
+                    match state.DragState, state.MouseHoverIndex with
+                    | Dragging _, Some index ->
+                        Some index
+                    | _ ->
+                        None
+                stepPoints elapsed state.ControlPoints state.ViewRect skipIndex
             else
-                state
+                state.ControlPoints
+        // if not in an active drag, check to see if anything slipped under the mouse
+        let maybeIndex =
+            match state.DragState with
+            | Dragging _ ->
+                // don't touch, already dragging
+                state.MouseHoverIndex
+            | NotDragging ->
+                match state.MousePos with
+                | Some pointF ->
+                    nearestIndex nextPoints pointF
+                | None ->
+                    None
+        let nextState =
+            { state with ControlPoints = nextPoints; MouseHoverIndex = maybeIndex }
         nextState, Cmd.None
+    | MouseMove pos ->
+        let pointF =
+            PointF.From(pos)
+        let nextState =
+            match state.DragState, state.MouseHoverIndex with
+            | Dragging grabOffs, Some hoverIndex ->
+                // moved indexed control point to current pos (taking account of the original grab offset)
+                let nextPoints =
+                    state.ControlPoints
+                    |> Array.replaceAtIndex hoverIndex (fun p ->
+                        let adjusted =
+                            { X = pointF.X - grabOffs.X; Y = pointF.Y - grabOffs.Y }
+                        { p with Position = adjusted })
+                { state with ControlPoints = nextPoints }
+            | _ ->
+                // not dragging, just update the hover index if we're over something
+                let maybeIndex =
+                    nearestIndex state.ControlPoints pointF
+                { state with
+                    MousePos = Some pointF
+                    MouseHoverIndex = maybeIndex }
+        nextState, Cmd.None
+    | MouseLeave ->
+        { state with MouseHoverIndex = None; MousePos = None }, Cmd.None
+    | BeginDrag grabOffs ->
+        { state with DragState = Dragging grabOffs }, Cmd.None
+    | EndDrag ->
+        { state with DragState = NotDragging }, Cmd.None
         
 let private bgColor = Color.DarkGray
 let private lineColorBrush = Brush(Color.Red)
 let private noPen = Pen(NoPen)
 let private controlPointPen = Pen(Color(50, 100, 120, 200))
 let private controlPointBrush = Brush(Color(200, 200, 210, 120))
+let private hoverPointBrush = Brush(Color.Yellow)
         
 type EventDelegate(state: State) =
     inherit EventDelegateBase<Msg,State>(state)
@@ -159,8 +243,32 @@ type EventDelegate(state: State) =
 
     override this.Resize _ newSize =
         RectF.From(0, 0, newSize.Width, newSize.Height)
-        |> Resized
-        |> Some
+        |> (Resized >> Some)
+        
+    override this.MousePress pos button modifiers =
+        state.MouseHoverIndex
+        |> Option.map (fun index ->
+            let grabOffs =
+                let p =
+                    state.ControlPoints[index].Position
+                let pointF =
+                    PointF.From(pos)
+                { X = pointF.X - p.X; Y = pointF.Y - p.Y }
+            BeginDrag grabOffs)
+        
+    override this.MouseRelease pos button modifiers =
+        match state.DragState with
+        | Dragging _ ->
+            Some EndDrag
+        | _ ->
+            None
+        
+    override this.MouseMove pos buttons modifiers =
+        Point.From(pos)
+        |> (MouseMove >> Some)
+        
+    override this.Leave() =
+        Some MouseLeave
     
     override this.DoPaint _ painter widgetRect =
         painter.SetRenderHint Antialiasing true
@@ -170,19 +278,19 @@ type EventDelegate(state: State) =
 
         // construct path        
         let path = PainterPath()
-        path.MoveTo(state.Points[0].Position.QtValue)
+        path.MoveTo(state.ControlPoints[0].Position.QtValue)
         match state.LineStyle with
         | Lines ->
-            seq { 1 .. state.Points.Length - 1 }
+            seq { 1 .. state.ControlPoints.Length - 1 }
             |> Seq.iter (fun i ->
-                path.LineTo(state.Points[i].Position.QtValue))
+                path.LineTo(state.ControlPoints[i].Position.QtValue))
         | Curves ->
             let mutable i = 1
-            while i + 2 < state.Points.Length do
-                path.CubicTo(state.Points[i].Position.QtValue, state.Points[i+1].Position.QtValue, state.Points[i+2].Position.QtValue)
+            while i + 2 < state.ControlPoints.Length do
+                path.CubicTo(state.ControlPoints[i].Position.QtValue, state.ControlPoints[i+1].Position.QtValue, state.ControlPoints[i+2].Position.QtValue)
                 i <- i + 3
-            while i < state.Points.Length do
-                path.LineTo(state.Points[i].Position.QtValue)
+            while i < state.ControlPoints.Length do
+                path.LineTo(state.ControlPoints[i].Position.QtValue)
                 i <- i + 1
 
         // draw path
@@ -202,20 +310,26 @@ type EventDelegate(state: State) =
         
         // draw control points
         painter.Pen <- controlPointPen
-        painter.Brush <- controlPointBrush
-        for anchor in state.Points do
-            painter.DrawEllipse(anchor.Position.QtValue, POINT_SIZE, POINT_SIZE)
+        for i, point in state.ControlPoints |> Array.zipWithIndex do
+            let brush =
+                match state.MouseHoverIndex with
+                | Some index when i = index ->
+                    hoverPointBrush
+                | _ ->
+                    controlPointBrush
+            painter.Brush <- brush
+            painter.DrawEllipse(point.Position.QtValue, CONTROL_POINT_RADIUS, CONTROL_POINT_RADIUS)
         painter.Pen <- Pen(Color.LightGray, 0, SolidLine)
         painter.Brush <- Brush.NoBrush
         let points =
-            state.Points
+            state.ControlPoints
             |> Array.map (_.Position.QtValue)
         painter.DrawPolyline(points)
 
         
 let view (state: State) =
     let custom =
-        CustomWidget(EventDelegate(state), [ PaintEvent; SizeHint; ResizeEvent ])
+        CustomWidget(EventDelegate(state), [ PaintEvent; SizeHint; ResizeEvent; MouseMoveEvent; LeaveEvent; MousePressEvent; MouseReleaseEvent ], Attrs = [ MouseTracking true ])
     let timer =
         Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)
     WidgetWithNonVisual(custom, [ "timer", timer ])

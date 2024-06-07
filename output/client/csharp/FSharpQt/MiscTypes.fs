@@ -48,6 +48,10 @@ type PointF = {
 } with
     static member From (x, y) =
         { X = x; Y = y }
+    static member From(p: Point) =
+        { X = double p.X; Y = p.Y }
+    static member From(p: Common.Point) =
+        { X = p.X; Y = p.Y }
     static member From(p: Common.PointF) =
         { X = p.X; Y = p.Y }
     member this.QtValue =
