@@ -149,7 +149,7 @@ flags MethodMask {
 
 interface MethodDelegate {
     Size sizeHint();
-    void paintEvent(Painter.Handle painter, Rect rect);
+    void paintEvent(Painter.Handle painter, Rect updateRect);
     void mousePressEvent(Point pos, MouseButton button, Set<Modifier> modifiers);
     void mouseMoveEvent(Point pos, Set<MouseButton> buttons, Set<Modifier> modifiers);
     void mouseReleaseEvent(Point pos, MouseButton button, Set<Modifier> modifiers);

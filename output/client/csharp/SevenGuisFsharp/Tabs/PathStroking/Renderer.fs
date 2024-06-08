@@ -6,7 +6,6 @@ open FSharpQt.Painting
 open FSharpQt.Reactor
 open FSharpQt.Widgets.CustomWidget
 open FSharpQt.Widgets.Timer
-open Org.Whatever.QtTesting
 
 open FSharpQt.MiscTypes
 open FSharpQt.Extensions
@@ -284,7 +283,7 @@ type EventDelegate(state: State) =
     override this.Leave() =
         Some MouseLeave
     
-    override this.DoPaint res stack painter widget =
+    override this.DoPaint res stack painter widget updateRect =
         painter.SetRenderHint Antialiasing true
         painter.FillRect(widget.Rect, res.BgColor)
         

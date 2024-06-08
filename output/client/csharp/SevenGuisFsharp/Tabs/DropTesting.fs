@@ -103,7 +103,7 @@ type EventDelegate(state: State) =
     override this.NeedsPaint prev =
         Everything
         
-    override this.DoPaint stack painter widget =
+    override this.DoPaint stack painter widget updateRect =
         let darkBlue = stack.Color(DarkBlue)
         let orangeBrush = stack.Brush(stack.Color(1, 0.5, 0.5, 0.25))
         let yellowPen = stack.Pen(stack.Color(Yellow))
