@@ -2,13 +2,14 @@
 
 open BuilderNode
 open System
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
 type DialogOp =
     | Exec
-    | ExecAt of p: Common.Point
+    | ExecAt of p: Point
     | Show
-    | ShowAt of p: Common.Point
+    | ShowAt of p: Point
     | Accept
     | Reject
 
@@ -19,7 +20,7 @@ type Cmd<'msg,'signal> =
     | Signal of 'signal
     | Batch of commands: Cmd<'msg,'signal> list
     | DialogOp of name: string * op: DialogOp
-    | PopMenu of name: string * loc: Common.Point
+    | PopMenu of name: string * loc: Point
     
 let nullAttrUpdate (state: 'state) (attr: 'attr) =
     state
@@ -114,10 +115,10 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
         | Some node ->
             match node with
             | AttachedDialog (node, maybeWidget) ->
-                let moveTo p =
+                let moveTo (p: Point) =
                     match maybeWidget with
                     | Some widget ->
-                        let abs = widget.MapToGlobal(p)
+                        let abs = widget.MapToGlobal(p.QtValue)
                         node.Dialog.Move(abs)
                     | None ->
                         ()
@@ -139,13 +140,13 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
         | None ->
             printfn "SubReactor.DialogOp: couldn't find dialog '%s'" name
             
-    member this.PopMenu (name: string) (loc: Common.Point) =
+    member this.PopMenu (name: string) (loc: Point) =
         match attachMap.TryFind name with
         | Some node ->
             match node with
             | AttachedPopup (node, relativeTo) ->
                 let loc' =
-                    relativeTo.MapToGlobal(loc)
+                    relativeTo.MapToGlobal(loc.QtValue)
                 node.Menu.Popup(loc')
             | _ ->
                 printfn "Cmd.PopMenu - found a node but it wasn't a menu node (are you using the same name twice?)"

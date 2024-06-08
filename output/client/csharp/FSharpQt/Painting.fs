@@ -149,12 +149,12 @@ type Font internal(qtFont: PaintResources.Font) =
         
 type PainterPath internal(qtPainterPath: PaintResources.PainterPath) =
     member val qtPainterPath = qtPainterPath
-    member this.MoveTo(p: Common.PointF) =
-        qtPainterPath.MoveTo(p)
-    member this.LineTo(p: Common.PointF) =
-        qtPainterPath.Lineto(p)
-    member this.CubicTo(c1: Common.PointF, c2: Common.PointF, endPoint: Common.PointF) =
-        qtPainterPath.CubicTo(c1, c2, endPoint)
+    member this.MoveTo(p: PointF) =
+        qtPainterPath.MoveTo(p.QtValue)
+    member this.LineTo(p: PointF) =
+        qtPainterPath.Lineto(p.QtValue)
+    member this.CubicTo(c1: PointF, c2: PointF, endPoint: PointF) =
+        qtPainterPath.CubicTo(c1.QtValue, c2.QtValue, endPoint.QtValue)
         
 type PainterPathStroker internal(qtStroker: PaintResources.PainterPathStroker) =
     member val qtStroker = qtStroker
@@ -304,38 +304,38 @@ type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
             hints |> Set.map (_.QtValue)
         qtPainter.SetRenderHints(HashSet(qHints), state)
     
-    member this.DrawText(rect: Common.Rect, align: Common.Alignment, text: string) =
-        qtPainter.DrawText(rect, align, text)
+    member this.DrawText(rect: Rect, align: Alignment, text: string) =
+        qtPainter.DrawText(rect.QtValue, align.QtValue, text)
         
-    member this.FillRect(rect: Common.Rect, brush: Brush) =
-        qtPainter.FillRect(rect, brush.qtBrush)
+    member this.FillRect(rect: Rect, brush: Brush) =
+        qtPainter.FillRect(rect.QtValue, brush.qtBrush)
         
-    member this.FillRect(rect: Common.Rect, color: Color) =
-        qtPainter.FillRect(rect, color.qtColor)
+    member this.FillRect(rect: Rect, color: Color) =
+        qtPainter.FillRect(rect.QtValue, color.qtColor)
 
-    member this.DrawRect(rect: Common.Rect) =
-        qtPainter.DrawRect(rect)
+    member this.DrawRect(rect: Rect) =
+        qtPainter.DrawRect(rect.QtValue)
         
-    member this.DrawRect(rect: Common.RectF) =
-        qtPainter.DrawRect(rect)
+    member this.DrawRect(rect: RectF) =
+        qtPainter.DrawRect(rect.QtValue)
         
     member this.DrawRect(x: int, y: int, width: int, height: int) =
         qtPainter.DrawRect(x, y, width, height)
         
-    member this.DrawEllipse(rect: Common.RectF) =
-        qtPainter.DrawEllipse(rect)
+    member this.DrawEllipse(rect: RectF) =
+        qtPainter.DrawEllipse(rect.QtValue)
 
-    member this.DrawEllipse(rect: Common.Rect) =
-        qtPainter.DrawEllipse(rect)
+    member this.DrawEllipse(rect: Rect) =
+        qtPainter.DrawEllipse(rect.QtValue)
         
     member this.DrawEllipse(x: int, y: int, width: int, height: int) =
         qtPainter.DrawEllipse(x, y, width, height)
         
-    member this.DrawEllipse(center: Common.PointF, rx: double, ry: double) =
-        qtPainter.DrawEllipse(center, rx, ry)
+    member this.DrawEllipse(center: PointF, rx: double, ry: double) =
+        qtPainter.DrawEllipse(center.QtValue, rx, ry)
         
-    member this.DrawEllipse(center: Common.Point, rx: int, ry: int) =
-        qtPainter.DrawEllipse(center, rx, ry)
+    member this.DrawEllipse(center: Point, rx: int, ry: int) =
+        qtPainter.DrawEllipse(center.QtValue, rx, ry)
         
     member this.FillPath(path: PainterPath, brush: Brush) =
         qtPainter.FillPath(path.qtPainterPath, brush.qtBrush)
@@ -343,5 +343,5 @@ type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
     member this.StrokePath(path: PainterPath, pen: Pen) =
         qtPainter.StrokePath(path.qtPainterPath, pen.qtPen)
         
-    member this.DrawPolyline(points: Common.PointF array) =
-        qtPainter.DrawPolyline(points)
+    member this.DrawPolyline(points: PointF array) =
+        qtPainter.DrawPolyline(points |> Array.map (_.QtValue))

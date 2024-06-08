@@ -37,7 +37,7 @@ type Point = {
 } with
     static member From (x, y) =
         { X = x; Y = y }
-    static member From(p: Common.Point) =
+    static member internal From(p: Common.Point) =
         { X = p.X; Y = p.Y }
     member internal this.QtValue =
         Common.Point(X = this.X, Y = this.Y)
@@ -50,12 +50,23 @@ type PointF = {
         { X = x; Y = y }
     static member From(p: Point) =
         { X = double p.X; Y = p.Y }
-    static member From(p: Common.Point) =
+    static member internal From(p: Common.Point) =
         { X = p.X; Y = p.Y }
-    static member From(p: Common.PointF) =
+    static member internal From(p: Common.PointF) =
         { X = p.X; Y = p.Y }
     member internal this.QtValue =
         Common.PointF(X = this.X, Y = this.Y)
+        
+type Size = {
+    Width: int
+    Height: int
+} with
+    static member From (w, h) =
+        { Width = w; Height = h }
+    static member internal From (sz: Common.Size) =
+        { Width = sz.Width; Height = sz.Height }
+    member internal this.QtValue =
+        Common.Size(Width = this.Width, Height = this.Height)
         
 type Rect = {
     X: int
@@ -65,7 +76,7 @@ type Rect = {
 } with
     static member From (x, y, width, height) =
         { X = x; Y = y; Width = width; Height = height }
-    static member From(rect: Common.Rect) =
+    static member internal From(rect: Common.Rect) =
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member internal this.QtValue =
         Common.Rect(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
@@ -78,9 +89,9 @@ type RectF = {
 } with
     static member From (x, y, width, height) =
         { X = x; Y = y; Width = width; Height = height }
-    static member From(rect: Common.Rect) =
+    static member internal From(rect: Common.Rect) =
         { X = double rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
-    static member From(rect: Common.RectF) =
+    static member internal From(rect: Common.RectF) =
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member internal this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)

@@ -1,6 +1,7 @@
 ﻿module Tabs.DropTesting
 
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
 open FSharpQt.Painting
 open FSharpQt.Reactor
 open FSharpQt.Widgets
@@ -13,7 +14,7 @@ type Signal = unit
 type Attr = unit
 
 let DRAG_SOURCE_RECT =
-    Common.Rect(20, 20, 100, 100)
+    Rect.From(20, 20, 100, 100)
 
 let DRAG_THRESH_PIXELS = 5
 
@@ -23,21 +24,21 @@ type Payload =
     | Files of string list
     
 type Fragment = {
-    Location: Common.Point
+    Location: Point
     Payload: Payload
 }
 
 type State = {
-    MaybeDropPosition: Common.Point option
+    MaybeDropPosition: Point option
     Fragments: Fragment list
-    PotentiallyDraggingFrom: Common.Point option
+    PotentiallyDraggingFrom: Point option
 }
 
 type Msg =
-    | DropPreview of loc: Common.Point
+    | DropPreview of loc: Point
     | PerformDrop of fragment: Fragment
     | DropCanceled
-    | BeginPotentialDrag of loc: Common.Point
+    | BeginPotentialDrag of loc: Point
     | EndDrag
 
 let init() =
@@ -61,7 +62,7 @@ let update (state: State) (msg: Msg) =
     | EndDrag ->
         { state with PotentiallyDraggingFrom = None }, Cmd.None
         
-let rectContains (r: Common.Rect) (p: Common.Point) =
+let rectContains (r: Rect) (p: Point) =
     p.X >= r.X && p.X < (r.X + r.Width) && p.Y >= r.Y && p.Y < (r.Y + r.Height)
     
 type EventDelegate(state: State) =
@@ -107,24 +108,24 @@ type EventDelegate(state: State) =
         let yellowPen = stack.Pen(stack.Color(Yellow))
         let noPen = stack.Pen(NoPen)
         
-        painter.FillRect(widget.Rect.QtValue, darkBlue)
+        painter.FillRect(widget.Rect, darkBlue)
         painter.Pen <- yellowPen
         // painter.Font <- font
         // drag source rect
         painter.DrawRect(DRAG_SOURCE_RECT)
-        painter.DrawText(DRAG_SOURCE_RECT, Common.Alignment.Center, "Drag from Me")
+        painter.DrawText(DRAG_SOURCE_RECT, Alignment.Center, "Drag from Me")
         // existing fragments
         for fragment in state.Fragments do
             let rect =
-                Common.Rect(fragment.Location.X, fragment.Location.Y, 1000, 1000)
+                Rect.From(fragment.Location.X, fragment.Location.Y, 1000, 1000)
             match fragment.Payload with
             | Payload.Text text ->
-                painter.DrawText(rect, Common.Alignment.Left, text)
+                painter.DrawText(rect, Alignment.Left, text)
             | Payload.Files files ->
                 let text =
                     files
                     |> String.concat "\n"
-                painter.DrawText(rect, Common.Alignment.Leading, text)
+                painter.DrawText(rect, Alignment.Leading, text)
         // preview pos
         match state.MaybeDropPosition with
         | Some pos ->

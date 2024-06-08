@@ -278,15 +278,14 @@ type EventDelegate(state: State) =
             None
         
     override this.MouseMove pos buttons modifiers =
-        Point.From(pos)
-        |> (MouseMove >> Some)
+        Some (MouseMove pos)
         
     override this.Leave() =
         Some MouseLeave
     
     override this.DoPaint res stack painter widget =
         painter.SetRenderHint Antialiasing true
-        painter.FillRect(widget.Rect.QtValue, res.BgColor)
+        painter.FillRect(widget.Rect, res.BgColor)
         
         // draw control points
         painter.Pen <- res.ControlPointPen
@@ -298,29 +297,29 @@ type EventDelegate(state: State) =
                 | _ ->
                     res.ControlPointBrush
             painter.Brush <- brush
-            painter.DrawEllipse(point.Position.QtValue, CONTROL_POINT_RADIUS, CONTROL_POINT_RADIUS)
+            painter.DrawEllipse(point.Position, CONTROL_POINT_RADIUS, CONTROL_POINT_RADIUS)
         painter.Pen <- res.LightGrayPen
         painter.Brush <- res.NoBrush
         let points =
             state.ControlPoints
-            |> Array.map (_.Position.QtValue)
+            |> Array.map (_.Position)
         painter.DrawPolyline(points)
 
         // construct path       
         let path = stack.PainterPath()
-        path.MoveTo(state.ControlPoints[0].Position.QtValue)
+        path.MoveTo(state.ControlPoints[0].Position)
         match state.LineStyle with
         | Lines ->
             seq { 1 .. state.ControlPoints.Length - 1 }
             |> Seq.iter (fun i ->
-                path.LineTo(state.ControlPoints[i].Position.QtValue))
+                path.LineTo(state.ControlPoints[i].Position))
         | Curves ->
             let mutable i = 1
             while i + 2 < state.ControlPoints.Length do
-                path.CubicTo(state.ControlPoints[i].Position.QtValue, state.ControlPoints[i+1].Position.QtValue, state.ControlPoints[i+2].Position.QtValue)
+                path.CubicTo(state.ControlPoints[i].Position, state.ControlPoints[i+1].Position, state.ControlPoints[i+2].Position)
                 i <- i + 3
             while i < state.ControlPoints.Length do
-                path.LineTo(state.ControlPoints[i].Position.QtValue)
+                path.LineTo(state.ControlPoints[i].Position)
                 i <- i + 1
 
         // draw path

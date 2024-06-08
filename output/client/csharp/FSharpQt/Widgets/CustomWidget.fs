@@ -27,31 +27,31 @@ type EventDelegateInterface<'msg>() = // obviously it's an abstract class and no
 
     abstract member DoPaintInternal: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> unit
 
-    abstract member MousePress: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
+    abstract member MousePress: Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MousePress _ _ _ = None
 
-    abstract member MouseMove: Common.Point -> Set<Widget.MouseButton> -> Set<Widget.Modifier> -> 'msg option
+    abstract member MouseMove: Point -> Set<Widget.MouseButton> -> Set<Widget.Modifier> -> 'msg option
     default this.MouseMove _ _ _ = None
 
-    abstract member MouseRelease: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
+    abstract member MouseRelease: Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MouseRelease _ _ _ = None
     
-    abstract member Enter: Common.Point -> 'msg option
+    abstract member Enter: Point -> 'msg option
     default this.Enter _ = None
     
     abstract member Leave: unit -> 'msg option
     default this.Leave() = None
     
-    abstract member Resize: Common.Size -> Common.Size -> 'msg option
+    abstract member Resize: Size -> Size -> 'msg option
     default this.Resize _ _ = None
     
-    abstract member DragMove: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> Set<Widget.DropAction> -> bool -> (Widget.DropAction * 'msg) option
+    abstract member DragMove: Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> Set<Widget.DropAction> -> bool -> (Widget.DropAction * 'msg) option
     default this.DragMove _ _ _ _ _ _ = None
 
     abstract member DragLeave: unit -> 'msg option
     default this.DragLeave () = None
 
-    abstract member Drop: Common.Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> 'msg option
+    abstract member Drop: Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> 'msg option
     default this.Drop _ _ _ _ = None
     
 type DragPayload =
@@ -168,19 +168,19 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             eventDelegate.DoPaintInternal stackResources (Painter(painter)) (WidgetProxy(widget))
             
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
-            eventDelegate.MousePress pos button (set modifiers)
+            eventDelegate.MousePress (Point.From pos) button (set modifiers)
             |> Option.iter dispatch
             
         override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Widget.Modifier>) =
-            eventDelegate.MouseMove pos (set buttons) (set modifiers)
+            eventDelegate.MouseMove (Point.From pos) (set buttons) (set modifiers)
             |> Option.iter dispatch
                 
         override this.MouseReleaseEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
-            eventDelegate.MouseRelease pos button (set modifiers)
+            eventDelegate.MouseRelease (Point.From pos) button (set modifiers)
             |> Option.iter dispatch
                 
         override this.EnterEvent(pos: Common.Point) =
-            eventDelegate.Enter pos
+            eventDelegate.Enter (Point.From pos)
             |> Option.iter dispatch
                 
         override this.LeaveEvent() =
@@ -188,14 +188,14 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             |> Option.iter dispatch
                 
         override this.ResizeEvent(oldSize: Common.Size, newSize: Common.Size) =
-            eventDelegate.Resize oldSize newSize
+            eventDelegate.Resize (Size.From oldSize) (Size.From newSize)
             |> Option.iter dispatch
             
         override this.SizeHint() =
             eventDelegate.SizeHint
                 
         override this.DragMoveEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, moveEvent: Widget.DragMoveEvent, isEnterEvent: bool) =
-            match eventDelegate.DragMove pos (set modifiers) mimeData (moveEvent.ProposedAction()) (moveEvent.PossibleActions() |> set) isEnterEvent with
+            match eventDelegate.DragMove (Point.From pos) (set modifiers) mimeData (moveEvent.ProposedAction()) (moveEvent.PossibleActions() |> set) isEnterEvent with
             | Some (dropAction, msg) ->
                 moveEvent.AcceptDropAction(dropAction)
                 dispatch msg
@@ -207,7 +207,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             |> Option.iter dispatch
             
         override this.DropEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
-            eventDelegate.Drop pos (set modifiers) mimeData dropAction
+            eventDelegate.Drop (Point.From pos) (set modifiers) mimeData dropAction
             |> Option.iter dispatch
             
         // override this.Dispose() =

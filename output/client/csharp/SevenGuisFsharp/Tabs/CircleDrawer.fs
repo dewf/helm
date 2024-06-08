@@ -1,6 +1,7 @@
 ﻿module Tabs.CircleDrawer
 
 open FSharpQt
+open FSharpQt.MiscTypes
 open Painting
 
 open BuilderNode
@@ -23,7 +24,7 @@ type Signal = unit
 type Attr = unit
 
 type Circle = {
-    Location: Common.Point
+    Location: Point
     Radius: int
 }
 
@@ -45,10 +46,10 @@ let circleAtIndex (index: int) (state: State) =
     |> List.item index
         
 type Msg =
-    | AddCircle of loc: Common.Point
-    | ShowContext of loc: Common.Point
+    | AddCircle of loc: Point
+    | ShowContext of loc: Point
     | ShowDialog
-    | MouseMove of loc: Common.Point
+    | MouseMove of loc: Point
     | SetRadius of radius: int
     | ApplyEdit
     | CancelEdit
@@ -190,7 +191,7 @@ type EventDelegate(state: State) =
         let pen = stack.Pen(stack.Color(Yellow), Width = 2)
         
         painter.SetRenderHint Antialiasing true
-        painter.FillRect(widget.Rect.QtValue, bgBrush)
+        painter.FillRect(widget.Rect, bgBrush)
         
         painter.Pen <- pen
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
