@@ -226,19 +226,29 @@ let update (state: State) (msg: Msg) =
     | EndDrag ->
         { state with DragState = NotDragging }, Cmd.None
         
-// some of these can be permanent, but in .DoPaint we use the incoming 'res' resources / provided paint stack to create state-dependent resources
-let globals = new PaintStack()
-let bgColor = globals.Color(DarkGray)
-let lineColorBrush = globals.Brush(globals.Color(Red))
-let noPen = globals.Pen(NoPen)
-let controlPointPen = globals.Pen(globals.Color(50, 100, 120, 200))
-let controlPointBrush = globals.Brush(globals.Color(200, 200, 210, 120))
-let hoverPointBrush = globals.Brush(globals.Color(Yellow))
-let lightGrayPen = globals.Pen(globals.Color(LightGray), 0, SolidLine)
-let noBrush = globals.Brush(NoBrush)
+type PaintResources = {
+    BgColor: Color
+    LineColorBrush: Brush
+    NoPen: Pen
+    ControlPointPen: Pen
+    ControlPointBrush: Brush
+    HoverPointBrush: Brush
+    LightGrayPen: Pen
+    NoBrush: Brush
+}
         
 type EventDelegate(state: State) =
-    inherit EventDelegateBase<Msg,State>(state)
+    inherit EventDelegateBaseWithResources<Msg,State,PaintResources>(state)
+    
+    override this.CreateResources res =
+        { BgColor = res.Color(DarkGray)
+          LineColorBrush = res.Brush(res.Color(Red))
+          NoPen = res.Pen(NoPen)
+          ControlPointPen = res.Pen(res.Color(50, 100, 120, 200))
+          ControlPointBrush = res.Brush(res.Color(200, 200, 210, 120))
+          HoverPointBrush = res.Brush(res.Color(Yellow))
+          LightGrayPen = res.Pen(res.Color(LightGray), 0, SolidLine)
+          NoBrush = res.Brush(NoBrush) }
     
     override this.SizeHint = Common.Size (600, 700)
     
@@ -274,23 +284,23 @@ type EventDelegate(state: State) =
     override this.Leave() =
         Some MouseLeave
     
-    override this.DoPaint stack _ painter widgetRect =
+    override this.DoPaint res stack _ painter widgetRect =
         painter.SetRenderHint Antialiasing true
-        painter.FillRect(widgetRect, bgColor)
+        painter.FillRect(widgetRect, res.BgColor)
         
         // draw control points
-        painter.Pen <- controlPointPen
+        painter.Pen <- res.ControlPointPen
         for i, point in state.ControlPoints |> Array.zipWithIndex do
             let brush =
                 match state.MouseHoverIndex with
                 | Some index when i = index ->
-                    hoverPointBrush
+                    res.HoverPointBrush
                 | _ ->
-                    controlPointBrush
+                    res.ControlPointBrush
             painter.Brush <- brush
             painter.DrawEllipse(point.Position.QtValue, CONTROL_POINT_RADIUS, CONTROL_POINT_RADIUS)
-        painter.Pen <- lightGrayPen
-        painter.Brush <- noBrush
+        painter.Pen <- res.LightGrayPen
+        painter.Brush <- res.NoBrush
         let points =
             state.ControlPoints
             |> Array.map (_.Position.QtValue)
@@ -314,7 +324,7 @@ type EventDelegate(state: State) =
                 i <- i + 1
 
         // draw path
-        painter.Pen <- noPen
+        painter.Pen <- res.NoPen
         match state.PenStyle with
         | CustomDashLine ->
             let stroker =
@@ -324,9 +334,9 @@ type EventDelegate(state: State) =
                 [| 1.0; space; 3; space; 9; space; 27; space; 9; space; 3; space |]
             stroker.DashPattern <- dashes
             let stroke = stroker.CreateStroke(path)
-            painter.FillPath(stroke, lineColorBrush)
+            painter.FillPath(stroke, res.LineColorBrush)
         | _ ->
-            let pen = stack.Pen(lineColorBrush, state.PenWidth, state.PenStyle, state.CapStyle, state.JoinStyle)
+            let pen = stack.Pen(res.LineColorBrush, state.PenWidth, state.PenStyle, state.CapStyle, state.JoinStyle)
             painter.StrokePath(path, pen)
 
         

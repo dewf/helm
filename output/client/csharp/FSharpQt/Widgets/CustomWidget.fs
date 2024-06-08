@@ -14,15 +14,17 @@ type UpdateArea =
     | Rects of Common.Rect list
     
 [<AbstractClass>]
-type EventDelegate<'msg>() =
+type EventDelegateInterface<'msg>() = // obviously it's an abstract class and not a proper interface, but that's mainly because F# doesn't currently support default interface methods / Scala-style traits
     abstract member Widget: Widget.Handle with set
     abstract member SizeHint: Common.Size
 
     default this.SizeHint = Common.Size(-1, -1) // invalid size = no recommendation
-    abstract member NeedsPaintInternal: EventDelegate<'msg> -> UpdateArea
+    abstract member NeedsPaintInternal: EventDelegateInterface<'msg> -> UpdateArea
+    
+    abstract member CreateResourcesInternal: PaintStack -> unit
+    abstract member MigrateResources: EventDelegateInterface<'msg> -> unit
 
-    abstract member DoPaint: PaintStack -> Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
-    default this.DoPaint _ _ _ _ = ()
+    abstract member DoPaintInternal: PaintStack -> Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
 
     abstract member MousePress: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MousePress _ _ _ = None
@@ -54,22 +56,25 @@ type EventDelegate<'msg>() =
 type DragPayload =
     | Text of text: string
     | Urls of urls: string list
-
-[<AbstractClass>]
-type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
-    inherit EventDelegate<'msg>()
     
+[<AbstractClass>]
+type AbstractEventDelegate<'msg,'state when 'state: equality>(state: 'state) =
+    inherit EventDelegateInterface<'msg>()
+
     let mutable widget: Widget.Handle = null
+    override this.Widget with set value = widget <- value
+
     member val private state = state
     
-    override this.Widget with set value = widget <- value
+    override this.CreateResourcesInternal stack = ()
+    override this.MigrateResources prev = ()
 
     abstract member NeedsPaint: 'state -> UpdateArea
     default this.NeedsPaint _ = NotRequired
     
     override this.NeedsPaintInternal prevDelegate =
         match prevDelegate with
-        | :? EventDelegateBase<'msg,'state> as prev' ->
+        | :? AbstractEventDelegate<'msg,'state> as prev' ->
             this.NeedsPaint prev'.state
         | _ ->
             failwith "nope"
@@ -87,7 +92,41 @@ type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
         drag.SetMimeData(mimeData)
         drag.Exec(HashSet(supported), defaultAction)
         // we're not responsible for either the mimeData nor the drag, as long as the drag was created with an owner
-            
+        
+[<AbstractClass>]
+type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
+    inherit AbstractEventDelegate<'msg,'state>(state)
+    
+    abstract member DoPaint: PaintStack -> Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
+    default this.DoPaint _ _ _ _ = ()
+    
+    override this.DoPaintInternal stack widget painter widgetRect =
+        this.DoPaint stack widget painter widgetRect
+        
+[<AbstractClass>]
+type EventDelegateBaseWithResources<'msg,'state,'resources when 'state: equality>(state: 'state) =
+    inherit AbstractEventDelegate<'msg,'state>(state)
+    
+    [<DefaultValue>] val mutable private resources: 'resources
+    
+    abstract member CreateResources: PaintStack -> 'resources
+    // no default, must implement
+
+    override this.CreateResourcesInternal stack =
+        this.resources <- this.CreateResources stack
+        
+    override this.MigrateResources prev =
+        match prev with
+        | :? EventDelegateBaseWithResources<'msg,'state,'resources> as prev' ->
+            this.resources <- prev'.resources
+        | _ ->
+            failwith "nope"
+
+    abstract member DoPaint: 'resources -> PaintStack -> Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
+    default this.DoPaint _ _ _ _ _ = ()
+    
+    override this.DoPaintInternal stack widget painter widgetRect =
+        this.DoPaint this.resources stack widget painter widgetRect
 
 // begin widget proper =================================================
 
@@ -108,21 +147,24 @@ let private attrKey = function
 let private diffAttrs =
     genericDiffAttrs attrKey
 
-type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegate<'msg>) as self =
+type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as self =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     
     let widget = Widget.CreateSubclassed(self, methodMask)
     
-    let signalDispatch s =
-        signalMap s
-        |> Option.iter dispatch
-        
+    // this is for anything the widget needs to create just once at the beginning
+    // basically a roundabout way of maintaning auxiliary state just for the EventDelegate, which otherwise isn't supposed to have any (separate from the reactor State that's provided to it)
+    let lifetimeResources = new PaintStack()
+    
     let mutable eventDelegate = eventDelegate
+    
+    do
+        eventDelegate.CreateResourcesInternal(lifetimeResources)
         
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
-            use stack = new PaintStack()
-            eventDelegate.DoPaint stack widget (Painter(painter)) rect
+            use stackResources = new PaintStack() // "stack" (local), vs. the 'lifetimeResources' declared above
+            eventDelegate.DoPaintInternal stackResources widget (Painter(painter)) rect
             
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
             eventDelegate.MousePress pos button (set modifiers)
@@ -174,8 +216,8 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
     member this.Widget with get() = widget
     member this.SignalMap with set value = signalMap <- value
     
-    member this.EventDelegate with set (newDelegate: EventDelegate<'msg>) =
-        // for now just the widget, maybe 'this' (the Model) in the future?
+    member this.EventDelegate with set (newDelegate: EventDelegateInterface<'msg>) =
+        // for now just the widget, maybe 'this' (the entire Model) in the future?
         newDelegate.Widget <- widget
         
         // check if it needs painting (by comparing to previous - for now the implementer will have to extract the previous state themselves, but we'll get to it
@@ -187,8 +229,12 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
         | Rects rects ->
             for rect in rects do
                 widget.Update(rect)
+                
+        // migrate paint resources from previous
+        newDelegate.MigrateResources eventDelegate
+                
+        // update/overwrite value
         eventDelegate <- newDelegate
-        // if we ever decide to add back in the 'paintresources', we will need to migrate it here (and create them in the ctor/do block of the model)
     
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
@@ -202,18 +248,19 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
                 
     interface IDisposable with
         member this.Dispose() =
-            // maybePaintState
-            // |> Option.iter (_.DestroyResourcesInternal())
+            (lifetimeResources :> IDisposable).Dispose()
             widget.Dispose()
 
-let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegate<'msg>) =
+let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) =
     let model = new Model<'msg>(dispatch, methodMask, eventDelegate)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
+    // can't assign eventDelegate as simply as signal map, requires different behavior on construction vs. migration
+    // hence providing it as Model ctor argument
     // model.EventDelegate <- eventDelegate
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegate<'msg>) =
+let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.EventDelegate <- eventDelegate
@@ -233,7 +280,7 @@ type EventMaskItem =
     | ResizeEvent
     | DropEvents
 
-type CustomWidget<'msg>(eventDelegate: EventDelegate<'msg>, eventMaskItems: EventMaskItem list) =
+type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskItems: EventMaskItem list) =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     

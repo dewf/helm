@@ -64,8 +64,9 @@ let update (state: State) (msg: Msg) =
 let rectContains (r: Common.Rect) (p: Common.Point) =
     p.X >= r.X && p.X < (r.X + r.Width) && p.Y >= r.Y && p.Y < (r.Y + r.Height)
     
-type DropDelegate(state: State) =
+type EventDelegate(state: State) =
     inherit EventDelegateBase<Msg,State>(state)
+    
     override this.SizeHint = Common.Size (640, 480)
     
     override this.MousePress loc button modifiers =
@@ -159,7 +160,7 @@ type DropDelegate(state: State) =
 let view (state: State) =
     let custom =
         CustomWidget(
-            DropDelegate(state), [ PaintEvent; DropEvents; SizeHint; MousePressEvent; MouseMoveEvent ],
+            EventDelegate(state), [ PaintEvent; DropEvents; SizeHint; MousePressEvent; MouseMoveEvent ],
             Attrs = [ AcceptDrops true ])
     BoxLayout(Items = [
         BoxItem.Create(custom)

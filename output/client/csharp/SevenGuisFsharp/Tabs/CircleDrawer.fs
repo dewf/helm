@@ -177,23 +177,20 @@ let update (state: State) = function
                 state
         nextState, Cmd.None
 
-// these can remain for lifetime of program
-let globals = new PaintStack()
-let bgColor = globals.Color(DarkBlue)
-let fgColor = globals.Color(Yellow)
-let hoverColor = globals.Color(Magenta)
-let bgBrush = globals.Brush(bgColor)
-let hoverBrush = globals.Brush(hoverColor)
-let pen = globals.Pen(fgColor, Width = 2)
-        
-type DrawerDelegate(state: State) =
+type EventDelegate(state: State) =
     inherit EventDelegateBase<Msg, State>(state)
+    
     override this.NeedsPaint prev =
         // we could compare states here, to determine smaller (or no) update regions, if we wanted
         Everything
+        
     override this.DoPaint stack widget painter paintRect =
+        let bgBrush = stack.Brush(stack.Color(DarkBlue))
+        let hoverBrush = stack.Brush(stack.Color(Magenta))
+        let pen = stack.Pen(stack.Color(Yellow), Width = 2)
+        
         painter.SetRenderHint Antialiasing true
-        painter.FillRect(widget.GetRect(), bgColor)
+        painter.FillRect(widget.GetRect(), bgBrush)
         
         painter.Pen <- pen
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
@@ -246,7 +243,7 @@ let view (state: State) =
             Menu(Items = [ action ])
         CustomWidget(
             // first 2 args required
-            DrawerDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
+            EventDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
             Attrs = [ MouseTracking true ], // tracking needed for move events without mouse down
             Menus = [ "context", contextMenu ])
     let dialog =
