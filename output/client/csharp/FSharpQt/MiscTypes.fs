@@ -79,6 +79,8 @@ type Rect = {
 } with
     static member From (x, y, width, height) =
         { X = x; Y = y; Width = width; Height = height }
+    static member From (size: Size) =
+        { X = 0; Y = 0; Width = size.Width; Height = size.Height }
     static member internal From(rect: Common.Rect) =
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member internal this.QtValue =
@@ -92,6 +94,8 @@ type RectF = {
 } with
     static member From (x, y, width, height) =
         { X = x; Y = y; Width = width; Height = height }
+    static member From (size: Size) =
+        { X = 0; Y = 0; Width = size.Width; Height = size.Height }
     static member internal From(rect: Common.Rect) =
         { X = double rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     static member internal From(rect: Common.RectF) =

@@ -256,7 +256,7 @@ type EventDelegate(state: State) =
         Everything
 
     override this.Resize _ newSize =
-        RectF.From(0, 0, newSize.Width, newSize.Height)
+        RectF.From newSize
         |> (Resized >> Some)
         
     override this.MousePress pos button modifiers =
@@ -283,7 +283,7 @@ type EventDelegate(state: State) =
     override this.Leave() =
         Some MouseLeave
     
-    override this.DoPaint res stack painter widget updateRect =
+    override this.Paint res stack painter widget updateRect =
         painter.SetRenderHint Antialiasing true
         painter.FillRect(widget.Rect, res.BgColor)
         
@@ -341,7 +341,16 @@ type EventDelegate(state: State) =
         
 let view (state: State) =
     let custom =
-        CustomWidget(EventDelegate(state), [ PaintEvent; SizeHint; ResizeEvent; MouseMoveEvent; LeaveEvent; MousePressEvent; MouseReleaseEvent ], Attrs = [ MouseTracking true ])
+        let events = [
+            PaintEvent
+            SizeHint
+            ResizeEvent
+            MouseMoveEvent
+            LeaveEvent
+            MousePressEvent
+            MouseReleaseEvent
+        ]
+        CustomWidget(EventDelegate(state), events, Attrs = [ MouseTracking true ])
     let timer =
         Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)
     WidgetWithNonVisual(custom, [ "timer", timer ])

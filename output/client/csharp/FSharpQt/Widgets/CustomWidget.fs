@@ -26,7 +26,7 @@ type EventDelegateInterface<'msg>() = // obviously it's an abstract class and no
     abstract member CreateResourcesInternal: PaintStack -> unit
     abstract member MigrateResources: EventDelegateInterface<'msg> -> unit
 
-    abstract member DoPaintInternal: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
+    abstract member PaintInternal: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
 
     abstract member MousePress: Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MousePress _ _ _ = None
@@ -99,11 +99,11 @@ type AbstractEventDelegate<'msg,'state when 'state: equality>(state: 'state) =
 type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
     inherit AbstractEventDelegate<'msg,'state>(state)
     
-    abstract member DoPaint: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
-    default this.DoPaint _ _ _ _ = ()
+    abstract member Paint: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
+    default this.Paint _ _ _ _ = ()
     
-    override this.DoPaintInternal stack painter widget updateRect =
-        this.DoPaint stack painter widget updateRect
+    override this.PaintInternal stack painter widget updateRect =
+        this.Paint stack painter widget updateRect
         
 [<AbstractClass>]
 type EventDelegateBaseWithResources<'msg,'state,'resources when 'state: equality>(state: 'state) =
@@ -124,11 +124,11 @@ type EventDelegateBaseWithResources<'msg,'state,'resources when 'state: equality
         | _ ->
             failwith "nope"
 
-    abstract member DoPaint: 'resources -> PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
-    default this.DoPaint _ _ _ _ _ = ()
+    abstract member Paint: 'resources -> PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
+    default this.Paint _ _ _ _ _ = ()
     
-    override this.DoPaintInternal stack painter widget updateRect =
-        this.DoPaint this.resources stack painter widget updateRect
+    override this.PaintInternal stack painter widget updateRect =
+        this.Paint this.resources stack painter widget updateRect
 
 // begin widget proper =================================================
 
@@ -166,7 +166,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, updateRect: Common.Rect) =
             use stackResources = new PaintStack() // "stack" (local), vs. the 'lifetimeResources' declared above
-            eventDelegate.DoPaintInternal stackResources (Painter(painter)) (WidgetProxy(widget)) (Rect.From(updateRect))
+            eventDelegate.PaintInternal stackResources (Painter(painter)) (WidgetProxy(widget)) (Rect.From(updateRect))
             
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
             eventDelegate.MousePress (Point.From pos) button (set modifiers)

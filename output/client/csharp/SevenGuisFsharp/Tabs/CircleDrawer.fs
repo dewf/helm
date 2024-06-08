@@ -185,7 +185,7 @@ type EventDelegate(state: State) =
         // we could compare states here, to determine smaller (or no) update regions, if we wanted
         Everything
         
-    override this.DoPaint stack painter widget updateRect =
+    override this.Paint stack painter widget updateRect =
         let bgBrush = stack.Brush(stack.Color(DarkBlue))
         let hoverBrush = stack.Brush(stack.Color(Magenta))
         let pen = stack.Pen(stack.Color(Yellow), Width = 2)
