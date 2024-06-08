@@ -226,12 +226,16 @@ let update (state: State) (msg: Msg) =
     | EndDrag ->
         { state with DragState = NotDragging }, Cmd.None
         
-let private bgColor = Color.DarkGray
-let private lineColorBrush = Brush(Color.Red)
-let private noPen = Pen(NoPen)
-let private controlPointPen = Pen(Color(50, 100, 120, 200))
-let private controlPointBrush = Brush(Color(200, 200, 210, 120))
-let private hoverPointBrush = Brush(Color.Yellow)
+// some of these can be permanent, but in .DoPaint we use the incoming 'res' resources / provided paint stack to create state-dependent resources
+let globals = new PaintStack()
+let bgColor = globals.Color(DarkGray)
+let lineColorBrush = globals.Brush(globals.Color(Red))
+let noPen = globals.Pen(NoPen)
+let controlPointPen = globals.Pen(globals.Color(50, 100, 120, 200))
+let controlPointBrush = globals.Brush(globals.Color(200, 200, 210, 120))
+let hoverPointBrush = globals.Brush(globals.Color(Yellow))
+let lightGrayPen = globals.Pen(globals.Color(LightGray), 0, SolidLine)
+let noBrush = globals.Brush(NoBrush)
         
 type EventDelegate(state: State) =
     inherit EventDelegateBase<Msg,State>(state)
@@ -270,14 +274,30 @@ type EventDelegate(state: State) =
     override this.Leave() =
         Some MouseLeave
     
-    override this.DoPaint _ painter widgetRect =
+    override this.DoPaint stack _ painter widgetRect =
         painter.SetRenderHint Antialiasing true
         painter.FillRect(widgetRect, bgColor)
         
-        painter.Pen <- noPen
+        // draw control points
+        painter.Pen <- controlPointPen
+        for i, point in state.ControlPoints |> Array.zipWithIndex do
+            let brush =
+                match state.MouseHoverIndex with
+                | Some index when i = index ->
+                    hoverPointBrush
+                | _ ->
+                    controlPointBrush
+            painter.Brush <- brush
+            painter.DrawEllipse(point.Position.QtValue, CONTROL_POINT_RADIUS, CONTROL_POINT_RADIUS)
+        painter.Pen <- lightGrayPen
+        painter.Brush <- noBrush
+        let points =
+            state.ControlPoints
+            |> Array.map (_.Position.QtValue)
+        painter.DrawPolyline(points)
 
-        // construct path        
-        let path = PainterPath()
+        // construct path       
+        let path = stack.PainterPath()
         path.MoveTo(state.ControlPoints[0].Position.QtValue)
         match state.LineStyle with
         | Lines ->
@@ -294,10 +314,11 @@ type EventDelegate(state: State) =
                 i <- i + 1
 
         // draw path
+        painter.Pen <- noPen
         match state.PenStyle with
         | CustomDashLine ->
             let stroker =
-                PainterPathStroker(Width = state.PenWidth, JoinStyle = state.JoinStyle, CapStyle = state.CapStyle)
+                stack.PainterPathStroker(Width = state.PenWidth, JoinStyle = state.JoinStyle, CapStyle = state.CapStyle)
             let dashes =
                 let space = 4
                 [| 1.0; space; 3; space; 9; space; 27; space; 9; space; 3; space |]
@@ -305,26 +326,8 @@ type EventDelegate(state: State) =
             let stroke = stroker.CreateStroke(path)
             painter.FillPath(stroke, lineColorBrush)
         | _ ->
-            let pen = Pen(lineColorBrush, state.PenWidth, state.PenStyle, state.CapStyle, state.JoinStyle)
+            let pen = stack.Pen(lineColorBrush, state.PenWidth, state.PenStyle, state.CapStyle, state.JoinStyle)
             painter.StrokePath(path, pen)
-        
-        // draw control points
-        painter.Pen <- controlPointPen
-        for i, point in state.ControlPoints |> Array.zipWithIndex do
-            let brush =
-                match state.MouseHoverIndex with
-                | Some index when i = index ->
-                    hoverPointBrush
-                | _ ->
-                    controlPointBrush
-            painter.Brush <- brush
-            painter.DrawEllipse(point.Position.QtValue, CONTROL_POINT_RADIUS, CONTROL_POINT_RADIUS)
-        painter.Pen <- Pen(Color.LightGray, 0, SolidLine)
-        painter.Brush <- Brush.NoBrush
-        let points =
-            state.ControlPoints
-            |> Array.map (_.Position.QtValue)
-        painter.DrawPolyline(points)
 
         
 let view (state: State) =

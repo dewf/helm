@@ -24,11 +24,6 @@ opaque Color {
             DarkYellow,
             Transparent
         }
-        Color create(Constant name);
-        Color create(int r, int g, int b);
-        Color create(int r, int g, int b, int a);
-        Color create(float r, float g, float b);
-        Color create(float r, float g, float b, float a); 
     }
 }
 
@@ -36,11 +31,7 @@ opaque Gradient {
     void setColorAt(double location, Color color);
 }
 
-opaque RadialGradient extends Gradient {
-    static {
-        RadialGradient create(double cx, double cy, double centerRadius, double fx, double fy, double focalRadius);
-    }
-}
+opaque RadialGradient extends Gradient;
 
 opaque Brush {
     static {
@@ -65,9 +56,6 @@ opaque Brush {
             RadialGradientPattern = 16,
             TexturePattern = 24
         }
-        Brush create(Style style);
-        Brush create(Color color); // + BrushStyle in the future
-        Brush create(Gradient gradient);
     }
 }
 
@@ -93,10 +81,6 @@ opaque Pen {
             Round,
             SvgMiter
         }
-        Pen create();
-        Pen create(Style style);
-        Pen create(Color color);
-        Pen create(Brush brush, double width, Style style, CapStyle cap, JoinStyle join);
     }
     void setBrush(Brush brush);
     void setWidth(int width);
@@ -116,16 +100,10 @@ opaque Font {
             ExtraBold = 800,
             Black = 900
         }
-        Font create(string family, int pointSize);
-        Font create(string family, int pointSize, Weight weight);
-        Font create(string family, int pointSize, Weight weight, bool italic);
     }
 }
 
 opaque PainterPath {
-    static {
-        PainterPath create();
-    }
     void moveTo(PointF p);
     void moveTo(double x, double y);
     void lineto(PointF p);
@@ -136,9 +114,6 @@ opaque PainterPath {
 }
 
 opaque PainterPathStroker {
-    static {
-        PainterPathStroker create();
-    }
     void setWidth(double width);
     void setJoinStyle(Pen.JoinStyle style);
     void setCapStyle(Pen.CapStyle style);
@@ -148,3 +123,34 @@ opaque PainterPathStroker {
 
     PainterPath createStroke(PainterPath path);
 }
+
+opaque Handle {
+    Color createColor(Color.Constant name);
+    Color createColor(int r, int g, int b);
+    Color createColor(int r, int g, int b, int a);
+    Color createColor(float r, float g, float b);
+    Color createColor(float r, float g, float b, float a);
+
+    RadialGradient createRadialGradient(double cx, double cy, double centerRadius, double fx, double fy, double focalRadius);
+
+    Brush createBrush(Brush.Style style);
+    Brush createBrush(Color color); // + BrushStyle in the future
+    Brush createBrush(Gradient gradient);
+
+    Pen createPen();
+    Pen createPen(Pen.Style style);
+    Pen createPen(Color color);
+    Pen createPen(Brush brush, double width, Pen.Style style, Pen.CapStyle cap, Pen.JoinStyle join);
+
+    Font createFont(string family, int pointSize);
+    Font createFont(string family, int pointSize, Font.Weight weight);
+    Font createFont(string family, int pointSize, Font.Weight weight, bool italic);
+
+    PainterPath createPainterPath();
+    PainterPathStroker createPainterPathStroker();
+
+    // will be invoked by PainterPathStroker.createStroke, because we need to track the created path (add to internal vector)
+    PainterPath createStrokeInternal(PainterPathStroker stroker, PainterPath path);
+}
+
+Handle create();

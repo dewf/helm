@@ -1,41 +1,62 @@
 ﻿module FSharpQt.Painting
 
+open System
 open System.Collections.Generic
 open Org.Whatever.QtTesting
 
-type Color private(qtColor: PaintResources.Color) =
+type Color internal(qtColor: PaintResources.Color) =
     member val internal qtColor = qtColor
-    override this.Finalize() =
-        qtColor.Dispose()
-    new (r: int, g: int, b: int) = Color(PaintResources.Color.Create(r, g, b))
-    new (r: int, g: int, b: int, a: int) = Color(PaintResources.Color.Create(r, g, b, a))
-    new (r: float, g: float, b: float) = Color(PaintResources.Color.Create(float32 r, float32 g, float32 b))
-    new (r: float, g: float, b: float, a: float) = Color(PaintResources.Color.Create(float32 r, float32 g, float32 b, float32 a))
-    static member Black = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Black))
-    static member White = Color(PaintResources.Color.Create(PaintResources.Color.Constant.White))
-    static member DarkGray = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkGray))
-    static member Gray = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Gray))
-    static member LightGray = Color(PaintResources.Color.Create(PaintResources.Color.Constant.LightGray))
-    static member Red = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Red))
-    static member Green = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Green))
-    static member Blue = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Blue))
-    static member Cyan = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Cyan))
-    static member Magenta = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Magenta))
-    static member Yellow = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Yellow))
-    static member DarkRed = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkRed))
-    static member DarkGreen = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkGreen))
-    static member DarkBlue = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkBlue))
-    static member DarkCyan = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkCyan))
-    static member DarkMagenta = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkMagenta))
-    static member DarkYellow = Color(PaintResources.Color.Create(PaintResources.Color.Constant.DarkYellow))
-    static member Transparent = Color(PaintResources.Color.Create(PaintResources.Color.Constant.Transparent))
 
-type Brush private(qtBrush: PaintResources.Brush) =
+type ColorConstant =
+    | Black
+    | White
+    | DarkGray
+    | Gray
+    | LightGray
+    | Red
+    | Green
+    | Blue
+    | Cyan
+    | Magenta
+    | Yellow
+    | DarkRed
+    | DarkGreen
+    | DarkBlue
+    | DarkCyan
+    | DarkMagenta
+    | DarkYellow
+    | Transparent
+with
+    member internal this.QtValue =
+        match this with
+        | Black -> PaintResources.Color.Constant.Black
+        | White -> PaintResources.Color.Constant.White
+        | DarkGray -> PaintResources.Color.Constant.DarkGray
+        | Gray -> PaintResources.Color.Constant.Gray
+        | LightGray -> PaintResources.Color.Constant.LightGray
+        | Red -> PaintResources.Color.Constant.Red
+        | Green -> PaintResources.Color.Constant.Green
+        | Blue -> PaintResources.Color.Constant.Blue
+        | Cyan -> PaintResources.Color.Constant.Cyan
+        | Magenta -> PaintResources.Color.Constant.Magenta
+        | Yellow -> PaintResources.Color.Constant.Yellow
+        | DarkRed -> PaintResources.Color.Constant.DarkRed
+        | DarkGreen -> PaintResources.Color.Constant.DarkGreen
+        | DarkBlue -> PaintResources.Color.Constant.DarkBlue
+        | DarkCyan -> PaintResources.Color.Constant.DarkCyan
+        | DarkMagenta -> PaintResources.Color.Constant.Magenta
+        | DarkYellow -> PaintResources.Color.Constant.Yellow
+        | Transparent -> PaintResources.Color.Constant.Transparent
+        
+type BrushStyle =
+    | NoBrush
+with
+    member internal this.QtValue =
+        match this with
+        | NoBrush -> PaintResources.Brush.Style.NoBrush
+    
+type Brush internal(qtBrush: PaintResources.Brush) =
     member val internal qtBrush = qtBrush
-    override this.Finalize() =
-        qtBrush.Dispose()
-    new (color: Color) = Brush(PaintResources.Brush.Create(color.qtColor))
-    static member NoBrush = Brush(PaintResources.Brush.Create(PaintResources.Brush.Style.NoBrush))
 
 type PenStyle =
     | NoPen
@@ -81,35 +102,10 @@ with
         | SvgMiter -> PaintResources.Pen.JoinStyle.SvgMiter
         
 
-type Pen private(qtPen: PaintResources.Pen) =
+type Pen internal(qtPen: PaintResources.Pen) =
     member val internal qtPen = qtPen
-    override this.Finalize() =
-        qtPen.Dispose()
-    new () = Pen(PaintResources.Pen.Create())
-    new (style: PenStyle) =
-        Pen(PaintResources.Pen.Create(style.QtValue))
-    new (color: Color) =
-        Pen(PaintResources.Pen.Create(color.qtColor))
-    new (brush: Brush, width: double, ?style: PenStyle, ?cap: CapStyle, ?join: JoinStyle) =
-        let useStyle =
-            defaultArg style SolidLine
-        let useCap =
-            defaultArg cap Square
-        let useJoin =
-            defaultArg join Bevel
-        Pen(PaintResources.Pen.Create(brush.qtBrush, width, useStyle.QtValue, useCap.QtValue, useJoin.QtValue))
-    new (color: Color, width: double, ?style: PenStyle, ?cap: CapStyle, ?join: JoinStyle) =
-        let useStyle =
-            defaultArg style SolidLine
-        let useCap =
-            defaultArg cap Square
-        let useJoin =
-            defaultArg join Bevel
-        Pen(Brush(color), width, useStyle, useCap, useJoin)
-    
     member this.Width with set (value: int) = this.qtPen.SetWidth(value)
     member this.Width with set (value: double) = this.qtPen.SetWidth(value)
-        
        
 type Weight =
     | Thin
@@ -134,20 +130,11 @@ with
         | ExtraBold -> PaintResources.Font.Weight.ExtraBold
         | Black -> PaintResources.Font.Weight.Black
     
-type Font private(qtFont: PaintResources.Font) =
+type Font internal(qtFont: PaintResources.Font) =
     member val internal qtFont = qtFont
-    override this.Finalize() =
-        qtFont.Dispose()
-    new (family: string, pointSize: int) = Font(PaintResources.Font.Create(family, pointSize))
-    new (family: string, pointSize: int, weight: Weight) = Font(PaintResources.Font.Create(family, pointSize, weight.QtValue))
-    new (family: string, pointSize: int, weight: Weight, italic: bool) = Font(PaintResources.Font.Create(family, pointSize, weight.QtValue, italic))
-        
         
 type PainterPath internal(qtPainterPath: PaintResources.PainterPath) =
     member val qtPainterPath = qtPainterPath
-    override this.Finalize() =
-        qtPainterPath.Dispose()
-    new() = PainterPath(PaintResources.PainterPath.Create())
     member this.MoveTo(p: Common.PointF) =
         qtPainterPath.MoveTo(p)
     member this.LineTo(p: Common.PointF) =
@@ -157,15 +144,102 @@ type PainterPath internal(qtPainterPath: PaintResources.PainterPath) =
         
 type PainterPathStroker internal(qtStroker: PaintResources.PainterPathStroker) =
     member val qtStroker = qtStroker
-    override this.Finalize() =
-        qtStroker.Dispose()
-    new() = PainterPathStroker(PaintResources.PainterPathStroker.Create())
     member this.Width with set value = qtStroker.SetWidth(value)
     member this.JoinStyle with set (value: JoinStyle) = qtStroker.SetJoinStyle(value.QtValue)
     member this.CapStyle with set (value: CapStyle) = qtStroker.SetCapStyle(value.QtValue)
     member this.DashPattern with set (value: double array) = qtStroker.SetDashPattern(value)
     member this.CreateStroke(path: PainterPath) =
         PainterPath(qtStroker.CreateStroke(path.qtPainterPath))
+        
+type PaintStack() =
+    member val qtResources = PaintResources.Create()
+   
+    interface IDisposable with
+        member this.Dispose() =
+            this.qtResources.Dispose()
+            
+    member this.Color(constant: ColorConstant) =
+        this.qtResources.CreateColor(constant.QtValue)
+        |> Color
+        
+    member this.Color(r: int, g: int, b: int) =
+        this.qtResources.CreateColor(r, g, b)
+        |> Color
+        
+    member this.Color(r: int, g: int, b: int, a: int) =
+        this.qtResources.CreateColor(r, g, b, a)
+        |> Color
+        
+    member this.Color(r: float, g: float, b: float) =
+        this.qtResources.CreateColor(float32 r, float32 g, float32 b)
+        |> Color
+        
+    member this.Color(r: float, g: float, b: float, a: float) =
+        this.qtResources.CreateColor(float32 r, float32 g, float32 b, float32 a)
+        |> Color
+        
+    member this.Brush(style: BrushStyle) =
+        this.qtResources.CreateBrush(style.QtValue)
+        |> Brush
+        
+    member this.Brush(color: Color) =
+        this.qtResources.CreateBrush(color.qtColor)
+        |> Brush
+        
+    member this.Pen() =
+        this.qtResources.CreatePen()
+        |> Pen
+        
+    member this.Pen(style: PenStyle) =
+        this.qtResources.CreatePen(style.QtValue)
+        |> Pen
+        
+    member this.Pen(color: Color) =
+        this.qtResources.CreatePen(color.qtColor)
+        |> Pen
+        
+    member this.Pen(brush: Brush, width: double, ?style: PenStyle, ?cap: CapStyle, ?join: JoinStyle) =
+        let useStyle =
+            defaultArg style SolidLine
+        let useCap =
+            defaultArg cap Square
+        let useJoin =
+            defaultArg join Bevel
+        this.qtResources.CreatePen(brush.qtBrush, width, useStyle.QtValue, useCap.QtValue, useJoin.QtValue)
+        |> Pen
+        
+    member this.Pen(color: Color, width: double, ?style: PenStyle, ?cap: CapStyle, ?join: JoinStyle) =
+        let useStyle =
+            defaultArg style SolidLine
+        let useCap =
+            defaultArg cap Square
+        let useJoin =
+            defaultArg join Bevel
+        let tempBrush =
+            // brush will be tracked + later freed like anything else
+            this.Brush(color)
+        this.qtResources.CreatePen(tempBrush.qtBrush, width, useStyle.QtValue, useCap.QtValue, useJoin.QtValue)
+        |> Pen
+    
+    member this.Font(family: string, pointSize: int) =
+        this.qtResources.CreateFont(family, pointSize)
+        |> Font
+        
+    member this.Font(family: string, pointSize: int, weight: Weight) =
+        this.qtResources.CreateFont(family, pointSize, weight.QtValue)
+        |> Font
+        
+    member this.Font(family: string, pointSize: int, weight: Weight, italic: bool) =
+        this.qtResources.CreateFont(family, pointSize, weight.QtValue, italic)
+        |> Font
+        
+    member this.PainterPath() =
+        this.qtResources.CreatePainterPath()
+        |> PainterPath
+        
+    member this.PainterPathStroker() =
+        this.qtResources.CreatePainterPathStroker()
+        |> PainterPathStroker
         
 type RenderHint =
     | Antialiasing
@@ -185,8 +259,9 @@ with
         | NonCosmeticBrushPatterns -> Painter.RenderHint.NonCosmeticBrushPatterns
 
 type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
+    // not disposable (for now) because we don't create them (for now)
     member val qtPainter = qtPainter
-    // no finalizer, we never own the qt painter
+    
     member this.Pen with set (value: Pen) = qtPainter.SetPen(value.qtPen)
     member this.Brush with set (value: Brush) = qtPainter.SetBrush(value.qtBrush)
     member this.Font with set (value: Font) = qtPainter.SetFont(value.qtFont)

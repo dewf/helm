@@ -176,23 +176,25 @@ let update (state: State) = function
                 // nothing to redo
                 state
         nextState, Cmd.None
-        
-let private bgColor = Color.DarkBlue
-let private fgColor = Color.Yellow
-let private hoverColor = Color.Magenta
-let private bgBrush = Brush(bgColor)
-let private clearBrush = Brush.NoBrush
-let private hoverBrush = Brush(hoverColor)
-let private pen = Pen(fgColor, Width = 2)
 
+// these can remain for lifetime of program
+let globals = new PaintStack()
+let bgColor = globals.Color(DarkBlue)
+let fgColor = globals.Color(Yellow)
+let hoverColor = globals.Color(Magenta)
+let bgBrush = globals.Brush(bgColor)
+let hoverBrush = globals.Brush(hoverColor)
+let pen = globals.Pen(fgColor, Width = 2)
+        
 type DrawerDelegate(state: State) =
     inherit EventDelegateBase<Msg, State>(state)
     override this.NeedsPaint prev =
         // we could compare states here, to determine smaller (or no) update regions, if we wanted
         Everything
-    override this.DoPaint widget painter paintRect =
+    override this.DoPaint stack widget painter paintRect =
         painter.SetRenderHint Antialiasing true
         painter.FillRect(widget.GetRect(), bgColor)
+        
         painter.Pen <- pen
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do
             let brush, radius =
@@ -208,6 +210,7 @@ type DrawerDelegate(state: State) =
                     bgBrush, circle.Radius
             painter.Brush <- brush
             painter.DrawEllipse(circle.Location, radius, radius)
+        
     override this.MousePress loc button modifiers =
         match button with
         | Widget.MouseButton.Left -> Some (AddCircle loc)

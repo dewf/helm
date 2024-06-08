@@ -21,8 +21,8 @@ type EventDelegate<'msg>() =
     default this.SizeHint = Common.Size(-1, -1) // invalid size = no recommendation
     abstract member NeedsPaintInternal: EventDelegate<'msg> -> UpdateArea
 
-    abstract member DoPaint: Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
-    default this.DoPaint _ _ _ = ()
+    abstract member DoPaint: PaintStack -> Widget.Handle -> FSharpQt.Painting.Painter -> Common.Rect -> unit
+    default this.DoPaint _ _ _ _ = ()
 
     abstract member MousePress: Common.Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
     default this.MousePress _ _ _ = None
@@ -121,7 +121,8 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
         
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, rect: Common.Rect) =
-            eventDelegate.DoPaint widget (Painter(painter)) rect
+            use stack = new PaintStack()
+            eventDelegate.DoPaint stack widget (Painter(painter)) rect
             
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
             eventDelegate.MousePress pos button (set modifiers)

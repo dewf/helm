@@ -61,11 +61,6 @@ let update (state: State) (msg: Msg) =
     | EndDrag ->
         { state with PotentiallyDraggingFrom = None }, Cmd.None
         
-let private orangeBrush = Brush(Color(1.0, 0.5, 0.5, 0.25))
-let private yellowPen = Pen(Color.Yellow)
-// let private font = Font("Helvetica", 10)
-let private noPen = Pen(NoPen)
-
 let rectContains (r: Common.Rect) (p: Common.Point) =
     p.X >= r.X && p.X < (r.X + r.Width) && p.Y >= r.Y && p.Y < (r.Y + r.Height)
     
@@ -105,8 +100,13 @@ type DropDelegate(state: State) =
     override this.NeedsPaint prev =
         Everything
         
-    override this.DoPaint widget painter paintRect =
-        painter.FillRect(widget.GetRect(), Color.DarkBlue)
+    override this.DoPaint stack widget painter paintRect =
+        let darkBlue = stack.Color(DarkBlue)
+        let orangeBrush = stack.Brush(stack.Color(1, 0.5, 0.5, 0.25))
+        let yellowPen = stack.Pen(stack.Color(Yellow))
+        let noPen = stack.Pen(NoPen)
+        
+        painter.FillRect(widget.GetRect(), darkBlue)
         painter.Pen <- yellowPen
         // painter.Font <- font
         // drag source rect

@@ -51,95 +51,33 @@ namespace PaintResources
             }
             return QColorConstants::Black;
         }
-
-        ColorRef create(Constant name) {
-            return new __Color {
-                    fromConstant(name)
-            };
-        }
-
-        ColorRef create(int32_t r, int32_t g, int32_t b) {
-            return new __Color {
-                    QColor::fromRgb(r, g, b)
-            };
-        }
-
-        ColorRef create(int32_t r, int32_t g, int32_t b, int32_t a) {
-            return new __Color {
-                    QColor::fromRgb(r, g, b, a)
-            };
-        }
-
-        ColorRef create(float r, float g, float b) {
-            return new __Color {
-                    QColor::fromRgbF(r, g, b)
-            };
-        }
-
-        ColorRef create(float r, float g, float b, float a) {
-            return new __Color {
-                    QColor::fromRgbF(r, g, b, a)
-            };
-        }
     }
 
     void Color_dispose(ColorRef _this) {
-        delete _this;
+        // not owned by client
     }
 
     // gradient ====================
     void Gradient_setColorAt(GradientRef _this, double location, ColorRef color) {
-        _this->qGrad.setColorAt(location, color->qColor);
+        _this->qGradPtr->setColorAt(location, color->qColor);
     }
 
     void Gradient_dispose(GradientRef _this) {
-        delete _this;
+        // not owned by client
     }
 
     // radial gradient =============
-    namespace RadialGradient {
-        RadialGradientRef create(double cx, double cy, double centerRadius, double fx, double fy, double focalRadius) {
-            return new __RadialGradient {
-                    QRadialGradient(cx, cy, centerRadius, fx, fy, focalRadius)
-            };
-        }
-    }
-
     void RadialGradient_dispose(RadialGradientRef _this) {
-        delete _this;
+        // not owned by client
     }
 
     // brush ======================
-    namespace Brush {
-        BrushRef create(Style style) {
-            return new __Brush {
-                QBrush((Qt::BrushStyle)style)
-            };
-        }
-
-        BrushRef create(ColorRef color) {
-            return new __Brush {
-                    QBrush(color->qColor)
-            };
-        }
-
-        BrushRef create(GradientRef gradient) {
-            return new __Brush {
-                    QBrush(gradient->qGrad)
-            };
-        }
-    }
-
     void Brush_dispose(BrushRef _this) {
-        delete _this;
+        // not owned by client
     }
 
     // pen =========================
     namespace Pen {
-        PenRef create() {
-            return new __Pen { QPen() };
-        }
-
         inline Qt::PenStyle toQtStyle(Style style) {
             return (Qt::PenStyle)style;
         }
@@ -150,24 +88,6 @@ namespace PaintResources
 
         inline Qt::PenJoinStyle toQtJoinStyle(JoinStyle joinStyle) {
             return (Qt::PenJoinStyle)joinStyle;
-        }
-
-        PenRef create(Style style) {
-            return new __Pen {
-                    QPen(toQtStyle(style))
-            };
-        }
-
-        PenRef create(ColorRef color) {
-            return new __Pen {
-                    QPen(color->qColor)
-            };
-        }
-
-        PenRef create(BrushRef brush, double width, Style style, CapStyle cap, JoinStyle join) {
-            return new __Pen {
-                    QPen(brush->qBrush, width, toQtStyle(style), toQtCapStyle(cap), toQtJoinStyle(join))
-            };
         }
     }
 
@@ -184,46 +104,22 @@ namespace PaintResources
     }
 
     void Pen_dispose(PenRef _this) {
-        delete _this;
+        // not owned by client
     }
 
     // font =====================================
     namespace Font {
-        FontRef create(std::string family, int32_t pointSize) {
-            return new __Font {
-                    QFont(family.c_str(), pointSize)
-            };
-        }
-
         inline QFont::Weight toQtWeight(Weight weight) {
             // simple cast should be OK for now
             return (QFont::Weight)weight;
         }
-
-        FontRef create(std::string family, int32_t pointSize, Weight weight) {
-            return new __Font {
-                    QFont( family.c_str(), pointSize, toQtWeight(weight))
-            };
-        }
-
-        FontRef create(std::string family, int32_t pointSize, Weight weight, bool italic) {
-            return new __Font {
-                    QFont( family.c_str(), pointSize, toQtWeight(weight), italic)
-            };
-        }
     }
 
     void Font_dispose(FontRef _this) {
-        delete _this;
+        // not owned by client
     }
 
     // painter path =========================================
-    namespace PainterPath {
-        PainterPathRef create() {
-            return new __PainterPath();
-        }
-    }
-
     void PainterPath_moveTo(PainterPathRef _this, PointF p) {
         _this->qPath.moveTo(toQPointF(p));
     }
@@ -249,16 +145,10 @@ namespace PaintResources
     }
 
     void PainterPath_dispose(PainterPathRef _this) {
-        delete _this;
+        // not owned by client
     }
 
     // painter path stroker ==================================
-    namespace PainterPathStroker {
-        PainterPathStrokerRef create() {
-            return new __PainterPathStroker();
-        }
-    }
-
     void PainterPathStroker_setWidth(PainterPathStrokerRef _this, double width) {
         _this->qStroker.setWidth(width);
     }
@@ -284,10 +174,139 @@ namespace PaintResources
     }
 
     PainterPathRef PainterPathStroker_createStroke(PainterPathStrokerRef _this, PainterPathRef path) {
-        return new __PainterPath { _this->qStroker.createStroke(path->qPath) };
+        // this is actually implemented in the items, because we need to place the result on the 'items'
+        return Handle_createStrokeInternal(_this->resources, _this, path);
     }
 
     void PainterPathStroker_dispose(PainterPathStrokerRef _this) {
+        // not owned by client
+    }
+
+    // =========== paint items object ========================================
+    struct __Handle {
+        std::vector<std::unique_ptr<PaintStackItem>> items;
+    };
+
+    ColorRef Handle_createColor(HandleRef _this, Color::Constant name) {
+        auto ret = new __Color { Color::fromConstant(name) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    ColorRef Handle_createColor(HandleRef _this, int32_t r, int32_t g, int32_t b) {
+        auto ret = new __Color { QColor::fromRgb(r, g, b) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    ColorRef Handle_createColor(HandleRef _this, int32_t r, int32_t g, int32_t b, int32_t a) {
+        auto ret = new __Color { QColor::fromRgb(r, g, b, a) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    ColorRef Handle_createColor(HandleRef _this, float r, float g, float b) {
+        auto ret = new __Color { QColor::fromRgbF(r, g, b) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    ColorRef Handle_createColor(HandleRef _this, float r, float g, float b, float a) {
+        auto ret = new __Color { QColor::fromRgbF(r, g, b, a) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    RadialGradientRef Handle_createRadialGradient(HandleRef _this, double cx, double cy, double centerRadius, double fx, double fy, double focalRadius) {
+        auto ret = new __RadialGradient { QRadialGradient(cx, cy, centerRadius, fx, fy, focalRadius) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    BrushRef Handle_createBrush(HandleRef _this, Brush::Style style) {
+        auto ret = new __Brush { QBrush((Qt::BrushStyle)style) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    BrushRef Handle_createBrush(HandleRef _this, ColorRef color) {
+        auto ret = new __Brush { QBrush(color->qColor) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    BrushRef Handle_createBrush(HandleRef _this, GradientRef gradient) {
+        auto ret = new __Brush { QBrush(*gradient->qGradPtr) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    PenRef Handle_createPen(HandleRef _this) {
+        auto ret = new __Pen { QPen() };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    PenRef Handle_createPen(HandleRef _this, Pen::Style style) {
+        auto ret = new __Pen { QPen(Pen::toQtStyle(style)) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    PenRef Handle_createPen(HandleRef _this, ColorRef color) {
+        auto ret = new __Pen { QPen(color->qColor) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    PenRef Handle_createPen(HandleRef _this, BrushRef brush, double width, Pen::Style style, Pen::CapStyle cap, Pen::JoinStyle join) {
+        auto ret = new __Pen { QPen(brush->qBrush, width, Pen::toQtStyle(style), Pen::toQtCapStyle(cap), Pen::toQtJoinStyle(join)) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize) {
+        auto ret = new __Font { QFont(family.c_str(), pointSize) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize, Font::Weight weight) {
+        auto ret = new __Font { QFont( family.c_str(), pointSize, Font::toQtWeight(weight)) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize, Font::Weight weight, bool italic) {
+        auto ret = new __Font { QFont( family.c_str(), pointSize, Font::toQtWeight(weight), italic) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    PainterPathRef Handle_createPainterPath(HandleRef _this) {
+        auto ret = new __PainterPath();
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    PainterPathStrokerRef Handle_createPainterPathStroker(HandleRef _this) {
+        auto ret = new __PainterPathStroker(_this); // notice _this param
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    PainterPathRef Handle_createStrokeInternal(HandleRef _this, PainterPathStrokerRef stroker, PainterPathRef path) {
+        auto qPath = stroker->qStroker.createStroke(path->qPath);
+        auto ret = new __PainterPath { qPath };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    void Handle_dispose(HandleRef _this) {
         delete _this;
+    }
+
+    HandleRef create() {
+        return new __Handle();
     }
 }
