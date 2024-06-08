@@ -16,7 +16,7 @@ type Alignment =
     | Baseline
     | Center
 with
-    member this.QtValue =
+    member internal this.QtValue =
         match this with
         | Left -> Common.Alignment.Left
         | Leading -> Common.Alignment.Leading
@@ -39,7 +39,7 @@ type Point = {
         { X = x; Y = y }
     static member From(p: Common.Point) =
         { X = p.X; Y = p.Y }
-    member this.QtValue =
+    member internal this.QtValue =
         Common.Point(X = this.X, Y = this.Y)
         
 type PointF = {
@@ -54,7 +54,7 @@ type PointF = {
         { X = p.X; Y = p.Y }
     static member From(p: Common.PointF) =
         { X = p.X; Y = p.Y }
-    member this.QtValue =
+    member internal this.QtValue =
         Common.PointF(X = this.X, Y = this.Y)
         
 type Rect = {
@@ -67,7 +67,7 @@ type Rect = {
         { X = x; Y = y; Width = width; Height = height }
     static member From(rect: Common.Rect) =
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
-    member this.QtValue =
+    member internal this.QtValue =
         Common.Rect(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
 
 type RectF = {
@@ -82,13 +82,11 @@ type RectF = {
         { X = double rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     static member From(rect: Common.RectF) =
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
-    member this.QtValue =
+    member internal this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
 
-        
-// for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace / C# shit
+// for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace (generated C# code)
 type WidgetProxy internal(widget: Widget.Handle) =
     member val widget = widget
-    
     member this.Rect =
         Rect.From(this.widget.GetRect())
