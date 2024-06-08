@@ -84,7 +84,11 @@ type RectF = {
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
+
         
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace / C# shit
 type WidgetProxy internal(widget: Widget.Handle) =
     member val widget = widget
+    
+    member this.Rect =
+        Rect.From(this.widget.GetRect())

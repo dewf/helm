@@ -184,13 +184,13 @@ type EventDelegate(state: State) =
         // we could compare states here, to determine smaller (or no) update regions, if we wanted
         Everything
         
-    override this.DoPaint stack widget painter paintRect =
+    override this.DoPaint stack painter widget =
         let bgBrush = stack.Brush(stack.Color(DarkBlue))
         let hoverBrush = stack.Brush(stack.Color(Magenta))
         let pen = stack.Pen(stack.Color(Yellow), Width = 2)
         
         painter.SetRenderHint Antialiasing true
-        painter.FillRect(widget.GetRect(), bgBrush)
+        painter.FillRect(widget.Rect.QtValue, bgBrush)
         
         painter.Pen <- pen
         for i, circle in state.Circles |> List.zipWithIndex |> List.rev do

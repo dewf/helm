@@ -284,9 +284,9 @@ type EventDelegate(state: State) =
     override this.Leave() =
         Some MouseLeave
     
-    override this.DoPaint res stack _ painter widgetRect =
+    override this.DoPaint res stack painter widget =
         painter.SetRenderHint Antialiasing true
-        painter.FillRect(widgetRect, res.BgColor)
+        painter.FillRect(widget.Rect.QtValue, res.BgColor)
         
         // draw control points
         painter.Pen <- res.ControlPointPen
