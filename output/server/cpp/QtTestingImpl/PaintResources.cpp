@@ -227,8 +227,8 @@ namespace PaintResources
         return ret;
     }
 
-    RadialGradientRef Handle_createRadialGradient(HandleRef _this, double cx, double cy, double centerRadius, double fx, double fy, double focalRadius) {
-        auto ret = new __RadialGradient { QRadialGradient(cx, cy, centerRadius, fx, fy, focalRadius) };
+    RadialGradientRef Handle_createRadialGradient(HandleRef _this, PointF center, double radius) {
+        auto ret = new __RadialGradient { QRadialGradient(toQPointF(center), radius) };
         _this->items.push_back(ret);
         return ret;
     }

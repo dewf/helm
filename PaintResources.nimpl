@@ -131,7 +131,7 @@ opaque Handle {
     Color createColor(float r, float g, float b);
     Color createColor(float r, float g, float b, float a);
 
-    RadialGradient createRadialGradient(double cx, double cy, double centerRadius, double fx, double fy, double focalRadius);
+    RadialGradient createRadialGradient(Common.PointF center, double radius);
     LinearGradient createLinearGradient(Common.PointF start, Common.PointF stop);
     LinearGradient createLinearGradient(double x1, double y1, double x2, double y2);
 

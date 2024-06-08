@@ -192,8 +192,8 @@ type PaintStack() =
         this.qtResources.CreateColor(float32 r, float32 g, float32 b, float32 a)
         |> Color
         
-    member this.RadialGradient(cx: double, cy: double, centerRadius: double, fx: double, fy: double, focalRadius: double) =
-        this.qtResources.CreateRadialGradient(cx, cy, centerRadius, fx, fy, focalRadius)
+    member this.RadialGradient(center: PointF, radius: double) =
+        this.qtResources.CreateRadialGradient(center.QtValue, radius)
         |> RadialGradient
         
     member this.LinearGradient(p1: PointF, p2: PointF) =

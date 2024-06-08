@@ -10,12 +10,11 @@ open BoxLayout
 open GroupBox
 open PushButton
 open MainWindow
-open Tabs.PathStroking.PathStroking
 open WindowSet
 
 open Tabs.Counter
 open Tabs.DropTesting
-open Tabs.PathStroking
+open Tabs.PathStroking.PathStroking
 open Tabs.TempConverter
 open Tabs.FlightBooker
 open Tabs.TimerPage
