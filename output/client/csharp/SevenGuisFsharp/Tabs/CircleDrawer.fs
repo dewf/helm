@@ -18,8 +18,6 @@ open WithDialogs
 
 open Extensions
 
-open Org.Whatever.QtTesting
-
 type Signal = unit
 type Attr = unit
 
@@ -211,8 +209,8 @@ type EventDelegate(state: State) =
         
     override this.MousePress loc button modifiers =
         match button with
-        | Widget.MouseButton.Left -> Some (AddCircle loc)
-        | Widget.MouseButton.Right -> Some (ShowContext loc)
+        | LeftButton -> Some (AddCircle loc)
+        | RightButton -> Some (ShowContext loc)
         | _ -> None
     override this.MouseMove loc buttons modifiers =
         Some (MouseMove loc)

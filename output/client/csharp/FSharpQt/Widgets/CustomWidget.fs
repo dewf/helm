@@ -14,6 +14,78 @@ type UpdateArea =
     | Everything
     | Rects of Rect list
     
+type MouseButton =
+    | LeftButton
+    | RightButton
+    | MiddleButton
+    | OtherButton
+with
+    static member internal From (qtButton: Widget.MouseButton) =
+        match qtButton with
+        | Widget.MouseButton.None -> failwith "MouseButton.From - .None case - shoudln't happen"
+        | Widget.MouseButton.Left -> LeftButton
+        | Widget.MouseButton.Right -> RightButton
+        | Widget.MouseButton.Middle -> MiddleButton
+        | _ -> OtherButton // also handles other enum cases
+    member internal this.QtValue =
+        match this with
+        | LeftButton -> Widget.MouseButton.Left
+        | RightButton -> Widget.MouseButton.Right
+        | MiddleButton -> Widget.MouseButton.Middle
+        | OtherButton -> Widget.MouseButton.Other
+    static member internal SetFrom (qtButtonSet: HashSet<Widget.MouseButton>) =
+        (set qtButtonSet)
+        |> Set.map MouseButton.From
+    
+type Modifier =
+    | Shift
+    | Control
+    | Alt
+    | Meta
+with
+    static member internal From (qtModifier: Widget.Modifier) =
+        match qtModifier with
+        | Widget.Modifier.Shift -> Shift
+        | Widget.Modifier.Control -> Control
+        | Widget.Modifier.Alt -> Alt
+        | Widget.Modifier.Meta -> Meta
+        | _ -> failwith "Modifier.From - unknown enum value (or .None, which shouldn't happen)"
+    static member internal SetFrom (qtModifierSet: HashSet<Widget.Modifier>) =
+        (set qtModifierSet)
+        |> Set.map Modifier.From
+    
+type DropAction =
+    | Ignore
+    | Copy
+    | Move
+    | Link
+with
+    static member internal From (qtDropAction: Widget.DropAction) =
+        match qtDropAction with
+        | Widget.DropAction.Ignore -> Ignore
+        | Widget.DropAction.Copy -> Copy
+        | Widget.DropAction.Move -> Move
+        | Widget.DropAction.Link -> Link
+        | _ -> failwith "DropAction.From - unhandled DropAction case (only move/copy/link supported)"
+    member internal this.QtValue =
+        match this with
+        | Ignore -> Widget.DropAction.Ignore
+        | Copy -> Widget.DropAction.Copy
+        | Move -> Widget.DropAction.Move
+        | Link -> Widget.DropAction.Link
+    static member internal SetFrom (qtDropActionSet: HashSet<Widget.DropAction>) =
+        (set qtDropActionSet)
+        |> Set.map DropAction.From
+    
+type MimeDataProxy internal(qMimeData: Widget.MimeData) =
+    member val qMimeData = qMimeData
+    member this.HasFormat(mimeType: string) =
+        qMimeData.HasFormat(mimeType)
+    member this.Text =
+        qMimeData.Text()
+    member this.Urls =
+        qMimeData.Urls()
+    
 [<AbstractClass>]
 type EventDelegateInterface<'msg>() = // obviously it's an abstract class and not a proper interface, but that's mainly because F# doesn't currently support default interface methods / Scala-style traits
     abstract member Widget: Widget.Handle with set
@@ -28,13 +100,13 @@ type EventDelegateInterface<'msg>() = // obviously it's an abstract class and no
 
     abstract member PaintInternal: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
 
-    abstract member MousePress: Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
+    abstract member MousePress: Point -> MouseButton -> Set<Modifier> -> 'msg option
     default this.MousePress _ _ _ = None
 
-    abstract member MouseMove: Point -> Set<Widget.MouseButton> -> Set<Widget.Modifier> -> 'msg option
+    abstract member MouseMove: Point -> Set<MouseButton> -> Set<Modifier> -> 'msg option
     default this.MouseMove _ _ _ = None
 
-    abstract member MouseRelease: Point -> Widget.MouseButton -> Set<Widget.Modifier> -> 'msg option
+    abstract member MouseRelease: Point -> MouseButton -> Set<Modifier> -> 'msg option
     default this.MouseRelease _ _ _ = None
     
     abstract member Enter: Point -> 'msg option
@@ -46,13 +118,13 @@ type EventDelegateInterface<'msg>() = // obviously it's an abstract class and no
     abstract member Resize: Size -> Size -> 'msg option
     default this.Resize _ _ = None
     
-    abstract member DragMove: Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> Set<Widget.DropAction> -> bool -> (Widget.DropAction * 'msg) option
+    abstract member DragMove: Point -> Set<Modifier> -> MimeDataProxy -> DropAction -> Set<DropAction> -> bool -> (DropAction * 'msg) option
     default this.DragMove _ _ _ _ _ _ = None
 
     abstract member DragLeave: unit -> 'msg option
     default this.DragLeave () = None
 
-    abstract member Drop: Point -> Set<Widget.Modifier> -> Widget.MimeData -> Widget.DropAction -> 'msg option
+    abstract member Drop: Point -> Set<Modifier> -> MimeDataProxy -> DropAction -> 'msg option
     default this.Drop _ _ _ _ = None
     
 type DragPayload =
@@ -81,7 +153,7 @@ type AbstractEventDelegate<'msg,'state when 'state: equality>(state: 'state) =
         | _ ->
             failwith "nope"
             
-    member this.BeginDrag (payload: DragPayload) (supported: Widget.DropAction list) (defaultAction: Widget.DropAction) =
+    member this.BeginDrag (payload: DragPayload) (supported: DropAction list) (defaultAction: DropAction) =
         let drag =
             Widget.CreateDrag(widget)
         let mimeData =
@@ -92,7 +164,8 @@ type AbstractEventDelegate<'msg,'state when 'state: equality>(state: 'state) =
         | Urls urls ->
             mimeData.SetUrls(urls |> Array.ofList)
         drag.SetMimeData(mimeData)
-        drag.Exec(HashSet(supported), defaultAction)
+        drag.Exec(HashSet(supported |> List.map (_.QtValue)), defaultAction.QtValue)
+        |> DropAction.From
         // we're not responsible for either the mimeData nor the drag, as long as the drag was created with an owner
         
 [<AbstractClass>]
@@ -169,15 +242,15 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             eventDelegate.PaintInternal stackResources (Painter(painter)) (WidgetProxy(widget)) (Rect.From(updateRect))
             
         override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
-            eventDelegate.MousePress (Point.From pos) button (set modifiers)
+            eventDelegate.MousePress (Point.From pos) (MouseButton.From button) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
             
         override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Widget.Modifier>) =
-            eventDelegate.MouseMove (Point.From pos) (set buttons) (set modifiers)
+            eventDelegate.MouseMove (Point.From pos) (MouseButton.SetFrom buttons) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
                 
         override this.MouseReleaseEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
-            eventDelegate.MouseRelease (Point.From pos) button (set modifiers)
+            eventDelegate.MouseRelease (Point.From pos) (MouseButton.From button) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
                 
         override this.EnterEvent(pos: Common.Point) =
@@ -196,9 +269,9 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             eventDelegate.SizeHint.QtValue
                 
         override this.DragMoveEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, moveEvent: Widget.DragMoveEvent, isEnterEvent: bool) =
-            match eventDelegate.DragMove (Point.From pos) (set modifiers) mimeData (moveEvent.ProposedAction()) (moveEvent.PossibleActions() |> set) isEnterEvent with
+            match eventDelegate.DragMove (Point.From pos) (Modifier.SetFrom modifiers) (MimeDataProxy(mimeData)) (moveEvent.ProposedAction() |> DropAction.From) (moveEvent.PossibleActions() |> DropAction.SetFrom) isEnterEvent with
             | Some (dropAction, msg) ->
-                moveEvent.AcceptDropAction(dropAction)
+                moveEvent.AcceptDropAction(dropAction.QtValue)
                 dispatch msg
             | None ->
                 moveEvent.Ignore()
@@ -208,7 +281,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             |> Option.iter dispatch
             
         override this.DropEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
-            eventDelegate.Drop (Point.From pos) (set modifiers) mimeData dropAction
+            eventDelegate.Drop (Point.From pos) (Modifier.SetFrom modifiers) (MimeDataProxy(mimeData)) (DropAction.From dropAction)
             |> Option.iter dispatch
             
         // override this.Dispose() =

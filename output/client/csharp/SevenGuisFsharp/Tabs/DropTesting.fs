@@ -8,8 +8,6 @@ open FSharpQt.Widgets
 open BoxLayout
 open CustomWidget
 
-open Org.Whatever.QtTesting
-
 type Signal = unit
 type Attr = unit
 
@@ -83,10 +81,10 @@ type EventDelegate(state: State) =
         | Some p ->
             if Util.dist loc p > DRAG_THRESH_PIXELS then
                 printfn "beginning drag!"
-                match this.BeginDrag (Text "WOOOOOOOOOOOOOOOOOOOOT") [Widget.DropAction.Copy; Widget.DropAction.Move] Widget.DropAction.Copy with
-                | Widget.DropAction.Copy ->
+                match this.BeginDrag (Text "WOOOOOOOOOOOOOOOOOOOOT") [Copy; Move] Copy with
+                | Copy ->
                     printfn "data copied"
-                | Widget.DropAction.Move ->
+                | Move ->
                     printfn "data moved"
                 | _ ->
                     printfn "(some other outcome)"
@@ -139,10 +137,10 @@ type EventDelegate(state: State) =
     // drop stuff -------------------------------------------------
             
     override this.DragMove loc modifiers mimeData proposedAction possibleActions isEnterEvent =
-        if mimeData.HasFormat("text/plain") && possibleActions.Contains(Widget.DropAction.Copy) then
-            Some (Widget.DropAction.Copy, DropPreview loc)
-        elif mimeData.HasFormat("text/uri-list") && possibleActions.Contains(Widget.DropAction.Copy) then
-            Some (Widget.DropAction.Copy, DropPreview loc)
+        if mimeData.HasFormat("text/plain") && possibleActions.Contains(Copy) then
+            Some (Copy, DropPreview loc)
+        elif mimeData.HasFormat("text/uri-list") && possibleActions.Contains(Copy) then
+            Some (Copy, DropPreview loc)
         else
             None
             
@@ -152,9 +150,12 @@ type EventDelegate(state: State) =
     override this.Drop loc modifiers mimeData dropAction =
         let payload =
             if mimeData.HasFormat("text/plain") then
-                mimeData.Text() |> Payload.Text 
+                mimeData.Text
+                |> Payload.Text
             else
-                mimeData.Urls() |> Array.toList |> Payload.Files
+                mimeData.Urls
+                |> Array.toList
+                |> Payload.Files
         let fragment =
             { Location = loc; Payload = payload }
         Some (PerformDrop fragment)
