@@ -217,7 +217,7 @@ type EventDelegate(state: State) =
     override this.MouseMove loc buttons modifiers =
         Some (MouseMove loc)
     override this.SizeHint =
-        Common.Size (400, 300)
+        Size.From(400, 300)
 
 let view (state: State) =
     let undoRedoButtons =

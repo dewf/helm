@@ -12,14 +12,15 @@ open Org.Whatever.QtTesting
 type UpdateArea =
     | NotRequired
     | Everything
-    | Rects of Common.Rect list
+    | Rects of Rect list
     
 [<AbstractClass>]
 type EventDelegateInterface<'msg>() = // obviously it's an abstract class and not a proper interface, but that's mainly because F# doesn't currently support default interface methods / Scala-style traits
     abstract member Widget: Widget.Handle with set
-    abstract member SizeHint: Common.Size
 
-    default this.SizeHint = Common.Size(-1, -1) // invalid size = no recommendation
+    abstract member SizeHint: Size
+    default this.SizeHint = Size.Invalid // invalid size = no recommendation
+    
     abstract member NeedsPaintInternal: EventDelegateInterface<'msg> -> UpdateArea
     
     abstract member CreateResourcesInternal: PaintStack -> unit
@@ -192,7 +193,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             |> Option.iter dispatch
             
         override this.SizeHint() =
-            eventDelegate.SizeHint
+            eventDelegate.SizeHint.QtValue
                 
         override this.DragMoveEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, moveEvent: Widget.DragMoveEvent, isEnterEvent: bool) =
             match eventDelegate.DragMove (Point.From pos) (set modifiers) mimeData (moveEvent.ProposedAction()) (moveEvent.PossibleActions() |> set) isEnterEvent with
@@ -229,7 +230,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             widget.Update()
         | Rects rects ->
             for rect in rects do
-                widget.Update(rect)
+                widget.Update(rect.QtValue)
                 
         // migrate paint resources from previous
         newDelegate.MigrateResources eventDelegate

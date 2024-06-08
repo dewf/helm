@@ -68,7 +68,8 @@ let rectContains (r: Rect) (p: Point) =
 type EventDelegate(state: State) =
     inherit EventDelegateBase<Msg,State>(state)
     
-    override this.SizeHint = Common.Size (640, 480)
+    override this.SizeHint =
+        Size.From(640, 480)
     
     override this.MousePress loc button modifiers =
         if rectContains DRAG_SOURCE_RECT loc then

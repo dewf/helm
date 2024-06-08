@@ -250,7 +250,8 @@ type EventDelegate(state: State) =
           LightGrayPen = res.Pen(res.Color(LightGray), 0, SolidLine)
           NoBrush = res.Brush(NoBrush) }
     
-    override this.SizeHint = Common.Size (600, 700)
+    override this.SizeHint =
+        Size.From(600, 700)
     
     override this.NeedsPaint _ =
         Everything
