@@ -189,133 +189,138 @@ namespace PaintResources
 
     // =========== paint items object ========================================
     struct __Handle {
-        std::vector<std::unique_ptr<PaintStackItem>> items;
+        std::vector<PaintStackItem*> items;
+        ~__Handle() {
+            for (auto item : items) {
+                delete item;
+            }
+        }
     };
 
     ColorRef Handle_createColor(HandleRef _this, Color::Constant name) {
         auto ret = new __Color { Color::fromConstant(name) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     ColorRef Handle_createColor(HandleRef _this, int32_t r, int32_t g, int32_t b) {
         auto ret = new __Color { QColor::fromRgb(r, g, b) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     ColorRef Handle_createColor(HandleRef _this, int32_t r, int32_t g, int32_t b, int32_t a) {
         auto ret = new __Color { QColor::fromRgb(r, g, b, a) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     ColorRef Handle_createColor(HandleRef _this, float r, float g, float b) {
         auto ret = new __Color { QColor::fromRgbF(r, g, b) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     ColorRef Handle_createColor(HandleRef _this, float r, float g, float b, float a) {
         auto ret = new __Color { QColor::fromRgbF(r, g, b, a) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     RadialGradientRef Handle_createRadialGradient(HandleRef _this, double cx, double cy, double centerRadius, double fx, double fy, double focalRadius) {
         auto ret = new __RadialGradient { QRadialGradient(cx, cy, centerRadius, fx, fy, focalRadius) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     LinearGradientRef Handle_createLinearGradient(HandleRef _this, PointF start, PointF stop) {
         auto ret = new __LinearGradient { QLinearGradient(toQPointF(start), toQPointF(stop)) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     LinearGradientRef Handle_createLinearGradient(HandleRef _this, double x1, double y1, double x2, double y2) {
         auto ret = new __LinearGradient { QLinearGradient(x1, y1, x2, y2) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     BrushRef Handle_createBrush(HandleRef _this, Brush::Style style) {
         auto ret = new __Brush { QBrush((Qt::BrushStyle)style) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     BrushRef Handle_createBrush(HandleRef _this, ColorRef color) {
         auto ret = new __Brush { QBrush(color->qColor) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     BrushRef Handle_createBrush(HandleRef _this, GradientRef gradient) {
         auto ret = new __Brush { QBrush(gradient->qGradPtr) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     PenRef Handle_createPen(HandleRef _this) {
         auto ret = new __Pen { QPen() };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     PenRef Handle_createPen(HandleRef _this, Pen::Style style) {
         auto ret = new __Pen { QPen(Pen::toQtStyle(style)) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     PenRef Handle_createPen(HandleRef _this, ColorRef color) {
         auto ret = new __Pen { QPen(color->qColor) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     PenRef Handle_createPen(HandleRef _this, BrushRef brush, double width, Pen::Style style, Pen::CapStyle cap, Pen::JoinStyle join) {
         auto ret = new __Pen { QPen(brush->qBrush, width, Pen::toQtStyle(style), Pen::toQtCapStyle(cap), Pen::toQtJoinStyle(join)) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize) {
         auto ret = new __Font { QFont(family.c_str(), pointSize) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize, Font::Weight weight) {
         auto ret = new __Font { QFont( family.c_str(), pointSize, Font::toQtWeight(weight)) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize, Font::Weight weight, bool italic) {
         auto ret = new __Font { QFont( family.c_str(), pointSize, Font::toQtWeight(weight), italic) };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     PainterPathRef Handle_createPainterPath(HandleRef _this) {
         auto ret = new __PainterPath();
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     PainterPathStrokerRef Handle_createPainterPathStroker(HandleRef _this) {
         auto ret = new __PainterPathStroker(_this); // notice _this param
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
     PainterPathRef Handle_createStrokeInternal(HandleRef _this, PainterPathStrokerRef stroker, PainterPathRef path) {
         auto qPath = stroker->qStroker.createStroke(path->qPath);
         auto ret = new __PainterPath { qPath };
-        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        _this->items.push_back(ret);
         return ret;
     }
 
