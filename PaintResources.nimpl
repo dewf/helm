@@ -30,8 +30,8 @@ opaque Color {
 opaque Gradient {
     void setColorAt(double location, Color color);
 }
-
 opaque RadialGradient extends Gradient;
+opaque LinearGradient extends Gradient;
 
 opaque Brush {
     static {
@@ -132,6 +132,8 @@ opaque Handle {
     Color createColor(float r, float g, float b, float a);
 
     RadialGradient createRadialGradient(double cx, double cy, double centerRadius, double fx, double fy, double focalRadius);
+    LinearGradient createLinearGradient(Common.PointF start, Common.PointF stop);
+    LinearGradient createLinearGradient(double x1, double y1, double x2, double y2);
 
     Brush createBrush(Brush.Style style);
     Brush createBrush(Color color); // + BrushStyle in the future

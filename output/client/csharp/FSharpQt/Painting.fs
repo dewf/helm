@@ -2,6 +2,7 @@
 
 open System
 open System.Collections.Generic
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
 type Color internal(qtColor: PaintResources.Color) =
@@ -47,6 +48,19 @@ with
         | DarkMagenta -> PaintResources.Color.Constant.Magenta
         | DarkYellow -> PaintResources.Color.Constant.Yellow
         | Transparent -> PaintResources.Color.Constant.Transparent
+        
+type Gradient internal(qtGradient: PaintResources.Gradient) =
+    member val qtGradient = qtGradient
+    member this.SetColorAt(location: double, color: Color) =
+        qtGradient.SetColorAt(location, color.qtColor)
+    
+type RadialGradient internal(qtRadial: PaintResources.RadialGradient) =
+    inherit Gradient(qtRadial)
+    member val qtRadial = qtRadial
+    
+type LinearGradient internal(qtLinear: PaintResources.LinearGradient) =
+    inherit Gradient(qtLinear)
+    member val qtLinear = qtLinear
         
 type BrushStyle =
     | NoBrush
@@ -116,7 +130,7 @@ type Weight =
     | DemiBold
     | Bold
     | ExtraBold
-    | Black
+    | BlackWeight
 with
     member internal this.QtValue =
         match this with
@@ -128,7 +142,7 @@ with
         | DemiBold -> PaintResources.Font.Weight.DemiBold
         | Bold -> PaintResources.Font.Weight.Bold
         | ExtraBold -> PaintResources.Font.Weight.ExtraBold
-        | Black -> PaintResources.Font.Weight.Black
+        | BlackWeight -> PaintResources.Font.Weight.Black
     
 type Font internal(qtFont: PaintResources.Font) =
     member val internal qtFont = qtFont
@@ -178,12 +192,28 @@ type PaintStack() =
         this.qtResources.CreateColor(float32 r, float32 g, float32 b, float32 a)
         |> Color
         
+    member this.RadialGradient(cx: double, cy: double, centerRadius: double, fx: double, fy: double, focalRadius: double) =
+        this.qtResources.CreateRadialGradient(cx, cy, centerRadius, fx, fy, focalRadius)
+        |> RadialGradient
+        
+    member this.LinearGradient(p1: PointF, p2: PointF) =
+        this.qtResources.CreateLinearGradient(p1.QtValue, p2.QtValue)
+        |> LinearGradient
+        
+    member this.LinearGradient(x1: double, y1: double, x2: double, y2: double) =
+        this.qtResources.CreateLinearGradient(x1, y1, x2, y2)
+        |> LinearGradient
+        
     member this.Brush(style: BrushStyle) =
         this.qtResources.CreateBrush(style.QtValue)
         |> Brush
         
     member this.Brush(color: Color) =
         this.qtResources.CreateBrush(color.qtColor)
+        |> Brush
+        
+    member this.Brush(grad: Gradient) =
+        this.qtResources.CreateBrush(grad.qtGradient)
         |> Brush
         
     member this.Pen() =

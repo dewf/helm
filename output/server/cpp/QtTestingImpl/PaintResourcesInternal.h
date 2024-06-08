@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QGradient>
 #include <QRadialGradient>
+#include <QLinearGradient>
 #include <QBrush>
 #include <QPen>
 #include <QFont>
@@ -21,14 +22,18 @@ namespace PaintResources
     };
 
     struct __Gradient : public PaintStackItem {
-        QGradient *qGradPtr; // needs to be set by subclass
-        explicit __Gradient(QGradient *actual) : qGradPtr(actual) {}
+        QGradient qGradPtr; // I guess this holds all types? so we don't have to worry about object slicing on the stack? seems weird
+        explicit __Gradient(const QGradient& actual) : qGradPtr(actual) {}
     };
 
     struct __RadialGradient : public __Gradient {
-        QRadialGradient qRadialGradient;
         explicit __RadialGradient(const QRadialGradient& qGrad)
-            : qRadialGradient(qGrad), __Gradient(&qRadialGradient) {}
+            : __Gradient(qGrad) {}
+    };
+
+    struct __LinearGradient : public __Gradient {
+        explicit __LinearGradient(const QLinearGradient& qLinear)
+            : __Gradient(qLinear) {}
     };
 
     struct __Brush : public PaintStackItem {

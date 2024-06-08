@@ -59,7 +59,7 @@ namespace PaintResources
 
     // gradient ====================
     void Gradient_setColorAt(GradientRef _this, double location, ColorRef color) {
-        _this->qGradPtr->setColorAt(location, color->qColor);
+        _this->qGradPtr.setColorAt(location, color->qColor);
     }
 
     void Gradient_dispose(GradientRef _this) {
@@ -68,6 +68,11 @@ namespace PaintResources
 
     // radial gradient =============
     void RadialGradient_dispose(RadialGradientRef _this) {
+        // not owned by client
+    }
+
+    // linear gradient =============
+    void LinearGradient_dispose(LinearGradientRef _this) {
         // not owned by client
     }
 
@@ -223,6 +228,18 @@ namespace PaintResources
         return ret;
     }
 
+    LinearGradientRef Handle_createLinearGradient(HandleRef _this, PointF start, PointF stop) {
+        auto ret = new __LinearGradient { QLinearGradient(toQPointF(start), toQPointF(stop)) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
+    LinearGradientRef Handle_createLinearGradient(HandleRef _this, double x1, double y1, double x2, double y2) {
+        auto ret = new __LinearGradient { QLinearGradient(x1, y1, x2, y2) };
+        _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
+        return ret;
+    }
+
     BrushRef Handle_createBrush(HandleRef _this, Brush::Style style) {
         auto ret = new __Brush { QBrush((Qt::BrushStyle)style) };
         _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
@@ -236,7 +253,7 @@ namespace PaintResources
     }
 
     BrushRef Handle_createBrush(HandleRef _this, GradientRef gradient) {
-        auto ret = new __Brush { QBrush(*gradient->qGradPtr) };
+        auto ret = new __Brush { QBrush(gradient->qGradPtr) };
         _this->items.push_back(std::unique_ptr<PaintStackItem>(ret));
         return ret;
     }
