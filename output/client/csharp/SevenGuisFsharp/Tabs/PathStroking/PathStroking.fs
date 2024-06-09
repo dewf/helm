@@ -126,7 +126,7 @@ let view (state: State) =
                 Checkable true
                 FSharpQt.Widgets.PushButton.Text (if state.Animating then "Animating" else "Not Animating")
                 FSharpQt.Widgets.PushButton.Checked state.Animating
-            ], OnClickedWithState = SetAnimating)
+            ], OnToggled = SetAnimating)
         
     let rightPanel =
         BoxLayout(Attrs = [ Direction TopToBottom ],

@@ -1,18 +1,11 @@
 module AbstractButton;
 
 import Widget;
-import Signal;
 
 opaque Handle extends Widget.Handle {
     void setText(string text);
     void setCheckable(bool checkable);
     void setChecked(bool checkState);       // 'checked' is a C# keyword
-
-    // signals
-    void onClicked(Signal.BoolDelegate handler); // arg: checked
-    void onPressed(Signal.VoidDelegate handler);
-    void onReleased(Signal.VoidDelegate handler);
-    void onToggled(Signal.BoolDelegate handler); // arg: checked
 }
 
 // can't create directly
