@@ -91,6 +91,7 @@ type Attr =
     | Buttons of buttons: MessageBoxButton list
     | DefaultButton of button: MessageBoxButton
     | Icon of icon: Icon
+    | WindowTitle of title: string
     
 let private keyFunc = function
     | Text _ -> 0
@@ -98,6 +99,7 @@ let private keyFunc = function
     | Buttons _ -> 2
     | DefaultButton _ -> 3
     | Icon _ -> 4
+    | WindowTitle _ -> 5
 
 let diffAttrs =
     genericDiffAttrs keyFunc
@@ -127,6 +129,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 messageBox.SetDefaultButton(button.QtValue)
             | Icon icon ->
                 messageBox.SetIcon(icon.QtValue)
+            | WindowTitle title ->
+                messageBox.SetWindowTitle(title)
                 
     interface IDisposable with
         member this.Dispose() =

@@ -4,6 +4,7 @@ open System
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.Widgets.BoxLayout
 open FSharpQt.WithDialogs
 open Reactor
 open FSharpQt.Widgets
@@ -19,7 +20,7 @@ type State = {
 let MESSAGEBOX_ID = "prompt"
 
 type Msg =
-    | ButtonClicked
+    | LaunchDialog
     | PromptResult of button: MessageBoxButton
 
 let init () =
@@ -30,19 +31,36 @@ let init () =
 
 let update (state: State) (msg: Msg) =
     match msg with
-    | ButtonClicked ->
+    | LaunchDialog ->
         state, Cmd.Dialog (execMessageBox MESSAGEBOX_ID PromptResult)
     | PromptResult button ->
-        printfn "got dialog button: %A" button
-        state, Cmd.None
+        let cmd =
+            match button with
+            | Ok -> Cmd.Signal QuitApplication
+            | _ -> Cmd.None
+        state, cmd
     
 let view (state: State) =
-    let showButton =
-        PushButton(Attrs = [ PushButton.Text "Nice" ], OnClicked = ButtonClicked)
     let mainWindow =
-        MainWindow(Attrs = [ Title "Hello"; Size (800, 600) ], Content = showButton)
+        let layout =
+            let quitButton =
+                PushButton(
+                    Attrs = [
+                        PushButton.Text "Quit App"
+                        MinWidth 200
+                    ], OnClicked = LaunchDialog)
+            BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (10, 10, 10, 10) ],
+                      Items = [ BoxItem.Create(quitButton) ])
+        MainWindow(Attrs = [ Title "Hello" ], Content = layout)
+        
     let mb =
-        MessageBox(Attrs = [ Text "Yeet"; InformativeText "Better"; Buttons [Ok; Cancel] ])
+        MessageBox(
+            Attrs = [
+                Text "Quit the application?"
+                Buttons [Ok; Cancel]
+                WindowTitle "!! Important !!"
+            ])
+        
     WindowWithDialogs(mainWindow, [ MESSAGEBOX_ID, mb ])
     :> IBuilderNode<Msg>
     

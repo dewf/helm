@@ -17,6 +17,8 @@ type Attr =
     | Enabled of bool
     | Checkable of bool
     | AutoDefault of bool
+    | MinWidth of width: int
+    | MinHeight of width: int
 
 let private keyFunc = function
     | Text _ -> 0
@@ -24,6 +26,8 @@ let private keyFunc = function
     | Enabled _ -> 2
     | Checkable _ -> 3
     | AutoDefault _ -> 4
+    | MinWidth _ -> 5
+    | MinHeight _ -> 6
 
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -62,6 +66,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 button.SetCheckable(state)
             | AutoDefault state ->
                 button.SetAutoDefault(state)
+            | MinWidth width ->
+                button.SetMinimumWidth(width)
+            | MinHeight height ->
+                button.SetMinimumHeight(height)
                 
     interface PushButton.SignalHandler with
         member this.Clicked(checkState: bool) =
