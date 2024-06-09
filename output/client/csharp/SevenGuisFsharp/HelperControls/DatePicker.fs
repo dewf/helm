@@ -109,7 +109,7 @@ let view (state: State) =
         LineEdit(
             Attrs = [ LineEdit.Value state.Raw; LineEdit.Enabled state.Enabled ], OnChanged = EditChanged, OnReturnPressed = EditSubmitted)
     let button =
-        PushButton(Attrs = [ Text "📅"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
+        PushButton(Attrs = [ Text "Pick"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
     let hbox =
         BoxLayout(
             Attrs = [
