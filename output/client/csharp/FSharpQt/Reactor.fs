@@ -5,53 +5,10 @@ open System
 open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
-type MessageBoxButton =
-    | Ok
-    | Save
-    | SaveAll
-    | Open
-    | Yes
-    | YesToAll
-    | No
-    | NoToAll
-    | Abort
-    | Retry
-    | Ignore
-    | Close
-    | Cancel
-    | Discard
-    | Help
-    | Apply
-    | Reset
-    | RestoreDefaults
-with
-    static member internal FromQtValue(raw: MessageBox.StandardButton) =
-        match raw with
-        // NoButton is currently not supported, it appears to be OK
-        | MessageBox.StandardButton.Ok -> Ok
-        | MessageBox.StandardButton.Save -> Save
-        | MessageBox.StandardButton.SaveAll -> SaveAll
-        | MessageBox.StandardButton.Open -> Open
-        | MessageBox.StandardButton.Yes -> Yes
-        | MessageBox.StandardButton.YesToAll -> YesToAll
-        | MessageBox.StandardButton.No -> No
-        | MessageBox.StandardButton.NoToAll -> NoToAll
-        | MessageBox.StandardButton.Abort -> Abort
-        | MessageBox.StandardButton.Retry -> Retry
-        | MessageBox.StandardButton.Ignore -> Ignore
-        | MessageBox.StandardButton.Close -> Close
-        | MessageBox.StandardButton.Cancel -> Cancel
-        | MessageBox.StandardButton.Discard -> Discard
-        | MessageBox.StandardButton.Help -> Help
-        | MessageBox.StandardButton.Apply -> Apply
-        | MessageBox.StandardButton.Reset -> Reset
-        | MessageBox.StandardButton.RestoreDefaults -> RestoreDefaults
-        | _ -> failwithf "MessageBox.StandardButton.FromQtValue - unknown input %A" raw
-        
 type DialogOp<'msg> =
     | Exec
     | ExecAt of p: Point
-    | ExecMessageBox of (MessageBoxButton -> 'msg)
+    | ExecWithResult of (int -> 'msg)
     | Show
     | ShowAt of p: Point
     | Accept
@@ -172,13 +129,10 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                 | ExecAt p ->
                     moveTo p
                     node.Dialog.Exec() |> ignore
-                | ExecMessageBox msgFunc ->
-                    let button =
-                        let qtButton =
-                            node.Dialog.Exec()
-                            |> enum<MessageBox.StandardButton>
-                        MessageBoxButton.FromQtValue qtButton
-                    dispatch (msgFunc button)
+                | ExecWithResult msgFunc ->
+                    let raw =
+                        node.Dialog.Exec()
+                    dispatch (msgFunc raw)
                 | Show ->
                     node.Dialog.Show()
                 | ShowAt p ->

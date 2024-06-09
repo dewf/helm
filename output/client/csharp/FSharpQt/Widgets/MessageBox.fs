@@ -1,35 +1,88 @@
 ﻿module FSharpQt.Widgets.MessageBox
 
 open System
-open FSharpQt.BuilderNode
-open FSharpQt.Reactor
+open FSharpQt
+open BuilderNode
+open Reactor
 open Org.Whatever.QtTesting
 
 type Signal = unit
 
-// MessageBoxButton defined in Reactor, because there's a Cmd that uses it
+type MessageBoxButton =
+    | Ok
+    | Save
+    | SaveAll
+    | Open
+    | Yes
+    | YesToAll
+    | No
+    | NoToAll
+    | Abort
+    | Retry
+    | Ignore
+    | Close
+    | Cancel
+    | Discard
+    | Help
+    | Apply
+    | Reset
+    | RestoreDefaults
+with
+    static member internal FromQtValue(raw: MessageBox.StandardButton) =
+        match raw with
+        // NoButton is currently not supported, it appears to be OK
+        | MessageBox.StandardButton.Ok -> Ok
+        | MessageBox.StandardButton.Save -> Save
+        | MessageBox.StandardButton.SaveAll -> SaveAll
+        | MessageBox.StandardButton.Open -> Open
+        | MessageBox.StandardButton.Yes -> Yes
+        | MessageBox.StandardButton.YesToAll -> YesToAll
+        | MessageBox.StandardButton.No -> No
+        | MessageBox.StandardButton.NoToAll -> NoToAll
+        | MessageBox.StandardButton.Abort -> Abort
+        | MessageBox.StandardButton.Retry -> Retry
+        | MessageBox.StandardButton.Ignore -> Ignore
+        | MessageBox.StandardButton.Close -> Close
+        | MessageBox.StandardButton.Cancel -> Cancel
+        | MessageBox.StandardButton.Discard -> Discard
+        | MessageBox.StandardButton.Help -> Help
+        | MessageBox.StandardButton.Apply -> Apply
+        | MessageBox.StandardButton.Reset -> Reset
+        | MessageBox.StandardButton.RestoreDefaults -> RestoreDefaults
+        | _ -> failwithf "MessageBox.StandardButton.FromQtValue - unknown input %A" raw
+        
+    member internal this.QtValue =
+        match this with
+        | Ok -> MessageBox.StandardButton.Ok
+        | Save -> MessageBox.StandardButton.Save
+        | SaveAll -> MessageBox.StandardButton.SaveAll
+        | Open -> MessageBox.StandardButton.Open
+        | Yes -> MessageBox.StandardButton.Yes
+        | YesToAll -> MessageBox.StandardButton.YesToAll
+        | No -> MessageBox.StandardButton.No
+        | NoToAll -> MessageBox.StandardButton.NoToAll
+        | Abort -> MessageBox.StandardButton.Abort
+        | Retry -> MessageBox.StandardButton.Retry
+        | Ignore -> MessageBox.StandardButton.Ignore
+        | Close -> MessageBox.StandardButton.Close
+        | Cancel -> MessageBox.StandardButton.Cancel
+        | Discard -> MessageBox.StandardButton.Discard
+        | Help -> MessageBox.StandardButton.Help
+        | Apply -> MessageBox.StandardButton.Apply
+        | Reset -> MessageBox.StandardButton.Reset
+        | RestoreDefaults -> MessageBox.StandardButton.RestoreDefaults
+        
+// use this in Cmd.Dialog invocation, it maps the raw int return value
+// this keeps us from having to declare the MessageBoxButton in Reactor which didn't feel right -
+//   maybe there will be other dialog types with different meanings to the .exec() return value
+let execMessageBox<'msg> (msgFunc: MessageBoxButton -> 'msg) =
+    let intToMsg (rawExecValue: int) =
+        rawExecValue
+        |> enum<MessageBox.StandardButton>
+        |> MessageBoxButton.FromQtValue
+        |> msgFunc
+    DialogOp.ExecWithResult intToMsg
 
-let private qtValue (mb: MessageBoxButton) =
-    match mb with
-    | Ok -> MessageBox.StandardButton.Ok
-    | Save -> MessageBox.StandardButton.Save
-    | SaveAll -> MessageBox.StandardButton.SaveAll
-    | Open -> MessageBox.StandardButton.Open
-    | Yes -> MessageBox.StandardButton.Yes
-    | YesToAll -> MessageBox.StandardButton.YesToAll
-    | No -> MessageBox.StandardButton.No
-    | NoToAll -> MessageBox.StandardButton.NoToAll
-    | Abort -> MessageBox.StandardButton.Abort
-    | Retry -> MessageBox.StandardButton.Retry
-    | Ignore -> MessageBox.StandardButton.Ignore
-    | Close -> MessageBox.StandardButton.Close
-    | Cancel -> MessageBox.StandardButton.Cancel
-    | Discard -> MessageBox.StandardButton.Discard
-    | Help -> MessageBox.StandardButton.Help
-    | Apply -> MessageBox.StandardButton.Apply
-    | Reset -> MessageBox.StandardButton.Reset
-    | RestoreDefaults -> MessageBox.StandardButton.RestoreDefaults
-    
 type Icon =
     | Information
     | Warning
@@ -79,10 +132,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 let mask =
                     ((enum<MessageBox.StandardButton> 0), buttons)
                     ||> List.fold (fun acc b ->
-                        acc ||| qtValue b)
+                        acc ||| b.QtValue)
                 messageBox.SetStandardButtons(mask)
             | DefaultButton button ->
-                messageBox.SetDefaultButton(qtValue button)
+                messageBox.SetDefaultButton(button.QtValue)
             | Icon icon ->
                 messageBox.SetIcon(icon.QtValue)
                 

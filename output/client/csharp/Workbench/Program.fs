@@ -31,7 +31,7 @@ let init () =
 let update (state: State) (msg: Msg) =
     match msg with
     | ButtonClicked ->
-        state, Cmd.Dialog (PROMPT_ID, ExecMessageBox PromptResult)
+        state, Cmd.Dialog (PROMPT_ID, execMessageBox PromptResult)
     | PromptResult button ->
         printfn "got dialog button: %A" button
         state, Cmd.None
