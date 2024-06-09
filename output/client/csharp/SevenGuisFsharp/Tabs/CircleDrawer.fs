@@ -89,7 +89,9 @@ let update (state: State) = function
         | Some index ->
             let circle =
                 state |> circleAtIndex index
-            { state with NowEditing = true; EditingRadius = circle.Radius }, Cmd.Dialog ("edit", ExecAt circle.Location)
+            let nextState =
+                { state with NowEditing = true; EditingRadius = circle.Radius }
+            nextState, Cmd.Dialog (execDialogAtPoint "edit" circle.Location DialogClosed)
         | None ->
             state, Cmd.None
     | SetRadius value ->
@@ -271,7 +273,7 @@ let view (state: State) =
                 BoxItem.Spacer 10
                 BoxItem.Create(hbox)
             ])
-        Dialog(Attrs = [ Dialog.Title "Edit Radius"; Modality WindowModal ], Layout = vbox, OnClosed = DialogClosed)
+        Dialog(Attrs = [ Dialog.Title "Edit Radius"; Modality WindowModal ], Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ...
     // we attach the dialog to the canvas,
     // so that there's a valid widget for relative dialog popups
     let canvasWithDialogs =

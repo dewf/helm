@@ -72,17 +72,6 @@ with
         | Reset -> MessageBox.StandardButton.Reset
         | RestoreDefaults -> MessageBox.StandardButton.RestoreDefaults
         
-// use this in Cmd.Dialog invocation, it maps the raw int return value
-// this keeps us from having to declare the MessageBoxButton in Reactor which didn't feel right -
-//   maybe there will be other dialog types with different meanings to the .exec() return value
-let execMessageBox<'msg> (msgFunc: MessageBoxButton -> 'msg) =
-    let intToMsg (rawExecValue: int) =
-        rawExecValue
-        |> enum<MessageBox.StandardButton>
-        |> MessageBoxButton.FromQtValue
-        |> msgFunc
-    DialogOp.ExecWithResult intToMsg
-
 type Icon =
     | Information
     | Warning
@@ -184,3 +173,15 @@ type MessageBox<'msg>() =
             
         override this.AttachedToWindow window =
             this.model.MessageBox.SetParentDialogFlags(window)
+
+
+// use this in Cmd.Dialog invocation, it maps the raw int return value
+// this keeps us from having to declare the MessageBoxButton in Reactor which didn't feel right -
+//   maybe there will be other dialog types with different meanings to the .exec() return value
+let execMessageBox<'msg> (id: string) (msgFunc: MessageBoxButton -> 'msg) =
+    let msgFunc2 intValue =
+        intValue
+        |> enum<MessageBox.StandardButton>
+        |> MessageBoxButton.FromQtValue
+        |> msgFunc
+    id, DialogOp.ExecWithResult msgFunc2

@@ -16,7 +16,7 @@ type State = {
     Nothing: int
 }
 
-let PROMPT_ID = "prompt"
+let MESSAGEBOX_ID = "prompt"
 
 type Msg =
     | ButtonClicked
@@ -31,7 +31,7 @@ let init () =
 let update (state: State) (msg: Msg) =
     match msg with
     | ButtonClicked ->
-        state, Cmd.Dialog (PROMPT_ID, execMessageBox PromptResult)
+        state, Cmd.Dialog (execMessageBox MESSAGEBOX_ID PromptResult)
     | PromptResult button ->
         printfn "got dialog button: %A" button
         state, Cmd.None
@@ -42,8 +42,8 @@ let view (state: State) =
     let mainWindow =
         MainWindow(Attrs = [ Title "Hello"; Size (800, 600) ], Content = showButton)
     let mb =
-        MessageBox(Attrs = [ Text "Yeet"; InformativeText "Better"; DefaultButton Ok; Buttons [Ok; Cancel; Retry] ])
-    WindowWithDialogs(mainWindow, [ PROMPT_ID, mb ])
+        MessageBox(Attrs = [ Text "Yeet"; InformativeText "Better"; Buttons [Ok; Cancel] ])
+    WindowWithDialogs(mainWindow, [ MESSAGEBOX_ID, mb ])
     :> IBuilderNode<Msg>
     
 [<EntryPoint>]

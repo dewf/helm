@@ -8,7 +8,8 @@ open Org.Whatever.QtTesting
 type DialogOp<'msg> =
     | Exec
     | ExecAt of p: Point
-    | ExecWithResult of (int -> 'msg)
+    | ExecWithResult of msgFunc: (int -> 'msg)
+    | ExecAtPointWithResult of p: Point * msgFunc: (int -> 'msg)
     | Show
     | ShowAt of p: Point
     | Accept
@@ -125,14 +126,21 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                         ()
                 match op with
                 | Exec ->
-                    node.Dialog.Exec() |> ignore
+                    node.Dialog.Exec()
+                    |> ignore
                 | ExecAt p ->
                     moveTo p
-                    node.Dialog.Exec() |> ignore
+                    node.Dialog.Exec()
+                    |> ignore
                 | ExecWithResult msgFunc ->
-                    let raw =
+                    let result =
                         node.Dialog.Exec()
-                    dispatch (msgFunc raw)
+                    dispatch (msgFunc result)
+                | ExecAtPointWithResult (p, msgFunc) ->
+                    moveTo p
+                    let result =
+                        node.Dialog.Exec()
+                    dispatch (msgFunc result)
                 | Show ->
                     node.Dialog.Show()
                 | ShowAt p ->

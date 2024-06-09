@@ -2,6 +2,8 @@
 
 open System
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
+open FSharpQt.Reactor
 open Org.Whatever.QtTesting
 
 type Signal =
@@ -148,3 +150,22 @@ type Dialog<'msg>() =
             
         override this.AttachedToWindow window =
             this.model.Dialog.SetParentDialogFlags(window)
+
+
+// some utility stuff for Cmd.Dialog
+
+let execDialog (id: string) (msgFunc: bool -> 'msg) =
+    let msgFunc2 intValue =
+        match intValue with
+        | 1 -> true
+        | _ -> false
+        |> msgFunc
+    id, DialogOp.ExecWithResult msgFunc2
+    
+let execDialogAtPoint (id: string) (p: Point) (msgFunc: bool -> 'msg) =
+    let msgFunc2 intValue =
+        match intValue with
+        | 1 -> true
+        | _ -> false
+        |> msgFunc
+    id, DialogOp.ExecAtPointWithResult (p, msgFunc2)
