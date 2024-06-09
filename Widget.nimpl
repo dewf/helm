@@ -134,7 +134,6 @@ opaque DragMoveEvent extends Event {
 // because only those included in the "method mask" will actually be invoked
 
 flags MethodMask {
-    None = 0,                // F# giving us grief!
     PaintEvent = 1 << 0,
     MousePressEvent = 1 << 1,
     MouseMoveEvent = 1 << 2,

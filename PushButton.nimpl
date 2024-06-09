@@ -2,8 +2,31 @@ module PushButton;
 
 import AbstractButton;
 
-opaque Handle extends AbstractButton.Handle {
-    void setAutoDefault(bool value);
+flags SignalMask {
+    // from AbstractButton:
+    Clicked = 1,
+    Pressed = 1 << 1,
+    Released = 1 << 2,
+    Toggled = 1 << 3,
+
+    // from PushButton:
 }
 
-Handle create();
+interface SignalHandler {
+    // nativeimpl doesn't support interface inheritance yet, otherwise we'd inherit this from an AbstractButton SignalHandler
+    // but we'd have to declare the full signal mask above anyway, so maybe it's not a huge deal
+    // and for that matter, maybe we only want to support a subset of inherited signals, anyway?
+
+    void clicked(bool checkState);
+    void pressed();
+    void released();
+    void toggled(bool checkState);
+}
+
+opaque Handle extends AbstractButton.Handle {
+    void setAutoDefault(bool value);
+
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);

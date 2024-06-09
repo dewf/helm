@@ -142,6 +142,7 @@ add_library(QtTestingImpl STATIC
 
     ../util/convert.h
     ../util/convert.cpp
+    ../util/SignalStuff.h
 )
 
 target_link_libraries(QtTestingImpl PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)

@@ -365,7 +365,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
     member private this.SignalMap = (fun _ -> None) // nothing yet
     
     member private this.MethodMask =
-        (Widget.MethodMask.None, eventMaskItems)
+        (enum<Widget.MethodMask> 0, eventMaskItems)
         ||> List.fold (fun acc item ->
             let value =
                 match item with
