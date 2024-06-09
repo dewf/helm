@@ -8,7 +8,7 @@ opaque Handle extends Widget.Handle {
 
     void accept();
     void reject();
-    void exec();
+    int exec();
 
     void onAccepted(Signal.VoidDelegate handler);
     void onRejected(Signal.VoidDelegate handler);

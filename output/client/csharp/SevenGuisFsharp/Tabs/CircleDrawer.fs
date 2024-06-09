@@ -89,7 +89,7 @@ let update (state: State) = function
         | Some index ->
             let circle =
                 state |> circleAtIndex index
-            { state with NowEditing = true; EditingRadius = circle.Radius }, Cmd.DialogOp ("edit", ExecAt circle.Location)
+            { state with NowEditing = true; EditingRadius = circle.Radius }, Cmd.Dialog ("edit", ExecAt circle.Location)
         | None ->
             state, Cmd.None
     | SetRadius value ->
@@ -100,9 +100,9 @@ let update (state: State) = function
             |> List.tryFindIndex (fun circle -> Util.dist circle.Location loc < circle.Radius)
         { state with MaybeHoverIndex = nextHoverIndex }, Cmd.None
     | ApplyEdit ->
-        state, Cmd.DialogOp ("edit", Accept)
+        state, Cmd.Dialog ("edit", Accept)
     | CancelEdit ->
-        state, Cmd.DialogOp ("edit", Reject)
+        state, Cmd.Dialog ("edit", Reject)
     | DialogClosed accepted ->
         // this also catches the case where the dialog is closed with the [X] and not via the cancel button
         // hence not changing any state in the CancelEdit handler

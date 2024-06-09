@@ -26,29 +26,6 @@ internal static class Program
             Console.WriteLine("toggled");
         }
     }
-
-    class Handler2(PushButton.Handle original) : PushButton.SignalHandler
-    {
-        public void Clicked(bool checkState)
-        {
-            original.SetSignalMask(0);
-        }
-
-        public void Pressed()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Released()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Toggled(bool checkState)
-        {
-            throw new NotImplementedException();
-        }
-    }
     
     [STAThread]
     private static void Main(string[] args)
@@ -57,35 +34,43 @@ internal static class Program
         
         using (var app = Application.Create(args))
         {
-            using (var window = MainWindow.Create())
-            {
-                window.SetWindowTitle("Haloooo");
-                // window.Resize(640, 480);
+            var mb = MessageBox.Create();
+            mb.SetText("Cool text bro");
+            mb.SetInformativeText("More info");
+            mb.SetIcon(MessageBox.Icon.Warning);
+            mb.SetStandardButtons(MessageBox.StandardButton.Ok | MessageBox.StandardButton.Cancel);
+            mb.SetDefaultButton(MessageBox.StandardButton.Ok);
+            mb.Exec();
 
-                // var area = ScrollArea.Create();
-                
-                var button = PushButton.Create(new Handler());
-                button.SetSignalMask(PushButton.SignalMask.Pressed | PushButton.SignalMask.Released | PushButton.SignalMask.Clicked);
-                button.SetText("Click ME");
-
-                var button2 = PushButton.Create(new Handler2(button));
-                button2.SetSignalMask(PushButton.SignalMask.Clicked);
-                button2.SetText("click to disable #1");
-
-                var vbox = BoxLayout.Create();
-                vbox.SetDirection(BoxLayout.Direction.TopToBottom);
-                vbox.AddWidget(button);
-                vbox.AddWidget(button2);
-
-                var w = Widget.Create();
-                w.SetLayout(vbox);
-                
-                window.SetCentralWidget(w);
-                window.Show();
-                
-                // runloop, before window destroyed plz
-                Application.Exec();
-            }
+            // using (var window = MainWindow.Create())
+            // {
+            //     window.SetWindowTitle("Haloooo");
+            //     // window.Resize(640, 480);
+            //
+            //     // var area = ScrollArea.Create();
+            //     
+            //     var button = PushButton.Create(new Handler());
+            //     button.SetSignalMask(PushButton.SignalMask.Pressed | PushButton.SignalMask.Released | PushButton.SignalMask.Clicked);
+            //     button.SetText("Click ME");
+            //
+            //     var button2 = PushButton.Create(new Handler2(button));
+            //     button2.SetSignalMask(PushButton.SignalMask.Clicked);
+            //     button2.SetText("click to disable #1");
+            //
+            //     var vbox = BoxLayout.Create();
+            //     vbox.SetDirection(BoxLayout.Direction.TopToBottom);
+            //     vbox.AddWidget(button);
+            //     vbox.AddWidget(button2);
+            //
+            //     var w = Widget.Create();
+            //     w.SetLayout(vbox);
+            //     
+            //     window.SetCentralWidget(w);
+            //     window.Show();
+            //     
+            //     // runloop, before window destroyed plz
+            //     Application.Exec();
+            // }
         }
         
         Library.DumpTables(); // check to make sure we're not leaking anything

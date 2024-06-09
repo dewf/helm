@@ -8,6 +8,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpQt", "FSharpQt\FSharp
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SevenGuisFsharp", "SevenGuisFsharp\SevenGuisFsharp.fsproj", "{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Workbench", "Workbench\Workbench.fsproj", "{9109F3DD-02B3-454A-8088-BFF1024496AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0FCCD318-7A63-4AFC-8975-E9F0D40E5DED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9109F3DD-02B3-454A-8088-BFF1024496AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9109F3DD-02B3-454A-8088-BFF1024496AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9109F3DD-02B3-454A-8088-BFF1024496AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9109F3DD-02B3-454A-8088-BFF1024496AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

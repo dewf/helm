@@ -145,5 +145,6 @@ type Dialog<'msg>() =
             
         override this.ContentKey =
             (this :> IDialogNode<'msg>).Dialog
+            
         override this.AttachedToWindow window =
             this.model.Dialog.SetParentDialogFlags(window)

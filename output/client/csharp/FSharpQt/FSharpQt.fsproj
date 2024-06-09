@@ -37,6 +37,7 @@
         <Compile Include="Widgets\GroupBox.fs" />
         <Compile Include="Widgets\RadioButton.fs" />
         <Compile Include="Widgets\ScrollArea.fs" />
+        <Compile Include="Widgets\MessageBox.fs" />
     </ItemGroup>
 
     <ItemGroup>

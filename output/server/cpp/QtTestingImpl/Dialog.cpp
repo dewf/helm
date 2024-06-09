@@ -19,8 +19,8 @@ namespace Dialog
         THIS->reject();
     }
 
-    void Handle_exec(HandleRef _this) {
-        THIS->exec();
+    int Handle_exec(HandleRef _this) {
+        return THIS->exec();
     }
 
     void Handle_onAccepted(HandleRef _this, std::function<VoidDelegate> handler) {

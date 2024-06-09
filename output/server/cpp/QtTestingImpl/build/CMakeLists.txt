@@ -91,6 +91,10 @@ add_library(QtTestingImpl STATIC
     ../generated/MenuBar_wrappers.cpp
     ../MenuBar.cpp
 
+    ../generated/MessageBox.h
+    ../generated/MessageBox_wrappers.cpp
+    ../MessageBox.cpp
+
     ../generated/Painter.h
     ../generated/Painter_wrappers.cpp
     ../Painter.cpp

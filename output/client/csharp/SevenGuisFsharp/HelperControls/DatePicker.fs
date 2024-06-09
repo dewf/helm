@@ -43,7 +43,7 @@ type Msg =
     | EditChanged of str: string
     | EditSubmitted
     | ShowCalendar
-    | CalendarOp of op: DialogOp
+    | CalendarOp of op: DialogOp<Msg>
 
 let init () =
     let state = {
@@ -100,9 +100,9 @@ let update (state: State) (msg: Msg) =
     | EditSubmitted ->
         state, Cmd.None
     | ShowCalendar ->
-        state, Cmd.DialogOp ("calendar", Exec)
+        state, Cmd.Dialog ("calendar", Exec)
     | CalendarOp op ->
-        state, Cmd.DialogOp ("calendar", op)
+        state, Cmd.Dialog ("calendar", op)
 
 let view (state: State) =
     let edit =

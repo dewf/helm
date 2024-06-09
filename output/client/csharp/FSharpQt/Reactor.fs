@@ -5,9 +5,53 @@ open System
 open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
-type DialogOp =
+type MessageBoxButton =
+    | Ok
+    | Save
+    | SaveAll
+    | Open
+    | Yes
+    | YesToAll
+    | No
+    | NoToAll
+    | Abort
+    | Retry
+    | Ignore
+    | Close
+    | Cancel
+    | Discard
+    | Help
+    | Apply
+    | Reset
+    | RestoreDefaults
+with
+    static member internal FromQtValue(raw: MessageBox.StandardButton) =
+        match raw with
+        // NoButton is currently not supported, it appears to be OK
+        | MessageBox.StandardButton.Ok -> Ok
+        | MessageBox.StandardButton.Save -> Save
+        | MessageBox.StandardButton.SaveAll -> SaveAll
+        | MessageBox.StandardButton.Open -> Open
+        | MessageBox.StandardButton.Yes -> Yes
+        | MessageBox.StandardButton.YesToAll -> YesToAll
+        | MessageBox.StandardButton.No -> No
+        | MessageBox.StandardButton.NoToAll -> NoToAll
+        | MessageBox.StandardButton.Abort -> Abort
+        | MessageBox.StandardButton.Retry -> Retry
+        | MessageBox.StandardButton.Ignore -> Ignore
+        | MessageBox.StandardButton.Close -> Close
+        | MessageBox.StandardButton.Cancel -> Cancel
+        | MessageBox.StandardButton.Discard -> Discard
+        | MessageBox.StandardButton.Help -> Help
+        | MessageBox.StandardButton.Apply -> Apply
+        | MessageBox.StandardButton.Reset -> Reset
+        | MessageBox.StandardButton.RestoreDefaults -> RestoreDefaults
+        | _ -> failwithf "MessageBox.StandardButton.FromQtValue - unknown input %A" raw
+        
+type DialogOp<'msg> =
     | Exec
     | ExecAt of p: Point
+    | ExecMessageBox of (MessageBoxButton -> 'msg)
     | Show
     | ShowAt of p: Point
     | Accept
@@ -19,7 +63,7 @@ type Cmd<'msg,'signal> =
     | OfMsg of 'msg
     | Signal of 'signal
     | Batch of commands: Cmd<'msg,'signal> list
-    | DialogOp of name: string * op: DialogOp
+    | Dialog of name: string * op: DialogOp<'msg>
     | PopMenu of name: string * loc: Point
     
 let nullAttrUpdate (state: 'state) (attr: 'attr) =
@@ -110,7 +154,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
     member this.ProcessMsg (msg: 'msg) =
         dispatch msg
         
-    member this.DialogOp (name: string) (op: DialogOp) =
+    member this.DialogOp (name: string) (op: DialogOp<'msg>) =
         match attachMap.TryFind name with
         | Some node ->
             match node with
@@ -124,10 +168,17 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                         ()
                 match op with
                 | Exec ->
-                    node.Dialog.Exec()
+                    node.Dialog.Exec() |> ignore
                 | ExecAt p ->
                     moveTo p
-                    node.Dialog.Exec()
+                    node.Dialog.Exec() |> ignore
+                | ExecMessageBox msgFunc ->
+                    let button =
+                        let qtButton =
+                            node.Dialog.Exec()
+                            |> enum<MessageBox.StandardButton>
+                        MessageBoxButton.FromQtValue qtButton
+                    dispatch (msgFunc button)
                 | Show ->
                     node.Dialog.Show()
                 | ShowAt p ->
@@ -193,7 +244,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                 | Cmd.Batch commands ->
                     commands
                     |> List.iter processCmd
-                | Cmd.DialogOp (name, op) ->
+                | Cmd.Dialog (name, op) ->
                     this.reactor.DialogOp name op
                 | Cmd.PopMenu (name, loc) ->
                     this.reactor.PopMenu name loc
@@ -284,7 +335,7 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
             | Cmd.Batch commands ->
                 commands
                 |> List.iter processCmd
-            | Cmd.DialogOp (name, op) ->
+            | Cmd.Dialog (name, op) ->
                 this.reactor.DialogOp name op
             | Cmd.PopMenu (name, loc) ->
                 this.reactor.PopMenu name loc
