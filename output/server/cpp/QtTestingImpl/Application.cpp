@@ -41,4 +41,38 @@ namespace Application
         delete[] argv;
         return (HandleRef)ret;
     }
+
+    // "execute on main thread" stuff ======================================
+
+    static QEvent::Type mainThreadRunEventType = (QEvent::Type)QEvent::registerEventType();
+
+    class MainThreadRunEvent : public QEvent {
+    private:
+        std::function<MainThreadFunc> func;
+    public:
+        explicit MainThreadRunEvent(const std::function<MainThreadFunc> &func) : QEvent(mainThreadRunEventType), func(func) {}
+        void execute() {
+            func();
+        }
+    };
+
+    class MainThreadRunner : public QObject {
+    public:
+        bool event(QEvent *event) override {
+            if (event->type() == mainThreadRunEventType) {
+                ((MainThreadRunEvent*)event)->execute();
+                return true;
+            } else {
+                return QObject::event(event);
+            }
+        }
+    };
+
+    MainThreadRunner* runnerInstance = new MainThreadRunner(); // just being superstitious about heap-allocating this, would probably be fine anyway
+
+    void executeOnMainThread(std::function<MainThreadFunc> func) {
+        // must be heap-allocated, owned by Qt after posting
+        auto event = new MainThreadRunEvent(func);
+        QCoreApplication::postEvent(runnerInstance, event);
+    }
 }

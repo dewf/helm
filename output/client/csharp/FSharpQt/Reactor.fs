@@ -23,6 +23,13 @@ type Cmd<'msg,'signal> =
     | Batch of commands: Cmd<'msg,'signal> list
     | Dialog of name: string * op: DialogOp<'msg>
     | PopMenu of name: string * loc: Point
+    | OfAsync of block: Async<'msg>
+    
+let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
+    async {
+        let! result = block
+        return mapper result
+    }
     
 let nullAttrUpdate (state: 'state) (attr: 'attr) =
     state
@@ -210,6 +217,11 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                     this.reactor.DialogOp name op
                 | Cmd.PopMenu (name, loc) ->
                     this.reactor.PopMenu name loc
+                | Cmd.OfAsync block ->
+                    async {
+                        let! msg = block
+                        Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)
+                    } |> Async.Start
             this.reactor <- new Reactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
             this.reactor.ApplyAttrs(this.Attrs)
         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
@@ -290,7 +302,6 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
             | Cmd.OfMsg msg ->
                 this.reactor.ProcessMsg msg
             | Cmd.Signal signal ->
-                // thoroughly chuffed, this worked out well!
                 match signal with
                 | QuitApplication ->
                     Application.Quit()
@@ -301,6 +312,11 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
                 this.reactor.DialogOp name op
             | Cmd.PopMenu (name, loc) ->
                 this.reactor.PopMenu name loc
+            | Cmd.OfAsync block ->
+                async {
+                    let! msg = block
+                    Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)
+                } |> Async.Start
         this.reactor <-
             new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
         Application.Exec()

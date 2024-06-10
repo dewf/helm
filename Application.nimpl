@@ -9,3 +9,7 @@ void quit();
 Array<string> availableStyles();
 
 Handle create(Array<string> args);
+
+
+delegate void MainThreadFunc();
+void executeOnMainThread(MainThreadFunc func);

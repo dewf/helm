@@ -14,25 +14,41 @@ open PushButton
 open MessageBox
 
 type State = {
-    Nothing: int
+    SleepComplete: bool
 }
 
-let MESSAGEBOX_ID = "prompt"
-
 type Msg =
-    | LaunchDialog
+    | DoneSleeping of value: int
+    | ButtonClicked
     | PromptResult of button: MessageBoxButton
 
 let init () =
     let nextState = {
-        Nothing = 0
+        SleepComplete = false
     }
     nextState, Cmd.None
 
 let update (state: State) (msg: Msg) =
     match msg with
-    | LaunchDialog ->
-        state, Cmd.Dialog (execMessageBox MESSAGEBOX_ID PromptResult)
+    | DoneSleeping value ->
+        { state with SleepComplete = true }, Cmd.None
+    | ButtonClicked ->
+        let func =
+            async {
+                printfn "wait 1"
+                do! Async.Sleep 1000
+                printfn "wait 2"
+                do! Async.Sleep 1000
+                printfn "wait 3"
+                do! Async.Sleep 1000
+                printfn "wait 4"
+                do! Async.Sleep 1000
+                printfn "wait 5"
+                do! Async.Sleep 1000
+                printfn "done!"
+                return 1234
+            }
+        state, Cmd.OfAsync (asyncPerform func DoneSleeping)
     | PromptResult button ->
         let cmd =
             match button with
@@ -44,11 +60,16 @@ let view (state: State) =
     let mainWindow =
         let layout =
             let quitButton =
+                let text, enabled =
+                    match state.SleepComplete with
+                    | true -> "Done", false
+                    | false -> "Do Something", true
                 PushButton(
                     Attrs = [
-                        PushButton.Text "Quit App"
+                        PushButton.Text text
+                        Enabled enabled
                         MinWidth 200
-                    ], OnClicked = LaunchDialog)
+                    ], OnClicked = ButtonClicked)
             BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (10, 10, 10, 10) ],
                       Items = [ BoxItem.Create(quitButton) ])
         MainWindow(Attrs = [ Title "Hello" ], Content = layout)
@@ -56,12 +77,12 @@ let view (state: State) =
     let mb =
         MessageBox(
             Attrs = [
+                WindowTitle "!! Important !!"
                 Text "Quit the application?"
                 Buttons [Ok; Cancel]
-                WindowTitle "!! Important !!"
             ])
         
-    WindowWithDialogs(mainWindow, [ MESSAGEBOX_ID, mb ])
+    WindowWithDialogs(mainWindow, [ "prompt", mb ])
     :> IBuilderNode<Msg>
     
 [<EntryPoint>]
