@@ -47,6 +47,7 @@ with
         | Save -> FileDialog.AcceptMode.Save
     
 type Attr =
+    | WindowTitle of title: string
     | AcceptMode of mode: AcceptMode
     | FileMode of mode: FileMode
     | NameFilter of filter: string
@@ -57,14 +58,15 @@ type Attr =
     | Directory of dir: string
 
 let private keyFunc = function
-    | AcceptMode _ -> 0
-    | FileMode _ -> 1
-    | NameFilter _ -> 2
-    | NameFilters _ -> 3
-    | MimeTypeFilters _ -> 4
-    | ViewMode _ -> 5
-    | DefaultSuffix _ -> 6
-    | Directory _ -> 7
+    | WindowTitle _ -> 0
+    | AcceptMode _ -> 1
+    | FileMode _ -> 2
+    | NameFilter _ -> 3
+    | NameFilters _ -> 4
+    | MimeTypeFilters _ -> 5
+    | ViewMode _ -> 6
+    | DefaultSuffix _ -> 7
+    | Directory _ -> 8
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -93,6 +95,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
+            | WindowTitle title ->
+                dialog.SetWindowTitle(title)
             | AcceptMode mode ->
                 dialog.SetAcceptMode(mode.QtValue)
             | FileMode mode ->

@@ -52,6 +52,7 @@ let view (state: State) =
     let openDialog =
         FileDialog(
             Attrs = [
+                WindowTitle "Open Something!"
                 FileMode ExistingFile
                 NameFilter "Images (*.png *.xpm *.jpg)"
                 ViewMode Detail
