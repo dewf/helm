@@ -271,7 +271,7 @@ let view (state: State) =
                 BoxItem.Spacer 10
                 BoxItem.Create(hbox)
             ])
-        Dialog(Attrs = [ Dialog.Title "Edit Radius"; Modality WindowModal ], Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ...
+        Dialog(Attrs = [ Dialog.Title "Edit Radius"; Modality WindowModal ], Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ... probably need to settle on a single manner of handling dialog close events
     // we attach the dialog to the canvas,
     // so that there's a valid widget for relative dialog popups
     let canvasWithDialogs =

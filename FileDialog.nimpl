@@ -1,0 +1,62 @@
+module FileDialog;
+
+import Dialog;
+
+flags SignalMask {
+    CurrentChanged = 1,
+    CurrentUrlChanged = 1 << 1,
+    DirectoryEntered = 1 << 2,
+    DirectoryUrlEntered = 1 << 3,
+    FileSelected = 1 << 4,
+    FilesSelected = 1 << 5,
+    FilterSelected = 1 << 6,
+    UrlSelected = 1 << 7,
+    UrlsSelected = 1 << 8
+}
+
+enum FileMode {
+    AnyFile,
+    ExistingFile,
+    Directory,
+    ExistingFiles
+}
+
+enum ViewMode {
+    Detail,
+    List
+}
+
+enum AcceptMode {
+    Open,
+    Save
+}
+
+opaque Handle extends Dialog.Handle {
+    void setAcceptMode(AcceptMode mode);
+    void setFileMode(FileMode mode);
+    void setNameFilter(string filter);
+    void setNameFilters(Array<string> filters);
+    void setMimeTypeFilters(Array<string> filters);
+    void setViewMode(ViewMode mode);
+    void setDefaultSuffix(string suffix);
+    void setDirectory(string dir);
+    void selectFile(string file);
+    
+    Array<string> selectedFiles();
+    
+    void setSignalMask(SignalMask mask);
+}
+
+interface SignalHandler {
+    void currentChanged(string path);
+    void currentUrlChanged(string url);
+    void directoryEntered(string dir);
+    void directoryUrlEntered(string url);
+    void fileSelected(string file);
+    void filesSelected(Array<string> selected);
+    void filterSelected(string filter);
+    void urlSelected(string url);
+    void urlsSelected(Array<string> urls);
+}
+
+Handle create(SignalHandler handler);

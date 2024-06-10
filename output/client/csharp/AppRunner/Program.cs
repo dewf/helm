@@ -4,26 +4,51 @@ namespace AppRunner;
 
 internal static class Program
 {
-    class Handler : PushButton.SignalHandler
+    class Handler : FileDialog.SignalHandler
     {
-        public void Clicked(bool checkState)
+        public void CurrentChanged(string path)
         {
-            Console.WriteLine("Push button clicked!");
+            throw new NotImplementedException();
         }
 
-        public void Pressed()
+        public void CurrentUrlChanged(string url)
         {
-            Console.WriteLine("pressed");
+            throw new NotImplementedException();
         }
 
-        public void Released()
+        public void DirectoryEntered(string dir)
         {
-            Console.WriteLine("released");
+            throw new NotImplementedException();
         }
 
-        public void Toggled(bool checkState)
+        public void DirectoryUrlEntered(string url)
         {
-            Console.WriteLine("toggled");
+            throw new NotImplementedException();
+        }
+
+        public void FileSelected(string file)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void FilesSelected(string[] selected)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void FilterSelected(string filter)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UrlSelected(string url)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UrlsSelected(string[] urls)
+        {
+            throw new NotImplementedException();
         }
     }
     
@@ -34,13 +59,27 @@ internal static class Program
         
         using (var app = Application.Create(args))
         {
-            var mb = MessageBox.Create();
-            mb.SetText("Cool text bro");
-            mb.SetInformativeText("More info");
-            mb.SetIcon(MessageBox.Icon.Warning);
-            mb.SetStandardButtons(MessageBox.StandardButton.Ok | MessageBox.StandardButton.Cancel);
-            mb.SetDefaultButton(MessageBox.StandardButton.Ok);
-            mb.Exec();
+            var dialog = FileDialog.Create(new Handler());
+            dialog.SetFileMode(FileDialog.FileMode.ExistingFile);
+            dialog.SetNameFilter("Images (*.png *.xpm *.jpg)");
+            dialog.SetViewMode(FileDialog.ViewMode.Detail);
+            if (dialog.Exec() > 0)
+            {
+                Console.WriteLine("woooot");
+            }
+            
+            // Application.Exec();
+            
+//             QObject::connect(button, &QPushButton::clicked, button, [](bool checked){
+//                 QFileDialog dialog;
+// //        dialog.setOptions(QFileDialog::DontUseNativeDialog);
+//                 dialog.setFileMode(QFileDialog::ExistingFile);
+//                 dialog.setNameFilter("Images (*.png *.xpm *.jpg)");
+//                 dialog.setViewMode(QFileDialog::Detail);
+//                 if (dialog.exec()) {
+//                     printf("it was good!\n");
+//                 }
+//             });
 
             // using (var window = MainWindow.Create())
             // {

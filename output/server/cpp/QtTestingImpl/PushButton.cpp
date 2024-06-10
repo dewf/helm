@@ -23,7 +23,6 @@ namespace PushButton
         };
     public:
         explicit PushButtonWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-
         void setSignalMask(uint32_t newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);

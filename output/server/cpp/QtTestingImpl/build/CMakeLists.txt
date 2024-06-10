@@ -51,6 +51,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Dialog_wrappers.cpp
     ../Dialog.cpp
 
+    ../generated/FileDialog.h
+    ../generated/FileDialog_wrappers.cpp
+    ../FileDialog.cpp
+
     ../generated/Frame.h
     ../generated/Frame_wrappers.cpp
     ../Frame.cpp
