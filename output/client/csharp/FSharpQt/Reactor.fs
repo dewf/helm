@@ -93,7 +93,10 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
             updateAttachments()
             // process command(s) after tree diff
             processCmd cmd
-    do
+        
+    member this.Init() =
+        // used to be in a 'do' block above, but we want whoever instantiated this reactor to have the opportunity to assign it to a mutable 'reactor' variable,
+        // which the 'processCmd' will rely on. now it should be safe to emit Cmds from init() functions
         build dispatch root
         updateAttachments()
         processCmd initCmd
@@ -202,7 +205,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                 | Cmd.None ->
                     ()
                 | Cmd.OfMsg msg ->
-                    // note, will break if used by init() - 'reactor' variable hasn't been set!
+                    // should this be deferred via .ExecuteOnMainThread? otherwise it's recursively processed ...
                     this.reactor.ProcessMsg(msg)
                 | Cmd.Signal signal ->
                     match this.SignalMap signal with
@@ -223,6 +226,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                         Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)
                     } |> Async.Start
             this.reactor <- new Reactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
+            this.reactor.Init() // formerly the reactor 'do' block, but this gives us a chance to assign 'reactor' before 'processCmd' ever executes
             this.reactor.ApplyAttrs(this.Attrs)
         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root>)
@@ -300,6 +304,7 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
             | Cmd.None ->
                 ()
             | Cmd.OfMsg msg ->
+                // should this be deferred via .ExecuteOnMainThread?
                 this.reactor.ProcessMsg msg
             | Cmd.Signal signal ->
                 match signal with
@@ -317,8 +322,8 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
                     let! msg = block
                     Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)
                 } |> Async.Start
-        this.reactor <-
-            new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
+        this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
+        this.reactor.Init() // former 'do' block of reactor, but 'processCmd' relies on reactor variable being set
         Application.Exec()
         
     interface IDisposable with
