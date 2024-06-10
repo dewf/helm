@@ -3,15 +3,21 @@ module FileDialog;
 import Dialog;
 
 flags SignalMask {
-    CurrentChanged = 1,
-    CurrentUrlChanged = 1 << 1,
-    DirectoryEntered = 1 << 2,
-    DirectoryUrlEntered = 1 << 3,
-    FileSelected = 1 << 4,
-    FilesSelected = 1 << 5,
-    FilterSelected = 1 << 6,
-    UrlSelected = 1 << 7,
-    UrlsSelected = 1 << 8
+    // from Dialog:
+    Accepted = 1 << 0,
+    Finished = 1 << 1,
+    Rejected = 1 << 2,
+
+    // FileDialog:
+    CurrentChanged = 1 << 3,
+    CurrentUrlChanged = 1 << 4,
+    DirectoryEntered = 1 << 5,
+    DirectoryUrlEntered = 1 << 6,
+    FileSelected = 1 << 7,
+    FilesSelected = 1 << 8,
+    FilterSelected = 1 << 9,
+    UrlSelected = 1 << 10,
+    UrlsSelected = 1 << 11
 }
 
 enum FileMode {
@@ -48,6 +54,12 @@ opaque Handle extends Dialog.Handle {
 }
 
 interface SignalHandler {
+    // from Dialog:
+    void accepted();
+    void finished(int result);
+    void rejected();
+
+    // FileDialog:
     void currentChanged(string path);
     void currentUrlChanged(string url);
     void directoryEntered(string dir);

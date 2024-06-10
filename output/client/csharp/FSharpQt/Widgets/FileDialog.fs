@@ -5,6 +5,9 @@ open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
 type Signal =
+    | Accepted
+    | Finished of result: int
+    | Rejected
     | CurrentChanged of path: string
     | CurrentUrlChanged of url: string
     | DirectoryEntered of dir: string
@@ -115,6 +118,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 dialog.SetDirectory(dir)
                 
     interface FileDialog.SignalHandler with
+        member this.Accepted() =
+            dispatcher Accepted
+        member this.Finished result =
+            dispatcher (Finished result)
+        member this.Rejected() =
+            dispatcher Rejected
         member this.CurrentChanged path =
             dispatcher (CurrentChanged path)
         member this.CurrentUrlChanged url =
@@ -161,6 +170,9 @@ type FileDialog<'msg>() =
     
     let mutable signalMask = enum<FileDialog.SignalMask> 0
     
+    let mutable onAccepted: 'msg option = None
+    let mutable onFinished: (int -> 'msg) option = None
+    let mutable onRejected: 'msg option = None
     let mutable onCurrentChanged: (string -> 'msg) option = None
     let mutable onCurrentUrlChanged: (string -> 'msg) option = None
     let mutable onDirectoryEntered: (string -> 'msg) option = None
@@ -170,6 +182,18 @@ type FileDialog<'msg>() =
     let mutable onFilterSelected: (string -> 'msg) option = None
     let mutable onUrlSelected: (string -> 'msg) option = None
     let mutable onUrlsSelected: (string list -> 'msg) option = None
+    
+    member this.OnAccepted with set value =
+        onAccepted <- Some value
+        signalMask <- signalMask ||| FileDialog.SignalMask.Accepted
+        
+    member this.OnFinished with set value =
+        onFinished <- Some value
+        signalMask <- signalMask ||| FileDialog.SignalMask.Finished
+        
+    member this.OnRejected with set value =
+        onRejected <- Some value
+        signalMask <- signalMask ||| FileDialog.SignalMask.Rejected
     
     member this.OnCurrentChanged with set value =
         onCurrentChanged <- Some value
@@ -209,6 +233,13 @@ type FileDialog<'msg>() =
             
     let signalMap (signal: Signal) =
         match signal with
+        | Accepted ->
+            onAccepted
+        | Finished result ->
+            onFinished
+            |> Option.map (fun f -> f result)
+        | Rejected ->
+            onRejected
         | CurrentChanged path ->
             onCurrentChanged
             |> Option.map (fun f -> f path)

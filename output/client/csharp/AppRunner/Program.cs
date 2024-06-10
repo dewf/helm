@@ -4,54 +4,6 @@ namespace AppRunner;
 
 internal static class Program
 {
-    class Handler : FileDialog.SignalHandler
-    {
-        public void CurrentChanged(string path)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CurrentUrlChanged(string url)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DirectoryEntered(string dir)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void DirectoryUrlEntered(string url)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void FileSelected(string file)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void FilesSelected(string[] selected)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void FilterSelected(string filter)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UrlSelected(string url)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void UrlsSelected(string[] urls)
-        {
-            throw new NotImplementedException();
-        }
-    }
-    
     [STAThread]
     private static void Main(string[] args)
     {
@@ -59,15 +11,6 @@ internal static class Program
         
         using (var app = Application.Create(args))
         {
-            var dialog = FileDialog.Create(new Handler());
-            dialog.SetFileMode(FileDialog.FileMode.ExistingFile);
-            dialog.SetNameFilter("Images (*.png *.xpm *.jpg)");
-            dialog.SetViewMode(FileDialog.ViewMode.Detail);
-            if (dialog.Exec() > 0)
-            {
-                Console.WriteLine("woooot");
-            }
-            
             // Application.Exec();
             
 //             QObject::connect(button, &QPushButton::clicked, button, [](bool checked){

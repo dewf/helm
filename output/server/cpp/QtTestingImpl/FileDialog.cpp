@@ -14,6 +14,11 @@ namespace FileDialog
         std::shared_ptr<SignalHandler> handler;
         uint32_t lastMask = 0;
         std::vector<SignalMapItem<SignalMask>> signalMap = {
+            // from Dialog:
+            { SignalMask::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
+            { SignalMask::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
+            { SignalMask::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
+            // FileDialog:
             { SignalMask::CurrentChanged, SIGNAL(currentChanged(QString)), SLOT(onCurrentChanged(QString)) },
             { SignalMask::CurrentUrlChanged, SIGNAL(currentUrlChanged(QUrl)), SLOT(onCurrentUrlChanged(QUrl)) },
             { SignalMask::DirectoryEntered, SIGNAL(directoryEntered(QString)), SLOT(onDirectoryEntered(QString)) },
@@ -34,6 +39,15 @@ namespace FileDialog
             }
         }
     public slots:
+        void onAccepted() {
+            handler->accepted();
+        };
+        void onFinished(int result) {
+            handler->finished(result);
+        }
+        void onRejected() {
+            handler->rejected();
+        }
         void onCurrentChanged(const QString &path) {
             handler->currentChanged(path.toStdString());
         }
