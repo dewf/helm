@@ -1,7 +1,18 @@
 module Dialog;
 
 import Widget;
-import Signal;
+
+flags SignalMask {
+    Accepted = 1,
+    Finished = 1 << 1,
+    Rejected = 1 << 2
+}
+
+interface SignalHandler {
+    void accepted();
+    void finished(int result);
+    void rejected();
+}
 
 opaque Handle extends Widget.Handle {
     void setParentDialogFlags(Widget.Handle parent); // a version where we're setting WindowFlags (Qt::Dialog) - otherwise it won't work
@@ -10,9 +21,7 @@ opaque Handle extends Widget.Handle {
     void reject();
     int exec();
 
-    void onAccepted(Signal.VoidDelegate handler);
-    void onRejected(Signal.VoidDelegate handler);
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
-Handle create(Widget.Handle parent);
+Handle create(SignalHandler handler);

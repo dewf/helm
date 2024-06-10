@@ -3,10 +3,42 @@
 #include <QObject>
 #include <QDialog>
 
-#define THIS ((QDialog*)_this)
+#include "util/SignalStuff.h"
+
+#define THIS ((DialogWithHandler*)_this)
 
 namespace Dialog
 {
+    class DialogWithHandler : public QDialog {
+        Q_OBJECT
+    private:
+        std::shared_ptr<SignalHandler> handler;
+        uint32_t lastMask = 0;
+        std::vector<SignalMapItem<SignalMask>> signalMap = {
+                { SignalMask::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
+                { SignalMask::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
+                { SignalMask::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
+        };
+    public:
+        explicit DialogWithHandler(const std::shared_ptr<SignalHandler> &handler) : handler(handler) {}
+        void setSignalMask(uint32_t newMask) {
+            if (newMask != lastMask) {
+                processChanges(lastMask, newMask, signalMap, this);
+                lastMask = newMask;
+            }
+        }
+    public slots:
+        void onAccepted() {
+            handler->accepted();
+        }
+        void onFinished(int result) {
+            handler->finished(result);
+        }
+        void onRejected() {
+            handler->rejected();
+        }
+    };
+
     void Handle_setParentDialogFlags(HandleRef _this, Widget::HandleRef parent) {
         THIS->setParent((QWidget*)parent, Qt::Dialog);
     }
@@ -23,31 +55,17 @@ namespace Dialog
         return THIS->exec();
     }
 
-    void Handle_onAccepted(HandleRef _this, std::function<VoidDelegate> handler) {
-        QObject::connect(
-                THIS,
-                &QDialog::accepted,
-                THIS,
-                handler);
-    }
-
-    void Handle_onRejected(HandleRef _this, std::function<VoidDelegate> handler) {
-        QObject::connect(
-                THIS,
-                &QDialog::rejected,
-                THIS,
-                handler);
+    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+        THIS->setSignalMask(mask);
     }
 
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
 
-    HandleRef create() {
-        return (HandleRef)new QDialog();
-    }
-
-    HandleRef create(Widget::HandleRef parent) {
-        return (HandleRef)new QDialog((QWidget*)parent);
+    HandleRef create(std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new DialogWithHandler(handler);
     }
 }
+
+#include "Dialog.moc"
