@@ -81,7 +81,7 @@ let update (state: State) = function
     | ShowContext loc ->
         match state.MaybeHoverIndex with
         | Some _ ->
-            state, Cmd.PopMenu ("context", loc)
+            state, Cmd.ShowMenu ("context", loc)
         | None ->
             state, Cmd.None
     | ShowDialog ->

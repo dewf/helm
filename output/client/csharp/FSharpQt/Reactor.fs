@@ -18,12 +18,12 @@ type DialogOp<'msg> =
 [<RequireQualifiedAccess>]
 type Cmd<'msg,'signal> =
     | None
-    | OfMsg of 'msg
+    | Msg of 'msg
     | Signal of 'signal
     | Batch of commands: Cmd<'msg,'signal> list
     | Dialog of name: string * op: DialogOp<'msg>
-    | PopMenu of name: string * loc: Point
-    | OfAsync of block: Async<'msg>
+    | ShowMenu of name: string * loc: Point
+    | Async of block: Async<'msg>
     
 let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
     async {
@@ -204,7 +204,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                 match cmd with
                 | Cmd.None ->
                     ()
-                | Cmd.OfMsg msg ->
+                | Cmd.Msg msg ->
                     // should this be deferred via .ExecuteOnMainThread? otherwise it's recursively processed ...
                     this.reactor.ProcessMsg(msg)
                 | Cmd.Signal signal ->
@@ -218,9 +218,9 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                     |> List.iter processCmd
                 | Cmd.Dialog (name, op) ->
                     this.reactor.DialogOp name op
-                | Cmd.PopMenu (name, loc) ->
+                | Cmd.ShowMenu (name, loc) ->
                     this.reactor.PopMenu name loc
-                | Cmd.OfAsync block ->
+                | Cmd.Async block ->
                     async {
                         let! msg = block
                         Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)
@@ -303,7 +303,7 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
             match cmd with
             | Cmd.None ->
                 ()
-            | Cmd.OfMsg msg ->
+            | Cmd.Msg msg ->
                 // should this be deferred via .ExecuteOnMainThread?
                 this.reactor.ProcessMsg msg
             | Cmd.Signal signal ->
@@ -315,9 +315,9 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
                 |> List.iter processCmd
             | Cmd.Dialog (name, op) ->
                 this.reactor.DialogOp name op
-            | Cmd.PopMenu (name, loc) ->
+            | Cmd.ShowMenu (name, loc) ->
                 this.reactor.PopMenu name loc
-            | Cmd.OfAsync block ->
+            | Cmd.Async block ->
                 async {
                     let! msg = block
                     Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)

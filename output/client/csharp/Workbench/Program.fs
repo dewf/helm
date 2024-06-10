@@ -48,7 +48,7 @@ let update (state: State) (msg: Msg) =
                 printfn "done!"
                 return 1234
             }
-        state, Cmd.OfAsync (asyncPerform func DoneSleeping)
+        state, Cmd.Async (asyncPerform func DoneSleeping)
     | PromptResult button ->
         let cmd =
             match button with
