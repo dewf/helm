@@ -7,16 +7,16 @@
         <entry key="Debug">
           <value>
             <PerProfileState>
-              <option name="myQmlPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.6.3/msvc2019_64/./qml" />
-              <option name="myQtBinPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.6.3/msvc2019_64/bin" />
+              <option name="myQmlPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.7.1/msvc2019_64/./qml" />
+              <option name="myQtBinPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.7.1/msvc2019_64/bin" />
             </PerProfileState>
           </value>
         </entry>
         <entry key="Release">
           <value>
             <PerProfileState>
-              <option name="myQmlPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.6.3/msvc2019_64/./qml" />
-              <option name="myQtBinPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.6.3/msvc2019_64/bin" />
+              <option name="myQmlPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.7.1/msvc2019_64/./qml" />
+              <option name="myQtBinPath" value="$PROJECT_DIR$/../../../../../../../Qt/6.7.1/msvc2019_64/bin" />
             </PerProfileState>
           </value>
         </entry>
