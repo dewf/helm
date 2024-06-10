@@ -12,6 +12,7 @@ enum RenderHint {
     NonCosmeticBrushPatterns = 0x80
 }
 
+@nodispose
 opaque Handle {
     void setRenderHint(RenderHint hint, bool on);
     void setRenderHints(Set<RenderHint> hints, bool on);

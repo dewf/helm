@@ -100,9 +100,4 @@ namespace Painter
         }
         THIS->drawPolyline(qPoints.data(), (int)qPoints.size());
     }
-
-    void Handle_dispose(HandleRef _this) {
-        // presently these will never be created (therefore owned) by the client side
-        printf("QPainter handle dispose called - why?\n");
-    }
 }

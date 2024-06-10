@@ -2,6 +2,7 @@ module PaintResources;
 
 import Common;
 
+@nodispose
 opaque Color {
     static {
         enum Constant {
@@ -27,12 +28,18 @@ opaque Color {
     }
 }
 
+@nodispose
 opaque Gradient {
     void setColorAt(double location, Color color);
 }
+
+@nodispose
 opaque RadialGradient extends Gradient;
+
+@nodispose
 opaque LinearGradient extends Gradient;
 
+@nodispose
 opaque Brush {
     static {
         enum Style {
@@ -59,6 +66,7 @@ opaque Brush {
     }
 }
 
+@nodispose
 opaque Pen {
     static {
         enum Style {
@@ -87,6 +95,7 @@ opaque Pen {
     void setWidth(double width);
 }
 
+@nodispose
 opaque Font {
     static {
         enum Weight {
@@ -103,6 +112,7 @@ opaque Font {
     }
 }
 
+@nodispose
 opaque PainterPath {
     void moveTo(PointF p);
     void moveTo(double x, double y);
@@ -113,6 +123,7 @@ opaque PainterPath {
     void cubicTo(double c1X, double c1Y, double c2X, double c2Y, double endPointX, double endPointY);
 }
 
+@nodispose
 opaque PainterPathStroker {
     void setWidth(double width);
     void setJoinStyle(Pen.JoinStyle style);

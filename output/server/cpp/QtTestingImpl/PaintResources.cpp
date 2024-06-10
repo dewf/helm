@@ -53,33 +53,16 @@ namespace PaintResources
         }
     }
 
-    void Color_dispose(ColorRef _this) {
-        // not owned by client
-    }
-
     // gradient ====================
     void Gradient_setColorAt(GradientRef _this, double location, ColorRef color) {
         _this->qGradPtr.setColorAt(location, color->qColor);
     }
 
-    void Gradient_dispose(GradientRef _this) {
-        // not owned by client
-    }
-
     // radial gradient =============
-    void RadialGradient_dispose(RadialGradientRef _this) {
-        // not owned by client
-    }
 
     // linear gradient =============
-    void LinearGradient_dispose(LinearGradientRef _this) {
-        // not owned by client
-    }
 
     // brush ======================
-    void Brush_dispose(BrushRef _this) {
-        // not owned by client
-    }
 
     // pen =========================
     namespace Pen {
@@ -108,20 +91,12 @@ namespace PaintResources
         _this->qPen.setWidthF(width);
     }
 
-    void Pen_dispose(PenRef _this) {
-        // not owned by client
-    }
-
     // font =====================================
     namespace Font {
         inline QFont::Weight toQtWeight(Weight weight) {
             // simple cast should be OK for now
             return (QFont::Weight)weight;
         }
-    }
-
-    void Font_dispose(FontRef _this) {
-        // not owned by client
     }
 
     // painter path =========================================
@@ -147,10 +122,6 @@ namespace PaintResources
 
     void PainterPath_cubicTo(PainterPathRef _this, double c1X, double c1Y, double c2X, double c2Y, double endPointX, double endPointY) {
         _this->qPath.cubicTo(c1X, c1Y, c2X, c2Y, endPointX, endPointY);
-    }
-
-    void PainterPath_dispose(PainterPathRef _this) {
-        // not owned by client
     }
 
     // painter path stroker ==================================
@@ -181,10 +152,6 @@ namespace PaintResources
     PainterPathRef PainterPathStroker_createStroke(PainterPathStrokerRef _this, PainterPathRef path) {
         // this is actually implemented in the items, because we need to place the result on the 'items'
         return Handle_createStrokeInternal(_this->resources, _this, path);
-    }
-
-    void PainterPathStroker_dispose(PainterPathStrokerRef _this) {
-        // not owned by client
     }
 
     // =========== paint items object ========================================
