@@ -165,7 +165,7 @@ let view (state: State) =
         CustomWidget(
             EventDelegate(state), [ PaintEvent; DropEvents; SizeHint; MousePressEvent; MouseMoveEvent ],
             Attrs = [ AcceptDrops true ])
-    BoxLayout(Items = [
+    VBoxLayout(Items = [
         BoxItem.Create(custom)
     ]) :> ILayoutNode<Msg>
     

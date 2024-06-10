@@ -70,7 +70,7 @@ let view (state: State) =
                         Enabled enabled
                         MinWidth 200
                     ], OnClicked = ButtonClicked)
-            BoxLayout(Attrs = [ Direction TopToBottom; ContentsMargins (10, 10, 10, 10) ],
+            VBoxLayout(Attrs = [ ContentsMargins (10, 10, 10, 10) ],
                       Items = [ BoxItem.Create(quitButton) ])
         MainWindow(Attrs = [ Title "Hello" ], Content = layout)
         

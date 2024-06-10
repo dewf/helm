@@ -255,11 +255,8 @@ let view (state: State) =
             GridItem.Create(lastEdit, 2, 3)
             // buttons:
             let hbox =
-                BoxLayout(
-                    Attrs = [
-                        Direction LeftToRight
-                        BoxLayout.ContentsMargins (0, 0, 0, 0)
-                    ],
+                HBoxLayout(
+                    Attrs = [ BoxLayout.ContentsMargins (0, 0, 0, 0) ],
                     Items = [
                         BoxItem.Create(createButton, stretch = 1)
                         BoxItem.Create(updateButton, stretch = 1)

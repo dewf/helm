@@ -39,8 +39,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             | InnerText text ->
                 if innerLabel = null then
                     let layout =
-                        BoxLayout.Create()
-                    layout.SetDirection(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom)
+                        BoxLayout.Create(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom) // not sure Org.Whatever.QtTesting prefix is required here, IDE seems to think it's not, but won't compile without it
+                    // layout.SetDirection(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom)
                     layout.SetContentsMargins(0, 0, 0, 0)
                     innerLabel <- Label.Create()
                     innerLabel.SetAlignment(Common.Alignment.Center)

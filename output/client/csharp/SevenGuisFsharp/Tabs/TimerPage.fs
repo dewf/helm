@@ -69,15 +69,13 @@ let view (state: State) =
                     Slider.Value state.Duration
                     MinimumWidth 250
                 ], OnValueChanged = SetDuration)
-            BoxLayout(Attrs = [ Direction LeftToRight ],
-                      Items = [
+            HBoxLayout(Items = [
                           BoxItem.Create(label)
                           BoxItem.Create(slider)
                       ])
         let button =
             PushButton(Attrs = [ Text "Reset" ], OnClicked = Reset)
-        BoxLayout(Attrs = [ Direction TopToBottom ],
-                  Items = [
+        VBoxLayout(Items = [
                       BoxItem.Create(progress)
                       BoxItem.Create(hbox)
                       BoxItem.Create(button)

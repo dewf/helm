@@ -118,8 +118,7 @@ let view (state: State) =
             DatePicker(
                 Attrs = [ Value value; DatePicker.Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
                 OnValueChanged = changeMsg)
-        BoxLayout(Attrs = [
-            Direction LeftToRight
+        HBoxLayout(Attrs = [
             ContentsMargins (0, 0, 0, 0)
             Spacing 10
         ], Items = [
@@ -134,8 +133,7 @@ let view (state: State) =
         Label(Attrs = [ Label.Text status ])
     let bookButton =
         PushButton(Attrs = [ Text "Book Trip"; Enabled canBook ])
-    BoxLayout(
-        Attrs = [ Direction TopToBottom ],
+    VBoxLayout(
         Items = [
             BoxItem.Create(combo)
             BoxItem.Create(depart)

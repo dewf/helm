@@ -1,6 +1,7 @@
 #include "generated/BoxLayout.h"
 
 #include <QBoxLayout>
+
 #include "util/convert.h"
 
 #define THIS ((QBoxLayout*)_this)
@@ -44,7 +45,8 @@ namespace BoxLayout
         delete THIS;
     }
 
-    HandleRef create() {
-        return (HandleRef)new QBoxLayout(QBoxLayout::TopToBottom);
+    HandleRef create(Direction dir) {
+        auto qDir = (QBoxLayout::Direction)dir;
+        return (HandleRef) new QBoxLayout(qDir);
     }
 }

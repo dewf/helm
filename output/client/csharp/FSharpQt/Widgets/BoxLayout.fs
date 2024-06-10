@@ -86,9 +86,9 @@ let addItem (box: BoxLayout.Handle) (item: BoxItem<'msg>) =
     | Stretch stretch ->
         box.AddStretch(stretch)
 
-type private Model<'msg>(dispatch: 'msg -> unit, items: BoxItem<'msg> list) =
+type private Model<'msg>(dispatch: 'msg -> unit, items: BoxItem<'msg> list, initialDirection: BoxLayout.Direction) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable box = BoxLayout.Create()
+    let mutable box = BoxLayout.Create(initialDirection)
     do
         // no signals yet
         for item in items do
@@ -116,8 +116,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: BoxItem<'msg> list) =
         for item in items do
             addItem box item
 
-let private create (attrs: Attr list) (items: BoxItem<'msg> list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
-    let model = new Model<'msg>(dispatch, items)
+let private create (attrs: Attr list) (items: BoxItem<'msg> list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
+    let model = new Model<'msg>(dispatch, items, initialDirection)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -130,7 +130,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
-type BoxLayout<'msg>() =
+type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
     let mutable items: BoxItem<'msg> list = []
 
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -140,7 +140,7 @@ type BoxLayout<'msg>() =
         with get() = items
         and set value = items <- value
         
-    member private this.MigrateContent(leftBox: BoxLayout<'msg>) =
+    member private this.MigrateContent(leftBox: BoxLayoutBase<'msg>) =
         let leftContents =
             leftBox.Items
             |> List.map (_.InternalKey)
@@ -175,10 +175,10 @@ type BoxLayout<'msg>() =
                     None)
             
         override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs items this.SignalMap dispatch
+            this.model <- create this.Attrs items this.SignalMap dispatch initialDirection
         
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> BoxLayout<'msg>)
+            let left' = (left :?> BoxLayoutBase<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
@@ -201,3 +201,13 @@ type BoxLayout<'msg>() =
                 | LayoutItem(l, _) -> l.AttachedToWindow window
                 | Spacer _ -> ()
                 | Stretch _ -> ()
+
+type BoxLayout<'msg>() =
+    inherit BoxLayoutBase<'msg>(BoxLayout.Direction.TopToBottom)
+    
+type VBoxLayout<'msg>() =
+    inherit BoxLayoutBase<'msg>(BoxLayout.Direction.TopToBottom)
+    
+type HBoxLayout<'msg>() =
+    inherit BoxLayoutBase<'msg>(BoxLayout.Direction.LeftToRight)
+

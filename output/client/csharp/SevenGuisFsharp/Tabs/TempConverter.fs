@@ -79,8 +79,7 @@ let view (state: State) =
         LineEdit(Attrs = [ Value state.FahrenText ], OnChanged = SetFahrenheit)
     let fahrenLabel =
         Label(Attrs = [ Text "Fahrenheit" ])
-    BoxLayout(
-        Attrs = [ Direction LeftToRight ],
+    HBoxLayout(
         Items = [
             BoxItem.Create(celsiusText)
             BoxItem.Create(celsiusLabel)

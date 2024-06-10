@@ -229,8 +229,7 @@ let view (state: State) =
             let enabled =
                 not state.RedoStack.IsEmpty
             PushButton(Attrs = [ Text "Redo"; Enabled enabled ], OnClicked = Redo)
-        BoxLayout(
-            Attrs = [ Direction LeftToRight ],
+        HBoxLayout(
             Items = [
                 BoxItem.Stretch 1
                 BoxItem.Create(undo)
@@ -260,15 +259,14 @@ let view (state: State) =
             PushButton(Attrs = [ Text "OK" ], OnClicked = ApplyEdit)
         let vbox =
             let hbox =
-                BoxLayout(
-                    Attrs = [ Direction LeftToRight ],
+                HBoxLayout(
                     Items = [
                         BoxItem.Stretch 1
                         BoxItem.Create(cancel)
                         BoxItem.Create(apply)
                         BoxItem.Stretch 1
                     ])
-            BoxLayout(Items = [
+            VBoxLayout(Items = [
                 BoxItem.Create(slider)
                 BoxItem.Spacer 10
                 BoxItem.Create(hbox)
@@ -279,7 +277,7 @@ let view (state: State) =
     let canvasWithDialogs =
         WidgetWithDialogs(canvas, [ "edit", dialog ])
     let vbox =
-        BoxLayout(Items = [
+        VBoxLayout(Items = [
             BoxItem.Create(undoRedoButtons)
             BoxItem.Create(canvasWithDialogs)
         ])

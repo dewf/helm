@@ -72,7 +72,7 @@ let radioGroup (title: string) (items: (string * 'a) list) (setterMsgFunc: 'a ->
         let items =
             buttons
             |> List.map BoxItem.Create
-        BoxLayout(Attrs = [ Direction TopToBottom ], Items = items)
+        VBoxLayout(Items = items)
     GroupBox(Attrs = [ Title title ], Layout = vbox)
         
     
@@ -111,7 +111,7 @@ let view (state: State) =
                     Value state.PenWidth
                 ], OnValueChanged = SetPenWidth)
         let vbox =
-            BoxLayout(Attrs = [ Direction TopToBottom ], Items = [ BoxItem.Create(slider) ])
+            VBoxLayout(Items = [ BoxItem.Create(slider) ])
         GroupBox(Attrs = [ Title "Pen Width" ], Layout = vbox)
         
     let lineStyleGroup =
@@ -129,8 +129,7 @@ let view (state: State) =
             ], OnToggled = SetAnimating)
         
     let rightPanel =
-        BoxLayout(Attrs = [ Direction TopToBottom ],
-                  Items = [
+        VBoxLayout(Items = [
                       BoxItem.Create(capStyleGroup)
                       BoxItem.Create(joinStyleGroup)
                       BoxItem.Create(penStyleGroup)
@@ -154,8 +153,7 @@ let view (state: State) =
                 Animating state.Animating
             ])
     
-    BoxLayout(Attrs = [ Direction LeftToRight ],
-              Items = [
+    HBoxLayout(Items = [
                   BoxItem.Create(renderer, 1)
                   BoxItem.Create(scrollArea)
               ])
