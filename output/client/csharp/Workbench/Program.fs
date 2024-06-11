@@ -2,7 +2,6 @@
 
 open System
 
-open System.Threading
 open FSharpQt
 open BuilderNode
 open Reactor
@@ -47,22 +46,21 @@ let nextPrimesList (prev: int64 list) =
 let update (state: State) (msg: Msg) =
     match msg with
     | DoSomething ->
-        // let subFunc dispatch (token: CancellationToken) =
-        //     async {
-        //         let mutable primes = [ 2L ]
-        //         let mutable lastCount = 1
-        //         while not token.IsCancellationRequested && primes.Head < 300_000L do
-        //             primes <- nextPrimesList primes
-        //             if primes.Length - lastCount >= 1000 then
-        //                 primes
-        //                 |> List.take 1000
-        //                 |> NextPrimes
-        //                 |> dispatch
-        //                 lastCount <- primes.Length
-        //         dispatch Done
-        //     } |> (fun block -> Async.Start(block, token))
-        // state, Cmd.Sub subFunc
-        state, Cmd.None
+        let subFunc dispatch =
+            async {
+                let mutable primes = [ 2L ]
+                let mutable lastCount = 1
+                while primes.Head < 300_000L do // not token.IsCancellationRequested && 
+                    primes <- nextPrimesList primes
+                    if primes.Length - lastCount >= 1000 then
+                        primes
+                        |> List.take 1000
+                        |> NextPrimes
+                        |> dispatch
+                        lastCount <- primes.Length
+                dispatch Done
+            } |> (fun block -> Async.Start block)
+        state, Cmd.Sub subFunc
     | NextPrimes batch ->
         printfn "primes batch: %A" batch
         state, Cmd.None

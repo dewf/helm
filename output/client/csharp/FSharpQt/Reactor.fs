@@ -24,6 +24,7 @@ type Cmd<'msg,'signal> =
     | Dialog of name: string * op: DialogOp<'msg>
     | ShowMenu of name: string * loc: Point
     | Async of block: Async<'msg>
+    | Sub of subFunc: (('msg -> unit) -> unit)
     
 let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
     async {
@@ -49,6 +50,8 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
     let mutable root = view state
     let mutable disableDispatch = false
     let mutable attachMap = Map.empty<string, Attachment<'msg>>
+    
+    let mutable disposed = false
     
     let updateAttachments() =
         let rec recInner (soFar: Map<string, Attachment<'msg>>) (node: IBuilderNode<'msg>) =
@@ -113,6 +116,16 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                     let! msg = block
                     Application.ExecuteOnMainThread(fun _ -> dispatch msg)
                 } |> Async.Start
+            | Cmd.Sub subFunc ->
+                let safeDispatch msg =
+                    // don't do anything except on the UI thread!
+                    let inner _ =
+                        if not disposed then
+                            dispatch msg
+                        else
+                            printfn "Cmd.Sub - attempted to dispatch [%A] on a disposed reactor" msg
+                    Application.ExecuteOnMainThread(inner)
+                subFunc safeDispatch
     do
         build dispatch root
         updateAttachments()
@@ -195,6 +208,8 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
 
     interface IDisposable with
         member this.Dispose() =
+            // set ASAP to stop subscription dispatches after disposal:
+            disposed <- true
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
             
