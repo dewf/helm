@@ -43,7 +43,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                     attrUpdate: 'state -> 'attr -> 'state,
                     update: 'state -> 'msg -> 'state * Cmd<'msg,'signal>,
                     view: 'state -> 'root,
-                    processCmd: Cmd<'msg,'signal> -> unit) =
+                    processSignal: 'signal -> unit) as this =
     let initState, initCmd = init()
     let mutable state = initState
     let mutable root = view state
@@ -72,11 +72,9 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                 soFar
         attachMap <- recInner Map.empty root
 
-    // dispatch isn't actually (supposed to be) recursive, but we do pass it as a parameter because it gets injected into all the widget models for callbacks
-    // but we need to protect against reentrance, which is the purpose of the 'inDispatch' flag
     let rec dispatch (msg: 'msg) =
         if disableDispatch then
-            // already in dispatch, something fired an even when it shouldn't have
+            // currently diffing, something tried to dispatch due to an attribute change (generally a Qt widget emitting a signal due to a method call / property change)
             // basically this acts as a global callback disabler, preventing them while we're handling one already
             ()
         else
@@ -93,10 +91,29 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
             updateAttachments()
             // process command(s) after tree diff
             processCmd cmd
-        
-    member this.Init() =
-        // used to be in a 'do' block above, but we want whoever instantiated this reactor to have the opportunity to assign it to a mutable 'reactor' variable,
-        // which the 'processCmd' will rely on. now it should be safe to emit Cmds from init() functions
+    and
+        processCmd (cmd: Cmd<'msg,'signal>) =
+            match cmd with
+            | Cmd.None ->
+                ()
+            | Cmd.Msg msg ->
+                // should this be deferred via .ExecuteOnMainThread? would the recursion be a problem for any reason?
+                dispatch msg
+            | Cmd.Signal signal ->
+                processSignal signal
+            | Cmd.Batch commands ->
+                commands
+                |> List.iter processCmd
+            | Cmd.Dialog (name, op) ->
+                this.DialogOp name op
+            | Cmd.ShowMenu (name, loc) ->
+                this.PopMenu name loc
+            | Cmd.Async block ->
+                async {
+                    let! msg = block
+                    Application.ExecuteOnMainThread(fun _ -> dispatch msg)
+                } |> Async.Start
+    do
         build dispatch root
         updateAttachments()
         processCmd initCmd
@@ -119,9 +136,6 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
         updateAttachments()
         // no commands allowed in attr update (for now)
     
-    member this.ProcessMsg (msg: 'msg) =
-        dispatch msg
-        
     member this.DialogOp (name: string) (op: DialogOp<'msg>) =
         match attachMap.TryFind name with
         | Some node ->
@@ -200,33 +214,13 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
     interface IBuilderNode<'outerMsg> with
         override this.Dependencies = []
         override this.Create(dispatch: 'outerMsg -> unit) =
-            let rec processCmd (cmd: Cmd<'msg, 'signal>) =
-                match cmd with
-                | Cmd.None ->
+            let processSignal signal =
+                match this.SignalMap signal with
+                | Some outerMsg ->
+                    dispatch outerMsg
+                | None ->
                     ()
-                | Cmd.Msg msg ->
-                    // should this be deferred via .ExecuteOnMainThread? otherwise it's recursively processed ...
-                    this.reactor.ProcessMsg(msg)
-                | Cmd.Signal signal ->
-                    match this.SignalMap signal with
-                    | Some outerMsg ->
-                        dispatch outerMsg
-                    | None ->
-                        ()
-                | Cmd.Batch commands ->
-                    commands
-                    |> List.iter processCmd
-                | Cmd.Dialog (name, op) ->
-                    this.reactor.DialogOp name op
-                | Cmd.ShowMenu (name, loc) ->
-                    this.reactor.PopMenu name loc
-                | Cmd.Async block ->
-                    async {
-                        let! msg = block
-                        Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)
-                    } |> Async.Start
-            this.reactor <- new Reactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processCmd)
-            this.reactor.Init() // formerly the reactor 'do' block, but this gives us a chance to assign 'reactor' before 'processCmd' ever executes
+            this.reactor <- new Reactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processSignal)
             this.reactor.ApplyAttrs(this.Attrs)
         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root>)
@@ -299,31 +293,11 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
     member this.Run(argv: string array) =
         use app =
             Application.Create(argv)
-        let rec processCmd (cmd: Cmd<'msg,AppSignal>) =
-            match cmd with
-            | Cmd.None ->
-                ()
-            | Cmd.Msg msg ->
-                // should this be deferred via .ExecuteOnMainThread?
-                this.reactor.ProcessMsg msg
-            | Cmd.Signal signal ->
-                match signal with
-                | QuitApplication ->
-                    Application.Quit()
-            | Cmd.Batch commands ->
-                commands
-                |> List.iter processCmd
-            | Cmd.Dialog (name, op) ->
-                this.reactor.DialogOp name op
-            | Cmd.ShowMenu (name, loc) ->
-                this.reactor.PopMenu name loc
-            | Cmd.Async block ->
-                async {
-                    let! msg = block
-                    Application.ExecuteOnMainThread(fun _ -> this.reactor.ProcessMsg msg)
-                } |> Async.Start
-        this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processCmd)
-        this.reactor.Init() // former 'do' block of reactor, but 'processCmd' relies on reactor variable being set
+        let processSignal signal =
+            match signal with
+            | QuitApplication ->
+                Application.Quit()
+        this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processSignal)
         Application.Exec()
         
     interface IDisposable with
