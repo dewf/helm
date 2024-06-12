@@ -3,6 +3,7 @@
 open System
 open FSharpQt
 open BuilderNode
+open FSharpQt.BuilderNode
 open MiscTypes
 open Reactor
 open Org.Whatever.QtTesting
@@ -29,11 +30,11 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg> option) as this =
+type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg> option, ourNode: IBuilderNode<'msg>) as this =
     let mutable dialog =
         let parentHandle =
             maybeParent
-            |> Option.map (_.ContainingWindowWidget)
+            |> Option.map (fun node -> node.ContainingWindowWidget ourNode)
             |> Option.flatten
             |> Option.defaultValue null
         Dialog.Create(parentHandle, this)
@@ -92,8 +93,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg>
     member this.AddLayout (layout: Layout.Handle) =
         dialog.SetLayout(layout)
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: IBuilderNode<'msg> option) =
-    let model = new Model<'msg>(dispatch, maybeParent)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: IBuilderNode<'msg> option) (ourNode: IBuilderNode<'msg>) =
+    let model = new Model<'msg>(dispatch, maybeParent, ourNode)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- initialMask
@@ -108,7 +109,7 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Dialog<'msg>() =
+type Dialog<'msg>() as this =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
 
@@ -169,7 +170,7 @@ type Dialog<'msg>() =
             |> Option.toList
             
         override this.Create2 dispatch maybeParent =
-            this.model <- create this.Attrs signalMap dispatch signalMask maybeParent
+            this.model <- create this.Attrs signalMap dispatch signalMask maybeParent this
             
         override this.AttachDeps () =
             maybeLayout
@@ -192,8 +193,8 @@ type Dialog<'msg>() =
         override this.ContentKey =
             (this :> IDialogNode<'msg>).Dialog
             
-        override this.ContainingWindowWidget =
-            this.model.Dialog.GetWindow()
+        override this.ContainingWindowWidget querent =
+            (this.model.Dialog :> Widget.Handle) // we're it ...
             |> Some
 
 // some utility stuff for Cmd.Dialog

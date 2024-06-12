@@ -33,7 +33,7 @@ type IBuilderNode<'msg> =
         
         // just for now? could this be avoided with the right sort of interface hierarchy, and having stuff like Dialog check for those on self-creation?
         // basically this proceeds upwards until we hit a genuine Widget which can call .getWindow() on itself ...
-        abstract ContainingWindowWidget: Widget.Handle option
+        abstract ContainingWindowWidget: IBuilderNode<'msg> -> Widget.Handle option
     end
 
 // this will allow certain widgets (eg MainWindow) to accept either type

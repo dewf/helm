@@ -204,7 +204,7 @@ type MainWindow<'msg>() =
         override this.ContentKey =
             (this :> IWindowNode<'msg>).WindowWidget
             
-        override this.ContainingWindowWidget =
+        override this.ContainingWindowWidget querent =
             // "of course I know him, he's me"
             (this.model.Widget :> Widget.Handle) // saves us a call to .GetWindow() which would return self
             |> Some

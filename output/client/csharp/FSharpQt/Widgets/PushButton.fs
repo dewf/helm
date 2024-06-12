@@ -168,6 +168,6 @@ type PushButton<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
             
-        override this.ContainingWindowWidget =
+        override this.ContainingWindowWidget querent =
             this.model.Widget.GetWindow()
             |> Some
