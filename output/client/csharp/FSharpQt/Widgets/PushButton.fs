@@ -34,7 +34,6 @@ let private diffAttrs =
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable button = PushButton.Create(this)
-    
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<PushButton.SignalMask> 0
     
@@ -148,8 +147,12 @@ type PushButton<'msg>() =
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
 
-        override this.Create(dispatch: 'msg -> unit) =
+        override this.Create2 dispatch maybeParent =
+            // buttons (and most widgets in general) don't need to know their parents, we wait for the parent's attachdeps to take care of that
             this.model <- create this.Attrs signalMap dispatch signalMask
+            
+        override this.AttachDeps () =
+            ()
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> PushButton<'msg>)
@@ -165,5 +168,6 @@ type PushButton<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
             
-        override this.AttachedToWindow window =
-            ()
+        override this.ContainingWindowWidget =
+            this.model.Widget.GetWindow()
+            |> Some

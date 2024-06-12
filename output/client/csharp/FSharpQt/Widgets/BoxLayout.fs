@@ -86,15 +86,17 @@ let addItem (box: BoxLayout.Handle) (item: BoxItem<'msg>) =
     | Stretch stretch ->
         box.AddStretch(stretch)
 
-type private Model<'msg>(dispatch: 'msg -> unit, items: BoxItem<'msg> list, initialDirection: BoxLayout.Direction) =
+type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Direction) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable box = BoxLayout.Create(initialDirection)
-    do
-        // no signals yet
+
+    member this.Layout with get() = box
+    member this.SignalMap with set value = signalMap <- value
+    
+    member this.AttachDeps (items: BoxItem<'msg> list) =
         for item in items do
             addItem box item
-    member this.Layout with get() = box
-    member this.SignalMap with set(value) = signalMap <- value
+    
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
@@ -108,16 +110,18 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: BoxItem<'msg> list, init
                 box.SetSpacing(spacing)
             | ContentsMargins (left, top, right, bottom) ->
                 box.SetContentsMargins (left, top, right, bottom)
+                
     interface IDisposable with
         member this.Dispose() =
             box.Dispose()
+            
     member this.Refill(items: BoxItem<'msg> list) =
         box.RemoveAll()
         for item in items do
             addItem box item
 
-let private create (attrs: Attr list) (items: BoxItem<'msg> list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
-    let model = new Model<'msg>(dispatch, items, initialDirection)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
+    let model = new Model<'msg>(dispatch, initialDirection)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -131,11 +135,14 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
 type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
-    let mutable items: BoxItem<'msg> list = []
-
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
+    let mutable maybeParentInternal: IBuilderNode<'msg> option = None
+    
     member val Attrs: Attr list = [] with get, set
     member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
+    
+    let mutable items: BoxItem<'msg> list = []
     member this.Items
         with get() = items
         and set value = items <- value
@@ -157,7 +164,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             // because the indices are generated here, based on items order,
             // it prevents the possibility of the "user" (app developer) from being able to reorder existing items without them being destroyed/recreated entirely
             // but I don't think that's a very common use case, to be reordering anything in a vbox/hbox, except maybe adding things at the end (which should work fine)
-            // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
+            // if user-reordering was a common use case, then the (API) user would have to provide item keys / IDs as part of the item list
             // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
             items
             |> List.zipWithIndex
@@ -174,8 +181,12 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
                 | Stretch _ ->
                     None)
             
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs items this.SignalMap dispatch initialDirection
+        override this.Create2 dispatch maybeParent =
+            maybeParentInternal <- maybeParent // needed to implement ContainingWindowWidget, we don't otherwise care
+            this.model <- create this.Attrs this.SignalMap dispatch initialDirection
+            
+        override this.AttachDeps () =
+            this.model.AttachDeps items
         
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> BoxLayoutBase<'msg>)
@@ -194,13 +205,10 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
         override this.ContentKey =
             (this :> ILayoutNode<'msg>).Layout
             
-        override this.AttachedToWindow window =
-            for item in items do
-                match item with
-                | WidgetItem(w, _) -> w.AttachedToWindow window
-                | LayoutItem(l, _) -> l.AttachedToWindow window
-                | Spacer _ -> ()
-                | Stretch _ -> ()
+        override this.ContainingWindowWidget =
+            maybeParentInternal
+            |> Option.map (_.ContainingWindowWidget)
+            |> Option.flatten
 
 type BoxLayout<'msg>() =
     inherit BoxLayoutBase<'msg>(BoxLayout.Direction.TopToBottom)

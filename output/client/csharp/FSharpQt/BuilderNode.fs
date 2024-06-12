@@ -25,11 +25,15 @@ type DepsChange =
 type IBuilderNode<'msg> =
     interface
         abstract Dependencies: (DepsKey * IBuilderNode<'msg>) list
-        abstract Create: ('msg -> unit) -> unit
+        abstract Create2: ('msg -> unit) -> IBuilderNode<'msg> option -> unit
+        abstract AttachDeps: unit -> unit
         abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
         abstract ContentKey: System.Object
-        abstract AttachedToWindow: Widget.Handle -> unit
+        
+        // just for now? could this be avoided with the right sort of interface hierarchy, and having stuff like Dialog check for those on self-creation?
+        // basically this proceeds upwards until we hit a genuine Widget which can call .getWindow() on itself ...
+        abstract ContainingWindowWidget: Widget.Handle option
     end
 
 // this will allow certain widgets (eg MainWindow) to accept either type
@@ -123,14 +127,6 @@ type IPopupMenuParent<'msg> =
         abstract member RelativeToWidget: Widget.Handle  // for translating relative coords to global
         abstract member AttachedPopups: (string * IMenuNode<'msg>) list
     end
-    
-// type Empty<'msg>() =
-//     interface IBuilderNode<'msg> with
-//         override this.Dependencies() = []
-//         override this.Create(dispatch: 'msg -> unit) = ()
-//         override this.MigrateFrom (left: IBuilderNode<'msg>) (changed: (DepsKey * DepsChange) list) = ()
-//         override this.Dispose() = ()
-//         override this.ContentKey = "!!empty!!"
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
     match node with
@@ -168,13 +164,15 @@ let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
 let nullDiffAttrs (a1: 'a list) (a2: 'a list) =
     []
 
-let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) =
+let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) (maybeParent: IBuilderNode<'msg> option) =
     let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =
+        // initial create w/ our already-created parent (if any)
+        right.Create2 dispatch maybeParent
         // realize dependencies
-        for (_, node) in right.Dependencies do
-            diff dispatch None (Some node)
-        // now create
-        right.Create dispatch
+        for _, node in right.Dependencies do
+            diff dispatch None (Some node) (Some right)
+        // only now attach dependencies (we used to create dependencies first, then create a parentless node)
+        right.AttachDeps()
 
     match (maybeLeft, maybeRight) with
     | None, None ->
@@ -197,7 +195,9 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         let zipped =
             List.zip leftChildren rightChildren
         for lch, rch in zipped do
-            diff dispatch lch rch
+            // re: using left as parent - we haven't migrated to the right yet, so only the left has a model, and the children will need to reference its widget etc
+            // also, would there be any reason to delay this until after the migration occurs? node CREATION needs to happen top-down, but does migration matter?
+            diff dispatch lch rch (Some left)  
             
         let depsChanges =
             // provide a more precise breakdown of the dependency changes
@@ -233,4 +233,4 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         createRight dispatch right
 
 let build (dispatch: 'msg -> unit) (root: IBuilderNode<'msg>) =
-    diff dispatch None (Some root)
+    diff dispatch None (Some root) None

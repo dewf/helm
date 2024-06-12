@@ -21,7 +21,7 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle option, maybeContentNode: IWidgetOrLayoutNode<'msg> option) = // we use node for content because we need to invoke 'attachedToWindow'
+type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable mainWindow = MainWindow.Create()
     let mutable syntheticLayoutWidget: Widget.Handle option = None
@@ -39,27 +39,15 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
         mainWindow.OnClosed (fun _ ->
             signalDispatch Closed)
         
-        maybeContentNode
-        |> Option.iter (fun node ->
-            match node with
-            | :? IWidgetNode<'msg> as widgetNode ->
-                mainWindow.SetCentralWidget widgetNode.Widget
-            | :? ILayoutNode<'msg> as layoutNode ->
-                let widget = Widget.Create()
-                widget.SetLayout(layoutNode.Layout)
-                mainWindow.SetCentralWidget(widget)
-                syntheticLayoutWidget <- Some widget
-            | _ ->
-                failwith "MainWindow.Model 'do' block - unknown node type"
-            // !!
-            node.AttachedToWindow mainWindow)
-        
-        maybeMenuBar
-        |> Option.iter mainWindow.SetMenuBar
-        
         // always show by default
         // hopefully this won't flicker if users want them hidden initially, but we can attend to that later
         mainWindow.Show()
+        
+    member this.AttachDeps (maybeMenuBar: MenuBar.Handle option) (maybeContentNode: IWidgetOrLayoutNode<'msg> option) = // we use node for content because we need to invoke 'attachedToWindow')
+        maybeContentNode
+        |> Option.iter this.AddContent
+        maybeMenuBar
+        |> Option.iter this.AddMenuBar
         
     member this.RemoveMenuBar() =
         printfn "*** not currently possible to remove MenuBar from Window ***"
@@ -91,8 +79,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
             syntheticLayoutWidget <- Some widget
         | _ ->
             failwith "MainWindow.Model.AddContent - unknown node type"
-        // below is for dialogs or anything else that needs to know what window it's ultimately attached to
-        node.AttachedToWindow mainWindow
         
     member this.Widget with get() = mainWindow
     member this.SignalMap with set(value) = signalMap <- value
@@ -107,14 +93,15 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeMenuBar: MenuBar.Handle op
     
     interface IDisposable with
         member this.Dispose() =
+            // synthetic layout widget out to be automatically disposed (on the C++ side) right?
             mainWindow.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeMenuBar: MenuBar.Handle option) (maybeContentNode: IWidgetOrLayoutNode<'msg> option) =
-    let model = new Model<'msg>(dispatch, maybeMenuBar, maybeContentNode)
+let private create2 (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
-
+    
 let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -189,12 +176,16 @@ type MainWindow<'msg>() =
                 |> Option.map (fun content -> (StrKey "content", content :> IBuilderNode<'msg>))
                 |> Option.toList
             menuBarList @ contentList
-
-        override this.Create(dispatch: 'msg -> unit) =
+            
+        override this.Create2 dispatch maybeParent =
+            // don't care about parents, QMainWindow won't have anything above it regardless of what's going on in F#Qt ... probably
+            this.model <- create2 this.Attrs this.SignalMap dispatch
+            
+        override this.AttachDeps () =
             let maybeMenuBarHandle =
                 maybeMenuBar
                 |> Option.map (_.MenuBar)
-            this.model <- create this.Attrs this.SignalMap dispatch maybeMenuBarHandle maybeContent
+            this.model.AttachDeps maybeMenuBarHandle maybeContent
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> MainWindow<'msg>)
@@ -206,16 +197,14 @@ type MainWindow<'msg>() =
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
+            
         override this.WindowWidget =
             this.model.Widget
+            
         override this.ContentKey =
             (this :> IWindowNode<'msg>).WindowWidget
-        override this.AttachedToWindow window =
-            // obviously a window isn't going to be contained in another window,
-            // but due to how the 'WithDialogs' type currently works, it manually calls this on top-level windows (with themselves as argument)
-            // so we need to propagate down to content, so dialogs declared internally to a window's content tree will be attached
-            match maybeContent with
-            | Some content ->
-                content.AttachedToWindow window
-            | None ->
-                ()
+            
+        override this.ContainingWindowWidget =
+            // "of course I know him, he's me"
+            (this.model.Widget :> Widget.Handle) // saves us a call to .GetWindow() which would return self
+            |> Some

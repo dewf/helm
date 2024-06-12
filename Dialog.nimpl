@@ -24,4 +24,4 @@ opaque Handle extends Widget.Handle {
     void setSignalMask(SignalMask mask);
 }
 
-Handle create(SignalHandler handler);
+Handle create(Widget.Handle parent, SignalHandler handler);

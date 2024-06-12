@@ -1,9 +1,10 @@
 ﻿module FSharpQt.Widgets.Dialog
 
 open System
-open FSharpQt.BuilderNode
-open FSharpQt.MiscTypes
-open FSharpQt.Reactor
+open FSharpQt
+open BuilderNode
+open MiscTypes
+open Reactor
 open Org.Whatever.QtTesting
 
 type Signal =
@@ -28,14 +29,17 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle option) as this =
-    let mutable dialog = Dialog.Create(this)
+type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg> option) as this =
+    let mutable dialog =
+        let parentHandle =
+            maybeParent
+            |> Option.map (_.ContainingWindowWidget)
+            |> Option.flatten
+            |> Option.defaultValue null
+        Dialog.Create(parentHandle, this)
     
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Dialog.SignalMask> 0
-    do
-        maybeLayout
-        |> Option.iter dialog.SetLayout
     
     let dispatcher (s: Signal) =
         match signalMap s with
@@ -88,8 +92,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
     member this.AddLayout (layout: Layout.Handle) =
         dialog.SetLayout(layout)
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeLayout: Layout.Handle option) (initialMask: Dialog.SignalMask) =
-    let model = new Model<'msg>(dispatch, maybeLayout)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: IBuilderNode<'msg> option) =
+    let model = new Model<'msg>(dispatch, maybeParent)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- initialMask
@@ -160,16 +164,16 @@ type Dialog<'msg>() =
     
     interface IDialogNode<'msg> with
         override this.Dependencies =
-            // maybeParent not a dependency, would create circular problems (and is intended only for internal modal use)
             maybeLayout
             |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))
             |> Option.toList
             
-        override this.Create(dispatch: 'msg -> unit) =
-            let maybeLayoutHandle =
-                maybeLayout
-                |> Option.map (_.Layout)
-            this.model <- create this.Attrs signalMap dispatch maybeLayoutHandle signalMask
+        override this.Create2 dispatch maybeParent =
+            this.model <- create this.Attrs signalMap dispatch signalMask maybeParent
+            
+        override this.AttachDeps () =
+            maybeLayout
+            |> Option.iter (fun layout -> this.model.AddLayout layout.Layout)
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Dialog<'msg>)
@@ -188,9 +192,9 @@ type Dialog<'msg>() =
         override this.ContentKey =
             (this :> IDialogNode<'msg>).Dialog
             
-        override this.AttachedToWindow window =
-            this.model.Dialog.SetParentDialogFlags(window)
-
+        override this.ContainingWindowWidget =
+            this.model.Dialog.GetWindow()
+            |> Some
 
 // some utility stuff for Cmd.Dialog
 

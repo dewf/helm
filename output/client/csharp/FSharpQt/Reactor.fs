@@ -88,7 +88,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
             root <- view state
             // prevent diff-triggered dispatching with a guard:
             disableDispatch <- true
-            diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>))
+            diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>)) None // TODO: for component reactors, won't we need the parent node to attach to?
             disableDispatch <- false
             //
             updateAttachments()
@@ -143,7 +143,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
         root <- view state
         // prevent dispatching while diffing
         disableDispatch <- true
-        diff dispatch (Some prevRoot) (Some root)
+        diff dispatch (Some prevRoot) (Some root) None // TODO: parent node?
         disableDispatch <- false
         //
         updateAttachments()
@@ -203,9 +203,6 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
         | None ->
             printfn "SubReactor.PopMenu: couldn't find popup '%s'" name
         
-    member this.AttachedToWindow (window: Widget.Handle) =
-        root.AttachedToWindow window
-
     interface IDisposable with
         member this.Dispose() =
             // set ASAP to stop subscription dispatches after disposal:
@@ -213,87 +210,87 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
             // outside code has no concept of our inner tree, so we're responsible for disposing all of it
             disposeTree root
             
-[<AbstractClass>]    
-type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBuilderNode<'msg>>(
-                init: unit -> 'state * Cmd<'msg, 'signal>,
-                attrUpdate: 'state -> 'attr -> 'state,
-                update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
-                view: 'state -> 'root,
-                diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
-                ) =
-    [<DefaultValue>] val mutable reactor: Reactor<'state,'attr,'msg,'signal,'root>
-    member val Attrs: 'attr list = [] with get, set
-    abstract member SignalMap: 'signal -> 'outerMsg option
-    default this.SignalMap _ = None
-    
-    interface IBuilderNode<'outerMsg> with
-        override this.Dependencies = []
-        override this.Create(dispatch: 'outerMsg -> unit) =
-            let processSignal signal =
-                match this.SignalMap signal with
-                | Some outerMsg ->
-                    dispatch outerMsg
-                | None ->
-                    ()
-            this.reactor <- new Reactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processSignal)
-            this.reactor.ApplyAttrs(this.Attrs)
-        override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-            this.reactor <- left'.reactor
-            this.reactor.ApplyAttrs(nextAttrs)
-        override this.Dispose() =
-            (this.reactor :> IDisposable).Dispose()
-        override this.ContentKey =
-            this.reactor.Root.ContentKey
-        override this.AttachedToWindow (window: Widget.Handle) =
-            this.reactor.AttachedToWindow window
-            
-    
-[<AbstractClass>]
-type WidgetReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
-                init: unit -> 'state * Cmd<'msg, 'signal>,
-                attrUpdate: 'state -> 'attr -> 'state,
-                update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
-                view: 'state -> IWidgetNode<'msg>,
-                diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
-                ) =
-    inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWidgetNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
-    new(init, update, view) =
-        WidgetReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
-    interface IWidgetNode<'outerMsg> with
-        override this.Widget =
-            this.reactor.Root.Widget
-
-[<AbstractClass>]
-type LayoutReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
-                init: unit -> 'state * Cmd<'msg, 'signal>,
-                attrUpdate: 'state -> 'attr -> 'state,
-                update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
-                view: 'state -> ILayoutNode<'msg>,
-                diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
-                ) =
-    inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,ILayoutNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
-    new(init, update, view) =
-        LayoutReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
-    interface ILayoutNode<'outerMsg> with
-        override this.Layout =
-            this.reactor.Root.Layout
-        
-[<AbstractClass>]
-type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
-                init: unit -> 'state * Cmd<'msg, 'signal>,
-                attrUpdate: 'state -> 'attr -> 'state,
-                update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
-                view: 'state -> IWindowNode<'msg>,
-                diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
-                ) =
-    inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWindowNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
-    new(init, update, view) =
-        WindowReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
-    interface IWindowNode<'outerMsg> with
-        override this.WindowWidget =
-            this.reactor.Root.WindowWidget
+// [<AbstractClass>]    
+// type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBuilderNode<'msg>>(
+//                 init: unit -> 'state * Cmd<'msg, 'signal>,
+//                 attrUpdate: 'state -> 'attr -> 'state,
+//                 update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
+//                 view: 'state -> 'root,
+//                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
+//                 ) =
+//     [<DefaultValue>] val mutable reactor: Reactor<'state,'attr,'msg,'signal,'root>
+//     member val Attrs: 'attr list = [] with get, set
+//     abstract member SignalMap: 'signal -> 'outerMsg option
+//     default this.SignalMap _ = None
+//     
+//     interface IBuilderNode<'outerMsg> with
+//         override this.Dependencies = []
+//         override this.Create(dispatch: 'outerMsg -> unit) =
+//             let processSignal signal =
+//                 match this.SignalMap signal with
+//                 | Some outerMsg ->
+//                     dispatch outerMsg
+//                 | None ->
+//                     ()
+//             this.reactor <- new Reactor<'state,'attr,'msg,'signal,'root>(init, attrUpdate, update, view, processSignal)
+//             this.reactor.ApplyAttrs(this.Attrs)
+//         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
+//             let left' = (left :?> ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root>)
+//             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+//             this.reactor <- left'.reactor
+//             this.reactor.ApplyAttrs(nextAttrs)
+//         override this.Dispose() =
+//             (this.reactor :> IDisposable).Dispose()
+//         override this.ContentKey =
+//             this.reactor.Root.ContentKey
+//         override this.AttachedToWindow (window: Widget.Handle) =
+//             this.reactor.AttachedToWindow window
+//             
+//     
+// [<AbstractClass>]
+// type WidgetReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
+//                 init: unit -> 'state * Cmd<'msg, 'signal>,
+//                 attrUpdate: 'state -> 'attr -> 'state,
+//                 update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
+//                 view: 'state -> IWidgetNode<'msg>,
+//                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
+//                 ) =
+//     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWidgetNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
+//     new(init, update, view) =
+//         WidgetReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
+//     interface IWidgetNode<'outerMsg> with
+//         override this.Widget =
+//             this.reactor.Root.Widget
+//
+// [<AbstractClass>]
+// type LayoutReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
+//                 init: unit -> 'state * Cmd<'msg, 'signal>,
+//                 attrUpdate: 'state -> 'attr -> 'state,
+//                 update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
+//                 view: 'state -> ILayoutNode<'msg>,
+//                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
+//                 ) =
+//     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,ILayoutNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
+//     new(init, update, view) =
+//         LayoutReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
+//     interface ILayoutNode<'outerMsg> with
+//         override this.Layout =
+//             this.reactor.Root.Layout
+//         
+// [<AbstractClass>]
+// type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
+//                 init: unit -> 'state * Cmd<'msg, 'signal>,
+//                 attrUpdate: 'state -> 'attr -> 'state,
+//                 update: 'state -> 'msg -> 'state * Cmd<'msg, 'signal>,
+//                 view: 'state -> IWindowNode<'msg>,
+//                 diffAttrs: 'attr list -> 'attr list -> AttrChange<'attr> list
+//                 ) =
+//     inherit ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,IWindowNode<'msg>>(init, attrUpdate, update, view, diffAttrs)
+//     new(init, update, view) =
+//         WindowReactorNode(init, nullAttrUpdate, update, view, nullDiffAttrs)
+//     interface IWindowNode<'outerMsg> with
+//         override this.WindowWidget =
+//             this.reactor.Root.WindowWidget
 
 // root-level AppReactor stuff ============================================================
 

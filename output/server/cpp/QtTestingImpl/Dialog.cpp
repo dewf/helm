@@ -20,7 +20,12 @@ namespace Dialog
                 { SignalMask::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
         };
     public:
-        explicit DialogWithHandler(const std::shared_ptr<SignalHandler> &handler) : handler(handler) {}
+        DialogWithHandler(QWidget *parent, const std::shared_ptr<SignalHandler> &handler)
+            : handler(handler), QDialog(parent)
+        {
+            // nothing yet
+        }
+
         void setSignalMask(uint32_t newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
@@ -63,8 +68,8 @@ namespace Dialog
         delete THIS;
     }
 
-    HandleRef create(std::shared_ptr<SignalHandler> handler) {
-        return (HandleRef) new DialogWithHandler(handler);
+    HandleRef create(Widget::HandleRef parent, std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new DialogWithHandler((QWidget*)parent, handler);
     }
 }
 
