@@ -38,7 +38,7 @@ with
         | Menu node -> node
     
 and BuilderContext<'msg> = {
-    ContainingWindow: IBuilderNode<'msg> option // window, dialog, whatever
+    ContainingWindow: Widget.Handle option // window, dialog, whatever
 }
 
 and IBuilderNode<'msg> =
@@ -193,9 +193,9 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         let nextContext =
             match right with
             | :? IWindowNode<'msg> as windowNode ->
-                { context with ContainingWindow = Some windowNode }
+                { context with ContainingWindow = Some windowNode.WindowWidget }
             | :? IDialogNode<'msg> as dialogNode ->
-                { context with ContainingWindow = Some dialogNode }
+                { context with ContainingWindow = Some dialogNode.Dialog }
             | _ ->
                 context
                 
@@ -237,9 +237,9 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
             // only left has a model right now (pre-migration), and created children could potentially query for the .Widget or whatever (eg Dialogs wanting to know parent windows)
             match left with
             | :? IWindowNode<'msg> as windowNode ->
-                { context with ContainingWindow = Some windowNode }
+                { context with ContainingWindow = Some windowNode.WindowWidget }
             | :? IDialogNode<'msg> as dialogNode ->
-                { context with ContainingWindow = Some dialogNode }
+                { context with ContainingWindow = Some dialogNode.Dialog }
             | _ ->
                 context
                 

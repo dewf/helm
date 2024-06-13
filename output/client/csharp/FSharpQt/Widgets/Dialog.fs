@@ -29,17 +29,11 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg> option) as this =
+type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle option) as this =
     let mutable dialog =
         let parentHandle =
-            match maybeParent with
-            | Some parent ->
-                match parent with
-                | :? IWindowNode<'msg> as window -> window.WindowWidget
-                | :? IDialogNode<'msg> as dialog -> dialog.Dialog :> Widget.Handle
-                | _ -> failwith "Dialog.Model parent handle matching - unknown/unhandled type (currently just IWindowNode/IDialogNode)"
-            | None ->
-                null
+            maybeParent
+            |> Option.defaultValue null
         Dialog.Create(parentHandle, this)
     
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -96,7 +90,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg>
     member this.AddLayout (layout: Layout.Handle) =
         dialog.SetLayout(layout)
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: IBuilderNode<'msg> option) =
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: Widget.Handle option) =
     let model = new Model<'msg>(dispatch, maybeParent)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap

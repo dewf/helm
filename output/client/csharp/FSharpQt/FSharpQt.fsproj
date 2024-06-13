@@ -13,7 +13,7 @@
         <Compile Include="Reactor.fs" />
 <!--        <Compile Include="NonVisual.fs" />-->
 <!--        <Compile Include="WithDialogs.fs" />-->
-<!--        <Compile Include="Painting.fs" />-->
+        <Compile Include="Painting.fs" />
         
 <!--        <Compile Include="Widgets\Menus\Menu.fs" />-->
 <!--        <Compile Include="Widgets\Menus\MenuAction.fs" />-->
