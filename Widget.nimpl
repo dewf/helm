@@ -34,6 +34,8 @@ opaque Handle {
     Rect getRect();
     Size getSize();
 
+    void adjustSize();
+
     void resize(int width, int height);
 
     void setFixedWidth(int width);
