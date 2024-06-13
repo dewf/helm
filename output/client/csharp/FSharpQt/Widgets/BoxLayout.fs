@@ -139,6 +139,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
     
     member val Attrs: Attr list = [] with get, set
     member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable items: BoxItem<'msg> list = []
     member this.Items
@@ -201,6 +202,8 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             
         override this.ContentKey =
             (this :> ILayoutNode<'msg>).Layout
+            
+        override this.Attachments = this.Attachments
 
 type BoxLayout<'msg>() =
     inherit BoxLayoutBase<'msg>(BoxLayout.Direction.TopToBottom)

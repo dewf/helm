@@ -112,9 +112,11 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-type Dialog<'msg>() as this =
+type Dialog<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
+    
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
 
     let mutable maybeLayout: ILayoutNode<'msg> option = None
     member private this.MaybeLayout = maybeLayout
@@ -195,6 +197,8 @@ type Dialog<'msg>() as this =
             
         override this.ContentKey =
             (this :> IDialogNode<'msg>).Dialog
+            
+        override this.Attachments = this.Attachments
 
 // some utility stuff for Cmd.Dialog
 

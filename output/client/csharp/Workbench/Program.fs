@@ -5,7 +5,6 @@ open System
 open FSharpQt
 open BuilderNode
 open FSharpQt.Widgets.Dialog
-open FSharpQt.WithDialogs
 open Reactor
 
 open FSharpQt.Widgets
@@ -37,22 +36,20 @@ let update (state: State) (msg: Msg) =
 let view (state: State) =
     let button =
         PushButton(Attrs = [ Text "ButtonText"; MinWidth 200 ], OnClicked = DoSomething)
+
     let layout =
         VBoxLayout(Items = [ BoxItem.Create(button) ])
-    let mainWindow =
-        MainWindow(Attrs = [ Title "Wooooot" ], Content = layout)
+
     let dialog =
+        let nested =
+            Dialog(Attrs = [ Dialog.Title "Smaller!"; Dialog.Size (320, 240) ])
         let layout =
             let button =
                 PushButton(Attrs = [ Text "Lauch Nested" ], OnClicked = ShowNested)
             VBoxLayout(Items = [ BoxItem.Create(button) ])
-        let nested =
-            Dialog(Attrs = [ Dialog.Title "Smaller!"; Dialog.Size (320, 240) ])
-        let dialog =
-            Dialog(Attrs = [ Dialog.Title "Awhooo"; Dialog.Size (640, 480) ], Layout = layout)
-        DialogWithDialogs(dialog, [ "nested", nested ])
-        
-    WindowWithDialogs(mainWindow, [ "dialog1", dialog ])
+        Dialog(Attrs = [ Dialog.Title "Awhooo"; Dialog.Size (640, 480) ], Layout = layout, Attachments = [ "nested", Attachment.Dialog nested ])
+
+    MainWindow(Attrs = [ Title "Wooooot" ], Content = layout, Attachments = [ "dialog1", Attachment.Dialog dialog ])
     :> IBuilderNode<Msg>
     
 [<EntryPoint>]

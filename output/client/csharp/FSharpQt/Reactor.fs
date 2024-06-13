@@ -36,7 +36,7 @@ let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
 let nullAttrUpdate (state: 'state) (attr: 'attr) =
     state
     
-type Attachment<'msg> =
+type RelativeAttachment<'msg> =
     | AttachedDialog of node: IDialogNode<'msg> * relativeTo: Widget.Handle option
     | AttachedPopup of node: IMenuNode<'msg> * relativeTo: Widget.Handle
     
@@ -51,30 +51,47 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
     let mutable state = initState
     let mutable root = view state
     let mutable disableDispatch = false
-    let mutable attachMap = Map.empty<string, Attachment<'msg>>
+    let mutable attachMap = Map.empty<string, RelativeAttachment<'msg>>
     
     let mutable disposed = false
     
     let updateAttachments() =
-        let rec recInner (soFar: Map<string, Attachment<'msg>>) (node: IBuilderNode<'msg>) =
+        let rec recInner (soFar: Map<string, RelativeAttachment<'msg>>) (node: IBuilderNode<'msg>) =
             // first process dependencies
             let soFar =
                 (soFar, node.Dependencies)
                 ||> List.fold (fun acc (_, node) -> recInner acc node)
-            // now this node
-            match node with
-            | :? IDialogParent<'msg> as dlgParent ->
-                let maybeWidget =
-                    dlgParent.RelativeToWidget
-                (soFar, dlgParent.AttachedDialogs)
-                ||> List.fold (fun acc (name, node) -> acc.Add (name, AttachedDialog (node, maybeWidget)))
-            | :? IPopupMenuParent<'msg> as popupParent ->
-                let widget =
-                    popupParent.RelativeToWidget
-                (soFar, popupParent.AttachedPopups)
-                ||> List.fold (fun acc (name, node) -> acc.Add (name, AttachedPopup (node, widget)))
-            | _ ->
-                soFar
+            // now this node's attachments
+            (soFar, node.Attachments)
+            ||> List.fold (fun acc (id, attach) ->
+                match attach with
+                | Attachment.NonVisual nonVisualNode ->
+                    recInner acc nonVisualNode
+                | Attachment.Dialog dialogNode ->
+                    // first process anything beneath (subdialogs! ack)
+                    let acc =
+                        recInner acc dialogNode
+                    // then this particular attachment
+                    let maybeWidget =
+                        match node with
+                        | :? IWidgetNode<'msg> as widgetNode -> Some widgetNode.Widget
+                        | :? IWindowNode<'msg> as windowNode -> Some windowNode.WindowWidget
+                        | :? IDialogNode<'msg> as dialogNode -> Some dialogNode.Dialog
+                        | _ -> None
+                    acc.Add(id, AttachedDialog(dialogNode, maybeWidget))
+                | Attachment.Menu menuNode ->
+                    // deeper attachments
+                    let acc =
+                        recInner acc menuNode
+                    // then this particular attachment
+                    let widget =
+                        match node with
+                        | :? IWidgetNode<'msg> as widgetNode -> widgetNode.Widget
+                        | :? IWindowNode<'msg> as windowNode -> windowNode.WindowWidget
+                        | :? IDialogNode<'msg> as dialogNode -> dialogNode.Dialog :> Widget.Handle
+                        | _ -> failwith "Reactor .updateAttachments() - menu was not attached to something with a widget handle"
+                    acc.Add(id, AttachedPopup(menuNode, widget))
+                )
         attachMap <- recInner Map.empty root
 
     let rec dispatch (msg: 'msg) =

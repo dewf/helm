@@ -113,6 +113,8 @@ let private dispose (model: Model<'msg>) =
 type MainWindow<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     let mutable onTitleChanged: (string -> 'msg) option = None
@@ -202,3 +204,5 @@ type MainWindow<'msg>() =
             
         override this.ContentKey =
             (this :> IWindowNode<'msg>).WindowWidget
+            
+        override this.Attachments = this.Attachments

@@ -105,6 +105,8 @@ type PushButton<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     member val Attrs: Attr list = [] with get, set
     
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
     let mutable signalMask = enum<PushButton.SignalMask> 0
     
     let mutable onClicked: 'msg option = None
@@ -166,3 +168,6 @@ type PushButton<'msg>() =
             
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
+            
+        override this.Attachments =
+            this.Attachments

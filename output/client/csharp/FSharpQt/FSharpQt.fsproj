@@ -12,7 +12,7 @@
         <Compile Include="BuilderNode.fs" />
         <Compile Include="Reactor.fs" />
 <!--        <Compile Include="NonVisual.fs" />-->
-        <Compile Include="WithDialogs.fs" />
+<!--        <Compile Include="WithDialogs.fs" />-->
 <!--        <Compile Include="Painting.fs" />-->
         
 <!--        <Compile Include="Widgets\Menus\Menu.fs" />-->

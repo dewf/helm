@@ -13,23 +13,34 @@ let createdOrChanged (changes: AttrChange<'a> list) =
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
     
 type DepsKey =
+    // used by actual widgets
     | IntKey of i: int
     | StrKey of str: string
+    // only internally by diff/build
+    | AttachKey of str: string
     
 type DepsChange =
     | Unchanged
     | Added
     | Removed
     | Swapped
+   
+[<RequireQualifiedAccess>]
+type Attachment<'msg> =
+    | NonVisual of node: INonVisualNode<'msg>
+    | Dialog of node: IDialogNode<'msg>
+    | Menu of node: IMenuNode<'msg>
+with
+    member this.Node =
+        match this with
+        | NonVisual node -> node :> IBuilderNode<'msg>
+        | Dialog node -> node
+        | Menu node -> node
     
-type BuilderContext<'msg> = {
+and BuilderContext<'msg> = {
     ContainingWindow: IBuilderNode<'msg> option // window, dialog, whatever
 }
-and IContextRewriter<'msg> =
-    interface
-        // certain utility nodes (eg ...WithDialogs) will rewrite the builder context
-        abstract ContextFor: DepsKey -> BuilderContext<'msg> -> BuilderContext<'msg>
-    end
+
 and IBuilderNode<'msg> =
     interface
         abstract Dependencies: (DepsKey * IBuilderNode<'msg>) list
@@ -38,22 +49,32 @@ and IBuilderNode<'msg> =
         abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
         abstract ContentKey: System.Object
+        
+        // externally-supplied dependencies of any type, which the node itself has no knowledge of (except for providing the basic property storage)
+        // will be added to self-reported dependencies during build/diff process
+        // for example, dialogs, pop-up menus, or non-visual nodes which might need to reference their parent somehow (or not, but simply need to be part of the build process)
+        abstract Attachments: (string * Attachment<'msg>) list
     end
-
-// this will allow certain widgets (eg MainWindow) to accept either type
-// also removes the burden of implementing IWidgetNode from every single ILayoutNode implementation (the former approach), which was annoying
-type IWidgetOrLayoutNode<'msg> =
+    
+and INonVisualNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
     end
 
-type IWidgetNode<'msg> =
+// this will allow certain widgets (eg MainWindow) to accept either type
+// also removes the burden of implementing IWidgetNode from every single ILayoutNode implementation (the former approach), which was annoying
+and IWidgetOrLayoutNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+    end
+
+and IWidgetNode<'msg> =
     interface
         inherit IWidgetOrLayoutNode<'msg>
         abstract Widget: Widget.Handle
     end
     
-type ILayoutNode<'msg> =
+and ILayoutNode<'msg> =
     interface
         inherit IWidgetOrLayoutNode<'msg>
         abstract member Layout: Layout.Handle
@@ -83,61 +104,56 @@ type ILayoutNode<'msg> =
 //                 maybeSyntheticParent <- Some widget
 //                 widget
     
-type IMenuBarNode<'msg> =
+and IMenuBarNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
             abstract MenuBar: MenuBar.Handle
     end
     
-type IMenuNode<'msg> =
+and IMenuNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
             abstract member Menu: Menu.Handle
             abstract member Popup: Common.Point -> unit
     end
     
-type IActionNode<'msg> =
+and IActionNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
             abstract member Action: Action.Handle
     end
     
-type ITopLevelNode<'msg> =
+and ITopLevelNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
         // doesn't define any properties / contentkey itself
     end
     
-type IWindowNode<'msg> =
+and IWindowNode<'msg> =
     interface
         inherit ITopLevelNode<'msg>
         abstract member WindowWidget: Widget.Handle
     end
     
-type IDialogNode<'msg> =
+and IDialogNode<'msg> =
     interface
         inherit ITopLevelNode<'msg>
         abstract member Dialog: Dialog.Handle
     end
     
-type IDialogParent<'msg> =
-    interface
-        abstract member RelativeToWidget: Widget.Handle option              // for showing dialogs relative to a point
-        abstract member AttachedDialogs: (string * IDialogNode<'msg>) list
-    end
-    
-type IPopupMenuParent<'msg> =
-    interface
-        abstract member RelativeToWidget: Widget.Handle  // for translating relative coords to global
-        abstract member AttachedPopups: (string * IMenuNode<'msg>) list
-    end
+let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
+    let attachDeps =
+        node.Attachments
+        |> List.map (fun (id, attach) -> AttachKey id, attach.Node)
+    node.Dependencies @ attachDeps
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
+    // TODO: needs to be updated to set a flag indicating when a window/dialog has been entered, and NOT disposing of any Qt resources below that (but still continuing)
     match node with
     | :? IDialogNode<'msg> ->
         printfn "not destroying dialog or dependencies (owned by a window ... probably)"
     | _ ->
-        for _, node in node.Dependencies do
+        for _, node in (nodeDepsWithAttachments node) do
             disposeTree node
         node.Dispose()
 
@@ -167,38 +183,30 @@ let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
     
 let nullDiffAttrs (a1: 'a list) (a2: 'a list) =
     []
-
+    
 let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) (context: BuilderContext<'msg>) =
     let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =
         // initial create
         right.Create2 dispatch context
         
         // are we a window/dialog parent for things deeper down?
-        let nextContext, maybeRewriter =
+        let nextContext =
             match right with
-            | :? IContextRewriter<'msg> as rewriter ->
-                context, Some rewriter
             | :? IWindowNode<'msg> as windowNode ->
-                { context with ContainingWindow = Some windowNode }, None
+                { context with ContainingWindow = Some windowNode }
             | :? IDialogNode<'msg> as dialogNode ->
-                { context with ContainingWindow = Some dialogNode }, None
+                { context with ContainingWindow = Some dialogNode }
             | _ ->
-                context, None
+                context
                 
-        // realize dependencies
-        match maybeRewriter with
-        | Some rewriter ->
-            // special handling for utility nodes, they need to be able to modify the context for their dependencies
-            for key, node in right.Dependencies do
-                let rewritten =
-                    rewriter.ContextFor key nextContext
-                diff dispatch None (Some node) rewritten
-        | _ ->
-            // normal processing
-            for _, node in right.Dependencies do
-                diff dispatch None (Some node) nextContext
+        // realize dependencies + attachments
+        let allDeps =
+            nodeDepsWithAttachments right
+        for _, node in allDeps do
+            diff dispatch None (Some node) nextContext
                 
-        // only now attach dependencies (we used to create dependencies first, then create a parentless node)
+        // attach realized dependencies
+        // (the node will know nothing of its attachments, only self-declared .Dependencies)
         right.AttachDeps()
 
     match (maybeLeft, maybeRight) with
@@ -214,8 +222,8 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
     | Some left, Some right when left.GetType() = right.GetType() ->
         // neither side empty, but same type - diff and migrate
         // reconcile and order children via ID
-        let leftMap = Map.ofList left.Dependencies
-        let rightMap = Map.ofList right.Dependencies
+        let leftMap = Map.ofList (nodeDepsWithAttachments left)
+        let rightMap = Map.ofList (nodeDepsWithAttachments right)
         let uniqueIds = (Map.keys leftMap @ Map.keys rightMap) |> List.distinct |> List.sort
         let correlated =
             uniqueIds
@@ -225,35 +233,32 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
                 key, left, right)
             
         // are we a window/dialog parent for things deeper down?
-        let nextContext, maybeRewriter =
+        let nextContext =
             // only left has a model right now (pre-migration), and created children could potentially query for the .Widget or whatever (eg Dialogs wanting to know parent windows)
             match left with
-            | :? IContextRewriter<'msg> as rewriter ->
-                context, Some rewriter
             | :? IWindowNode<'msg> as windowNode ->
-                { context with ContainingWindow = Some windowNode }, None
+                { context with ContainingWindow = Some windowNode }
             | :? IDialogNode<'msg> as dialogNode ->
-                { context with ContainingWindow = Some dialogNode }, None
+                { context with ContainingWindow = Some dialogNode }
             | _ ->
-                context, None
+                context
                 
-        match maybeRewriter with
-        | Some rewriter ->
-            // utility node builder context rewriting
-            for key, lch, rch in correlated do
-                let rewritten =
-                    rewriter.ContextFor key nextContext
-                diff dispatch lch rch rewritten
-        | _ ->
-            // normal processing
-            for _, lch, rch in correlated do
-                diff dispatch lch rch nextContext
+        for _, lch, rch in correlated do
+            diff dispatch lch rch nextContext
             
         let depsChanges =
+            // we exclude the attachments from the dependency changes sent to .Migrate
+            // probably unnecessary, really, since they are generally queried by key and nobody will be looking for them
+            let withoutAttachments =
+                correlated
+                |> List.filter (fun (key, _, _) ->
+                    match key with
+                    | AttachKey _ -> false
+                    | _ -> true)
             // provide a more precise breakdown of the dependency changes
             // saves redundant comparison code in widgets with dependencies of different types (eg MainWindow)
             // see MainWindow.MigrateContent to see how this is typically used
-            [for key, lch, rch in correlated ->
+            [for key, lch, rch in withoutAttachments ->
                 let changeType =
                     match lch, rch with
                     | None, None ->
