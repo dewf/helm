@@ -2,7 +2,6 @@
 
 open System
 open FSharpQt.BuilderNode
-open FSharpQt.NonVisual
 open Org.Whatever.QtTesting
 
 type Signal =
@@ -13,11 +12,13 @@ type Attr =
     | SingleShot of state: bool
     | Running of state: bool
     
+let attrKey = function
+    | Interval _ -> 0
+    | SingleShot _ -> 1
+    | Running _ -> 2    
+    
 let private diffAttrs =
-    genericDiffAttrs (function
-        | Interval _ -> 0
-        | SingleShot _ -> 1
-        | Running _ -> 2)
+    genericDiffAttrs attrKey
     
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -79,36 +80,34 @@ type Timer<'msg>() =
     member this.OnTimeout with set value = onTimeout <- Some value
     
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap
-        with get() = function
-            | Timeout elapsed ->
-                onTimeout
-                |> Option.map (fun f -> f elapsed)
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = function
+        | Timeout elapsed ->
+            onTimeout
+            |> Option.map (fun f -> f elapsed)
                 
     interface INonVisualNode<'msg> with
         override this.Dependencies = []
         
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs this.SignalMap dispatch
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
+            ()
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Timer<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
             
         override this.ContentKey =
-            // if we ever change NonVisualNode to explicitly represent QObjects, change this to:
-            // (this :> INonVisualNode<'msg>).QObject
             this.model.QObject
             
-        override this.AttachedToWindow window =
-            // maybe we need to make a VisualNode subtype of IBuilderNode? because why should a non-visual have this?
-            ()
-      
-            
-        
+        override this.Attachments =
+            this.Attachments

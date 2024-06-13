@@ -39,9 +39,12 @@ let private diffAttrs =
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable label = Label.Create()
+    
     // no 'do' block currently since no signals
+    
     member this.Widget with get() = label
     member this.SignalMap with set value = signalMap <- value
+    
     member this.ApplyAttrs (attrs: Attr list) =
         for attr in attrs do
             match attr with
@@ -89,19 +92,25 @@ let private dispose (model: Model<'msg>) =
 
 type Label<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap = (fun _ -> None)
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = (fun _ -> None)
             
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
         
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs this.SignalMap dispatch
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps() =
+            ()
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Label<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
@@ -112,6 +121,5 @@ type Label<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
             
-        override this.AttachedToWindow window =
-            ()
-            
+        override this.Attachments =
+            this.Attachments

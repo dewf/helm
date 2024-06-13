@@ -45,8 +45,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             dispatchSignal LostFocus
             if submitOnLostFocus then
                 dispatchSignal (Submitted lastValue))
+        
     member this.Widget with get() = edit
     member this.SignalMap with set value = signalMap <- value
+    
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
@@ -62,6 +64,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 edit.SetEnabled(value)
             | SubmitOnLostFocus value ->
                 submitOnLostFocus <- value
+                
     interface IDisposable with
         member this.Dispose() =
             edit.Dispose()
@@ -82,6 +85,7 @@ let private dispose (model: Model<'msg>) =
 
 type LineEdit<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     let mutable onChanged: (string -> 'msg) option = None
     let mutable onReturnPressed: 'msg option = None
     let mutable onLostFocus: 'msg option = None
@@ -90,38 +94,48 @@ type LineEdit<'msg>() =
     member this.OnReturnPressed with set value = onReturnPressed <- Some value
     member this.OnLostFocus with set value = onLostFocus <- Some value
     member this.OnSubmitted with set value = onSubmitted <- Some value
+    
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap
-        with get() = function
-            | Changed s ->
-                onChanged
-                |> Option.map (fun f -> f s)
-            | ReturnPressed ->
-                onReturnPressed
-            | LostFocus ->
-                onLostFocus
-            | Submitted value ->
-                onSubmitted
-                |> Option.map (fun f -> f value)
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = function
+        | Changed s ->
+            onChanged
+            |> Option.map (fun f -> f s)
+        | ReturnPressed ->
+            onReturnPressed
+        | LostFocus ->
+            onLostFocus
+        | Submitted value ->
+            onSubmitted
+            |> Option.map (fun f -> f value)
                 
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs this.SignalMap dispatch
+        
+        override this.Create2 dispatch buildContextr =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
+            ()
+            
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> LineEdit<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
             this.model <-
-                migrate left'.model nextAttrs this.SignalMap
+                migrate left'.model nextAttrs signalMap
+                
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
+            
         override this.Widget =
             (this.model.Widget :> Widget.Handle)
+            
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
-        override this.AttachedToWindow window =
-            ()
             
-            
+        override this.Attachments =
+            this.Attachments
+         

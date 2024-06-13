@@ -60,8 +60,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         slider.OnValueChanged (fun value ->
             lastValue <- value
             dispatchSignal (ValueChanged value))
+        
     member this.Widget = slider
     member this.SignalMap with set value = signalMap <- value
+    
     member this.ApplyAttrs (attrs: Attr list) =
         for attr in attrs do
             match attr with
@@ -99,6 +101,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 slider.SetMinimumWidth(width)
             | MinimumHeight height ->
                 slider.SetMaximumHeight(height)
+                
     interface IDisposable with
         member this.Dispose() =
             slider.Dispose()
@@ -119,31 +122,42 @@ let private dispose (model: Model<'msg>) =
 
 type Slider<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     let mutable onValueChanged: (int -> 'msg) option = None
     member this.OnValueChanged with set value = onValueChanged <- Some value
+    
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap
-        with get() = function
-            | ValueChanged value ->
-                onValueChanged
-                |> Option.map (fun f -> f value)
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = function
+        | ValueChanged value ->
+            onValueChanged
+            |> Option.map (fun f -> f value)
                 
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs this.SignalMap dispatch
+        
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
+            ()
+            
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Slider<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <-
-                migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
+                
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
+            
         override this.Widget =
             (this.model.Widget :> Widget.Handle)
+            
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
-        override this.AttachedToWindow window =
-            ()
+            
+        override this.Attachments =
+            this.Attachments

@@ -239,6 +239,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
                 ) =
     [<DefaultValue>] val mutable reactor: Reactor<'state,'attr,'msg,'signal,'root>
     member val Attrs: 'attr list = [] with get, set
+    
     abstract member SignalMap: 'signal -> 'outerMsg option
     default this.SignalMap _ = None
     

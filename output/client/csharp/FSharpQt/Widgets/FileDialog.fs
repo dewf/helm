@@ -166,7 +166,9 @@ let private dispose (model: Model<'msg>) =
 
 type FileDialog<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     member val Attrs: Attr list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<FileDialog.SignalMask> 0
     
@@ -271,8 +273,11 @@ type FileDialog<'msg>() =
     interface IDialogNode<'msg> with
         override this.Dependencies = []
             
-        override this.Create(dispatch: 'msg -> unit) =
+        override this.Create2 dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
+            
+        override this.AttachDeps () =
+            ()
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> FileDialog<'msg>)
@@ -290,5 +295,5 @@ type FileDialog<'msg>() =
         override this.ContentKey =
             (this :> IDialogNode<'msg>).Dialog
             
-        override this.AttachedToWindow window =
-            this.model.Dialog.SetParentDialogFlags(window)
+        override this.Attachments =
+            this.Attachments

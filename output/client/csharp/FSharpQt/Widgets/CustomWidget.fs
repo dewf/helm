@@ -208,16 +208,14 @@ type EventDelegateBaseWithResources<'msg,'state,'resources when 'state: equality
 type Signal = unit
     
 type Attr =
-    // | PaintState of ps: PaintState
     | UpdatesEnabled of enabled: bool
     | MouseTracking of enabled: bool
     | AcceptDrops of enabled: bool
     
 let private attrKey = function
-    // | PaintState _ -> 0
-    | UpdatesEnabled _ -> 1
-    | MouseTracking _ -> 2
-    | AcceptDrops _ -> 3
+    | UpdatesEnabled _ -> 0
+    | MouseTracking _ -> 1
+    | AcceptDrops _ -> 2
     
 let private diffAttrs =
     genericDiffAttrs attrKey
@@ -357,12 +355,11 @@ type EventMaskItem =
 
 type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskItems: EventMaskItem list) =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     member val Attrs: Attr list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable menus: (string * IMenuNode<'msg>) list = []
-    member this.Menus with set value = menus <- value
-    
-    member private this.SignalMap = (fun _ -> None) // nothing yet
+    let signalMap = (fun _ -> None) // nothing yet
     
     member private this.MethodMask =
         (enum<Widget.MethodMask> 0, eventMaskItems)
@@ -381,26 +378,29 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
             acc ||| value)
             
     interface IWidgetNode<'msg> with
-        override this.Dependencies =
-            menus
-            |> List.map (fun (id, menu) -> StrKey ("menu_"+id), menu :> IBuilderNode<'msg>)
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs this.SignalMap dispatch this.MethodMask eventDelegate
+        override this.Dependencies = []
+            
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch this.MethodMask eventDelegate
+            
+        override this.AttachDeps () =
+            ()
+            
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> CustomWidget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap eventDelegate
+            this.model <- migrate left'.model nextAttrs signalMap eventDelegate
+            
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
+            
         override this.Widget =
             this.model.Widget
+            
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
-        override this.AttachedToWindow window =
-            ()
             
-    interface IPopupMenuParent<'msg> with
-        override this.RelativeToWidget = this.model.Widget
-        override this.AttachedPopups = menus
+        override this.Attachments =
+            this.Attachments

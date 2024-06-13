@@ -9,14 +9,17 @@ type Signal =
     
 type Attr =
     | NoneYet
+    
 let private keyFunc = function
     | NoneYet -> 0
+    
 let private diffAttrs =
     genericDiffAttrs keyFunc
     
-type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * Widget.Handle) list) =
+type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable tabWidget = TabWidget.Create()
+    
     let addPages(pages: (string * Widget.Handle) list) =
         for label, widget in pages do
             tabWidget.AddTab(widget, label)
@@ -29,8 +32,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * Widget.Han
                 ()
         tabWidget.OnCurrentChanged (fun index ->
             signalDispatch (CurrentChanged index))
-        
-        addPages initPages
         
     member this.Refill(pages: (string * Widget.Handle) list) =
         tabWidget.Clear()
@@ -48,8 +49,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, initPages: (string * Widget.Han
         member this.Dispose() =
             tabWidget.Dispose()
 
-let private create (attrs: Attr list) (pages: (string * Widget.Handle) list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
-    let model = new Model<'msg>(dispatch, pages)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -63,33 +64,30 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type TabWidget<'msg>() =
-    let mutable pages: (string * IWidgetNode<'msg>) list = []
-
     [<DefaultValue>] val mutable private model: Model<'msg>
+
     member val Attrs: Attr list = [] with get, set
+    member val Pages: (string * IWidgetNode<'msg>) list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable onCurrentChanged: (int -> 'msg) option = None
     member this.OnCurrentChanged with set value = onCurrentChanged <- Some value
-    member private this.SignalMap
-        with get() = function
-            | CurrentChanged index ->
-                onCurrentChanged
-                |> Option.map (fun f -> f index)
-                
-    member this.Pages
-        with get() = pages
-        and set value = pages <- value
+    
+    let signalMap = function
+        | CurrentChanged index ->
+            onCurrentChanged
+            |> Option.map (fun f -> f index)
         
     member private this.MigrateContent(leftTabWidget: TabWidget<'msg>) =
         let leftContents =
             leftTabWidget.Pages
             |> List.map (fun (label, node) -> label, node.ContentKey)
         let thisContents =
-            pages
+            this.Pages
             |> List.map (fun (label, node) -> label, node.ContentKey)
         if leftContents <> thisContents then
             let pageLabelsAndHandles =
-                pages
+                this.Pages
                 |> List.map (fun (label, node) -> label, node.Widget)
             this.model.Refill(pageLabelsAndHandles)
         else
@@ -101,22 +99,24 @@ type TabWidget<'msg>() =
             // ... we should probably switch to string keys anyway, and/or rethink how widgets can survive reorderings
             // seems silly to needlessly destroy/create things just because the order changed and the user didn't provide keys,
             // especially when .ContentKeys exist
-            pages
+            this.Pages
             |> List.mapi (fun i (_, node) -> IntKey i, node :> IBuilderNode<'msg>)
             
-        override this.Create(dispatch: 'msg -> unit) =
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
             let pageLabelsAndHandles =
-                pages
-                |> List.map (fun (label, widget) ->
-                    label, widget.Widget)
-            this.model <- create this.Attrs pageLabelsAndHandles this.SignalMap dispatch
+                this.Pages
+                |> List.map (fun (label, widget) -> label, widget.Widget)
+            this.model.Refill(pageLabelsAndHandles)
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> TabWidget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent(left')
             
         override this.Dispose() =
@@ -128,6 +128,5 @@ type TabWidget<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
             
-        override this.AttachedToWindow window =
-            for _, page in pages do
-                page.AttachedToWindow window
+        override this.Attachments =
+            this.Attachments

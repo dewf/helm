@@ -15,23 +15,20 @@ let keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle option) =
+type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable groupBox = GroupBox.Create()
-    do
-        let signalDispatch (s: Signal) =
-            match signalMap s with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
-        // no signals yet
-        
-        maybeLayout
-        |> Option.iter groupBox.SetLayout
+    
+    let signalDispatch (s: Signal) =
+        match signalMap s with
+        | Some msg ->
+            dispatch msg
+        | None ->
+            ()
         
     member this.Widget with get() = groupBox
     member this.SignalMap with set value = signalMap <- value
+    
     member this.ApplyAttrs (attrs: Attr list) =
         for attr in attrs do
             match attr with
@@ -52,8 +49,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
         groupBox.SetLayout(layout)
             
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeLayout: Layout.Handle option) =
-    let model = new Model<'msg>(dispatch, maybeLayout)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -73,7 +70,9 @@ type GroupBox<'msg>() =
     member this.Layout with set value = maybeLayout <- Some value
     
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap = (fun _ -> None)
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = (fun _ -> None)
     
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "layout") with
@@ -98,16 +97,17 @@ type GroupBox<'msg>() =
             |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))
             |> Option.toList
         
-        override this.Create(dispatch: 'msg -> unit) =
-            let maybeLayoutHandle =
-                maybeLayout
-                |> Option.map (_.Layout)
-            this.model <- create this.Attrs this.SignalMap dispatch maybeLayoutHandle
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
+            maybeLayout
+            |> Option.iter (fun node -> this.model.AddLayout(node.Layout))
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> GroupBox<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent (depsChanges |> Map.ofList)
             
         override this.Dispose() =
@@ -119,6 +119,5 @@ type GroupBox<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
             
-        override this.AttachedToWindow window =
-            ()
-          
+        override this.Attachments =
+            this.Attachments

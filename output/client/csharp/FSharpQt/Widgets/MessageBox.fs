@@ -152,19 +152,25 @@ let private dispose (model: Model<'msg>) =
 
 type MessageBox<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap = (fun _ -> None)
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = (fun _ -> None)
             
     interface IDialogNode<'msg> with
         override this.Dependencies = []
         
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs this.SignalMap dispatch
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps() =
+            ()
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> MessageBox<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
@@ -175,9 +181,8 @@ type MessageBox<'msg>() =
         override this.ContentKey =
             (this :> IDialogNode<'msg>).Dialog
             
-        override this.AttachedToWindow window =
-            this.model.MessageBox.SetParentDialogFlags(window)
-
+        override this.Attachments =
+            this.Attachments
 
 // use this in Cmd.Dialog invocation, it maps the raw int return value
 // this keeps us from having to declare the MessageBoxButton in Reactor which didn't feel right -

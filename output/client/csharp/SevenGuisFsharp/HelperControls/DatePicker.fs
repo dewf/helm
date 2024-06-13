@@ -7,7 +7,6 @@ open FSharpQt
 open BuilderNode
 open Reactor
 open FSharpQt.Widgets
-open WithDialogs
 open BoxLayout
 open Dialog
 
@@ -110,17 +109,6 @@ let view (state: State) =
             Attrs = [ LineEdit.Value state.Raw; LineEdit.Enabled state.Enabled ], OnChanged = EditChanged, OnReturnPressed = EditSubmitted)
     let button =
         PushButton(Attrs = [ Text "Pick"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
-    let hbox =
-        BoxLayout(
-            Attrs = [
-                Direction LeftToRight
-                Spacing 4
-                ContentsMargins (0, 0, 0, 0)
-            ],
-            Items = [
-                BoxItem.Create(edit)
-                BoxItem.Create(button)
-            ])
     let dialog =
         let reject =
             PushButton(Attrs = [ Text "Reject" ], OnClicked = CalendarOp Reject)
@@ -135,13 +123,28 @@ let view (state: State) =
         Dialog(
             Attrs = [ Size (320, 200); Title state.DialogTitle ],
             Layout = layout)
-    LayoutWithDialogs(hbox, [ "calendar", dialog ])
-    :> ILayoutNode<Msg>
+    let hbox =
+        BoxLayout(
+            Attrs = [
+                Direction LeftToRight
+                Spacing 4
+                ContentsMargins (0, 0, 0, 0)
+            ],
+            Items = [
+                BoxItem.Create(edit)
+                BoxItem.Create(button)
+            ],
+            Attachments = [
+                "calendar", Attachment.Dialog dialog
+            ])
+    hbox :> ILayoutNode<Msg>
     
 type DatePicker<'outerMsg>() =
     inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, genericDiffAttrs keyFunc)
+    
     let mutable onValueChanged: (Value -> 'outerMsg) option = None
     member this.OnValueChanged with set value = onValueChanged <- Some value
+    
     override this.SignalMap (s: Signal) =
         match s with
         | ValueChanged value ->

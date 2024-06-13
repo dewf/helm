@@ -14,7 +14,6 @@ open Widgets.Menus.MenuAction
 open Widgets.Menus.Menu
 open Widgets.PushButton
 open Widgets.Slider
-open WithDialogs
 
 open Extensions
 
@@ -236,16 +235,7 @@ let view (state: State) =
                 BoxItem.Create(redo)
                 BoxItem.Stretch 1
             ])
-    let canvas =
-        let contextMenu =
-            let action =
-                MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't MenuAction.Text sufficient?
-            Menu(Items = [ action ])
-        CustomWidget(
-            // first 2 args required
-            EventDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
-            Attrs = [ MouseTracking true ], // tracking needed for move events without mouse down
-            Menus = [ "context", contextMenu ])
+        
     let dialog =
         let slider =
             Slider(Attrs = [
@@ -272,16 +262,26 @@ let view (state: State) =
                 BoxItem.Create(hbox)
             ])
         Dialog(Attrs = [ Dialog.Title "Edit Radius"; Modality WindowModal ], Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ... probably need to settle on a single manner of handling dialog close events
-    // we attach the dialog to the canvas,
-    // so that there's a valid widget for relative dialog popups
-    let canvasWithDialogs =
-        WidgetWithDialogs(canvas, [ "edit", dialog ])
+        
+    let canvas =
+        let contextMenu =
+            let action =
+                MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't MenuAction.Text sufficient?
+            Menu(Items = [ action ])
+        CustomWidget(
+            // first 2 args required
+            EventDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
+            Attrs = [ MouseTracking true ], // tracking needed for move events without mouse down
+            Attachments = [
+                "context", Attachment.Menu contextMenu
+                "edit", Attachment.Dialog dialog
+            ])
+        
     let vbox =
         VBoxLayout(Items = [
             BoxItem.Create(undoRedoButtons)
-            BoxItem.Create(canvasWithDialogs)
+            BoxItem.Create(canvas)
         ])
-    // LayoutWithDialogs(vbox, [ "edit", dialog ])
     vbox :> ILayoutNode<Msg>
     
 type CircleDrawer<'outerMsg>() =

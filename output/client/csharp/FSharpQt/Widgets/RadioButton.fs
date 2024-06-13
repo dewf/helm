@@ -94,7 +94,9 @@ let private dispose (model: Model<'msg>) =
 
 type RadioButton<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    
     member val Attrs: Attr list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<RadioButton.SignalMask> 0
     
@@ -138,8 +140,11 @@ type RadioButton<'msg>() =
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
 
-        override this.Create(dispatch: 'msg -> unit) =
+        override this.Create2 dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
+            
+        override this.AttachDeps () =
+            ()
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> RadioButton<'msg>)
@@ -155,5 +160,5 @@ type RadioButton<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
             
-        override this.AttachedToWindow window =
-            ()
+        override this.Attachments =
+            this.Attachments

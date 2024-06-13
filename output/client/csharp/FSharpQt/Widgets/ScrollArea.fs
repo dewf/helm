@@ -28,24 +28,10 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeContentNode: IWidgetOrLayoutNode<'msg> option) =
+type private Model<'msg>(dispatch: 'msg -> unit) = 
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable scrollArea = ScrollArea.Create()
     let mutable syntheticLayoutWidget: Widget.Handle option = None
-    do
-        // no signals yet
-        maybeContentNode
-        |> Option.iter (fun node ->
-            match node with
-            | :? IWidgetNode<'msg> as widgetNode ->
-                scrollArea.SetWidget(widgetNode.Widget)
-            | :? ILayoutNode<'msg> as layoutNode ->
-                let widget = Widget.Create()
-                widget.SetLayout(layoutNode.Layout)
-                scrollArea.SetWidget(widget)
-                syntheticLayoutWidget <- Some widget
-            | _ ->
-                failwith "ScrollArea.Model 'do' block - unknown node type")
         
     member this.RemoveContent() =
         // TODO: need to do some serious testing with all this
@@ -88,8 +74,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContentNode: IWidgetOrLayo
             scrollArea.Dispose()
 
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (maybeContentNode: IWidgetOrLayoutNode<'msg> option) =
-    let model = new Model<'msg>(dispatch, maybeContentNode)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -109,8 +95,10 @@ type ScrollArea<'msg>() =
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     member this.Content with set value = maybeContent <- Some value
     
-    member private this.SignalMap = (fun _ -> None)
+    let signalMap = (fun _ -> None)
+    
     member val Attrs: Attr list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "content") with
@@ -137,15 +125,19 @@ type ScrollArea<'msg>() =
                 |> Option.toList
             contentList
 
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs this.SignalMap dispatch maybeContent
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
+            maybeContent
+            |> Option.iter this.model.AddContent
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ScrollArea<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent (depsChanges |> Map.ofList)
 
         override this.Dispose() =
@@ -157,6 +149,5 @@ type ScrollArea<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).Widget
             
-        override this.AttachedToWindow window =
-            maybeContent
-            |> Option.iter (fun node -> node.AttachedToWindow window)
+        override this.Attachments =
+            this.Attachments

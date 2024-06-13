@@ -114,14 +114,15 @@ let private addItem (grid: GridLayout.Handle) = function
         | WithSpansAlignment(rowSpan, colSpan, align) ->
             grid.AddLayout(l.Layout, loc.Row, loc.Col, rowSpan, colSpan, align)
     
-type private Model<'msg>(dispatch: 'msg -> unit, items: GridItem<'msg> list) =
+type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+    
     let mutable grid = GridLayout.Create()
-    do
-        for item in items do
-            addItem grid item
+    
     member this.Layout with get() = grid
+    
     member this.SignalMap with set value = signalMap <- value
+    
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
@@ -141,13 +142,14 @@ type private Model<'msg>(dispatch: 'msg -> unit, items: GridItem<'msg> list) =
     interface IDisposable with
         member this.Dispose() =
             grid.Dispose()
+            
     member this.Refill(items: GridItem<'msg> list) =
         grid.RemoveAll()
         for item in items do
             addItem grid item
 
-let private create (attrs: Attr list) (items: GridItem<'msg> list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
-    let model = new Model<'msg>(dispatch, items)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -162,16 +164,14 @@ let private dispose (model: Model<'msg>) =
 
 
 type GridLayout<'msg>() =
-    let mutable items: GridItem<'msg> list = []
-
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attrs: Attr list = [] with get, set
-    member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
-    member this.Items
-        with get() = items
-        and set value = items <- value
-        
+    member val Items: GridItem<'msg> list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = (fun _ -> None)
+    
     member private this.MigrateContent(leftBox: GridLayout<'msg>) =
         let leftContents =
             leftBox.Items
@@ -179,12 +179,12 @@ type GridLayout<'msg>() =
                 | WidgetItem (w, loc) -> w.ContentKey, loc
                 | LayoutItem (l, loc) -> l.ContentKey, loc)
         let thisContents =
-            items
+            this.Items
             |> List.map (function
                 | WidgetItem (w, loc) -> w.ContentKey, loc
                 | LayoutItem (l, loc) -> l.ContentKey, loc)
         if leftContents <> thisContents then
-            this.model.Refill(items)
+            this.model.Refill(this.Items)
         else
             ()
         
@@ -195,7 +195,7 @@ type GridLayout<'msg>() =
             // but I don't think that's a very common use case, to be reordering anything in a vbox/hbox, except maybe adding things at the end (which should work fine)
             // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
             // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
-            items
+            this.Items
             |> List.mapi (fun i item ->
                 let node =
                     match item with
@@ -203,15 +203,18 @@ type GridLayout<'msg>() =
                     | LayoutItem(l, _) -> l :> IBuilderNode<'msg>
                 IntKey i, node)
             
-        override this.Create(dispatch: 'msg -> unit) =
-            this.model <- create this.Attrs items this.SignalMap dispatch
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
+            this.model.Refill(this.Items)
         
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> GridLayout<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent(left')
                 
         override this.Dispose() =
@@ -223,10 +226,5 @@ type GridLayout<'msg>() =
         override this.ContentKey =
             (this :> ILayoutNode<'msg>).Layout
             
-        override this.AttachedToWindow window =
-            for item in items do
-                match item with
-                | WidgetItem(w, _) ->
-                    w.AttachedToWindow window
-                | LayoutItem(l, _) ->
-                    l.AttachedToWindow window
+        override this.Attachments =
+            this.Attachments

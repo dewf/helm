@@ -1,7 +1,6 @@
 ﻿module Tabs.PathStroking.Renderer
 
 open FSharpQt.BuilderNode
-open FSharpQt.NonVisual
 open FSharpQt.Painting
 open FSharpQt.Reactor
 open FSharpQt.Widgets.CustomWidget
@@ -340,6 +339,8 @@ type EventDelegate(state: State) =
 
         
 let view (state: State) =
+    let timer =
+        Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)
     let custom =
         let events = [
             PaintEvent
@@ -350,11 +351,10 @@ let view (state: State) =
             MousePressEvent
             MouseReleaseEvent
         ]
-        CustomWidget(EventDelegate(state), events, Attrs = [ MouseTracking true ])
-    let timer =
-        Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)
-    WidgetWithNonVisual(custom, [ "timer", timer ])
-    :> IWidgetNode<Msg>
+        CustomWidget(EventDelegate(state), events,
+                     Attrs = [ MouseTracking true ],
+                     Attachments = [ "timer", Attachment.NonVisual timer ])
+    custom :> IWidgetNode<Msg>
 
 type PathStrokeRenderer<'outerMsg>() =
     inherit WidgetReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)

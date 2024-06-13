@@ -3,28 +3,32 @@
 open FSharpQt.BuilderNode
 
 type WindowSet<'msg>() =
-    let mutable windows: (DepsKey * IWindowNode<'msg>) list = []
-    
-    member this.Windows
-        with get() = windows
-        and set value = windows <- value
+    member val Windows: (DepsKey * IWindowNode<'msg>) list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
         
     interface ITopLevelNode<'msg> with
         override this.Dependencies =
-            windows
+            this.Windows
             |> List.map (fun (key, window) -> key, window :> IBuilderNode<'msg>)
-        override this.Create(dispatch: 'msg -> unit) =
+            
+        override this.Create2 dispatch buildContext =
             // no model, nothing to do
             ()
+            
+        override this.AttachDeps () =
+            ()
+            
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             // no model, nothing to do
             ()
+            
         override this.Dispose() =
             // etc
             ()
-        override this.ContentKey =
-            // does this even make sense?
-            windows
             
-        override this.AttachedToWindow window =
-            failwith "WindowSet .AttachedToWindow??"
+        override this.ContentKey =
+            // there is no internal content, and dependencies are evaluated by their own content keys, so ... ?
+            null
+            
+        override this.Attachments =
+            this.Attachments

@@ -15,9 +15,10 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle option) =
+type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable widget = Widget.Create()
+    
     do
         let signalDispatch (s: Signal) =
             match signalMap s with
@@ -25,34 +26,35 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeLayout: Layout.Handle opti
                 dispatch msg
             | None ->
                 ()
-                
         // no signals yet
         
-        maybeLayout
-        |> Option.iter widget.SetLayout
-        
-        // I guess show it initially, in case it's being used as a top-levle
+        // I guess show it initially, in case it's being used as a top-level?
         widget.Show()
+        
     member this.Widget with get() = widget
     member this.SignalMap with set(value) = signalMap <- value
+    
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
             | Visible state ->
                 widget.SetVisible(state)
+                
     interface IDisposable with
         member this.Dispose() =
             widget.Dispose()
+            
     member this.RemoveLayout() =
         let existing =
             widget.GetLayout()
         existing.RemoveAll()
         widget.SetLayout(null)
+        
     member this.AddLayout(layout: Layout.Handle) =
         widget.SetLayout(layout)
         
-let private create (attrs: Attr list) (maybeLayout: Layout.Handle option) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
-    let model = new Model<'msg>(dispatch, maybeLayout)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+    let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -73,8 +75,9 @@ type Widget<'msg>() =
     member this.Layout with set value = maybeLayout <- Some value
 
     member val Attrs: Attr list = [] with get, set
-    member private this.SignalMap
-        with get() = (fun _ -> None)
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let signalMap = (fun _ -> None)
     
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "layout") with
@@ -99,18 +102,19 @@ type Widget<'msg>() =
             |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))
             |> Option.toList
   
-        override this.Create(dispatch: 'msg -> unit) =
-            let maybeLayoutHandle =
-                maybeLayout
-                |> Option.map (_.Layout)
-            this.model <- create this.Attrs maybeLayoutHandle this.SignalMap dispatch
-
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch
+            
+        override this.AttachDeps () =
+            maybeLayout
+            |> Option.iter (fun node -> this.model.AddLayout(node.Layout))
+            
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Widget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent (depsChanges |> Map.ofList)
 
         override this.Dispose() =
@@ -122,5 +126,5 @@ type Widget<'msg>() =
         override this.ContentKey =
             (this :> IWidgetNode<'msg>).ContentKey
             
-        override this.AttachedToWindow window =
-            ()
+        override this.Attachments =
+            this.Attachments
