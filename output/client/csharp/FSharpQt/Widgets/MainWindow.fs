@@ -177,8 +177,7 @@ type MainWindow<'msg>() =
                 |> Option.toList
             menuBarList @ contentList
             
-        override this.Create2 dispatch maybeParent =
-            // don't care about parents, QMainWindow won't have anything above it regardless of what's going on in F#Qt ... probably
+        override this.Create2 dispatch buildContext =
             this.model <- create2 this.Attrs this.SignalMap dispatch
             
         override this.AttachDeps () =
@@ -203,8 +202,3 @@ type MainWindow<'msg>() =
             
         override this.ContentKey =
             (this :> IWindowNode<'msg>).WindowWidget
-            
-        override this.ContainingWindowWidget querent =
-            // "of course I know him, he's me"
-            (this.model.Widget :> Widget.Handle) // saves us a call to .GetWindow() which would return self
-            |> Some

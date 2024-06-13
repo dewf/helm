@@ -137,8 +137,6 @@ let private dispose (model: Model<'msg>) =
 type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    let mutable maybeParent: IBuilderNode<'msg> option = None
-    
     member val Attrs: Attr list = [] with get, set
     member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
     
@@ -181,8 +179,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
                 | Stretch _ ->
                     None)
             
-        override this.Create2 dispatch maybeParentParam =
-            maybeParent <- maybeParentParam // needed to implement ContainingWindowWidget, we don't otherwise care
+        override this.Create2 dispatch buildContext =
             this.model <- create this.Attrs this.SignalMap dispatch initialDirection
             
         override this.AttachDeps () =
@@ -204,11 +201,6 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             
         override this.ContentKey =
             (this :> ILayoutNode<'msg>).Layout
-            
-        override this.ContainingWindowWidget _ =
-            maybeParent
-            |> Option.map (fun node -> node.ContainingWindowWidget this)
-            |> Option.flatten
 
 type BoxLayout<'msg>() =
     inherit BoxLayoutBase<'msg>(BoxLayout.Direction.TopToBottom)

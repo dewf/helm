@@ -22,18 +22,22 @@ type DepsChange =
     | Removed
     | Swapped
     
-type IBuilderNode<'msg> =
+type BuilderContext<'msg> = {
+    ContainingWindow: IBuilderNode<'msg> option // window, dialog, whatever
+}
+and IContextRewriter<'msg> =
+    interface
+        // certain utility nodes (eg ...WithDialogs) will rewrite the builder context
+        abstract ContextFor: DepsKey -> BuilderContext<'msg> -> BuilderContext<'msg>
+    end
+and IBuilderNode<'msg> =
     interface
         abstract Dependencies: (DepsKey * IBuilderNode<'msg>) list
-        abstract Create2: ('msg -> unit) -> IBuilderNode<'msg> option -> unit
+        abstract Create2: ('msg -> unit) -> BuilderContext<'msg> -> unit
         abstract AttachDeps: unit -> unit
         abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
         abstract ContentKey: System.Object
-        
-        // just for now? could this be avoided with the right sort of interface hierarchy, and having stuff like Dialog check for those on self-creation?
-        // basically this proceeds upwards until we hit a genuine Widget which can call .getWindow() on itself ...
-        abstract ContainingWindowWidget: IBuilderNode<'msg> -> Widget.Handle option
     end
 
 // this will allow certain widgets (eg MainWindow) to accept either type
@@ -133,7 +137,7 @@ let rec disposeTree(node: IBuilderNode<'msg>) =
     | :? IDialogNode<'msg> ->
         printfn "not destroying dialog or dependencies (owned by a window ... probably)"
     | _ ->
-        for (_, node) in node.Dependencies do
+        for _, node in node.Dependencies do
             disposeTree node
         node.Dispose()
 
@@ -151,7 +155,7 @@ let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
 
     allKeys
     |> List.choose (fun key ->
-        let (leftVal, rightVal) = (Map.tryFind key leftMap, Map.tryFind key rightMap)
+        let leftVal, rightVal = (Map.tryFind key leftMap, Map.tryFind key rightMap)
         match leftVal, rightVal with
         | Some left, Some right ->
             if left = right then None else Changed (left, right) |> Some
@@ -164,13 +168,36 @@ let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
 let nullDiffAttrs (a1: 'a list) (a2: 'a list) =
     []
 
-let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) (maybeParent: IBuilderNode<'msg> option) =
+let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) (context: BuilderContext<'msg>) =
     let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =
-        // initial create w/ our already-created parent (if any)
-        right.Create2 dispatch maybeParent
+        // initial create
+        right.Create2 dispatch context
+        
+        // are we a window/dialog parent for things deeper down?
+        let nextContext, maybeRewriter =
+            match right with
+            | :? IContextRewriter<'msg> as rewriter ->
+                context, Some rewriter
+            | :? IWindowNode<'msg> as windowNode ->
+                { context with ContainingWindow = Some windowNode }, None
+            | :? IDialogNode<'msg> as dialogNode ->
+                { context with ContainingWindow = Some dialogNode }, None
+            | _ ->
+                context, None
+                
         // realize dependencies
-        for _, node in right.Dependencies do
-            diff dispatch None (Some node) (Some right)
+        match maybeRewriter with
+        | Some rewriter ->
+            // special handling for utility nodes, they need to be able to modify the context for their dependencies
+            for key, node in right.Dependencies do
+                let rewritten =
+                    rewriter.ContextFor key nextContext
+                diff dispatch None (Some node) rewritten
+        | _ ->
+            // normal processing
+            for _, node in right.Dependencies do
+                diff dispatch None (Some node) nextContext
+                
         // only now attach dependencies (we used to create dependencies first, then create a parentless node)
         right.AttachDeps()
 
@@ -187,23 +214,46 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
     | Some left, Some right when left.GetType() = right.GetType() ->
         // neither side empty, but same type - diff and migrate
         // reconcile and order children via ID
-        let leftMap = Map.ofList (left.Dependencies)
-        let rightMap = Map.ofList (right.Dependencies)
+        let leftMap = Map.ofList left.Dependencies
+        let rightMap = Map.ofList right.Dependencies
         let uniqueIds = (Map.keys leftMap @ Map.keys rightMap) |> List.distinct |> List.sort
-        let leftChildren = uniqueIds |> List.map leftMap.TryFind
-        let rightChildren = uniqueIds |> List.map rightMap.TryFind
-        let zipped =
-            List.zip leftChildren rightChildren
-        for lch, rch in zipped do
-            // re: using left as parent - we haven't migrated to the right yet, so only the left has a model, and the children will need to reference its widget etc
-            // also, would there be any reason to delay this until after the migration occurs? node CREATION needs to happen top-down, but does migration matter?
-            diff dispatch lch rch (Some left)  
+        let correlated =
+            uniqueIds
+            |> List.map (fun key ->
+                let left = leftMap.TryFind key
+                let right = rightMap.TryFind key
+                key, left, right)
+            
+        // are we a window/dialog parent for things deeper down?
+        let nextContext, maybeRewriter =
+            // only left has a model right now (pre-migration), and created children could potentially query for the .Widget or whatever (eg Dialogs wanting to know parent windows)
+            match left with
+            | :? IContextRewriter<'msg> as rewriter ->
+                context, Some rewriter
+            | :? IWindowNode<'msg> as windowNode ->
+                { context with ContainingWindow = Some windowNode }, None
+            | :? IDialogNode<'msg> as dialogNode ->
+                { context with ContainingWindow = Some dialogNode }, None
+            | _ ->
+                context, None
+                
+        match maybeRewriter with
+        | Some rewriter ->
+            // utility node builder context rewriting
+            for key, lch, rch in correlated do
+                let rewritten =
+                    rewriter.ContextFor key nextContext
+                diff dispatch lch rch rewritten
+        | _ ->
+            // normal processing
+            for _, lch, rch in correlated do
+                diff dispatch lch rch nextContext
             
         let depsChanges =
             // provide a more precise breakdown of the dependency changes
             // saves redundant comparison code in widgets with dependencies of different types (eg MainWindow)
             // see MainWindow.MigrateContent to see how this is typically used
-            [for id, (lch, rch) in List.zip uniqueIds zipped ->
+            [for key, lch, rch in correlated ->
                 let changeType =
                     match lch, rch with
                     | None, None ->
@@ -218,7 +268,7 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
                             Unchanged
                         else
                             Swapped
-                id, changeType]
+                key, changeType]
 
         // now merge the nodes themselves, with the children having been recursively reconciled above
         // attrs are handled internally
@@ -233,4 +283,6 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         createRight dispatch right
 
 let build (dispatch: 'msg -> unit) (root: IBuilderNode<'msg>) =
-    diff dispatch None (Some root) None
+    let context =
+        { ContainingWindow = None }
+    diff dispatch None (Some root) context

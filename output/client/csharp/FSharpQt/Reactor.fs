@@ -2,6 +2,7 @@
 
 open BuilderNode
 open System
+open FSharpQt.BuilderNode
 open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
@@ -44,7 +45,8 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                     attrUpdate: 'state -> 'attr -> 'state,
                     update: 'state -> 'msg -> 'state * Cmd<'msg,'signal>,
                     view: 'state -> 'root,
-                    processSignal: 'signal -> unit) as this =
+                    processSignal: 'signal -> unit,
+                    buildContext: BuilderContext<'msg>) as this =
     let initState, initCmd = init()
     let mutable state = initState
     let mutable root = view state
@@ -88,7 +90,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
             root <- view state
             // prevent diff-triggered dispatching with a guard:
             disableDispatch <- true
-            diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>)) None // TODO: for component reactors, won't we need the parent node to attach to?
+            diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>)) buildContext
             disableDispatch <- false
             //
             updateAttachments()
@@ -143,7 +145,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
         root <- view state
         // prevent dispatching while diffing
         disableDispatch <- true
-        diff dispatch (Some prevRoot) (Some root) None // TODO: parent node?
+        diff dispatch (Some prevRoot) (Some root) buildContext
         disableDispatch <- false
         //
         updateAttachments()
@@ -309,7 +311,9 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
             match signal with
             | QuitApplication ->
                 Application.Quit()
-        this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processSignal)
+        let context =
+            { ContainingWindow = None }
+        this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processSignal, context)
         Application.Exec()
         
     interface IDisposable with

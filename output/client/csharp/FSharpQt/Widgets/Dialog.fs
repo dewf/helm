@@ -3,7 +3,6 @@
 open System
 open FSharpQt
 open BuilderNode
-open FSharpQt.BuilderNode
 open MiscTypes
 open Reactor
 open Org.Whatever.QtTesting
@@ -30,13 +29,17 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg> option, ourNode: IBuilderNode<'msg>) as this =
+type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg> option) as this =
     let mutable dialog =
         let parentHandle =
-            maybeParent
-            |> Option.map (fun node -> node.ContainingWindowWidget ourNode)
-            |> Option.flatten
-            |> Option.defaultValue null
+            match maybeParent with
+            | Some parent ->
+                match parent with
+                | :? IWindowNode<'msg> as window -> window.WindowWidget
+                | :? IDialogNode<'msg> as dialog -> dialog.Dialog :> Widget.Handle
+                | _ -> failwith "Dialog.Model parent handle matching - unknown/unhandled type (currently just IWindowNode/IDialogNode)"
+            | None ->
+                null
         Dialog.Create(parentHandle, this)
     
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -93,8 +96,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: IBuilderNode<'msg>
     member this.AddLayout (layout: Layout.Handle) =
         dialog.SetLayout(layout)
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: IBuilderNode<'msg> option) (ourNode: IBuilderNode<'msg>) =
-    let model = new Model<'msg>(dispatch, maybeParent, ourNode)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: IBuilderNode<'msg> option) =
+    let model = new Model<'msg>(dispatch, maybeParent)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- initialMask
@@ -169,8 +172,8 @@ type Dialog<'msg>() as this =
             |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))
             |> Option.toList
             
-        override this.Create2 dispatch maybeParent =
-            this.model <- create this.Attrs signalMap dispatch signalMask maybeParent this
+        override this.Create2 dispatch buildContext =
+            this.model <- create this.Attrs signalMap dispatch signalMask buildContext.ContainingWindow
             
         override this.AttachDeps () =
             maybeLayout
@@ -192,10 +195,6 @@ type Dialog<'msg>() as this =
             
         override this.ContentKey =
             (this :> IDialogNode<'msg>).Dialog
-            
-        override this.ContainingWindowWidget querent =
-            (this.model.Dialog :> Widget.Handle) // we're it ...
-            |> Some
 
 // some utility stuff for Cmd.Dialog
 
