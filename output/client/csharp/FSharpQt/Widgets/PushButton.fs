@@ -37,7 +37,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<PushButton.SignalMask> 0
     
-    let dispatcher (s: Signal) =
+    let dispatchSignal (s: Signal) =
         match signalMap s with
         | Some msg ->
             dispatch msg
@@ -72,14 +72,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 
     interface PushButton.SignalHandler with
         member this.Clicked(checkState: bool) =
-            dispatcher (ClickedWithState checkState)
-            dispatcher Clicked
+            dispatchSignal (ClickedWithState checkState)
+            dispatchSignal Clicked
         member this.Pressed() =
-            dispatcher Pressed
+            dispatchSignal Pressed
         member this.Released() =
-            dispatcher Released
+            dispatchSignal Released
         member this.Toggled(checkState: bool) =
-            dispatcher (Toggled checkState)
+            dispatchSignal (Toggled checkState)
             
     interface IDisposable with
         member this.Dispose() =
@@ -103,8 +103,8 @@ let private dispose (model: Model<'msg>) =
 
 type PushButton<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
-    member val Attrs: Attr list = [] with get, set
     
+    member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<PushButton.SignalMask> 0

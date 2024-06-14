@@ -2,6 +2,36 @@ module Slider;
 
 import AbstractSlider;
 
+flags SignalMask {
+    // AbstractSlider:
+    ActionTriggered = 1 << 0,
+    RangeChanged = 1 << 1,
+    SliderMoved = 1 << 2,
+    SliderPressed = 1 << 3,
+    SliderReleased = 1 << 4,
+    ValueChanged = 1 << 5
+}
+
+enum SliderAction {
+    NoAction = 0,
+    SingleStepAdd = 1,
+    SingleStepSub = 2,
+    PageStepAdd = 3,
+    PageStepSub = 4,
+    ToMinimum = 5,
+    ToMaximum = 6,
+    Move = 7
+}
+
+interface SignalHandler {
+    void actionTriggered(SliderAction action);
+    void rangeChanged(int min, int max);
+    void sliderMoved(int value);
+    void sliderPressed();
+    void sliderReleased();
+    void valueChanged(int value);
+}
+
 enum TickPosition {
     None = 0,
     Above = 1,
@@ -14,6 +44,8 @@ enum TickPosition {
 opaque Handle extends AbstractSlider.Handle {
     void setTickPosition(TickPosition tpos);
     void setTickInterval(int interval);
+
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
+Handle create(SignalHandler handler);

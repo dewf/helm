@@ -1,7 +1,6 @@
 module AbstractSlider;
 
 import Widget;
-import Signal;
 import Common;
 
 opaque Handle extends Widget.Handle {
@@ -11,8 +10,6 @@ opaque Handle extends Widget.Handle {
     void setSingleStep(int step);
     void setPageStep(int pageStep);
     void setTracking(bool value);
-
-    void onValueChanged(Signal.IntDelegate handler);
 }
 
 // no direct creation, inherited by eg QSlider

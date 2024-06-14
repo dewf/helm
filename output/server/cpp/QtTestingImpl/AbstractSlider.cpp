@@ -31,14 +31,6 @@ namespace AbstractSlider
         THIS->setTracking(value);
     }
 
-    void Handle_onValueChanged(HandleRef _this, std::function<IntDelegate> handler) {
-        QObject::connect(
-                THIS,
-                &QAbstractSlider::valueChanged,
-                THIS,
-                handler);
-    }
-
     void Handle_dispose(HandleRef _this) {
         printf("AbstractSlider deleted directly (vs. via sublcass), why?\n");
         delete THIS;
