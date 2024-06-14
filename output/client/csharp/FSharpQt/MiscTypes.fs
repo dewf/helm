@@ -104,7 +104,12 @@ type RectF = {
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
 
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace (generated C# code)
+
 type WidgetProxy internal(widget: Widget.Handle) =
     member val widget = widget
     member this.Rect =
         Rect.From(this.widget.GetRect())
+
+type ActionProxy internal(action: Action.Handle) =
+    // not sure what methods/props will be useful yet
+    let x = 10

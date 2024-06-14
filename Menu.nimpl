@@ -2,8 +2,21 @@ module Menu;
 
 import Common;
 import Widget;
-import Signal;
 import Action;
+
+flags SignalMask {
+    AboutToHide,
+    AboutToShow,
+    Hovered,
+    Triggered
+}
+
+interface SignalHandler {
+    void aboutToHide();
+    void aboutToShow();
+    void hovered(Action.Handle action);
+    void triggered(Action.Handle action);
+}
 
 opaque Handle extends Widget.Handle {
     void clear();
@@ -12,8 +25,7 @@ opaque Handle extends Widget.Handle {
 
     void popup(Point p);
 
-    void onAboutToShow(Signal.VoidDelegate handler);
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
-Handle create(string title);
+Handle create(SignalHandler handler);
