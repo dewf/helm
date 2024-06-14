@@ -188,9 +188,9 @@ namespace Widget
         EVENTTHIS->ignore();
     }
 
-    void Event_dispose(EventRef _this) {
-        // not owned, do nothing
-    }
+//    void Event_dispose(EventRef _this) {
+//        // not owned, do nothing
+//    }
 
 #define MIMETHIS ((QMimeData*)_this)
 
@@ -230,10 +230,10 @@ namespace Widget
         MIMETHIS->setUrls(qUrls);
     }
 
-    void MimeData_dispose(MimeDataRef _this) {
-        // if it was created on a drop, we're not responsible for it
-        // if we created it for a drag, we're also not responsible for releasing it
-    }
+//    void MimeData_dispose(MimeDataRef _this) {
+//        // if it was created on a drop, we're not responsible for it
+//        // if we created it for a drag, we're also not responsible for releasing it
+//    }
 
     MimeDataRef createMimeData() {
         return (MimeDataRef) new QMimeData();
@@ -268,9 +268,9 @@ namespace Widget
         return (DropAction) DRAGTHIS->exec(qSupported, qDefault);
     }
 
-    void Drag_dispose(DragRef _this) {
-        // we're not responsible for deleting these (if they are exec'ed)
-    }
+//    void Drag_dispose(DragRef _this) {
+//        // we're not responsible for deleting these (if they are exec'ed)
+//    }
 
     DragRef createDrag(HandleRef parent) {
         return (DragRef) new QDrag((QObject*)parent);
@@ -318,9 +318,9 @@ namespace Widget
         }
     }
 
-    void DragMoveEvent_dispose(DragMoveEventRef _this) {
-        // not owned
-    }
+//    void DragMoveEvent_dispose(DragMoveEventRef _this) {
+//        // not owned
+//    }
 
     // subclass stuff ==========================================================
 
