@@ -4,11 +4,10 @@ open System
 
 open FSharpQt
 open BuilderNode
-open FSharpQt.Widgets.BoxLayout
-open FSharpQt.Widgets.Dialog
 open Reactor
 
 open FSharpQt.Widgets
+open Dialog
 open MainWindow
 open PushButton
 open BoxLayout

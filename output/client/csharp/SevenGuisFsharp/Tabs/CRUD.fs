@@ -246,13 +246,13 @@ let view (state: State) =
             ColumnMinimumWidth (3, 120)
         ],
         Items = [
-            GridItem.Create(filterLabel, 0, 0)
-            GridItem.Create(filterEdit, 0, 1)
-            GridItem.Create(listBox, 1, 0, 4, 2)
-            GridItem.Create(firstLabel, 1, 2, align = Common.Alignment.Right)
-            GridItem.Create(firstEdit, 1, 3)
-            GridItem.Create(lastLabel, 2, 2, align = Common.Alignment.Right)
-            GridItem.Create(lastEdit, 2, 3)
+            GridItem(filterLabel, 0, 0)
+            GridItem(filterEdit, 0, 1)
+            GridItem(listBox, 1, 0, 4, 2)
+            GridItem(firstLabel, 1, 2, align = Common.Alignment.Right)
+            GridItem(firstEdit, 1, 3)
+            GridItem(lastLabel, 2, 2, align = Common.Alignment.Right)
+            GridItem(lastEdit, 2, 3)
             // buttons:
             let hbox =
                 HBoxLayout(
@@ -263,7 +263,7 @@ let view (state: State) =
                         BoxItem(deleteButton, stretch = 1)
                         BoxItem(stretch = 1)
                     ])
-            GridItem.Create(hbox, 5, 0, 1, 4)
+            GridItem(hbox, 5, 0, 1, 4)
         ])
     :> ILayoutNode<Msg>
 

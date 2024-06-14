@@ -42,26 +42,36 @@ type Location = {
     static member Default =
         { Row = 0; Col = 0; RowSpan = None; ColSpan = None; Align = None }
 
-type GridItem<'msg> =
+type internal InternalItem<'msg> =
     | WidgetItem of w: IWidgetNode<'msg> * loc: Location
     | LayoutItem of l: ILayoutNode<'msg> * loc: Location
-with
-    static member Create(w: IWidgetNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
+        
+type GridItem<'msg> private(item: InternalItem<'msg>) =
+    member val internal Item = item
+    new(w: IWidgetNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
         let loc =
             { Row = row
               Col = col
               RowSpan = defaultArg (Some rowSpan) None
               ColSpan = defaultArg (Some colSpan) None
               Align = defaultArg (Some align) None }
-        WidgetItem (w, loc)
-    static member Create(l: ILayoutNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
+        GridItem(WidgetItem (w, loc))
+    new(l: ILayoutNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
         let loc =
             { Row = row
               Col = col
               RowSpan = defaultArg (Some rowSpan) None
               ColSpan = defaultArg (Some colSpan) None
               Align = defaultArg (Some align) None }
-        LayoutItem (l, loc)
+        GridItem(LayoutItem (l, loc))
+    member this.Node =
+        match item with
+        | WidgetItem(w, _) -> w :> IBuilderNode<'msg>
+        | LayoutItem(l, _) -> l :> IBuilderNode<'msg>
+    member this.Key =
+        match item with
+        | WidgetItem(w, loc) -> w.ContentKey, loc
+        | LayoutItem(l, loc) -> l.ContentKey, loc
         
 type private Method =
     | Normal
@@ -146,7 +156,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
     member this.Refill(items: GridItem<'msg> list) =
         grid.RemoveAll()
         for item in items do
-            addItem grid item
+            addItem grid item.Item
 
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch)
@@ -162,7 +172,6 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-
 type GridLayout<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
@@ -175,14 +184,10 @@ type GridLayout<'msg>() =
     member private this.MigrateContent(leftBox: GridLayout<'msg>) =
         let leftContents =
             leftBox.Items
-            |> List.map (function
-                | WidgetItem (w, loc) -> w.ContentKey, loc
-                | LayoutItem (l, loc) -> l.ContentKey, loc)
+            |> List.map (_.Key)
         let thisContents =
             this.Items
-            |> List.map (function
-                | WidgetItem (w, loc) -> w.ContentKey, loc
-                | LayoutItem (l, loc) -> l.ContentKey, loc)
+            |> List.map (_.Key)
         if leftContents <> thisContents then
             this.model.Refill(this.Items)
         else
@@ -196,12 +201,7 @@ type GridLayout<'msg>() =
             // if user-reordering was a common use case, then the user would have to provide item keys / IDs as part of the item list
             // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
             this.Items
-            |> List.mapi (fun i item ->
-                let node =
-                    match item with
-                    | WidgetItem(w, _) -> w :> IBuilderNode<'msg>
-                    | LayoutItem(l, _) -> l :> IBuilderNode<'msg>
-                IntKey i, node)
+            |> List.mapi (fun i item -> IntKey i, item.Node)
             
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch
