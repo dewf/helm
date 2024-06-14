@@ -36,6 +36,7 @@ type internal ItemKey<'msg> =
     | LayoutItem of content: Object * info: ItemInfo
     | Spacer of sp: int
     | Stretch of stretch: int
+    
 type BoxItem<'msg> =
     | WidgetItem of w: IWidgetNode<'msg> * info: ItemInfo
     | LayoutItem of l: ILayoutNode<'msg> * info: ItemInfo
@@ -137,24 +138,21 @@ let private dispose (model: Model<'msg>) =
 type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
-    member val private SignalMap: Signal -> 'msg option = (fun _ -> None) with get, set // just pass through to model
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    let signalMap = (fun _ -> None)
     
-    let mutable items: BoxItem<'msg> list = []
-    member this.Items
-        with get() = items
-        and set value = items <- value
+    member val Attrs: Attr list = [] with get, set
+    member val Items: BoxItem<'msg> list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
         
     member private this.MigrateContent(leftBox: BoxLayoutBase<'msg>) =
         let leftContents =
             leftBox.Items
             |> List.map (_.InternalKey)
         let thisContents =
-            items
+            this.Items
             |> List.map (_.InternalKey)
         if leftContents <> thisContents then
-            this.model.Refill(items)
+            this.model.Refill(this.Items)
         else
             ()
         
@@ -165,7 +163,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             // but I don't think that's a very common use case, to be reordering anything in a vbox/hbox, except maybe adding things at the end (which should work fine)
             // if user-reordering was a common use case, then the (API) user would have to provide item keys / IDs as part of the item list
             // we'll do that for example with top-level windows in the app window order, so that windows can be added/removed without forcing a rebuild of existing windows
-            items
+            this.Items
             |> List.zipWithIndex
             |> List.choose (fun (i, item) ->
                 match item with
@@ -181,17 +179,17 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
                     None)
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch initialDirection
+            this.model <- create this.Attrs signalMap dispatch initialDirection
             
         override this.AttachDeps () =
-            this.model.AttachDeps items
+            this.model.AttachDeps this.Items
         
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> BoxLayoutBase<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent(left')
                 
         override this.Dispose() =
