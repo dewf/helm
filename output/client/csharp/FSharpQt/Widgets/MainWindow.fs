@@ -93,6 +93,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                     mainWindow.SetVisible(state))
         
     member this.ShowIfVisible () =
+        // long story short, this is our workaround for Qt's layout system which doesn't necessarily play nicely with how we want to create our widget trees
+        // this is invoked in a special step in the builder diff, after .AttachDeps has occurred
+        // because a window/widget needs all its content attached first, before the layout will work properly (on .show)
+        // during migrations however we can change visibility just fine, the layout has already occurred of course
         if visible then
             mainWindow.Show()
     
