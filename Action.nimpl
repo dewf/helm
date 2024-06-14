@@ -1,14 +1,31 @@
 module Action;
 
-import Signal;
+flags SignalMask {
+    Changed = 1 << 0,
+    CheckableChanged = 1 << 1,
+    EnabledChanged = 1 << 2,
+    Hovered = 1 << 3,
+    Toggled = 1 << 4,
+    Triggered = 1 << 5,
+    VisibleChanged = 1 << 6
+}
+
+interface SignalHandler {
+    void changed();
+    void checkableChanged(bool checkable);
+    void enabledChanged(bool enabled);
+    void hovered();
+    void toggled(bool checked_);
+    void triggered(bool checked_);
+    void visibleChanged();
+}
 
 opaque Handle {
-    string getText();
     void setEnabled(bool state);
     void setText(string text);
     void setSeparator(bool state);
-    void onTriggered(Signal.BoolDelegate handler);
+
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
-Handle create(string text);
+Handle create(SignalHandler handler);

@@ -3,13 +3,57 @@
 #include <QObject>
 #include <QAction>
 
-#define THIS ((QAction*)_this)
+#include "util/SignalStuff.h"
+
+#define THIS ((ActionWithHandler*)_this)
 
 namespace Action
 {
-    std::string Handle_getText(HandleRef _this) {
-        return THIS->text().toStdString();
-    }
+    class ActionWithHandler : public QAction {
+        Q_OBJECT
+    private:
+        std::shared_ptr<SignalHandler> handler;
+        uint32_t lastMask = 0;
+        std::vector<SignalMapItem<SignalMask>> signalMap = {
+            { SignalMask::Changed, SIGNAL(changed()), SLOT(onChanged) },
+            { SignalMask::CheckableChanged, SIGNAL(checkableChanged(bool)), SLOT(onCheckableChanged(bool)) },
+            { SignalMask::EnabledChanged, SIGNAL(enabledChanged(bool)), SLOT(onEnabledChanged(bool) )},
+            { SignalMask::Hovered, SIGNAL(hovered()), SLOT(onHovered()) },
+            { SignalMask::Toggled, SIGNAL(toggled(bool)), SLOT(onToggled(bool)) },
+            { SignalMask::Triggered, SIGNAL(triggered(bool)), SLOT(onTriggered(bool)) },
+            { SignalMask::VisibleChanged, SIGNAL(visibleChanged()), SLOT(onVisibleChanged()) }
+        };
+    public:
+        explicit ActionWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
+        void setSignalMask(uint32_t newMask) {
+            if (newMask != lastMask) {
+                processChanges(lastMask, newMask, signalMap, this);
+                lastMask = newMask;
+            }
+        }
+    public slots:
+        void onChanged() {
+            handler->changed();
+        }
+        void onCheckableChanged(bool checkable) {
+            handler->checkableChanged(checkable);
+        }
+        void onEnabledChanged(bool enabled) {
+            handler->enabledChanged(enabled);
+        }
+        void onHovered() {
+            handler->hovered();
+        }
+        void onToggled(bool checked_) {
+            handler->toggled(checked_);
+        }
+        void onTriggered(bool checked_) {
+            handler->triggered(checked_);
+        }
+        void onVisibleChanged() {
+            handler->visibleChanged();
+        }
+    };
 
     void Handle_setText(HandleRef _this, std::string text) {
         THIS->setText(text.c_str());
@@ -23,23 +67,17 @@ namespace Action
         THIS->setEnabled(state);
     }
 
-    void Handle_onTriggered(HandleRef _this, std::function<BoolDelegate> handler) {
-        QObject::connect(
-            THIS,
-            &QAction::triggered,
-            THIS,
-            handler);
+    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+        THIS->setSignalMask(mask);
     }
 
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
 
-    HandleRef create() {
-        return (HandleRef)new QAction();
-    }
-
-    HandleRef create(std::string text) {
-        return (HandleRef)new QAction(text.c_str());
+    HandleRef create(std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new ActionWithHandler(std::move(handler));
     }
 }
+
+#include "Action.moc"

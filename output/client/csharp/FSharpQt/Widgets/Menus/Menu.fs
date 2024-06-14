@@ -52,13 +52,13 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             menu.AddAction(item)
         
     interface Menu.SignalHandler with
-        member this.AboutToHide() =
+        override this.AboutToHide() =
             signalDispatch AboutToHide
-        member this.AboutToShow() =
+        override this.AboutToShow() =
             signalDispatch AboutToShow
-        member this.Hovered action =
+        override this.Hovered action =
             signalDispatch (ActionProxy action |> Hovered)
-        member this.Triggered action =
+        override this.Triggered action =
             signalDispatch (ActionProxy action |> Triggered)
             
     interface IDisposable with

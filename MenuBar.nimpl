@@ -4,13 +4,21 @@ import Widget;
 import Menu;
 import Action;
 
-opaque Handle extends Widget.Handle {
-    static {
-        delegate void ActionDelegate(Action.Handle action);
-    }
-    void clear();
-    void addMenu(Menu.Handle menu);
-    void onTriggered(ActionDelegate handler);
+flags SignalMask {
+    Hovered = 1 << 0,
+    Triggered = 1 << 1
 }
 
-Handle create();
+interface SignalHandler {
+    void hovered(Action.Handle action);
+    void triggered(Action.Handle action);
+}
+
+opaque Handle extends Widget.Handle {
+    void clear();
+    void addMenu(Menu.Handle menu);
+
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);

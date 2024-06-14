@@ -5,10 +5,10 @@ import Widget;
 import Action;
 
 flags SignalMask {
-    AboutToHide,
-    AboutToShow,
-    Hovered,
-    Triggered
+    AboutToHide = 1 << 0,
+    AboutToShow = 1 << 1,
+    Hovered = 1 << 2,
+    Triggered = 1 << 3
 }
 
 interface SignalHandler {

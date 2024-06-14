@@ -8,12 +8,14 @@ open BuilderNode
 open Reactor
 open FSharpQt.Widgets
 open CustomWidget
-open Widgets.BoxLayout
-open Widgets.Dialog
-open Widgets.Menus.MenuAction
-open Widgets.Menus.Menu
-open Widgets.PushButton
-open Widgets.Slider
+open BoxLayout
+open Dialog
+
+open FSharpQt.Widgets.Menus
+open MenuAction
+open Menu
+open PushButton
+open Slider
 
 open Extensions
 
@@ -266,7 +268,7 @@ let view (state: State) =
     let canvas =
         let contextMenu =
             let action =
-                MenuAction(Attrs = [ Widgets.Menus.MenuAction.Text "Edit Radius" ], OnTriggered = ShowDialog) // no idea why we have to fully qualify .Text attribute. why isn't MenuAction.Text sufficient?
+                MenuAction(Attrs = [ MenuAction.Text "Edit Radius" ], OnTriggered = (fun _ -> ShowDialog))
             Menu(Items = [ action ])
         CustomWidget(
             // first 2 args required
