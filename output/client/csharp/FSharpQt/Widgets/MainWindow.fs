@@ -25,6 +25,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable mainWindow = MainWindow.Create()
     let mutable syntheticLayoutWidget: Widget.Handle option = None
+    let mutable visible = true
     do
         let signalDispatch (s: Signal) =
             match signalMap s with
@@ -38,10 +39,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         
         mainWindow.OnClosed (fun _ ->
             signalDispatch Closed)
-        
-        // always show by default
-        // hopefully this won't flicker if users want them hidden initially, but we can attend to that later
-        mainWindow.Show()
         
     member this.AttachDeps (maybeMenuBar: MenuBar.Handle option) (maybeContentNode: IWidgetOrLayoutNode<'msg> option) = // we use node for content because we need to invoke 'attachedToWindow')
         maybeContentNode
@@ -82,14 +79,22 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         
     member this.Widget with get() = mainWindow
     member this.SignalMap with set(value) = signalMap <- value
-    member this.ApplyAttrs(attrs: Attr list) =
+    
+    member this.ApplyAttrs (attrs: Attr list) (isCreate: bool) =
         attrs |> List.iter (function
             | Title text ->
                 mainWindow.SetWindowTitle(text)
             | Size (width, height) ->
                 mainWindow.Resize(width, height)
             | Visible state ->
-                mainWindow.SetVisible(state))
+                visible <- state
+                if not isCreate then
+                    // on creation we just set the flag
+                    mainWindow.SetVisible(state))
+        
+    member this.ShowIfVisible () =
+        if visible then
+            mainWindow.Show()
     
     interface IDisposable with
         member this.Dispose() =
@@ -98,12 +103,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
 
 let private create2 (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs attrs true
     model.SignalMap <- signalMap
     model
     
 let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
-    model.ApplyAttrs attrs
+    model.ApplyAttrs attrs false
     model.SignalMap <- signalMap
     model
 
@@ -206,3 +211,6 @@ type MainWindow<'msg>() =
             (this :> IWindowNode<'msg>).WindowWidget
             
         override this.Attachments = this.Attachments
+        
+        override this.ShowIfVisible () =
+            this.model.ShowIfVisible()

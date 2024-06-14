@@ -315,6 +315,8 @@ type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
     interface IWindowNode<'outerMsg> with
         override this.WindowWidget =
             this.reactor.Root.WindowWidget
+        override this.ShowIfVisible () =
+            this.reactor.Root.ShowIfVisible()
 
 // root-level AppReactor stuff ============================================================
 

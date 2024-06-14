@@ -133,6 +133,7 @@ and IWindowNode<'msg> =
     interface
         inherit ITopLevelNode<'msg>
         abstract member WindowWidget: Widget.Handle
+        abstract member ShowIfVisible: unit -> unit
     end
     
 and IDialogNode<'msg> =
@@ -205,10 +206,15 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         // (the node will know nothing of its attachments, only self-declared .Dependencies)
         right.AttachDeps()
         
-        // doing a .Show() here on a top-level window widget makes things size correctly
-        // but of course for a number of reasons we can't do that
-        // so right now it's being .Show()n in its own model constructor
-        // and anyway we need a way of adjusting top-level windows from deeply-nested content dimensions, so that we can potentially add and remove window content dynamically without things getting weird
+        // top-level window visibility is not set (other than an internal flag) during creation, only migration
+        // because it doesn't have any dependencies attached until .AttachDeps, so internal layout will not happen correctly, and the window won't be sized to its content
+        // later we also have to figure out the right way to account for nested layout changes, propagating them up to the window
+        // (seemingly a series of layout.activate() / widget.adjustSize() for every boundary we cross)
+        match right with
+        | :? IWindowNode<'msg> as windowNode ->
+            windowNode.ShowIfVisible()
+        | _ ->
+            ()
 
     match (maybeLeft, maybeRight) with
     | None, None ->
