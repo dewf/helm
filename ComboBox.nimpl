@@ -1,14 +1,33 @@
 module ComboBox;
 
 import Widget;
-import Signal;
+
+flags SignalMask {
+    Activated = 1 << 0,
+    CurrentIndexChanged = 1 << 1,
+    CurrentTextChanged = 1 << 2,
+    EditTextChanged = 1 << 3,
+    Highlighted = 1 << 4,
+    TextActivated = 1 << 5,
+    TextHighlighted = 1 << 6
+}
+
+interface SignalHandler {
+    void activated(int index);
+    void currentIndexChanged(int index);
+    void currentTextChanged(string text);
+    void editTextChanged(string text);
+    void highlighted(int index);
+    void textActivated(string text);
+    void textHighlighted(string text);
+}
 
 opaque Handle extends Widget.Handle {
     void clear();
     void setItems(Array<string> items);
     void setCurrentIndex(int index);
-    void onCurrentIndexChanged(Signal.IntDelegate handler);
-    void onCurrentTextChanged(Signal.StringDelegate handler);
+
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
+Handle create(SignalHandler handler);

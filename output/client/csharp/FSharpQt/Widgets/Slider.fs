@@ -180,6 +180,7 @@ type Slider<'msg>() =
     let mutable onSliderPressed: 'msg option = None
     let mutable onSliderReleased: 'msg option = None
     let mutable onValueChanged: (int -> 'msg) option = None
+    
     member this.OnActionTriggered with set value =
         onActionTriggered <- Some value
         signalMask <- signalMask ||| Slider.SignalMask.ActionTriggered
