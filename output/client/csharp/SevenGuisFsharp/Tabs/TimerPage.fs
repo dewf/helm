@@ -69,8 +69,8 @@ let view (state: State) =
                 MinimumWidth 250
             ], OnValueChanged = SetDuration)
         HBoxLayout(Items = [
-                      BoxItem.Create(label)
-                      BoxItem.Create(slider)
+                      BoxItem(label)
+                      BoxItem(slider)
                   ])
     let button =
         PushButton(Attrs = [ Text "Reset" ], OnClicked = Reset)
@@ -80,9 +80,9 @@ let view (state: State) =
         
     let hbox =
         VBoxLayout(Items = [
-                      BoxItem.Create(progress)
-                      BoxItem.Create(hbox)
-                      BoxItem.Create(button)
+                      BoxItem(progress)
+                      BoxItem(hbox)
+                      BoxItem(button)
                   ], Attachments = [ "timer", Attachment.NonVisual timer ])
     hbox :> ILayoutNode<Msg>
 

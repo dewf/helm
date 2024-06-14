@@ -81,10 +81,10 @@ let view (state: State) =
         Label(Attrs = [ Text "Fahrenheit" ])
     HBoxLayout(
         Items = [
-            BoxItem.Create(celsiusText)
-            BoxItem.Create(celsiusLabel)
-            BoxItem.Create(fahrenText)
-            BoxItem.Create(fahrenLabel)
+            BoxItem(celsiusText)
+            BoxItem(celsiusLabel)
+            BoxItem(fahrenText)
+            BoxItem(fahrenLabel)
         ])
     :> ILayoutNode<Msg>
 

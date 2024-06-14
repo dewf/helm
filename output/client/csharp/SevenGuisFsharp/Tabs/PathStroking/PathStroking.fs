@@ -71,7 +71,7 @@ let radioGroup (title: string) (items: (string * 'a) list) (setterMsgFunc: 'a ->
     let vbox =
         let items =
             buttons
-            |> List.map BoxItem.Create
+            |> List.map BoxItem
         VBoxLayout(Items = items)
     GroupBox(Attrs = [ Title title ], Layout = vbox)
         
@@ -111,7 +111,7 @@ let view (state: State) =
                     Value state.PenWidth
                 ], OnValueChanged = SetPenWidth)
         let vbox =
-            VBoxLayout(Items = [ BoxItem.Create(slider) ])
+            VBoxLayout(Items = [ BoxItem(slider) ])
         GroupBox(Attrs = [ Title "Pen Width" ], Layout = vbox)
         
     let lineStyleGroup =
@@ -130,13 +130,13 @@ let view (state: State) =
         
     let rightPanel =
         VBoxLayout(Items = [
-                      BoxItem.Create(capStyleGroup)
-                      BoxItem.Create(joinStyleGroup)
-                      BoxItem.Create(penStyleGroup)
-                      BoxItem.Create(penWidthGroup)
-                      BoxItem.Create(lineStyleGroup)
-                      BoxItem.Create(animateButton)
-                      BoxItem.Stretch 1
+                      BoxItem(capStyleGroup)
+                      BoxItem(joinStyleGroup)
+                      BoxItem(penStyleGroup)
+                      BoxItem(penWidthGroup)
+                      BoxItem(lineStyleGroup)
+                      BoxItem(animateButton)
+                      BoxItem(stretch = 1)
                   ])
         
     let scrollArea =
@@ -154,8 +154,8 @@ let view (state: State) =
             ])
     
     HBoxLayout(Items = [
-                  BoxItem.Create(renderer, 1)
-                  BoxItem.Create(scrollArea)
+                  BoxItem(renderer, 1)
+                  BoxItem(scrollArea)
               ])
     :> ILayoutNode<Msg>
 

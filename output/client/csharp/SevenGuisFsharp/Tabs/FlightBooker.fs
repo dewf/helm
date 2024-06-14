@@ -122,8 +122,8 @@ let view (state: State) =
             ContentsMargins (0, 0, 0, 0)
             Spacing 10
         ], Items = [
-            BoxItem.Create(label)
-            BoxItem.Create(picker)
+            BoxItem(label)
+            BoxItem(picker)
         ])
     let depart =
         labeledPicker "Depart" state.DepartDate DepartChanged true
@@ -135,11 +135,11 @@ let view (state: State) =
         PushButton(Attrs = [ Text "Book Trip"; Enabled canBook ])
     VBoxLayout(
         Items = [
-            BoxItem.Create(combo)
-            BoxItem.Create(depart)
-            BoxItem.Create(return_)
-            BoxItem.Create(status)
-            BoxItem.Create(bookButton)
+            BoxItem(combo)
+            BoxItem(depart)
+            BoxItem(return_)
+            BoxItem(status)
+            BoxItem(bookButton)
         ])
     :> ILayoutNode<Msg>
     

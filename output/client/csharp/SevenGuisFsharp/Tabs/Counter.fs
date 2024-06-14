@@ -36,8 +36,8 @@ let view (state: State) =
         PushButton(Attrs = [ Text "Increment" ], OnClicked = Increment)
     HBoxLayout(
         Items = [
-            BoxItem.Create(label)
-            BoxItem.Create(button)
+            BoxItem(label)
+            BoxItem(button)
         ])
     :> ILayoutNode<Msg>
 

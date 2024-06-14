@@ -258,10 +258,10 @@ let view (state: State) =
                 HBoxLayout(
                     Attrs = [ BoxLayout.ContentsMargins (0, 0, 0, 0) ],
                     Items = [
-                        BoxItem.Create(createButton, stretch = 1)
-                        BoxItem.Create(updateButton, stretch = 1)
-                        BoxItem.Create(deleteButton, stretch = 1)
-                        BoxItem.Stretch 1
+                        BoxItem(createButton, stretch = 1)
+                        BoxItem(updateButton, stretch = 1)
+                        BoxItem(deleteButton, stretch = 1)
+                        BoxItem(stretch = 1)
                     ])
             GridItem.Create(hbox, 5, 0, 1, 4)
         ])

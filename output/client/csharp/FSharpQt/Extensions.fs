@@ -11,7 +11,16 @@ module List =
         | h :: etc ->
             before @ replaceFunc h :: etc
         | _ ->
-            failwith "replaceAtIndex fail"
+            failwith "List.replaceAtIndex fail"
+            
+    let removeAt (index: int) (xs: 'a list) =
+        let before, after =
+            List.splitAt index xs
+        match after with
+        | _ :: etc ->
+            before @ etc
+        | _ ->
+            failwith "List.removeAt fail"
 
 module Map =
     let keys (map: Map<'a,'b>) =

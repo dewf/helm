@@ -31,19 +31,21 @@ type ItemInfo = {
 
 [<RequireQualifiedAccess>]
 type internal ItemKey<'msg> =
-    // used for internal comparisons, since we can't (meaningfully) compare builder nodes against each other, we need the inner handles
+    // used for internal comparisons, since we can't compare builder node interfaces against each other, we use the ContentKeys
     | WidgetItem of content: Object * info: ItemInfo
     | LayoutItem of content: Object * info: ItemInfo
     | Spacer of sp: int
     | Stretch of stretch: int
+    | Ignore
     
-type BoxItem<'msg> =
+type internal InternalItem<'msg> =
     | WidgetItem of w: IWidgetNode<'msg> * info: ItemInfo
     | LayoutItem of l: ILayoutNode<'msg> * info: ItemInfo
     | Spacer of sp: int
     | Stretch of stretch: int
+    | Ignore
 with
-    member internal this.InternalKey =
+    member this.Key =
         match this with
         | WidgetItem(w, info) ->
             ItemKey.WidgetItem (w.ContentKey, info)
@@ -53,18 +55,56 @@ with
             ItemKey.Spacer sp
         | Stretch stretch ->
             ItemKey.Stretch stretch
-    static member Create(w: IWidgetNode<'msg>, ?stretch: int, ?align: Common.Alignment) =
+        | Ignore ->
+            ItemKey.Ignore
+        
+type BoxItem<'msg> private(item: InternalItem<'msg>) =
+    member val internal Item = item
+    
+    member this.MaybeNode =
+        match item with
+        | WidgetItem(w, _) -> w :> IBuilderNode<'msg> |> Some
+        | LayoutItem(l, _) -> l :> IBuilderNode<'msg> |> Some
+        | Spacer _ -> None
+        | Stretch _ -> None
+        | Ignore -> None
+    
+    new(w: IWidgetNode<'msg>, ?stretch: int, ?align: Common.Alignment) =
         let info =
             { Stretch = defaultArg (Some stretch) None
               Align = defaultArg (Some align) None }
-        WidgetItem (w, info)
-    static member Create(l: ILayoutNode<'msg>, ?stretch) =
+        BoxItem(WidgetItem (w, info))
+        
+    new(l: ILayoutNode<'msg>, ?stretch: int) =
         let info =
             { Stretch = defaultArg (Some stretch) None
               Align = None }
-        LayoutItem (l, info)
+        BoxItem(LayoutItem (l, info))
         
-let addItem (box: BoxLayout.Handle) (item: BoxItem<'msg>) =
+    new(?stretch: int, ?spacer: int) =
+        match stretch with
+        | Some value ->
+            // spacer ignored, only one valid at a time
+            BoxItem(Stretch value)
+        | None ->
+            match spacer with
+            | Some value ->
+                BoxItem(Spacer value)
+            | None ->
+                BoxItem(Ignore)
+                
+    // these are annoying because you have to do BoxItem<_>.Whatever etc
+    // hence the ctor above with optionals for stretch and spacer
+    static member Spacer(sp: int) =
+        BoxItem(Spacer(sp))
+        
+    static member Stretch(stretch: int) =
+        BoxItem(Stretch(stretch))
+        
+    member internal this.InternalKey =
+        item.Key
+        
+let internal addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
     match item with
     | WidgetItem(w, info) ->
         match info.Stretch, info.Align with
@@ -86,6 +126,8 @@ let addItem (box: BoxLayout.Handle) (item: BoxItem<'msg>) =
         box.AddSpacing(sp)
     | Stretch stretch ->
         box.AddStretch(stretch)
+    | Ignore ->
+        ()
 
 type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Direction) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -96,7 +138,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Dir
     
     member this.AttachDeps (items: BoxItem<'msg> list) =
         for item in items do
-            addItem box item
+            addItem box item.Item
     
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
@@ -119,7 +161,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Dir
     member this.Refill(items: BoxItem<'msg> list) =
         box.RemoveAll()
         for item in items do
-            addItem box item
+            addItem box item.Item
 
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
     let model = new Model<'msg>(dispatch, initialDirection)
@@ -166,17 +208,8 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             this.Items
             |> List.zipWithIndex
             |> List.choose (fun (i, item) ->
-                match item with
-                | WidgetItem(w, _) ->
-                    (IntKey i, w :> IBuilderNode<'msg>)
-                    |> Some
-                | LayoutItem(l, _) ->
-                    (IntKey i, l :> IBuilderNode<'msg>)
-                    |> Some
-                | Spacer _ ->
-                    None
-                | Stretch _ ->
-                    None)
+                item.MaybeNode
+                |> Option.map (fun node -> (IntKey i, node)))
             
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch initialDirection

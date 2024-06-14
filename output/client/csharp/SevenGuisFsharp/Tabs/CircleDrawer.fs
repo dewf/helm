@@ -230,10 +230,10 @@ let view (state: State) =
             PushButton(Attrs = [ Text "Redo"; Enabled enabled ], OnClicked = Redo)
         HBoxLayout(
             Items = [
-                BoxItem.Stretch 1
-                BoxItem.Create(undo)
-                BoxItem.Create(redo)
-                BoxItem.Stretch 1
+                BoxItem(stretch = 1)
+                BoxItem(undo)
+                BoxItem(redo)
+                BoxItem(stretch = 1)
             ])
         
     let dialog =
@@ -251,15 +251,15 @@ let view (state: State) =
             let hbox =
                 HBoxLayout(
                     Items = [
-                        BoxItem.Stretch 1
-                        BoxItem.Create(cancel)
-                        BoxItem.Create(apply)
-                        BoxItem.Stretch 1
+                        BoxItem(stretch = 1)
+                        BoxItem(cancel)
+                        BoxItem(apply)
+                        BoxItem(stretch = 1)
                     ])
             VBoxLayout(Items = [
-                BoxItem.Create(slider)
-                BoxItem.Spacer 10
-                BoxItem.Create(hbox)
+                BoxItem(slider)
+                BoxItem(spacer = 10)
+                BoxItem(hbox)
             ])
         Dialog(Attrs = [ Dialog.Title "Edit Radius"; Modality WindowModal ], Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ... probably need to settle on a single manner of handling dialog close events
         
@@ -279,8 +279,8 @@ let view (state: State) =
         
     let vbox =
         VBoxLayout(Items = [
-            BoxItem.Create(undoRedoButtons)
-            BoxItem.Create(canvas)
+            BoxItem(undoRedoButtons)
+            BoxItem(canvas)
         ])
     vbox :> ILayoutNode<Msg>
     

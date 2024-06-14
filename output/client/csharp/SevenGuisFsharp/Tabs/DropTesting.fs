@@ -166,7 +166,7 @@ let view (state: State) =
             EventDelegate(state), [ PaintEvent; DropEvents; SizeHint; MousePressEvent; MouseMoveEvent ],
             Attrs = [ AcceptDrops true ])
     VBoxLayout(Items = [
-        BoxItem.Create(custom)
+        BoxItem(custom)
     ]) :> ILayoutNode<Msg>
     
 type DropTesting<'outerMsg>() =

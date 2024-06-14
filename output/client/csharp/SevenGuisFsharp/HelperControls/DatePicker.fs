@@ -117,8 +117,8 @@ let view (state: State) =
         let layout =
             BoxLayout(Attrs = [ Direction TopToBottom ],
                       Items = [
-                          BoxItem.Create(reject)
-                          BoxItem.Create(accept)
+                          BoxItem(reject)
+                          BoxItem(accept)
                       ])
         Dialog(
             Attrs = [ Size (320, 200); Title state.DialogTitle ],
@@ -131,8 +131,8 @@ let view (state: State) =
                 ContentsMargins (0, 0, 0, 0)
             ],
             Items = [
-                BoxItem.Create(edit)
-                BoxItem.Create(button)
+                BoxItem(edit)
+                BoxItem(button)
             ],
             Attachments = [
                 "calendar", Attachment.Dialog dialog

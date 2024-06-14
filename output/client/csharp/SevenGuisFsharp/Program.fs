@@ -98,7 +98,7 @@ let view (state: State) =
                 PushButton(Attrs = [ Text name; Enabled enabled ], OnClicked = LaunchInstance kind))
         let items =
             buttons
-            |> List.map BoxItem.Create
+            |> List.map BoxItem
         let vbox =
             VBoxLayout(Items = items)
         GroupBox(Attrs = [ GroupBox.Title "7GUIs" ], Layout = vbox)
@@ -111,7 +111,7 @@ let view (state: State) =
                 PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind))
         let items =
             buttons
-            |> List.map BoxItem.Create
+            |> List.map BoxItem
         let vbox =
             VBoxLayout(Items = items)
         GroupBox(Attrs = [ GroupBox.Title "Misc" ], Layout = vbox)
@@ -119,9 +119,9 @@ let view (state: State) =
     let vbox =
         let items = [
             // listed explicitly (vs. List.map) to avoid casting to :> IWidgetNode above
-            BoxItem.Create(topGroup)
-            BoxItem.Create(bottomGroup)
-            BoxItem.Stretch(1)
+            BoxItem(topGroup)
+            BoxItem(bottomGroup)
+            BoxItem(stretch = 1)
         ]
         VBoxLayout(Items = items)
         

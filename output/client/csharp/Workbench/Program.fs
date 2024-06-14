@@ -4,6 +4,7 @@ open System
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.Widgets.BoxLayout
 open FSharpQt.Widgets.Dialog
 open Reactor
 
@@ -35,10 +36,10 @@ let update (state: State) (msg: Msg) =
     
 let view (state: State) =
     let button =
-        PushButton(Attrs = [ Text "ButtonText"; MinWidth 200 ], OnClicked = DoSomething)
+        PushButton(Attrs = [ Text "ButtonText" ], OnClicked = DoSomething)
 
     let layout =
-        VBoxLayout(Items = [ BoxItem.Create(button) ])
+        VBoxLayout(Items = [ BoxItem(button) ])
 
     let dialog =
         let nested =
@@ -46,7 +47,7 @@ let view (state: State) =
         let layout =
             let button =
                 PushButton(Attrs = [ Text "Lauch Nested" ], OnClicked = ShowNested)
-            VBoxLayout(Items = [ BoxItem.Create(button) ])
+            VBoxLayout(Items = [ BoxItem(button) ])
         Dialog(Attrs = [ Dialog.Title "Awhooo"; Dialog.Size (640, 480) ], Layout = layout, Attachments = [ "nested", Attachment.Dialog nested ])
 
     MainWindow(Attrs = [ Title "Wooooot" ], Content = layout, Attachments = [ "dialog1", Attachment.Dialog dialog ])
