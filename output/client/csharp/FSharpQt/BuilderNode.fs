@@ -148,14 +148,10 @@ let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
     node.Dependencies @ attachDeps
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
-    // TODO: needs to be updated to set a flag indicating when a window/dialog has been entered, and NOT disposing of any Qt resources below that (but still continuing)
-    match node with
-    | :? IDialogNode<'msg> ->
-        printfn "not destroying dialog or dependencies (owned by a window ... probably)"
-    | _ ->
-        for _, node in (nodeDepsWithAttachments node) do
-            disposeTree node
-        node.Dispose()
+    // TODO: needs major rethink/overhaul for correctness (and not crashing)
+    for _, node in (nodeDepsWithAttachments node) do
+        disposeTree node
+    node.Dispose()
 
 let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
     let leftList = a1 |> List.map (fun a -> keyFunc a, a)
@@ -208,6 +204,11 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         // attach realized dependencies
         // (the node will know nothing of its attachments, only self-declared .Dependencies)
         right.AttachDeps()
+        
+        // doing a .Show() here on a top-level window widget makes things size correctly
+        // but of course for a number of reasons we can't do that
+        // so right now it's being .Show()n in its own model constructor
+        // and anyway we need a way of adjusting top-level windows from deeply-nested content dimensions, so that we can potentially add and remove window content dynamically without things getting weird
 
     match (maybeLeft, maybeRight) with
     | None, None ->

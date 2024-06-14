@@ -27,6 +27,14 @@ namespace Layout
         THIS->setContentsMargins(left, top, right, bottom);
     }
 
+    void Handle_activate(HandleRef _this) {
+        THIS->activate();
+    }
+
+    void Handle_update(HandleRef _this) {
+        THIS->update();
+    }
+
     void Handle_dispose(HandleRef _this) {
         delete (QLayout*)_this;
     }

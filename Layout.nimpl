@@ -4,4 +4,8 @@ opaque Handle {
     void removeAll();
     void setSpacing(int spacing);
     void setContentsMargins(int left, int top, int right, int bottom);
+
+    // not really sure what these do yet ...
+    void activate();
+    void update();
 }

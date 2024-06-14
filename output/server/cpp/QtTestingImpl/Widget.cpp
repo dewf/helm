@@ -55,6 +55,10 @@ namespace Widget
         return toSize(THIS->size());
     }
 
+    void Handle_updateGeometry(HandleRef _this) {
+        THIS->updateGeometry();
+    }
+
     void Handle_adjustSize(HandleRef _this) {
         THIS->adjustSize();
     }
