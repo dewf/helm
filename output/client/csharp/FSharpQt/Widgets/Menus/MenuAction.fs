@@ -87,7 +87,7 @@ type MenuAction<'msg>() =
     interface IActionNode<'msg> with
         override this.Dependencies = []
         
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch
             
         override this.AttachDeps () =

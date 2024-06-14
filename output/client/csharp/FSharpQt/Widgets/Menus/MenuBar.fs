@@ -98,7 +98,7 @@ type MenuBar<'msg>() =
             this.Menus
             |> List.mapi (fun i menu -> (IntKey i, menu :> IBuilderNode<'msg>))
             
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch
             
         override this.AttachDeps() =

@@ -184,7 +184,7 @@ type MainWindow<'msg>() =
                 |> Option.toList
             menuBarList @ contentList
             
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create2 this.Attrs this.SignalMap dispatch
             
         override this.AttachDeps () =

@@ -168,7 +168,7 @@ type Dialog<'msg>() =
             |> Option.map (fun content -> (StrKey "layout", content :> IBuilderNode<'msg>))
             |> Option.toList
             
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask buildContext.ContainingWindow
             
         override this.AttachDeps () =

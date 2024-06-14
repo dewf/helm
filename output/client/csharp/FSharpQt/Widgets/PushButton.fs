@@ -149,7 +149,7 @@ type PushButton<'msg>() =
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
 
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
             
         override this.AttachDeps () =

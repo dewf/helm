@@ -11,7 +11,7 @@ type WindowSet<'msg>() =
             this.Windows
             |> List.map (fun (key, window) -> key, window :> IBuilderNode<'msg>)
             
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             // no model, nothing to do
             ()
             

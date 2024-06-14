@@ -44,7 +44,7 @@ and BuilderContext<'msg> = {
 and IBuilderNode<'msg> =
     interface
         abstract Dependencies: (DepsKey * IBuilderNode<'msg>) list
-        abstract Create2: ('msg -> unit) -> BuilderContext<'msg> -> unit
+        abstract Create: ('msg -> unit) -> BuilderContext<'msg> -> unit
         abstract AttachDeps: unit -> unit
         abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
@@ -184,7 +184,7 @@ let nullDiffAttrs (a1: 'a list) (a2: 'a list) =
 let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) (context: BuilderContext<'msg>) =
     let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =
         // initial create
-        right.Create2 dispatch context
+        right.Create dispatch context
         
         // are we a window/dialog parent for things deeper down?
         let nextContext =

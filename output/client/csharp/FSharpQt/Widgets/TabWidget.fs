@@ -102,7 +102,7 @@ type TabWidget<'msg>() =
             this.Pages
             |> List.mapi (fun i (_, node) -> IntKey i, node :> IBuilderNode<'msg>)
             
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch
             
         override this.AttachDeps () =

@@ -113,7 +113,7 @@ type LineEdit<'msg>() =
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
         
-        override this.Create2 dispatch buildContextr =
+        override this.Create dispatch buildContextr =
             this.model <- create this.Attrs signalMap dispatch
             
         override this.AttachDeps () =

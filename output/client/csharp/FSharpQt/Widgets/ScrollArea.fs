@@ -125,7 +125,7 @@ type ScrollArea<'msg>() =
                 |> Option.toList
             contentList
 
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch
             
         override this.AttachDeps () =

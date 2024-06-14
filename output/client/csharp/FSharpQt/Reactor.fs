@@ -245,7 +245,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'attr,'signal,'root when 'root :> IBu
     
     interface IBuilderNode<'outerMsg> with
         override this.Dependencies = []
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             let processSignal signal =
                 match this.SignalMap signal with
                 | Some outerMsg ->

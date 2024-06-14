@@ -180,7 +180,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
                 | Stretch _ ->
                     None)
             
-        override this.Create2 dispatch buildContext =
+        override this.Create dispatch buildContext =
             this.model <- create this.Attrs this.SignalMap dispatch initialDirection
             
         override this.AttachDeps () =
