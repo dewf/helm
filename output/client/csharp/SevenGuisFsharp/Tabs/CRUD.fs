@@ -195,7 +195,7 @@ let view (state: State) =
             match state.Mode with
             | Unfiltered -> ""
             | Filtered(filter, _) -> filter
-        LineEdit(Attrs = [ Value value ], OnChanged = SetFilter)
+        LineEdit(Attrs = [ Value value ], OnTextChanged = SetFilter)
 
     let items =
         match state.Mode with
@@ -217,10 +217,10 @@ let view (state: State) =
             OnCurrentRowChanged = SelectItem)
 
     let firstLabel = Label(Attrs = [ Label.Text "First:" ])
-    let firstEdit = LineEdit(Attrs = [ Value state.FirstEdit ], OnChanged = SetFirst)
+    let firstEdit = LineEdit(Attrs = [ Value state.FirstEdit ], OnTextChanged = SetFirst)
 
     let lastLabel = Label(Attrs = [ Label.Text "Last:" ])
-    let lastEdit = LineEdit(Attrs = [ Value state.LastEdit ], OnChanged = SetLast)
+    let lastEdit = LineEdit(Attrs = [ Value state.LastEdit ], OnTextChanged = SetLast)
 
     let createButton =
         let enabled =

@@ -1,15 +1,31 @@
 module LineEdit;
 
-import Signal;
 import Widget;
+
+flags SignalMask {
+    CursorPositionChanged = 1 << 0,
+    EditingFinished = 1 << 1,
+    InputRejected = 1 << 2,
+    ReturnPressed = 1 << 3,
+    SelectionChanged = 1 << 4,
+    TextChanged = 1 << 5,
+    TextEdited = 1 << 6
+}
+
+interface SignalHandler {
+    void cursorPositionChanged(int oldPos, int newPos);
+    void editingFinished();
+    void inputRejected();
+    void returnPressed();
+    void selectionChanged();
+    void textChanged(string text);
+    void textEdited(string text);
+}
 
 opaque Handle extends Widget.Handle {
     void setText(string str);
-    void onTextEdited(Signal.StringDelegate handler);
-    void onReturnPressed(Signal.VoidDelegate handler);
-
-    // an event of our own
-    void onLostFocus(Signal.VoidDelegate handler);
+    
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
+Handle create(SignalHandler handler);

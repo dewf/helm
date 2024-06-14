@@ -106,7 +106,7 @@ let update (state: State) (msg: Msg) =
 let view (state: State) =
     let edit =
         LineEdit(
-            Attrs = [ LineEdit.Value state.Raw; LineEdit.Enabled state.Enabled ], OnChanged = EditChanged, OnReturnPressed = EditSubmitted)
+            Attrs = [ LineEdit.Value state.Raw; LineEdit.Enabled state.Enabled ], OnTextChanged = EditChanged, OnReturnPressed = EditSubmitted)
     let button =
         PushButton(Attrs = [ Text "Pick"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
     let dialog =

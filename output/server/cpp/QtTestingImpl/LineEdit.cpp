@@ -2,26 +2,56 @@
 
 #include <QObject>
 #include <QLineEdit>
-#include <utility>
 
-#define THIS ((LineEdit2*)_this)
+#include "util/SignalStuff.h"
+
+#define THIS ((LineEditWithHandler*)_this)
 
 namespace LineEdit
 {
-    class LineEdit2 : public QLineEdit {
+    class LineEditWithHandler : public QLineEdit {
+        Q_OBJECT
     private:
-        std::function<VoidDelegate> onLostFocusHandler = nullptr;
+        std::shared_ptr<SignalHandler> handler;
+        uint32_t lastMask = 0;
+        std::vector<SignalMapItem<SignalMask>> signalMap = {
+            { SignalMask::CursorPositionChanged, SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int,int)) },
+            { SignalMask::EditingFinished, SIGNAL(editingFinished()), SLOT(onEditingFinished()) },
+            { SignalMask::InputRejected, SIGNAL(inputRejected()), SLOT(onInputRejected()) },
+            { SignalMask::ReturnPressed, SIGNAL(returnPressed()), SLOT(onReturnPressed()) },
+            { SignalMask::SelectionChanged, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()) },
+            { SignalMask::TextChanged, SIGNAL(textChanged(QString)), SLOT(onTextChanged(QString)) },
+            { SignalMask::TextEdited, SIGNAL(textEdited(QString)), SLOT(onTextEdited(QString)) }
+        };
     public:
-        explicit LineEdit2(QWidget *parent = nullptr) : QLineEdit(parent) {}
-        void onLostFocus(std::function<VoidDelegate> handler) {
-            onLostFocusHandler = std::move(handler);
-        }
-    protected:
-        void focusOutEvent(QFocusEvent *event) override {
-            QLineEdit::focusOutEvent(event);
-            if (onLostFocusHandler) {
-                onLostFocusHandler();
+        explicit LineEditWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
+        void setSignalMask(uint32_t newMask) {
+            if (newMask != lastMask) {
+                processChanges(lastMask, newMask, signalMap, this);
+                lastMask = newMask;
             }
+        }
+    public slots:
+        void onCursorPositionChanged(int oldPos, int newPos) {
+            handler->cursorPositionChanged(oldPos, newPos);
+        };
+        void onEditingFinished() {
+            handler->editingFinished();
+        }
+        void onInputRejected() {
+            handler->inputRejected();
+        }
+        void onReturnPressed() {
+            handler->returnPressed();
+        }
+        void onSelectionChanged() {
+            handler->selectionChanged();
+        }
+        void onTextChanged(const QString& text) {
+            handler->textChanged(text.toStdString());
+        }
+        void onTextEdited(const QString& text) {
+            handler->textEdited(text.toStdString());
         }
     };
 
@@ -29,33 +59,17 @@ namespace LineEdit
         THIS->setText(str.c_str());
     }
 
-    void Handle_onTextEdited(HandleRef _this, std::function<StringDelegate> handler) {
-        QObject::connect(
-            THIS,
-            &LineEdit2::textEdited,
-            THIS,
-            [handler](const QString& str) {
-                handler(str.toStdString());
-            });
-    }
-
-    void Handle_onReturnPressed(HandleRef _this, std::function<VoidDelegate> handler) {
-        QObject::connect(
-            THIS,
-            &LineEdit2::returnPressed,
-            THIS,
-            handler);
-    }
-
-    void Handle_onLostFocus(HandleRef _this, std::function<VoidDelegate> handler) {
-        THIS->onLostFocus(std::move(handler));
+    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+        THIS->setSignalMask(mask);
     }
 
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
 
-    HandleRef create() {
-        return (HandleRef)new LineEdit2();
+    HandleRef create(std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new LineEditWithHandler(std::move(handler));
     }
 }
+
+#include "LineEdit.moc"

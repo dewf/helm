@@ -110,21 +110,27 @@ type MenuAction<'msg>() =
     member this.OnChanged with set value =
         onChanged <- Some value
         signalMask <- signalMask ||| Action.SignalMask.Changed
+        
     member this.OnCheckableChanged with set value =
         onCheckableChanged <- Some value
         signalMask <- signalMask ||| Action.SignalMask.CheckableChanged
+        
     member this.OnEnabledChanged with set value =
         onEnabledChanged <- Some value
         signalMask <- signalMask ||| Action.SignalMask.EnabledChanged
+        
     member this.OnHovered with set value =
         onHovered <- Some value
         signalMask <- signalMask ||| Action.SignalMask.Hovered
+        
     member this.OnToggled with set value =
         onToggled <- Some value
         signalMask <- signalMask ||| Action.SignalMask.Toggled
+        
     member this.OnTriggered with set value =
         onTriggered <- Some value
         signalMask <- signalMask ||| Action.SignalMask.Triggered
+        
     member this.OnVisibleChanged with set value =
         onVisibleChanged <- Some value
         signalMask <- signalMask ||| Action.SignalMask.VisibleChanged
