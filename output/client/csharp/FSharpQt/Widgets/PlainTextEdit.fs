@@ -71,6 +71,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.SelectionChanged () =
             signalDispatch SelectionChanged
         member this.TextChanged () =
+            // given that we are always calling this ... why not just pass along in the signal at that point?
+            // also/or, why maintain our own 'currentText' if we have to query anyway?
+            // we could replace the 2-way binding guard in .ApplyAttrs with a check against this method, vs. our own variable
             currentText <- plainTextEdit.ToPlainText() // hmmm
             signalDispatch TextChanged
         member this.UndoAvailable state =
@@ -178,6 +181,7 @@ type PlainTextEdit<'msg>() =
 
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
+            // assign the method proxy if one is requested
             maybeMethodProxy
             |> Option.iter (fun mp -> mp.Handle <- this.model.Widget)
             
@@ -188,8 +192,8 @@ type PlainTextEdit<'msg>() =
             let left' = (left :?> PlainTextEdit<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
             this.model <- migrate left'.model nextAttrs signalMap signalMask
-            maybeMethodProxy
-            |> Option.iter (fun mp -> mp.Handle <- this.model.Widget)
+            // maybeMethodProxy
+            // |> Option.iter (fun mp -> mp.Handle <- this.model.Widget)
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

@@ -15,8 +15,6 @@ open BoxLayout
 open PlainTextEdit
 
 type State = {
-    // widget proxies for things that you absolutely, positively need to call methods on :(
-    EditProxy: PlainTextEditProxy
     NothingYet: int
 }
 
@@ -27,10 +25,13 @@ type Msg =
 
 let init () =
     let nextState = {
-        EditProxy = PlainTextEditProxy()
         NothingYet = 0
     }
     nextState, Cmd.None
+    
+// unfortunately we need to be able to call some methods on PlainTextEdit(), for example to get the current text value (which isn't sent along with signals, currently)
+// since it's not state-dependent (ie, its existence in our view is unconditional), we can just bind it at global level
+let editProxy = PlainTextEditProxy()
     
 let update (state: State) (msg: Msg) =
     match msg with
@@ -39,12 +40,12 @@ let update (state: State) (msg: Msg) =
     | ShowNested ->
         state, Cmd.Dialog ("nested", Show)
     | FetchText ->
-        printfn "text was: %s" (state.EditProxy.ToPlainText())
+        printfn "text was: %s" (editProxy.ToPlainText())
         state, Cmd.None
     
 let view (state: State) =
     let edit =
-        PlainTextEdit(MethodProxy = state.EditProxy)
+        PlainTextEdit(MethodProxy = editProxy)
         
     let button =
         PushButton(Attrs = [ Text "ButtonText" ], OnClicked = DoSomething)

@@ -150,5 +150,8 @@ type ProxyBase<'handle> internal() =
 
 type PlainTextEditProxy() =
     inherit ProxyBase<PlainTextEdit.Handle>()
+    internal new(handle: PlainTextEdit.Handle) =
+        base.Handle <- handle
+        PlainTextEditProxy()
     member this.ToPlainText () =
         this.Handle.ToPlainText()
