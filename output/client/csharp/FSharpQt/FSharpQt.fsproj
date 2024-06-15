@@ -30,6 +30,7 @@
         <Compile Include="Widgets\MainWindow.fs" />
         <Compile Include="Widgets\MessageBox.fs" />
         <Compile Include="Widgets\ProgressBar.fs" />
+        <Compile Include="Widgets\PlainTextEdit.fs" />
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\RadioButton.fs" />
         <Compile Include="Widgets\ScrollArea.fs" />

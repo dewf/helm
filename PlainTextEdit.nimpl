@@ -1,11 +1,37 @@
 module PlainTextEdit;
 
+import Common;
 import Widget;
-import Signal;
 
-opaque Handle extends Widget.Handle {
-    void setText(string text);
-    void onTextChanged(Signal.StringDelegate handler);
+flags SignalMask {
+    BlockCountChanged = 1,
+    CopyAvailable = 1 << 1,
+    CursorPositionChanged = 1 << 2,
+    ModificationChanged = 1 << 3,
+    RedoAvailable = 1 << 4,
+    SelectionChanged = 1 << 5,
+    TextChanged = 1 << 6,
+    UndoAvailable = 1 << 7,
+    UpdateRequest = 1 << 8
 }
 
-Handle create();
+interface SignalHandler {
+    void blockCountChanged(int newBlockCount);
+    void copyAvailable(bool yes);
+    void cursorPositionChanged();
+    void modificationChanged(bool changed);
+    void redoAvailable(bool available);
+    void selectionChanged();
+    void textChanged();
+    void undoAvailable(bool available);
+    void updateRequest(Rect rect, int dy);
+}
+
+opaque Handle extends Widget.Handle {
+    string toPlainText();
+    void setPlainText(string text);
+
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);

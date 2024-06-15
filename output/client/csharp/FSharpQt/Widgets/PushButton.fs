@@ -37,7 +37,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<PushButton.SignalMask> 0
     
-    let dispatchSignal (s: Signal) =
+    let signalDispatch (s: Signal) =
         match signalMap s with
         | Some msg ->
             dispatch msg
@@ -72,24 +72,24 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 
     interface PushButton.SignalHandler with
         member this.Clicked(checkState: bool) =
-            dispatchSignal (ClickedWithState checkState)
-            dispatchSignal Clicked
+            signalDispatch (ClickedWithState checkState)
+            signalDispatch Clicked
         member this.Pressed() =
-            dispatchSignal Pressed
+            signalDispatch Pressed
         member this.Released() =
-            dispatchSignal Released
+            signalDispatch Released
         member this.Toggled(checkState: bool) =
-            dispatchSignal (Toggled checkState)
+            signalDispatch (Toggled checkState)
             
     interface IDisposable with
         member this.Dispose() =
             button.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: PushButton.SignalMask) =
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: PushButton.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
-    model.SignalMask <- initialMask
+    model.SignalMask <- signalMask
     model
 
 let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: PushButton.SignalMask) =
@@ -167,7 +167,7 @@ type PushButton<'msg>() =
             (this.model.Widget :> Widget.Handle)
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.Widget
             
         override this.Attachments =
             this.Attachments

@@ -6,22 +6,28 @@ open FSharpQt
 open BuilderNode
 open Reactor
 
+open MiscTypes
 open FSharpQt.Widgets
 open Dialog
 open MainWindow
 open PushButton
 open BoxLayout
+open PlainTextEdit
 
 type State = {
+    // widget proxies for things that you absolutely, positively need to call methods on :(
+    EditProxy: PlainTextEditProxy
     NothingYet: int
 }
 
 type Msg =
     | DoSomething
     | ShowNested
+    | FetchText
 
 let init () =
     let nextState = {
+        EditProxy = PlainTextEditProxy()
         NothingYet = 0
     }
     nextState, Cmd.None
@@ -32,13 +38,26 @@ let update (state: State) (msg: Msg) =
         state, Cmd.Dialog ("dialog1", Show)
     | ShowNested ->
         state, Cmd.Dialog ("nested", Show)
+    | FetchText ->
+        printfn "text was: %s" (state.EditProxy.ToPlainText())
+        state, Cmd.None
     
 let view (state: State) =
+    let edit =
+        PlainTextEdit(MethodProxy = state.EditProxy)
+        
     let button =
         PushButton(Attrs = [ Text "ButtonText" ], OnClicked = DoSomething)
+        
+    let fetchButton =
+        PushButton(Attrs = [ Text "Fetch Value" ], OnClicked = FetchText)
 
     let layout =
-        VBoxLayout(Items = [ BoxItem(button) ])
+        VBoxLayout(Items = [
+            BoxItem(edit, stretch = 1)
+            BoxItem(button)
+            BoxItem(fetchButton)
+        ])
 
     let dialog =
         let nested =
@@ -49,7 +68,7 @@ let view (state: State) =
             VBoxLayout(Items = [ BoxItem(button) ])
         Dialog(Attrs = [ Dialog.Title "Awhooo"; Dialog.Size (640, 480) ], Layout = layout, Attachments = [ "nested", Attachment.Dialog nested ])
 
-    MainWindow(Attrs = [ Title "Wooooot" ], Content = layout, Attachments = [ "dialog1", Attachment.Dialog dialog ])
+    MainWindow(Attrs = [ Title "Wooooot"; Size (640, 480) ], Content = layout, Attachments = [ "dialog1", Attachment.Dialog dialog ])
     :> IBuilderNode<Msg>
     
 [<EntryPoint>]

@@ -128,10 +128,10 @@ with
     
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace (generated C# code)
 
-type WidgetProxy internal(widget: Widget.Handle) =
-    member val widget = widget
+type WidgetProxy internal(handle: Widget.Handle) =
+    // member val widget = widget
     member this.Rect =
-        Rect.From(this.widget.GetRect())
+        Rect.From(handle.GetRect())
 
 type ActionProxy internal(action: Action.Handle) =
     // not sure what methods/props will be useful yet
@@ -142,3 +142,13 @@ type IconProxy internal(icon: Icon.Handle) =
     
 type DockWidgetProxy internal(widget: DockWidget.Handle) =
     let x = 10
+    
+// experimenting for extreme cases:
+   
+type ProxyBase<'handle> internal() =
+    member val internal Handle: 'handle = Unchecked.defaultof<'handle> with get, set
+
+type PlainTextEditProxy() =
+    inherit ProxyBase<PlainTextEdit.Handle>()
+    member this.ToPlainText () =
+        this.Handle.ToPlainText()
