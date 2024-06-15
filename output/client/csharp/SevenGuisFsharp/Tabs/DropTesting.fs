@@ -1,9 +1,13 @@
 ﻿module Tabs.DropTesting
 
-open FSharpQt.BuilderNode
-open FSharpQt.MiscTypes
-open FSharpQt.Painting
-open FSharpQt.Reactor
+open FSharpQt
+open BuilderNode
+open MiscTypes
+
+open Painting
+open Reactor
+open EventDelegate
+
 open FSharpQt.Widgets
 open BoxLayout
 open CustomWidget

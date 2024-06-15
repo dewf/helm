@@ -1,8 +1,9 @@
 ﻿module Tabs.CircleDrawer
 
 open FSharpQt
-open FSharpQt.MiscTypes
+open MiscTypes
 open Painting
+open EventDelegate
 
 open BuilderNode
 open Reactor

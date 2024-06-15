@@ -1,13 +1,17 @@
 ﻿module Tabs.PathStroking.Renderer
 
-open FSharpQt.BuilderNode
-open FSharpQt.Painting
-open FSharpQt.Reactor
-open FSharpQt.Widgets.CustomWidget
-open FSharpQt.Widgets.Timer
+open FSharpQt
+open BuilderNode
+open Reactor
 
-open FSharpQt.MiscTypes
-open FSharpQt.Extensions
+open FSharpQt.Widgets
+open CustomWidget
+open Timer
+
+open MiscTypes
+open Extensions
+open EventDelegate
+open Painting
 
 let CONTROL_POINT_RADIUS = 10.0
 let MAX_GRAB_DIST = 30.0

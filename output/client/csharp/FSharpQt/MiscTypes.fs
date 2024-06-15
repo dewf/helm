@@ -125,6 +125,19 @@ with
         | TextBesideIcon -> Common.ToolButtonStyle.TextBesideIcon
         | TextUnderIcon -> Common.ToolButtonStyle.TextUnderIcon
         | FollowStyle -> Common.ToolButtonStyle.FollowStyle
+        
+// for utility widgets (synthetic layout widgets etc)
+
+type internal NullWidgetHandler() =
+    interface Widget.SignalHandler with
+        member this.CustomContextMenuRequested pos =
+            ()
+        member this.WindowIconChanged icon =
+            ()
+        member this.WindowTitleChanged title =
+            ()
+        member this.Dispose() =
+            ()
     
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace (generated C# code)
 
@@ -143,6 +156,15 @@ type IconProxy internal(icon: Icon.Handle) =
 type DockWidgetProxy internal(widget: DockWidget.Handle) =
     let x = 10
     
+type MimeDataProxy internal(qMimeData: Widget.MimeData) =
+    member val qMimeData = qMimeData
+    member this.HasFormat(mimeType: string) =
+        qMimeData.HasFormat(mimeType)
+    member this.Text =
+        qMimeData.Text()
+    member this.Urls =
+        qMimeData.Urls()
+    
 // experimenting for extreme cases:
    
 type ProxyBase<'handle> internal() =
@@ -155,17 +177,3 @@ type PlainTextEditProxy() =
         PlainTextEditProxy()
     member this.ToPlainText () =
         this.Handle.ToPlainText()
-
-
-// for utility widgets (synthetic layout widgets etc)
-
-type internal NullWidgetHandler() =
-    interface Widget.SignalHandler with
-        member this.CustomContextMenuRequested pos =
-            ()
-        member this.WindowIconChanged icon =
-            ()
-        member this.WindowTitleChanged title =
-            ()
-        member this.Dispose() =
-            ()
