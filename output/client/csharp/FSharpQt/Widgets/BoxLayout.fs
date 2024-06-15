@@ -24,33 +24,28 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
     
-type ItemInfo = {
-    Stretch: int option
-    Align: Common.Alignment option  // irrelevant for layout items
-}
-
 [<RequireQualifiedAccess>]
 type internal ItemKey<'msg> =
     // used for internal comparisons, since we can't compare builder node interfaces against each other, we use the ContentKeys
-    | WidgetItem of content: Object * info: ItemInfo
-    | LayoutItem of content: Object * info: ItemInfo
+    | WidgetItem of content: Object * maybeStretch: int option * maybeAlign: Common.Alignment option
+    | LayoutItem of content: Object * maybeStretch: int option
     | Spacer of sp: int
     | Stretch of stretch: int
     | Ignore
     
 type internal InternalItem<'msg> =
-    | WidgetItem of w: IWidgetNode<'msg> * info: ItemInfo
-    | LayoutItem of l: ILayoutNode<'msg> * info: ItemInfo
+    | WidgetItem of w: IWidgetNode<'msg> * maybeStretch: int option * maybeAlign: Common.Alignment option
+    | LayoutItem of l: ILayoutNode<'msg> * maybeStretch: int option
     | Spacer of sp: int
     | Stretch of stretch: int
     | Ignore
 with
     member this.Key =
         match this with
-        | WidgetItem(w, info) ->
-            ItemKey.WidgetItem (w.ContentKey, info)
-        | LayoutItem(l, info) ->
-            ItemKey.LayoutItem (l.ContentKey, info)
+        | WidgetItem(w, stretch, align) ->
+            ItemKey.WidgetItem (w.ContentKey, stretch, align)
+        | LayoutItem(l, stretch) ->
+            ItemKey.LayoutItem (l.ContentKey, stretch)
         | Spacer sp ->
             ItemKey.Spacer sp
         | Stretch stretch ->
@@ -63,23 +58,17 @@ type BoxItem<'msg> private(item: InternalItem<'msg>) =
     
     member this.MaybeNode =
         match item with
-        | WidgetItem(w, _) -> w :> IBuilderNode<'msg> |> Some
+        | WidgetItem(w, _, _) -> w :> IBuilderNode<'msg> |> Some
         | LayoutItem(l, _) -> l :> IBuilderNode<'msg> |> Some
         | Spacer _ -> None
         | Stretch _ -> None
         | Ignore -> None
     
     new(w: IWidgetNode<'msg>, ?stretch: int, ?align: Common.Alignment) =
-        let info =
-            { Stretch = defaultArg (Some stretch) None
-              Align = defaultArg (Some align) None }
-        BoxItem(WidgetItem (w, info))
+        BoxItem(WidgetItem (w, stretch, align))
         
     new(l: ILayoutNode<'msg>, ?stretch: int) =
-        let info =
-            { Stretch = defaultArg (Some stretch) None
-              Align = None }
-        BoxItem(LayoutItem (l, info))
+        BoxItem(LayoutItem (l, stretch))
         
     new(?stretch: int, ?spacer: int) =
         match stretch with
@@ -106,8 +95,8 @@ type BoxItem<'msg> private(item: InternalItem<'msg>) =
         
 let internal addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
     match item with
-    | WidgetItem(w, info) ->
-        match info.Stretch, info.Align with
+    | WidgetItem(w, maybeStretch, maybeAlign) ->
+        match maybeStretch, maybeAlign with
         | None, None ->
             box.AddWidget(w.Widget)
         | None, Some align ->
@@ -116,8 +105,8 @@ let internal addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
             box.AddWidget(w.Widget, stretch)
         | Some stretch, Some align ->
             box.AddWidget(w.Widget, stretch, align)
-    | LayoutItem(l, info) ->
-        match info.Stretch with
+    | LayoutItem(l, maybeStretch) ->
+        match maybeStretch with
         | Some stretch ->
             box.AddLayout(l.Layout, stretch)
         | None ->
