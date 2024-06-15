@@ -54,3 +54,11 @@ enum Orientation {
     Horizontal = 1,
     Vertical = 2
 }
+
+enum ToolButtonStyle {
+    IconOnly = 0,
+    TextOnly = 1,
+    TextBesideIcon = 2,
+    TextUnderIcon = 3,
+    FollowStyle = 4
+}

@@ -1,0 +1,7 @@
+module Icon;
+
+opaque Handle {
+    void nothingYet();
+}
+
+// no create yet

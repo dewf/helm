@@ -1,11 +1,19 @@
 ﻿module FSharpQt.Widgets.MainWindow
 
 open System
-open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
+open FSharpQt
+open BuilderNode
+open MiscTypes
+
 type Signal =
-    | TitleChanged of title: string
+    | CustomContextMenuRequested of pos: Point
+    | WindowIconChanged of icon: IconProxy
+    | WindowTitleChanged of title: string
+    | IconSizeChanged of size: Size
+    | TabifiedDockWidgetActivated of widget: DockWidgetProxy
+    | ToolButtonStyleChanged of style: ToolButtonStyle
     | Closed
     
 type Attr =
@@ -21,30 +29,40 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit) =
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    let mutable mainWindow = MainWindow.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable mainWindow = MainWindow.Create()
+    let mutable currentMask = enum<MainWindow.SignalMask> 0
+    
     let mutable syntheticLayoutWidget: Widget.Handle option = None
     let mutable visible = true
-    do
-        let signalDispatch (s: Signal) =
-            match signalMap s with
-            | Some msg ->
-                dispatch msg
-            | None ->
-                ()
-                
-        mainWindow.OnWindowTitleChanged (fun title ->
-            signalDispatch (TitleChanged title))
-        
-        mainWindow.OnClosed (fun _ ->
-            signalDispatch Closed)
-        
-    member this.AttachDeps (maybeMenuBar: MenuBar.Handle option) (maybeContentNode: IWidgetOrLayoutNode<'msg> option) = // we use node for content because we need to invoke 'attachedToWindow')
-        maybeContentNode
-        |> Option.iter this.AddContent
-        maybeMenuBar
-        |> Option.iter this.AddMenuBar
+    
+    let signalDispatch (s: Signal) =
+        match signalMap s with
+        | Some msg ->
+            dispatch msg
+        | None ->
+            ()
+            
+    member this.Widget with get() = mainWindow
+    member this.SignalMap with set value = signalMap <- value
+    
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            mainWindow.SetSignalMask(value)
+            currentMask <- value
+    
+    member this.ApplyAttrs (attrs: Attr list) (isCreate: bool) =
+        attrs |> List.iter (function
+            | Title text ->
+                mainWindow.SetWindowTitle(text)
+            | Size (width, height) ->
+                mainWindow.Resize(width, height)
+            | Visible state ->
+                visible <- state
+                if not isCreate then
+                    // on creation we just set the flag
+                    mainWindow.SetVisible(state))
         
     member this.RemoveMenuBar() =
         printfn "*** not currently possible to remove MenuBar from Window ***"
@@ -77,21 +95,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         | _ ->
             failwith "MainWindow.Model.AddContent - unknown node type"
         
-    member this.Widget with get() = mainWindow
-    member this.SignalMap with set(value) = signalMap <- value
-    
-    member this.ApplyAttrs (attrs: Attr list) (isCreate: bool) =
-        attrs |> List.iter (function
-            | Title text ->
-                mainWindow.SetWindowTitle(text)
-            | Size (width, height) ->
-                mainWindow.Resize(width, height)
-            | Visible state ->
-                visible <- state
-                if not isCreate then
-                    // on creation we just set the flag
-                    mainWindow.SetVisible(state))
-        
     member this.ShowIfVisible () =
         // long story short, this is our workaround for Qt's layout system which doesn't necessarily play nicely with how we want to create our widget trees
         // this is invoked in a special step in the builder diff, after .AttachDeps has occurred
@@ -99,21 +102,39 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         // during migrations however we can change visibility just fine, the layout has already occurred of course
         if visible then
             mainWindow.Show()
+            
+    interface MainWindow.SignalHandler with
+        member this.CustomContextMenuRequested pos =
+            signalDispatch (Point.From pos |> CustomContextMenuRequested)
+        member this.WindowIconChanged icon =
+            signalDispatch (IconProxy(icon) |> WindowIconChanged)
+        member this.WindowTitleChanged title =
+            signalDispatch (WindowTitleChanged title)
+        member this.IconSizeChanged size =
+            signalDispatch (Size.From size |> IconSizeChanged)
+        member this.TabifiedDockWidgetActivated widget =
+            signalDispatch (DockWidgetProxy(widget) |> TabifiedDockWidgetActivated)
+        member this.ToolButtonStyleChanged style =
+            signalDispatch (ToolButtonStyle.From style |> ToolButtonStyleChanged)
+        member this.Closed () =
+            signalDispatch Closed
     
     interface IDisposable with
         member this.Dispose() =
             // synthetic layout widget out to be automatically disposed (on the C++ side) right?
             mainWindow.Dispose()
 
-let private create2 (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create2 (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: MainWindow.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs true
     model.SignalMap <- signalMap
+    model.SignalMask <- signalMask
     model
     
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: MainWindow.SignalMask) =
     model.ApplyAttrs attrs false
     model.SignalMap <- signalMap
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
@@ -122,26 +143,73 @@ let private dispose (model: Model<'msg>) =
 type MainWindow<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
+    member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
-    let mutable onTitleChanged: (string -> 'msg) option = None
-    let mutable onClosed: 'msg option = None
     member this.Content with set value = maybeContent <- Some value
     member this.MenuBar with set value = maybeMenuBar <- Some value
-    member this.OnTitleChanged with set value = onTitleChanged <- Some value
-    member this.OnClosed with set value = onClosed <- Some value
     
-    member private this.SignalMap
-        with get() = function
-            | TitleChanged title ->
-                onTitleChanged
-                |> Option.map (fun f -> f title)
-            | Closed ->
-                onClosed
-                
-    member val Attrs: Attr list = [] with get, set
+    let mutable signalMask = enum<MainWindow.SignalMask> 0
+    
+    let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
+    let mutable onWindowIconChanged: (IconProxy -> 'msg) option = None
+    let mutable onWindowTitleChanged: (string -> 'msg) option = None
+    let mutable onIconSizeChanged: (Size -> 'msg) option = None
+    let mutable onTabifiedDockWidgetActivated: (DockWidgetProxy -> 'msg) option = None
+    let mutable onToolButtonStyleChanged: (ToolButtonStyle -> 'msg) option = None
+    let mutable onClosed: 'msg option = None
+
+    member this.OnCustomContextMenuRequested with set value =
+        onCustomContextMenuRequested <- Some value
+        signalMask <- signalMask ||| MainWindow.SignalMask.CustomContextMenuRequested
+        
+    member this.OnWindowIconChanged with set value =
+        onWindowIconChanged <- Some value
+        signalMask <- signalMask ||| MainWindow.SignalMask.WindowIconChanged
+        
+    member this.OnWindowTitleChanged with set value =
+        onWindowTitleChanged <- Some value
+        signalMask <- signalMask ||| MainWindow.SignalMask.WindowTitleChanged
+        
+    member this.OnIconSizeChanged with set value =
+        onIconSizeChanged <- Some value
+        signalMask <- signalMask ||| MainWindow.SignalMask.IconSizeChanged
+        
+    member this.OnTabifiedDockWidgetActivated with set value =
+        onTabifiedDockWidgetActivated <- Some value
+        signalMask <- signalMask ||| MainWindow.SignalMask.TabifiedDockWidgetActivated
+        
+    member this.OnToolButtonStylechanged with set value =
+        onToolButtonStyleChanged <- Some value
+        signalMask <- signalMask ||| MainWindow.SignalMask.ToolButtonStyleChanged
+        
+    member this.OnClosed with set value =
+        onClosed <- Some value
+        signalMask <- signalMask ||| MainWindow.SignalMask.Closed
+        
+    let signalMap = function
+        | CustomContextMenuRequested pos ->
+            onCustomContextMenuRequested
+            |> Option.map (fun f -> f pos)
+        | WindowIconChanged icon ->
+            onWindowIconChanged
+            |> Option.map (fun f -> f icon)
+        | WindowTitleChanged title ->
+            onWindowTitleChanged
+            |> Option.map (fun f -> f title)
+        | IconSizeChanged size ->
+            onIconSizeChanged
+            |> Option.map (fun f -> f size)
+        | TabifiedDockWidgetActivated widget ->
+            onTabifiedDockWidgetActivated
+            |> Option.map (fun f -> f widget)
+        | ToolButtonStyleChanged style ->
+            onToolButtonStyleChanged
+            |> Option.map (fun f -> f style)
+        | Closed ->
+            onClosed
     
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "menu") with
@@ -189,20 +257,20 @@ type MainWindow<'msg>() =
             menuBarList @ contentList
             
         override this.Create dispatch buildContext =
-            this.model <- create2 this.Attrs this.SignalMap dispatch
+            this.model <- create2 this.Attrs signalMap dispatch signalMask
             
         override this.AttachDeps () =
-            let maybeMenuBarHandle =
-                maybeMenuBar
-                |> Option.map (_.MenuBar)
-            this.model.AttachDeps maybeMenuBarHandle maybeContent
+            maybeContent
+            |> Option.iter this.model.AddContent
+            maybeMenuBar
+            |> Option.iter (fun node -> this.model.AddMenuBar node.MenuBar)
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> MainWindow<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap
+            this.model <- migrate left'.model nextAttrs signalMap signalMask
             this.MigrateContent (depsChanges |> Map.ofList)
 
         override this.Dispose() =

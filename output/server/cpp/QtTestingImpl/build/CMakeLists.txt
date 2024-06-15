@@ -51,6 +51,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Dialog_wrappers.cpp
     ../Dialog.cpp
 
+    ../generated/DockWidget.h
+    ../generated/DockWidget_wrappers.cpp
+    ../DockWidget.cpp
+
     ../generated/FileDialog.h
     ../generated/FileDialog_wrappers.cpp
     ../FileDialog.cpp
@@ -66,6 +70,10 @@ add_library(QtTestingImpl STATIC
     ../generated/GroupBox.h
     ../generated/GroupBox_wrappers.cpp
     ../GroupBox.cpp
+
+    ../generated/Icon.h
+    ../generated/Icon_wrappers.cpp
+    ../Icon.cpp
 
     ../generated/Label.h
     ../generated/Label_wrappers.cpp

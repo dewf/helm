@@ -103,6 +103,29 @@ type RectF = {
     member internal this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
 
+type ToolButtonStyle =
+    | IconOnly
+    | TextOnly
+    | TextBesideIcon
+    | TextUnderIcon
+    | FollowStyle
+with
+    static member internal From(style: Common.ToolButtonStyle) =
+        match style with
+        | Common.ToolButtonStyle.IconOnly -> IconOnly
+        | Common.ToolButtonStyle.TextOnly -> TextOnly
+        | Common.ToolButtonStyle.TextBesideIcon -> TextBesideIcon
+        | Common.ToolButtonStyle.TextUnderIcon -> TextUnderIcon
+        | Common.ToolButtonStyle.FollowStyle -> FollowStyle
+        | _ -> failwith "ToolButtonStyle.From - unknown enum value"
+    member internal this.QtValue =
+        match this with
+        | IconOnly -> Common.ToolButtonStyle.IconOnly
+        | TextOnly -> Common.ToolButtonStyle.TextOnly
+        | TextBesideIcon -> Common.ToolButtonStyle.TextBesideIcon
+        | TextUnderIcon -> Common.ToolButtonStyle.TextUnderIcon
+        | FollowStyle -> Common.ToolButtonStyle.FollowStyle
+    
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace (generated C# code)
 
 type WidgetProxy internal(widget: Widget.Handle) =
@@ -112,4 +135,10 @@ type WidgetProxy internal(widget: Widget.Handle) =
 
 type ActionProxy internal(action: Action.Handle) =
     // not sure what methods/props will be useful yet
+    let x = 10
+
+type IconProxy internal(icon: Icon.Handle) =
+    let x = 10
+    
+type DockWidgetProxy internal(widget: DockWidget.Handle) =
     let x = 10

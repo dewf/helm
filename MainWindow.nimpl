@@ -1,16 +1,47 @@
 module MainWindow;
 
+import Common;
 import Widget;
-import Signal;
 import Layout;
 import MenuBar;
+import Icon;
+import DockWidget;
+
+flags SignalMask {
+    // from QWidget
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
+
+    // from QMainWindow
+    IconSizeChanged = 1 << 3,
+    TabifiedDockWidgetActivated = 1 << 4,
+    ToolButtonStyleChanged = 1 << 5,
+
+    // custom:
+    Closed = 1 << 6
+}
+
+interface SignalHandler {
+    // from QWidget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // from QMainWindow:
+    void iconSizeChanged(Size iconSize);
+    void tabifiedDockWidgetActivated(DockWidget.Handle dockWidget);
+    void toolButtonStyleChanged(ToolButtonStyle style);
+
+    // custom:
+    void closed();
+}
 
 opaque Handle extends Widget.Handle {
     void setCentralWidget(Widget.Handle widget);
     void setMenuBar(MenuBar.Handle menubar);
 
-    // signals
-    void onClosed(Signal.VoidDelegate handler);
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
+Handle create(SignalHandler handler);

@@ -1,25 +1,70 @@
 #include "generated/MainWindow.h"
 
 #include <QMainWindow>
+#include <utility>
 
-#define THIS ((MainWindow2*)_this)
+#include "util/SignalStuff.h"
+#include "util/convert.h"
+
+#define THIS ((MainWindowWithHandler*)_this)
 
 namespace MainWindow
 {
-    class MainWindow2 : public QMainWindow {
+    class MainWindowWithHandler : public QMainWindow {
+        Q_OBJECT
     private:
-        std::function<VoidDelegate> closeEventHandler;
+        std::shared_ptr<SignalHandler> handler;
+        uint32_t lastMask = 0;
+        std::vector<SignalMapItem<SignalMask>> signalMap = {
+            { SignalMask::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMask::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMask::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            { SignalMask::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
+            { SignalMask::TabifiedDockWidgetActivated, SIGNAL(tabifiedDockWidgetActivated(QDockWidget)), SLOT(onTabifiedDockWidgetActivated(QDockWidget)) },
+            { SignalMask::ToolButtonStyleChanged, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), SLOT(onToolButtonStyleChanged(Qt::ToolButtonStyle)) },
+            { SignalMask::Closed, SIGNAL(windowClosed()), SLOT(onWindowClosed()) },
+        };
     public:
-        MainWindow2() : QMainWindow() {}
-        void setCloseHandler(const std::function<VoidDelegate>& handler) {
-            closeEventHandler = handler;
+        explicit MainWindowWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
+        void setSignalMask(uint32_t newMask) {
+            if (newMask != lastMask) {
+                processChanges(lastMask, newMask, signalMap, this);
+                lastMask = newMask;
+            }
         }
+    signals:
+        void windowClosed();
     protected:
+        // something we're implementing ourselves since it's not a stock signal
         void closeEvent(QCloseEvent *event) override {
             QWidget::closeEvent(event);
-            if (closeEventHandler) {
-                closeEventHandler();
-            }
+            emit windowClosed();
+        }
+    public slots:
+        // QWidget:
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        };
+        void onWindowIconChanged(const QIcon& icon) {
+            // hmm, I presume these are normally stack allocated in Qt?
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // QMainWindow:
+        void onIconSizeChanged(const QSize& size) {
+            handler->iconSizeChanged(toSize(size));
+        }
+        void onTabifiedDockWidgetActivated(QDockWidget* dockWidget) {
+            handler->tabifiedDockWidgetActivated((DockWidget::HandleRef)dockWidget);
+        }
+        void onToolButtonStyleChanged(Qt::ToolButtonStyle style) {
+            handler->toolButtonStyleChanged((Common::ToolButtonStyle)style);
+        }
+        // custom:
+        void onWindowClosed() {
+            handler->closed();
         }
     };
 
@@ -31,15 +76,17 @@ namespace MainWindow
         THIS->setMenuBar((QMenuBar*)menubar);
     }
 
-    void Handle_onClosed(HandleRef _this, std::function<VoidDelegate> handler) {
-        THIS->setCloseHandler(handler);
+    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+        THIS->setSignalMask(mask);
     }
 
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
 
-    HandleRef create() {
-        return (HandleRef)new MainWindow2();
+    HandleRef create(std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new MainWindowWithHandler(std::move(handler));
     }
 }
+
+#include "MainWindow.moc"

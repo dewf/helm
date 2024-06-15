@@ -16,10 +16,10 @@ namespace PushButton
         std::shared_ptr<SignalHandler> handler;
         uint32_t lastMask = 0;
         std::vector<SignalMapItem<SignalMask>> signalMap = {
-                { SignalMask::Clicked, SIGNAL(clicked(bool)), SLOT(onClicked(bool)) },
-                { SignalMask::Pressed, SIGNAL(pressed()), SLOT(onPressed()) },
-                { SignalMask::Released, SIGNAL(released()), SLOT(onReleased()) },
-                { SignalMask::Toggled, SIGNAL(toggled(bool)), SLOT(onToggled(bool)) }
+            { SignalMask::Clicked, SIGNAL(clicked(bool)), SLOT(onClicked(bool)) },
+            { SignalMask::Pressed, SIGNAL(pressed()), SLOT(onPressed()) },
+            { SignalMask::Released, SIGNAL(released()), SLOT(onReleased()) },
+            { SignalMask::Toggled, SIGNAL(toggled(bool)), SLOT(onToggled(bool)) }
         };
     public:
         explicit PushButtonWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
