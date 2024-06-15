@@ -9,13 +9,45 @@
 
 #include <QMimeData>
 #include <QDrag>
+#include <utility>
 
+#include "util/SignalStuff.h"
 #include "util/convert.h"
 
-#define THIS ((QWidget*)_this)
+#define THIS ((WidgetWithHandler*)_this)
 
 namespace Widget
 {
+    class WidgetWithHandler : public QWidget {
+        Q_OBJECT
+    private:
+        std::shared_ptr<SignalHandler> handler;
+        uint32_t lastMask = 0;
+        std::vector<SignalMapItem<SignalMask>> signalMap = {
+            { SignalMask::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMask::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMask::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) }
+        };
+    public:
+        explicit WidgetWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
+        void setSignalMask(uint32_t newMask) {
+            if (newMask != lastMask) {
+                processChanges(lastMask, newMask, signalMap, this);
+                lastMask = newMask;
+            }
+        }
+    public slots:
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+    };
+
     const int32_t WIDGET_SIZE_MAX = QWIDGETSIZE_MAX;
 
     void Handle_setParent(HandleRef _this, HandleRef parent) {
@@ -148,32 +180,16 @@ namespace Widget
         THIS->setAcceptDrops(enabled);
     }
 
-    void Handle_onWindowTitleChanged(HandleRef _this, std::function<StringDelegate> func) {
-        QObject::connect(
-            THIS,
-            &QWidget::windowTitleChanged,
-            THIS,
-            [func](const QString& title) {
-                func(title.toStdString());
-            });
-    }
-
-    void Handle_onCustomContextMenuRequested(HandleRef _this, std::function<PointDelegate> func) {
-        QObject::connect(
-                THIS,
-                &QWidget::customContextMenuRequested,
-                THIS,
-                [func](const QPoint& point) {
-                    func(toPoint(point));
-                });
+    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+        THIS->setSignalMask(mask);
     }
 
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
 
-    HandleRef create() {
-        return (HandleRef)new QWidget();
+    HandleRef create(std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new WidgetWithHandler(std::move(handler));
     }
 
     // =========================================================================
@@ -370,14 +386,16 @@ namespace Widget
         return ret;
     }
 
-    class WidgetSubclass : public QWidget {
+    class WidgetSubclass : public WidgetWithHandler {
     private:
         std::shared_ptr<MethodDelegate> methodDelegate;
         uint32_t methodMask;
     public:
-        WidgetSubclass(std::shared_ptr<MethodDelegate> &methodDelegate, uint32_t methodMask) :
+        WidgetSubclass(std::shared_ptr<MethodDelegate> &methodDelegate, uint32_t methodMask, std::shared_ptr<SignalHandler> handler) :
             methodDelegate(methodDelegate),
-            methodMask(methodMask) {}
+            methodMask(methodMask),
+            WidgetWithHandler(std::move(handler))
+            {}
     protected:
         void paintEvent(QPaintEvent *event) override {
             if (methodMask & MethodMask::PaintEvent) {
@@ -515,7 +533,9 @@ namespace Widget
         }
     };
 
-    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, uint32_t methodMask) {
-        return (HandleRef) new WidgetSubclass(methodDelegate, methodMask);
+    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, uint32_t methodMask, std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new WidgetSubclass(methodDelegate, methodMask, std::move(handler));
     }
 }
+
+#include "Widget.moc"

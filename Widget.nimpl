@@ -1,9 +1,9 @@
 module Widget;
 
 import Common;
-import Signal;
 import Layout;
 import Painter;
+import Icon;
 
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
@@ -19,6 +19,18 @@ enum WindowModality {
     NonModal = 0,
     WindowModal = 1,
     ApplicationModal = 2
+}
+
+flags SignalMask {
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2
+}
+
+interface SignalHandler {
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
 }
 
 opaque Handle {
@@ -66,13 +78,12 @@ opaque Handle {
     void setUpdatesEnabled(bool enabled);
     void setMouseTracking(bool enabled);
     void setAcceptDrops(bool enabled);
+    // end subclass-y stuff
 
-    // signals + event handling
-    void onWindowTitleChanged(Signal.StringDelegate func);
-    void onCustomContextMenuRequested(Signal.PointDelegate func);
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
+Handle create(SignalHandler handler);
 
 // SUBCLASSING ===========================================================
 
@@ -169,4 +180,4 @@ interface MethodDelegate {
     void dropEvent(Point pos, Set<Modifier> modifiers, MimeData mimeData, DropAction action);
 }
 
-Handle createSubclassed(MethodDelegate methodDelegate, MethodMask methodMask);
+Handle createSubclassed(MethodDelegate methodDelegate, MethodMask methodMask, SignalHandler handler);

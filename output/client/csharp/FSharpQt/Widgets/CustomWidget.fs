@@ -205,7 +205,10 @@ type EventDelegateBaseWithResources<'msg,'state,'resources when 'state: equality
 
 // begin widget proper =================================================
 
-type Signal = unit
+type Signal =
+    | CustomContextMenuRequested of pos: Point
+    | WindowIconChanged of icon: IconProxy
+    | WindowTitleChanged of title: string
     
 type Attr =
     | UpdatesEnabled of enabled: bool
@@ -220,19 +223,68 @@ let private attrKey = function
 let private diffAttrs =
     genericDiffAttrs attrKey
 
-type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as self =
+type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as this =
+    let widget = Widget.CreateSubclassed(this, methodMask, this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     
-    let widget = Widget.CreateSubclassed(self, methodMask)
+    let mutable currentMask = enum<Widget.SignalMask> 0
     
+    let signalDispatch (s: Signal) =
+        signalMap s
+        |> Option.iter dispatch
+        
     // this is for anything the widget needs to create just once at the beginning
     // basically a roundabout way of maintaning auxiliary state just for the EventDelegate, which otherwise isn't supposed to have any (separate from the reactor State that's provided to it)
     let lifetimeResources = new PaintStack()
-    
     let mutable eventDelegate = eventDelegate
-    
     do
         eventDelegate.CreateResourcesInternal(lifetimeResources)
+            
+    member this.Widget with get() = widget
+    member this.SignalMap with set value = signalMap <- value
+    
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            widget.SetSignalMask(value)
+            currentMask <- value
+            
+    member this.EventDelegate with set (newDelegate: EventDelegateInterface<'msg>) =
+        // for now just the widget, maybe 'this' (the entire Model) in the future?
+        newDelegate.Widget <- widget
+        
+        // check if it needs painting (by comparing to previous - for now the implementer will have to extract the previous state themselves, but we'll get to it
+        match newDelegate.NeedsPaintInternal(eventDelegate) with
+        | NotRequired ->
+            ()
+        | Everything ->
+            widget.Update()
+        | Rects rects ->
+            for rect in rects do
+                widget.Update(rect.QtValue)
+                
+        // migrate paint resources from previous
+        newDelegate.MigrateResources eventDelegate
+                
+        // update/overwrite value
+        eventDelegate <- newDelegate
+    
+    member this.ApplyAttrs(attrs: Attr list) =
+        for attr in attrs do
+            match attr with
+            | AcceptDrops enabled ->
+                widget.SetAcceptDrops(enabled)
+            | UpdatesEnabled enabled ->
+                widget.SetUpdatesEnabled(enabled)
+            | MouseTracking enabled ->
+                widget.SetMouseTracking(enabled)
+                
+    interface Widget.SignalHandler with
+        member this.CustomContextMenuRequested pos =
+            signalDispatch (Point.From pos |> CustomContextMenuRequested)
+        member this.WindowIconChanged icon =
+            signalDispatch (IconProxy(icon) |> WindowIconChanged)
+        member this.WindowTitleChanged title =
+            signalDispatch (WindowTitleChanged title)
         
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, updateRect: Common.Rect) =
@@ -282,61 +334,26 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             eventDelegate.Drop (Point.From pos) (Modifier.SetFrom modifiers) (MimeDataProxy(mimeData)) (DropAction.From dropAction)
             |> Option.iter dispatch
             
-        // override this.Dispose() =
-        //     // I forget why the generated method delegates have this ...
-        //     ()
-
-    member this.Widget with get() = widget
-    member this.SignalMap with set value = signalMap <- value
-    
-    member this.EventDelegate with set (newDelegate: EventDelegateInterface<'msg>) =
-        // for now just the widget, maybe 'this' (the entire Model) in the future?
-        newDelegate.Widget <- widget
-        
-        // check if it needs painting (by comparing to previous - for now the implementer will have to extract the previous state themselves, but we'll get to it
-        match newDelegate.NeedsPaintInternal(eventDelegate) with
-        | NotRequired ->
-            ()
-        | Everything ->
-            widget.Update()
-        | Rects rects ->
-            for rect in rects do
-                widget.Update(rect.QtValue)
-                
-        // migrate paint resources from previous
-        newDelegate.MigrateResources eventDelegate
-                
-        // update/overwrite value
-        eventDelegate <- newDelegate
-    
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
-            match attr with
-            | AcceptDrops enabled ->
-                widget.SetAcceptDrops(enabled)
-            | UpdatesEnabled enabled ->
-                widget.SetUpdatesEnabled(enabled)
-            | MouseTracking enabled ->
-                widget.SetMouseTracking(enabled)
-                
     interface IDisposable with
         member this.Dispose() =
             (lifetimeResources :> IDisposable).Dispose()
             widget.Dispose()
 
-let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) =
+let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch, methodMask, eventDelegate)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
+    model.SignalMask <- signalMask
     // can't assign eventDelegate as simply as signal map, requires different behavior on construction vs. migration
     // hence providing it as Model ctor argument
     // model.EventDelegate <- eventDelegate
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) =
+let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.EventDelegate <- eventDelegate
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
@@ -359,7 +376,34 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
     member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let signalMap = (fun _ -> None) // nothing yet
+    let mutable signalMask = enum<Widget.SignalMask> 0
+    
+    let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
+    let mutable onWindowIconChanged: (IconProxy -> 'msg) option = None
+    let mutable onWindowTitleChanged: (string -> 'msg) option = None
+    
+    member this.OnCustomContextMenuRequested with set value =
+        onCustomContextMenuRequested <- Some value
+        signalMask <- signalMask ||| Widget.SignalMask.CustomContextMenuRequested
+        
+    member this.OnWindowIconChanged with set value =
+        onWindowIconChanged <- Some value
+        signalMask <- signalMask ||| Widget.SignalMask.WindowIconChanged
+        
+    member this.OnWindowTitleChanged with set value =
+        onWindowTitleChanged <- Some value
+        signalMask <- signalMask ||| Widget.SignalMask.WindowTitleChanged
+        
+    let signalMap = function
+        | CustomContextMenuRequested pos ->
+            onCustomContextMenuRequested
+            |> Option.map (fun f -> f pos)
+        | WindowIconChanged icon ->
+            onWindowIconChanged
+            |> Option.map (fun f -> f icon)
+        | WindowTitleChanged title ->
+            onWindowTitleChanged
+            |> Option.map (fun f -> f title)
     
     member private this.MethodMask =
         (enum<Widget.MethodMask> 0, eventMaskItems)
@@ -381,7 +425,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
         override this.Dependencies = []
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch this.MethodMask eventDelegate
+            this.model <- create this.Attrs signalMap dispatch this.MethodMask eventDelegate signalMask
             
         override this.AttachDeps () =
             ()
@@ -391,7 +435,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs signalMap eventDelegate
+            this.model <- migrate left'.model nextAttrs signalMap eventDelegate signalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

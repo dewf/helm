@@ -38,11 +38,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable currentMask = enum<PushButton.SignalMask> 0
     
     let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
+        signalMap s
+        |> Option.iter dispatch
         
     member this.Widget with get() = button
     member this.SignalMap with set value = signalMap <- value

@@ -2,6 +2,7 @@
 
 open System
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
 type Signal = unit
@@ -51,7 +52,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         | :? IWidgetNode<'msg> as widgetNode ->
             scrollArea.SetWidget(widgetNode.Widget)
         | :? ILayoutNode<'msg> as layout ->
-            let widget = Widget.Create()
+            let widget = Widget.Create(new NullWidgetHandler())
             widget.SetLayout(layout.Layout)
             scrollArea.SetWidget(widget)
             syntheticLayoutWidget <- Some widget

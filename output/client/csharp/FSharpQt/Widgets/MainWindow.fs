@@ -28,7 +28,7 @@ let private keyFunc = function
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
-
+    
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable mainWindow = MainWindow.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -88,7 +88,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         | :? IWidgetNode<'msg> as widgetNode ->
             mainWindow.SetCentralWidget(widgetNode.Widget)
         | :? ILayoutNode<'msg> as layout ->
-            let widget = Widget.Create()
+            let widget = Widget.Create(new NullWidgetHandler())
             widget.SetLayout(layout.Layout)
             mainWindow.SetCentralWidget(widget)
             syntheticLayoutWidget <- Some widget

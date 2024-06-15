@@ -155,3 +155,17 @@ type PlainTextEditProxy() =
         PlainTextEditProxy()
     member this.ToPlainText () =
         this.Handle.ToPlainText()
+
+
+// for utility widgets (synthetic layout widgets etc)
+
+type internal NullWidgetHandler() =
+    interface Widget.SignalHandler with
+        member this.CustomContextMenuRequested pos =
+            ()
+        member this.WindowIconChanged icon =
+            ()
+        member this.WindowTitleChanged title =
+            ()
+        member this.Dispose() =
+            ()
