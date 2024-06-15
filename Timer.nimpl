@@ -1,6 +1,12 @@
 module Timer;
 
-import Signal;
+flags SignalMask {
+    Timeout = 1 << 0
+}
+
+interface SignalHandler {
+    void timeout();
+}
 
 opaque Handle {
     void setInterval(int msec);
@@ -8,8 +14,8 @@ opaque Handle {
     void start(int msec);
     void start();
     void stop();
-    void onTimeout(Signal.VoidDelegate handler);
+
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
-void singleShot(int msec, Signal.VoidDelegate handler);
+Handle create(SignalHandler handler);

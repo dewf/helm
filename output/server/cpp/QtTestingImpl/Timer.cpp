@@ -3,11 +3,36 @@
 #include <QTimer>
 #include <QObject>
 #include <chrono>
+#include <utility>
 
-#define THIS ((QTimer*)_this)
+#include "util/SignalStuff.h"
+
+#define THIS ((TimerWithHandler*)_this)
 
 namespace Timer
 {
+    class TimerWithHandler : public QTimer {
+        Q_OBJECT
+    private:
+        std::shared_ptr<SignalHandler> handler;
+        uint32_t lastMask = 0;
+        std::vector<SignalMapItem<SignalMask>> signalMap = {
+            { SignalMask::Timeout, SIGNAL(timeout()), SLOT(onTimeout()) },
+        };
+    public:
+        explicit TimerWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
+        void setSignalMask(uint32_t newMask) {
+            if (newMask != lastMask) {
+                processChanges(lastMask, newMask, signalMap, this);
+                lastMask = newMask;
+            }
+        }
+    public slots:
+        void onTimeout() {
+            handler->timeout();
+        };
+    };
+
     void Handle_setInterval(HandleRef _this, int32_t msec) {
         THIS->setInterval(msec);
     }
@@ -28,24 +53,17 @@ namespace Timer
         THIS->stop();
     }
 
-    void Handle_onTimeout(HandleRef _this, std::function<VoidDelegate> handler) {
-        QObject::connect(
-                THIS,
-                &QTimer::timeout,
-                THIS,
-                handler);
+    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+        THIS->setSignalMask(mask);
     }
 
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
 
-    HandleRef create() {
-        return (HandleRef) new QTimer();
-    }
-
-    void singleShot(int32_t msec, std::function<VoidDelegate> handler) {
-        auto interval = std::chrono::milliseconds(msec);
-        QTimer::singleShot(interval, handler);
+    HandleRef create(std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new TimerWithHandler(std::move(handler));
     }
 }
+
+#include "Timer.moc"

@@ -20,26 +20,24 @@ let attrKey = function
 let private diffAttrs =
     genericDiffAttrs attrKey
     
-type private Model<'msg>(dispatch: 'msg -> unit) =
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    let mutable timer = Timer.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable timer = Timer.Create()
+    let mutable currentMask = enum<Timer.SignalMask> 0
+    
     let mutable lastTicks = 0L
-    do
-        let signalDispatch (s: Signal) =
-            signalMap s
-            |> Option.iter dispatch
-            
-        timer.OnTimeout(fun _ ->
-            let ticks =
-                DateTime.Now.Ticks
-            let elapsed =
-                double (ticks - lastTicks) / double TimeSpan.TicksPerMillisecond
-            lastTicks <- ticks
-            signalDispatch (Timeout elapsed))
+    
+    let signalDispatch (s: Signal) =
+        signalMap s
+        |> Option.iter dispatch
         
     member this.QObject with get() = timer
-    
     member this.SignalMap with set value = signalMap <- value
+    
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            timer.SetSignalMask(value)
+            currentMask <- value
     
     member this.ApplyAttrs (attrs: Attr list) =
         for attr in attrs do
@@ -55,19 +53,30 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 else
                     timer.Stop()
                     
+    interface Timer.SignalHandler with
+        member this.Timeout () =
+            let ticks =
+                DateTime.Now.Ticks
+            let elapsed =
+                double (ticks - lastTicks) / double TimeSpan.TicksPerMillisecond
+            lastTicks <- ticks
+            signalDispatch (Timeout elapsed)
+                    
     interface IDisposable with
         member this.Dispose() =
             timer.Dispose()
             
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Timer.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
+    model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: Timer.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
@@ -75,12 +84,16 @@ let private dispose (model: Model<'msg>) =
 
 type Timer<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
-
-    let mutable onTimeout: (double -> 'msg) option = None
-    member this.OnTimeout with set value = onTimeout <- Some value
     
     member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let mutable signalMask = enum<Timer.SignalMask> 0
+
+    let mutable onTimeout: (double -> 'msg) option = None
+    member this.OnTimeout with set value =
+        onTimeout <- Some value
+        signalMask <- signalMask ||| Timer.SignalMask.Timeout
     
     let signalMap = function
         | Timeout elapsed ->
@@ -91,7 +104,7 @@ type Timer<'msg>() =
         override this.Dependencies = []
         
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch
+            this.model <- create this.Attrs signalMap dispatch signalMask
             
         override this.AttachDeps () =
             ()
@@ -101,7 +114,7 @@ type Timer<'msg>() =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs signalMap
+            this.model <- migrate left'.model nextAttrs signalMap signalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
