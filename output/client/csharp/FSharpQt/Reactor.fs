@@ -191,12 +191,17 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                 | ExecWithResult msgFunc ->
                     let result =
                         node.Dialog.Exec()
-                    dispatch (msgFunc result)
+                    if not disposed then
+                        // since the above is a nested runloop, it's possible our container (eg reactor node of some kind) was disposed out from under us
+                        // dispatching is a no-no in that case
+                        dispatch (msgFunc result)
                 | ExecAtPointWithResult (p, msgFunc) ->
                     moveTo p
                     let result =
                         node.Dialog.Exec()
-                    dispatch (msgFunc result)
+                    if not disposed then
+                        // see note above
+                        dispatch (msgFunc result)
                 | Show ->
                     node.Dialog.Show()
                 | ShowAt p ->

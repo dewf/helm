@@ -149,7 +149,9 @@ let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
     node.Dependencies @ attachDeps
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
-    // TODO: needs major rethink/overhaul for correctness (and not crashing)
+    // I feel like this could be improved by stopping at top-level owning windows/widgets
+    // but an attempt to do that resulted in leaks, more than would be expected from unowned things like timers
+    // this isn't crashing for now so I guess we'll keep the naive approach for awhile
     for _, node in (nodeDepsWithAttachments node) do
         disposeTree node
     node.Dispose()
