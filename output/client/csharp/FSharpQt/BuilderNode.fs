@@ -80,30 +80,6 @@ and ILayoutNode<'msg> =
         abstract member Layout: Layout.Handle
     end
     
-// leaving this below for future reference, in case fancier inheritance (eg default interface methods / traits) ever comes to F#
-// unfortunately we have to manually implement this pattern below in anything that implements LayoutNode interface for now
-// but it's a small price to pay for cleaner, less redundant implementation of the various reactor node types (eg LayoutReactorNode, WindowReactorNode, etc)
-// (that was the problem that necessitated changing the *Node inheritance hierarchy from abstract classes to interfaces)
-// (but/and the only reason they were abstract classes to begin with, was to get some default implementation behavior -
-//  back in the original Scala/Swing experiment that led to this framework, the *Node types were defined as Scala traits)
-    
-// [<AbstractClass>]
-// type BaseLayoutNode<'msg>() =
-//     let mutable maybeSyntheticParent: Widget.Handle option = None
-//     interface LayoutNode<'msg> with
-//         override this.ContentKey = (this :> LayoutNode<'msg>).Layout
-//         override this.Widget =
-//             // create a widget on demand to hold the layout
-//             // TODO: set up .Dipose() inheritance business so that everything up and down the hierarchy disposes properly
-//             match maybeSyntheticParent with
-//             | Some widget ->
-//                 widget
-//             | None ->
-//                 let widget = Widget.Create()
-//                 widget.SetLayout((this :> LayoutNode<'msg>).Layout)
-//                 maybeSyntheticParent <- Some widget
-//                 widget
-    
 and IMenuBarNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
