@@ -38,6 +38,10 @@ with
         | Menu node -> node
     
 and BuilderContext<'msg> = {
+    // context cannot contain nodes (eg parent node),
+    // because when crossing a reactor node boundary, the 'msg type changes ('outerMsg to 'msg)
+    // (a new builder context is created, copying the internal content to the new type)
+    // reactor nodes might be able to create a wrapper node type but sounds like way too much work for little gain
     ContainingWindow: Widget.Handle option // window, dialog, whatever
 }
 
