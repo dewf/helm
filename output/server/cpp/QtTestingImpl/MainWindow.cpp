@@ -6,6 +6,8 @@
 #include "util/SignalStuff.h"
 #include "util/convert.h"
 
+#include "IconInternal.h"
+
 #define THIS ((MainWindowWithHandler*)_this)
 
 namespace MainWindow
@@ -46,8 +48,8 @@ namespace MainWindow
             handler->customContextMenuRequested(toPoint(pos));
         };
         void onWindowIconChanged(const QIcon& icon) {
-            // hmm, I presume these are normally stack allocated in Qt?
-            handler->windowIconChanged((Icon::HandleRef)&icon);
+            Icon::__Handle icon2(icon); // only valid for duration of this call ...
+            handler->windowIconChanged(&icon2);
         }
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());

@@ -73,6 +73,7 @@ add_library(QtTestingImpl STATIC
 
     ../generated/Icon.h
     ../generated/Icon_wrappers.cpp
+    ../IconInternal.h                           # needed for internal struct definitions (when accessing icons from other modules)
     ../Icon.cpp
 
     ../generated/Label.h
@@ -113,7 +114,7 @@ add_library(QtTestingImpl STATIC
 
     ../generated/PaintResources.h
     ../generated/PaintResources_wrappers.cpp
-    ../PaintResourcesInternal.h                      # needed for internal struct definitions!
+    ../PaintResourcesInternal.h                      # needed for internal struct definitions
     ../PaintResources.cpp
 
     ../generated/PlainTextEdit.h

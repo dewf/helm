@@ -13,6 +13,7 @@
 
 #include "util/SignalStuff.h"
 #include "util/convert.h"
+#include "IconInternal.h"
 
 #define THIS ((WidgetWithHandler*)_this)
 
@@ -41,7 +42,8 @@ namespace Widget
             handler->customContextMenuRequested(toPoint(pos));
         }
         void onWindowIconChanged(const QIcon& icon) {
-            handler->windowIconChanged((Icon::HandleRef)&icon);
+            Icon::__Handle icon2(icon); // only valid for duration of this call ...
+            handler->windowIconChanged(&icon2);
         }
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());
