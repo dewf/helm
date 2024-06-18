@@ -4,6 +4,8 @@
 #include <QAction>
 
 #include "util/SignalStuff.h"
+#include "IconInternal.h"
+#include "KeySequenceInternal.h"
 
 #define THIS ((ActionWithHandler*)_this)
 
@@ -65,6 +67,26 @@ namespace Action
 
     void Handle_setEnabled(HandleRef _this, bool state) {
         THIS->setEnabled(state);
+    }
+
+    void Handle_setIcon(HandleRef _this, Icon::HandleRef icon) {
+        THIS->setIcon(icon->icon);
+    }
+
+    void Handle_setIconText(HandleRef _this, std::string text) {
+        THIS->setIconText(text.c_str());
+    }
+
+    void Handle_setShortcut(HandleRef _this, KeySequence::HandleRef seq) {
+        THIS->setShortcut(seq->seq);
+    }
+
+    void Handle_setStatusTip(HandleRef _this, std::string tip) {
+        THIS->setStatusTip(tip.c_str());
+    }
+
+    void Handle_setToolTip(HandleRef _this, std::string tip) {
+        THIS->setToolTip(tip.c_str());
     }
 
     void Handle_setSignalMask(HandleRef _this, uint32_t mask) {

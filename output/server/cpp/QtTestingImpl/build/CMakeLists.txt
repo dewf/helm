@@ -80,6 +80,11 @@ add_library(QtTestingImpl STATIC
     ../IconInternal.h                           # needed for internal struct definitions (when accessing icons from other modules)
     ../Icon.cpp
 
+    ../generated/KeySequence.h
+    ../generated/KeySequence_wrappers.cpp
+    ../KeySequenceInternal.h
+    ../KeySequence.cpp
+
     ../generated/Label.h
     ../generated/Label_wrappers.cpp
     ../Label.cpp

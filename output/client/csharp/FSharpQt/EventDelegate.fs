@@ -1,55 +1,17 @@
 ﻿module FSharpQt.EventDelegate
 
 open System.Collections.Generic
-open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
+open FSharpQt
+open InputEnums
+open MiscTypes
 open Painting
 
 type UpdateArea =
     | NotRequired
     | Everything
     | Rects of Rect list
-    
-type MouseButton =
-    | LeftButton
-    | RightButton
-    | MiddleButton
-    | OtherButton
-with
-    static member internal From (qtButton: Widget.MouseButton) =
-        match qtButton with
-        | Widget.MouseButton.None -> failwith "MouseButton.From - .None case - shoudln't happen"
-        | Widget.MouseButton.Left -> LeftButton
-        | Widget.MouseButton.Right -> RightButton
-        | Widget.MouseButton.Middle -> MiddleButton
-        | _ -> OtherButton // also handles other enum cases
-    member internal this.QtValue =
-        match this with
-        | LeftButton -> Widget.MouseButton.Left
-        | RightButton -> Widget.MouseButton.Right
-        | MiddleButton -> Widget.MouseButton.Middle
-        | OtherButton -> Widget.MouseButton.Other
-    static member internal SetFrom (qtButtonSet: HashSet<Widget.MouseButton>) =
-        (set qtButtonSet)
-        |> Set.map MouseButton.From
-    
-type Modifier =
-    | Shift
-    | Control
-    | Alt
-    | Meta
-with
-    static member internal From (qtModifier: Enums.Modifier) =
-        match qtModifier with
-        | Enums.Modifier.Shift -> Shift
-        | Enums.Modifier.Control -> Control
-        | Enums.Modifier.Alt -> Alt
-        | Enums.Modifier.Meta -> Meta
-        | _ -> failwith "Modifier.From - unknown enum value (or .None, which shouldn't happen)"
-    static member internal SetFrom (qtModifierSet: HashSet<Enums.Modifier>) =
-        (set qtModifierSet)
-        |> Set.map Modifier.From
     
 type DropAction =
     | Ignore
@@ -86,7 +48,7 @@ type EventDelegateInterface<'msg>() = // obviously it's an abstract class and no
     abstract member CreateResourcesInternal: PaintStack -> unit
     abstract member MigrateResources: EventDelegateInterface<'msg> -> unit
 
-    abstract member PaintInternal: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
+    abstract member PaintInternal: PaintStack -> Painter -> WidgetProxy -> Rect -> unit
 
     abstract member MousePress: Point -> MouseButton -> Set<Modifier> -> 'msg option
     default this.MousePress _ _ _ = None

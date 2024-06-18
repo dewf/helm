@@ -1,6 +1,8 @@
 ﻿module FSharpQt.MiscTypes
 
+open System.Collections.Generic
 open Org.Whatever.QtTesting
+open FSharpQt.InputEnums
 
 type Alignment =
     | Left
@@ -152,6 +154,7 @@ type ActionProxy internal(action: Action.Handle) =
 
 type IconProxy internal(icon: Icon.Handle) =
     let x = 10
+    member internal this.Handle = icon
     
 type DockWidgetProxy internal(widget: DockWidget.Handle) =
     let x = 10
@@ -177,3 +180,20 @@ type PlainTextEditProxy() =
         PlainTextEditProxy()
     member this.ToPlainText () =
         this.Handle.ToPlainText()
+
+// other =========================
+
+type KeySequenceProxy(seq: KeySequence.Handle) =
+    new(standardKey: StandardKey) =
+        let handle =
+            KeySequence.Create(standardKey.QtValue)
+        KeySequenceProxy(handle)
+    new(key: Key) =
+        let handle =
+            KeySequence.Create(key.QtValue, HashSet<Enums.Modifier>())
+        KeySequenceProxy(handle)
+    new(key: Key, modifiers: Set<Modifier>) =
+        let handle =
+            KeySequence.Create(key.QtValue, Modifier.QtSetFrom(modifiers))
+        KeySequenceProxy(handle)
+    member internal this.Handle = seq

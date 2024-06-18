@@ -2,6 +2,7 @@
 
 open System
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
 type Signal =
@@ -17,11 +18,21 @@ type Attr =
     | Text of text: string
     | Enabled of state: bool
     | Separator of state: bool
+    | Icon of icon: IconProxy  // "proxy" for now ...
+    | IconText of text: string
+    | Shortcut of seq: KeySequenceProxy
+    | StatusTip of tip: string
+    | ToolTip of tip: string
     
 let private keyFunc = function
     | Text _ -> 0
     | Enabled _ -> 1
     | Separator _ -> 2
+    | Icon _ -> 3
+    | IconText _ -> 4
+    | Shortcut _ -> 5
+    | StatusTip _ -> 6
+    | ToolTip _ -> 7
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -54,6 +65,16 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 action.SetEnabled(state)
             | Separator state ->
                 action.SetSeparator(state)
+            | Icon icon ->
+                action.SetIcon(icon.Handle)
+            | IconText text ->
+                action.SetIconText(text)
+            | Shortcut seq ->
+                action.SetShortcut(seq.Handle)
+            | StatusTip tip ->
+                action.SetStatusTip(tip)
+            | ToolTip tip ->
+                action.SetToolTip(tip)
                 
     interface Action.SignalHandler with
         override this.Changed () =

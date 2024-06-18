@@ -7,6 +7,7 @@ open EventDelegate
 
 open BuilderNode
 open Reactor
+
 open FSharpQt.Widgets
 open CustomWidget
 open BoxLayout
@@ -19,6 +20,8 @@ open PushButton
 open Slider
 
 open Extensions
+
+open FSharpQt.InputEnums
 
 type Signal = unit
 type Attr = unit

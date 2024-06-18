@@ -342,52 +342,6 @@ namespace Widget
 
     // subclass stuff ==========================================================
 
-    std::set<Modifier> fromQtModifiers (Qt::KeyboardModifiers modifiers) {
-        std::set<Modifier> ret;
-        if (modifiers.testFlag(Qt::ShiftModifier)) {
-            ret.emplace(Modifier::Shift);
-        }
-        if (modifiers.testFlag(Qt::ControlModifier)) {
-            ret.emplace(Modifier::Control);
-        }
-        if (modifiers.testFlag(Qt::AltModifier)) {
-            ret.emplace(Modifier::Alt);
-        }
-        if (modifiers.testFlag(Qt::MetaModifier)) {
-            ret.emplace(Modifier::Meta);
-        }
-        return ret;
-    }
-
-    MouseButton fromQtButton(Qt::MouseButton button) {
-        switch (button) {
-            case Qt::NoButton:
-                return MouseButton::None;
-            case Qt::LeftButton:
-                return MouseButton::Left;
-            case Qt::RightButton:
-                return MouseButton::Right;
-            case Qt::MiddleButton:
-                return MouseButton::Middle;
-            default:
-                return MouseButton::Other;
-        }
-    }
-
-    std::set<MouseButton> fromQtButtons(Qt::MouseButtons buttons) {
-        std::set<MouseButton> ret;
-        if (buttons.testFlag(Qt::LeftButton)) {
-            ret.emplace(MouseButton::Left);
-        }
-        if (buttons.testFlag(Qt::RightButton)) {
-            ret.emplace(MouseButton::Right);
-        }
-        if (buttons.testFlag(Qt::MiddleButton)) {
-            ret.emplace(MouseButton::Middle);
-        }
-        return ret;
-    }
-
     class WidgetSubclass : public WidgetWithHandler {
     private:
         std::shared_ptr<MethodDelegate> methodDelegate;

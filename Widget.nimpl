@@ -74,14 +74,6 @@ Handle create(SignalHandler handler);
 
 // SUBCLASSING ===========================================================
 
-enum MouseButton {
-    None,
-    Left,
-    Right,
-    Middle,
-    Other
-}
-
 enum DropAction {
     Ignore = 0,
     Copy = 0x1,

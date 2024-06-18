@@ -2,6 +2,7 @@
 
 #include <Qt>
 #include <QRect>
+#include <QKeySequence>
 
 #include "../generated/Common.h"
 using namespace Common;
@@ -44,4 +45,67 @@ inline QRect toQRect(const Rect& r) {
 
 inline QRectF toQRectF(const RectF& r) {
     return { r.x, r.y, r.width, r.height };
+}
+
+inline std::set<Modifier> fromQtModifiers (Qt::KeyboardModifiers modifiers) {
+    std::set<Modifier> ret;
+    if (modifiers.testFlag(Qt::ShiftModifier)) {
+        ret.emplace(Modifier::Shift);
+    }
+    if (modifiers.testFlag(Qt::ControlModifier)) {
+        ret.emplace(Modifier::Control);
+    }
+    if (modifiers.testFlag(Qt::AltModifier)) {
+        ret.emplace(Modifier::Alt);
+    }
+    if (modifiers.testFlag(Qt::MetaModifier)) {
+        ret.emplace(Modifier::Meta);
+    }
+    return ret;
+}
+
+inline Qt::KeyboardModifiers toQtModifiers (const std::set<Modifier>& modifiers) {
+    Qt::KeyboardModifiers ret;
+    if (modifiers.contains(Modifier::Shift)) {
+        ret.setFlag(Qt::ShiftModifier);
+    }
+    if (modifiers.contains(Modifier::Control)) {
+        ret.setFlag(Qt::ControlModifier);
+    }
+    if (modifiers.contains(Modifier::Alt)) {
+        ret.setFlag(Qt::AltModifier);
+    }
+    if (modifiers.contains(Modifier::Meta)) {
+        ret.setFlag(Qt::MetaModifier);
+    }
+    return ret;
+}
+
+inline MouseButton fromQtButton(Qt::MouseButton button) {
+    switch (button) {
+        case Qt::NoButton:
+            return MouseButton::None;
+        case Qt::LeftButton:
+            return MouseButton::Left;
+        case Qt::RightButton:
+            return MouseButton::Right;
+        case Qt::MiddleButton:
+            return MouseButton::Middle;
+        default:
+            return MouseButton::Other;
+    }
+}
+
+inline std::set<MouseButton> fromQtButtons(Qt::MouseButtons buttons) {
+    std::set<MouseButton> ret;
+    if (buttons.testFlag(Qt::LeftButton)) {
+        ret.emplace(MouseButton::Left);
+    }
+    if (buttons.testFlag(Qt::RightButton)) {
+        ret.emplace(MouseButton::Right);
+    }
+    if (buttons.testFlag(Qt::MiddleButton)) {
+        ret.emplace(MouseButton::Middle);
+    }
+    return ret;
 }

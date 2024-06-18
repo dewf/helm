@@ -5,6 +5,7 @@ open System
 
 open FSharpQt
 open FSharpQt.BuilderNode
+open FSharpQt.InputEnums
 open FSharpQt.MiscTypes
 open FSharpQt.Painting
 open Org.Whatever.QtTesting
@@ -97,15 +98,15 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             use stackResources = new PaintStack() // "stack" (local), vs. the 'lifetimeResources' declared above
             eventDelegate.PaintInternal stackResources (Painter(painter)) (WidgetProxy(widget)) (Rect.From(updateRect))
             
-        override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Enums.Modifier>) =
+        override this.MousePressEvent(pos: Common.Point, button: Enums.MouseButton, modifiers: HashSet<Enums.Modifier>) =
             eventDelegate.MousePress (Point.From pos) (MouseButton.From button) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
             
-        override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Enums.Modifier>) =
+        override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Enums.MouseButton>, modifiers: HashSet<Enums.Modifier>) =
             eventDelegate.MouseMove (Point.From pos) (MouseButton.SetFrom buttons) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
                 
-        override this.MouseReleaseEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Enums.Modifier>) =
+        override this.MouseReleaseEvent(pos: Common.Point, button: Enums.MouseButton, modifiers: HashSet<Enums.Modifier>) =
             eventDelegate.MouseRelease (Point.From pos) (MouseButton.From button) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
                 
