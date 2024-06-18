@@ -29,8 +29,8 @@ namespace BoxLayout
         THIS->addWidget((QWidget*)widget, stretch);
     }
 
-    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t stretch, Alignment align) {
-        THIS->addWidget((QWidget*)widget, stretch, toQtAlign(align));
+    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t stretch, uint32_t align) {
+        THIS->addWidget((QWidget*)widget, stretch, (Qt::AlignmentFlag)align);
     }
 
     void Handle_addLayout(HandleRef _this, Layout::HandleRef layout) {

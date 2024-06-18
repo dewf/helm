@@ -4,22 +4,9 @@ import Common;
 import Layout;
 import Painter;
 import Icon;
+import Enums;
 
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
-
-enum ContextMenuPolicy {
-    NoContextMenu = 0,
-    Prevent = 4,
-    Default = 1,
-    Actions = 2,
-    Custom = 3
-}
-
-enum WindowModality {
-    NonModal = 0,
-    WindowModal = 1,
-    ApplicationModal = 2
-}
 
 flags SignalMask {
     CustomContextMenuRequested = 1,
@@ -86,14 +73,6 @@ opaque Handle {
 Handle create(SignalHandler handler);
 
 // SUBCLASSING ===========================================================
-
-enum Modifier {
-    None,
-    Shift,
-    Control,
-    Alt,
-    Meta
-}
 
 enum MouseButton {
     None,

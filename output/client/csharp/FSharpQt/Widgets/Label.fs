@@ -53,13 +53,13 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
             | Alignment align ->
                 let qAlign =
                     match align with
-                    | Left -> Common.Alignment.Left
-                    | HCenter -> Common.Alignment.HCenter
-                    | Right -> Common.Alignment.Right
-                    | Top -> Common.Alignment.Top
-                    | VCenter -> Common.Alignment.VCenter
-                    | Bottom -> Common.Alignment.Bottom
-                    | Center -> Common.Alignment.Center
+                    | Left -> Enums.Alignment.AlignLeft
+                    | HCenter -> Enums.Alignment.AlignHCenter
+                    | Right -> Enums.Alignment.AlignRight
+                    | Top -> Enums.Alignment.AlignTop
+                    | VCenter -> Enums.Alignment.AlignVCenter
+                    | Bottom -> Enums.Alignment.AlignBottom
+                    | Center -> Enums.Alignment.AlignCenter
                 label.SetAlignment(qAlign)
             | FrameShape shape ->
                 label.SetFrameShape(shape.QtShape)

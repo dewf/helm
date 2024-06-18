@@ -55,6 +55,10 @@ add_library(QtTestingImpl STATIC
     ../generated/DockWidget_wrappers.cpp
     ../DockWidget.cpp
 
+    ../generated/Enums.h
+    ../generated/Enums_wrappers.cpp
+    ../Enums.cpp
+
     ../generated/FileDialog.h
     ../generated/FileDialog_wrappers.cpp
     ../FileDialog.cpp

@@ -18,18 +18,18 @@ type Alignment =
 with
     member internal this.QtValue =
         match this with
-        | Left -> Common.Alignment.Left
-        | Leading -> Common.Alignment.Leading
-        | Right -> Common.Alignment.Right
-        | Trailing -> Common.Alignment.Trailing
-        | HCenter -> Common.Alignment.HCenter
-        | Justify -> Common.Alignment.Justify
-        | Absolute -> Common.Alignment.Absolute
-        | Top -> Common.Alignment.Top
-        | Bottom -> Common.Alignment.Bottom
-        | VCenter ->Common.Alignment.VCenter
-        | Baseline -> Common.Alignment.Baseline
-        | Center -> Common.Alignment.Center
+        | Left -> Enums.Alignment.AlignLeft
+        | Leading -> Enums.Alignment.AlignLeading
+        | Right -> Enums.Alignment.AlignRight
+        | Trailing -> Enums.Alignment.AlignTrailing
+        | HCenter -> Enums.Alignment.AlignHCenter
+        | Justify -> Enums.Alignment.AlignJustify
+        | Absolute -> Enums.Alignment.AlignAbsolute
+        | Top -> Enums.Alignment.AlignTop
+        | Bottom -> Enums.Alignment.AlignBottom
+        | VCenter ->Enums.Alignment.AlignVCenter
+        | Baseline -> Enums.Alignment.AlignBaseline
+        | Center -> Enums.Alignment.AlignCenter
         
 type Point = {
     X: int
@@ -110,21 +110,21 @@ type ToolButtonStyle =
     | TextUnderIcon
     | FollowStyle
 with
-    static member internal From(style: Common.ToolButtonStyle) =
+    static member internal From(style: Enums.ToolButtonStyle) =
         match style with
-        | Common.ToolButtonStyle.IconOnly -> IconOnly
-        | Common.ToolButtonStyle.TextOnly -> TextOnly
-        | Common.ToolButtonStyle.TextBesideIcon -> TextBesideIcon
-        | Common.ToolButtonStyle.TextUnderIcon -> TextUnderIcon
-        | Common.ToolButtonStyle.FollowStyle -> FollowStyle
+        | Enums.ToolButtonStyle.IconOnly -> IconOnly
+        | Enums.ToolButtonStyle.TextOnly -> TextOnly
+        | Enums.ToolButtonStyle.TextBesideIcon -> TextBesideIcon
+        | Enums.ToolButtonStyle.TextUnderIcon -> TextUnderIcon
+        | Enums.ToolButtonStyle.FollowStyle -> FollowStyle
         | _ -> failwith "ToolButtonStyle.From - unknown enum value"
     member internal this.QtValue =
         match this with
-        | IconOnly -> Common.ToolButtonStyle.IconOnly
-        | TextOnly -> Common.ToolButtonStyle.TextOnly
-        | TextBesideIcon -> Common.ToolButtonStyle.TextBesideIcon
-        | TextUnderIcon -> Common.ToolButtonStyle.TextUnderIcon
-        | FollowStyle -> Common.ToolButtonStyle.FollowStyle
+        | IconOnly -> Enums.ToolButtonStyle.IconOnly
+        | TextOnly -> Enums.ToolButtonStyle.TextOnly
+        | TextBesideIcon -> Enums.ToolButtonStyle.TextBesideIcon
+        | TextUnderIcon -> Enums.ToolButtonStyle.TextUnderIcon
+        | FollowStyle -> Enums.ToolButtonStyle.FollowStyle
         
 // for utility widgets (synthetic layout widgets etc)
 

@@ -6,6 +6,7 @@ import Layout;
 import MenuBar;
 import Icon;
 import DockWidget;
+import Enums;
 
 flags SignalMask {
     // from QWidget

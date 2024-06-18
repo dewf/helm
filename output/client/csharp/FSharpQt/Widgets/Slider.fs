@@ -100,8 +100,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             | Orientation orient ->
                 let orient' =
                     match orient with
-                    | Horizontal -> Common.Orientation.Horizontal
-                    | Vertical -> Common.Orientation.Vertical
+                    | Horizontal -> Enums.Orientation.Horizontal
+                    | Vertical -> Enums.Orientation.Vertical
                 slider.SetOrientation(orient')
             | Range(min, max) ->
                 slider.SetRange(min, max)

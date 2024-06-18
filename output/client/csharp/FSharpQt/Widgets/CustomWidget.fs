@@ -97,15 +97,15 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             use stackResources = new PaintStack() // "stack" (local), vs. the 'lifetimeResources' declared above
             eventDelegate.PaintInternal stackResources (Painter(painter)) (WidgetProxy(widget)) (Rect.From(updateRect))
             
-        override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
+        override this.MousePressEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Enums.Modifier>) =
             eventDelegate.MousePress (Point.From pos) (MouseButton.From button) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
             
-        override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Widget.Modifier>) =
+        override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Widget.MouseButton>, modifiers: HashSet<Enums.Modifier>) =
             eventDelegate.MouseMove (Point.From pos) (MouseButton.SetFrom buttons) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
                 
-        override this.MouseReleaseEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Widget.Modifier>) =
+        override this.MouseReleaseEvent(pos: Common.Point, button: Widget.MouseButton, modifiers: HashSet<Enums.Modifier>) =
             eventDelegate.MouseRelease (Point.From pos) (MouseButton.From button) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
                 
@@ -124,7 +124,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
         override this.SizeHint() =
             eventDelegate.SizeHint.QtValue
                 
-        override this.DragMoveEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, moveEvent: Widget.DragMoveEvent, isEnterEvent: bool) =
+        override this.DragMoveEvent(pos: Common.Point, modifiers: HashSet<Enums.Modifier>, mimeData: Widget.MimeData, moveEvent: Widget.DragMoveEvent, isEnterEvent: bool) =
             match eventDelegate.DragMove (Point.From pos) (Modifier.SetFrom modifiers) (MimeDataProxy(mimeData)) (moveEvent.ProposedAction() |> DropAction.From) (moveEvent.PossibleActions() |> DropAction.SetFrom) isEnterEvent with
             | Some (dropAction, msg) ->
                 moveEvent.AcceptDropAction(dropAction.QtValue)
@@ -136,7 +136,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             eventDelegate.DragLeave()
             |> Option.iter dispatch
             
-        override this.DropEvent(pos: Common.Point, modifiers: HashSet<Widget.Modifier>, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
+        override this.DropEvent(pos: Common.Point, modifiers: HashSet<Enums.Modifier>, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
             eventDelegate.Drop (Point.From pos) (Modifier.SetFrom modifiers) (MimeDataProxy(mimeData)) (DropAction.From dropAction)
             |> Option.iter dispatch
             

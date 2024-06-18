@@ -2,6 +2,7 @@ module Label;
 
 import Common;
 import Frame;
+import Enums;
 
 opaque Handle extends Frame.Handle {
     void setText(string text);

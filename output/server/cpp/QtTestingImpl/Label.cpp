@@ -11,8 +11,8 @@ namespace Label
         THIS->setText(text.c_str());
     }
 
-    void Handle_setAlignment(HandleRef _this, Alignment align) {
-        THIS->setAlignment(toQtAlign(align));
+    void Handle_setAlignment(HandleRef _this, uint32_t align) {
+        THIS->setAlignment((Qt::AlignmentFlag)align);
     }
 
     void Handle_dispose(HandleRef _this) {

@@ -1,8 +1,10 @@
 ﻿module FSharpQt.Widgets.GridLayout
 
 open System
-open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
+open FSharpQt
+open BuilderNode
+open MiscTypes
 
 // no signals yet
 
@@ -31,9 +33,9 @@ type Location = {
     Col: int
     RowSpan: int option
     ColSpan: int option
-    Align: Common.Alignment option
+    Align: Alignment option
 } with
-    static member Create(row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
+    static member Create(row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Alignment) =
         { Row = row
           Col = col
           RowSpan = defaultArg (Some rowSpan) None
@@ -48,7 +50,7 @@ type internal InternalItem<'msg> =
         
 type GridItem<'msg> private(item: InternalItem<'msg>) =
     member val internal Item = item
-    new(w: IWidgetNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
+    new(w: IWidgetNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Alignment) =
         let loc =
             { Row = row
               Col = col
@@ -56,7 +58,7 @@ type GridItem<'msg> private(item: InternalItem<'msg>) =
               ColSpan = defaultArg (Some colSpan) None
               Align = defaultArg (Some align) None }
         GridItem(WidgetItem (w, loc))
-    new(l: ILayoutNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Common.Alignment) =
+    new(l: ILayoutNode<'msg>, row: int, col: int, ?rowSpan: int, ?colSpan: int, ?align: Alignment) =
         let loc =
             { Row = row
               Col = col
@@ -75,9 +77,9 @@ type GridItem<'msg> private(item: InternalItem<'msg>) =
         
 type private Method =
     | Normal
-    | WithAlignment of align: Common.Alignment
+    | WithAlignment of align: Alignment
     | WithSpans of rowSpan: int * colSpan: int
-    | WithSpansAlignment of rowSpan: int * colSpan: int * align: Common.Alignment
+    | WithSpansAlignment of rowSpan: int * colSpan: int * align: Alignment
     
 let private whichMethod (loc: Location) =
     match loc.Align with
@@ -108,21 +110,21 @@ let private addItem (grid: GridLayout.Handle) = function
         | Normal ->
             grid.AddWidget(w.Widget, loc.Row, loc.Col)
         | WithAlignment align ->
-            grid.AddWidget(w.Widget, loc.Row, loc.Col, align)
+            grid.AddWidget(w.Widget, loc.Row, loc.Col, align.QtValue)
         | WithSpans(rowSpan, colSpan) ->
             grid.AddWidget(w.Widget, loc.Row, loc.Col, rowSpan, colSpan)
         | WithSpansAlignment(rowSpan, colSpan, align) ->
-            grid.AddWidget(w.Widget, loc.Row, loc.Col, rowSpan, colSpan, align)
+            grid.AddWidget(w.Widget, loc.Row, loc.Col, rowSpan, colSpan, align.QtValue)
     | LayoutItem(l, loc) ->
         match whichMethod loc with
         | Normal ->
             grid.AddLayout(l.Layout, loc.Row, loc.Col)
         | WithAlignment align ->
-            grid.AddLayout(l.Layout, loc.Row, loc.Col, align)
+            grid.AddLayout(l.Layout, loc.Row, loc.Col, align.QtValue)
         | WithSpans(rowSpan, colSpan) ->
             grid.AddLayout(l.Layout, loc.Row, loc.Col, rowSpan, colSpan)
         | WithSpansAlignment(rowSpan, colSpan, align) ->
-            grid.AddLayout(l.Layout, loc.Row, loc.Col, rowSpan, colSpan, align)
+            grid.AddLayout(l.Layout, loc.Row, loc.Col, rowSpan, colSpan, align.QtValue)
     
 type private Model<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)

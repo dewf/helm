@@ -1,9 +1,11 @@
 ﻿module FSharpQt.Widgets.BoxLayout
 
 open System
-open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
-open FSharpQt.Extensions
+open FSharpQt
+open BuilderNode
+open Extensions
+open MiscTypes
 
 // no signals yet
 
@@ -27,14 +29,14 @@ let private diffAttrs =
 [<RequireQualifiedAccess>]
 type internal ItemKey<'msg> =
     // used for internal comparisons, since we can't compare builder node interfaces against each other, we use the ContentKeys
-    | WidgetItem of content: Object * maybeStretch: int option * maybeAlign: Common.Alignment option
+    | WidgetItem of content: Object * maybeStretch: int option * maybeAlign: Alignment option
     | LayoutItem of content: Object * maybeStretch: int option
     | Spacer of sp: int
     | Stretch of stretch: int
     | Ignore
     
 type internal InternalItem<'msg> =
-    | WidgetItem of w: IWidgetNode<'msg> * maybeStretch: int option * maybeAlign: Common.Alignment option
+    | WidgetItem of w: IWidgetNode<'msg> * maybeStretch: int option * maybeAlign: Alignment option
     | LayoutItem of l: ILayoutNode<'msg> * maybeStretch: int option
     | Spacer of sp: int
     | Stretch of stretch: int
@@ -64,7 +66,7 @@ type BoxItem<'msg> private(item: InternalItem<'msg>) =
         | Stretch _ -> None
         | Ignore -> None
     
-    new(w: IWidgetNode<'msg>, ?stretch: int, ?align: Common.Alignment) =
+    new(w: IWidgetNode<'msg>, ?stretch: int, ?align: Alignment) =
         BoxItem(WidgetItem (w, stretch, align))
         
     new(l: ILayoutNode<'msg>, ?stretch: int) =
@@ -100,11 +102,11 @@ let internal addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
         | None, None ->
             box.AddWidget(w.Widget)
         | None, Some align ->
-            box.AddWidget(w.Widget, 0, align)
+            box.AddWidget(w.Widget, 0, align.QtValue)
         | Some stretch, None ->
             box.AddWidget(w.Widget, stretch)
         | Some stretch, Some align ->
-            box.AddWidget(w.Widget, stretch, align)
+            box.AddWidget(w.Widget, stretch, align.QtValue)
     | LayoutItem(l, maybeStretch) ->
         match maybeStretch with
         | Some stretch ->

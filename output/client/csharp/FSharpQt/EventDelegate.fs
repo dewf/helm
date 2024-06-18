@@ -40,14 +40,14 @@ type Modifier =
     | Alt
     | Meta
 with
-    static member internal From (qtModifier: Widget.Modifier) =
+    static member internal From (qtModifier: Enums.Modifier) =
         match qtModifier with
-        | Widget.Modifier.Shift -> Shift
-        | Widget.Modifier.Control -> Control
-        | Widget.Modifier.Alt -> Alt
-        | Widget.Modifier.Meta -> Meta
+        | Enums.Modifier.Shift -> Shift
+        | Enums.Modifier.Control -> Control
+        | Enums.Modifier.Alt -> Alt
+        | Enums.Modifier.Meta -> Meta
         | _ -> failwith "Modifier.From - unknown enum value (or .None, which shouldn't happen)"
-    static member internal SetFrom (qtModifierSet: HashSet<Widget.Modifier>) =
+    static member internal SetFrom (qtModifierSet: HashSet<Enums.Modifier>) =
         (set qtModifierSet)
         |> Set.map Modifier.From
     

@@ -62,7 +62,7 @@ namespace MainWindow
             handler->tabifiedDockWidgetActivated((DockWidget::HandleRef)dockWidget);
         }
         void onToolButtonStyleChanged(Qt::ToolButtonStyle style) {
-            handler->toolButtonStyleChanged((Common::ToolButtonStyle)style);
+            handler->toolButtonStyleChanged((Enums::ToolButtonStyle)style);
         }
         // custom:
         void onWindowClosed() {

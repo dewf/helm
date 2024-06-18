@@ -3,6 +3,7 @@ module GridLayout;
 import Common;
 import Widget;
 import Layout;
+import Enums;
 
 opaque Handle extends Layout.Handle {
     void addWidget(Widget.Handle widget, int row, int col);

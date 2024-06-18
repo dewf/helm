@@ -12,8 +12,8 @@ open PushButton
 open LineEdit
 open ListWidget
 
-open Org.Whatever.QtTesting
 open Extensions
+open MiscTypes
 
 type Attr = unit
 type Signal = unit
@@ -249,9 +249,9 @@ let view (state: State) =
             GridItem(filterLabel, 0, 0)
             GridItem(filterEdit, 0, 1)
             GridItem(listBox, 1, 0, 4, 2)
-            GridItem(firstLabel, 1, 2, align = Common.Alignment.Right)
+            GridItem(firstLabel, 1, 2, align = Alignment.Right)
             GridItem(firstEdit, 1, 3)
-            GridItem(lastLabel, 2, 2, align = Common.Alignment.Right)
+            GridItem(lastLabel, 2, 2, align = Alignment.Right)
             GridItem(lastEdit, 2, 3)
             // buttons:
             let hbox =

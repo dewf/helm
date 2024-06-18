@@ -2,6 +2,7 @@ module AbstractSlider;
 
 import Widget;
 import Common;
+import Enums;
 
 opaque Handle extends Widget.Handle {
     void setOrientation(Orientation orient);

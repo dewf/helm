@@ -28,37 +28,3 @@ struct RectF {
     double width;
     double height;
 }
-
-// these are flags on the C++ side, but to keep this simple for now we will use a simple enum,
-// because our flags handling is not yet as advanced as C++ (can't refer to prior values and 'or' them together etc)
-enum Alignment {
-    Left,
-    Leading,
-    Right,
-    Trailing,
-    HCenter,
-    Justify,
-    Absolute,
-    // Horizontal_Mask,
-
-    Top,
-    Bottom,
-    VCenter,
-    Baseline,
-    // Vertical_Mask,
-
-    Center
-}
-
-enum Orientation {
-    Horizontal = 1,
-    Vertical = 2
-}
-
-enum ToolButtonStyle {
-    IconOnly = 0,
-    TextOnly = 1,
-    TextBesideIcon = 2,
-    TextUnderIcon = 3,
-    FollowStyle = 4
-}

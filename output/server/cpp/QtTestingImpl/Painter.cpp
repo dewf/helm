@@ -33,8 +33,8 @@ namespace Painter
         THIS->setFont(font->qFont);
     }
 
-    void Handle_drawText(HandleRef _this, Rect rect, Alignment align, std::string text) {
-        THIS->drawText(toQRect(rect), toQtAlign(align), text.c_str());
+    void Handle_drawText(HandleRef _this, Rect rect, uint32_t align, std::string text) {
+        THIS->drawText(toQRect(rect), (Qt::AlignmentFlag)align, text.c_str());
     }
 
     void Handle_fillPath(HandleRef _this, PainterPathRef path, BrushRef brush) {

@@ -46,7 +46,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                     // layout.SetDirection(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom)
                     layout.SetContentsMargins(0, 0, 0, 0)
                     innerLabel <- Label.Create()
-                    innerLabel.SetAlignment(Common.Alignment.Center)
+                    innerLabel.SetAlignment(Enums.Alignment.AlignCenter)
                     layout.AddWidget(innerLabel)
                     progressBar.SetLayout(layout)
                     progressBar.SetTextVisible(false) // you probably want this ...

@@ -64,8 +64,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle opti
             | Modality modality ->
                 let qModality =
                     match modality with
-                    | WindowModal -> Widget.WindowModality.WindowModal
-                    | AppModal -> Widget.WindowModality.ApplicationModal
+                    | WindowModal -> Enums.WindowModality.WindowModal
+                    | AppModal -> Enums.WindowModality.ApplicationModal
                 dialog.SetWindowModality(qModality)
                 
     interface Dialog.SignalHandler with
