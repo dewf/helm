@@ -186,14 +186,14 @@ type PlainTextEditProxy() =
 type KeySequenceProxy(seq: KeySequence.Handle) =
     new(standardKey: StandardKey) =
         let handle =
-            KeySequence.Create(standardKey.QtValue)
+            KeySequence.Create(toQtStandardKey standardKey)
         KeySequenceProxy(handle)
     new(key: Key) =
         let handle =
-            KeySequence.Create(key.QtValue, HashSet<Enums.Modifier>())
+            KeySequence.Create(toQtKey key, HashSet<Enums.Modifier>())
         KeySequenceProxy(handle)
     new(key: Key, modifiers: Set<Modifier>) =
         let handle =
-            KeySequence.Create(key.QtValue, Modifier.QtSetFrom(modifiers))
+            KeySequence.Create(toQtKey key, Modifier.QtSetFrom(modifiers))
         KeySequenceProxy(handle)
     member internal this.Handle = seq

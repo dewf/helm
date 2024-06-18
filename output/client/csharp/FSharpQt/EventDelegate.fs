@@ -122,7 +122,7 @@ type AbstractEventDelegate<'msg,'state when 'state: equality>(state: 'state) =
 type EventDelegateBase<'msg,'state when 'state: equality>(state: 'state) =
     inherit AbstractEventDelegate<'msg,'state>(state)
     
-    abstract member Paint: PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
+    abstract member Paint: PaintStack -> Painter -> WidgetProxy -> Rect -> unit
     default this.Paint _ _ _ _ = ()
     
     override this.PaintInternal stack painter widget updateRect =
@@ -147,9 +147,8 @@ type EventDelegateBaseWithResources<'msg,'state,'resources when 'state: equality
         | _ ->
             failwith "nope"
 
-    abstract member Paint: 'resources -> PaintStack -> FSharpQt.Painting.Painter -> WidgetProxy -> Rect -> unit
+    abstract member Paint: 'resources -> PaintStack -> Painter -> WidgetProxy -> Rect -> unit
     default this.Paint _ _ _ _ _ = ()
     
     override this.PaintInternal stack painter widget updateRect =
         this.Paint this.resources stack painter widget updateRect
-
