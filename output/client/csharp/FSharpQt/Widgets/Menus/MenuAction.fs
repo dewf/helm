@@ -18,6 +18,8 @@ type Attr =
     | Text of text: string
     | Enabled of state: bool
     | Separator of state: bool
+    | Checkable of state: bool
+    | Checked of state: bool
     | Icon of icon: IconProxy  // "proxy" for now ...
     | IconText of text: string
     | Shortcut of seq: KeySequenceProxy
@@ -28,11 +30,13 @@ let private keyFunc = function
     | Text _ -> 0
     | Enabled _ -> 1
     | Separator _ -> 2
-    | Icon _ -> 3
-    | IconText _ -> 4
-    | Shortcut _ -> 5
-    | StatusTip _ -> 6
-    | ToolTip _ -> 7
+    | Checkable _ -> 3
+    | Checked _ -> 4
+    | Icon _ -> 5
+    | IconText _ -> 6
+    | Shortcut _ -> 7
+    | StatusTip _ -> 8
+    | ToolTip _ -> 9
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -49,6 +53,12 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
     let mutable action = Action.Create(owner, this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Action.SignalMask> 0
+    
+    // 2-way binding guards for anything with a signal
+    // see the note in LineEdit's ApplyAttrs
+    let mutable enabled = true
+    let mutable checkable = false
+    let mutable checked_ = false
     
     let signalDispatch (s: Signal) =
         match signalMap s with
@@ -70,9 +80,19 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
             | Text text ->
                 action.SetText(text)
             | Enabled state ->
-                action.SetEnabled(state)
+                if state <> enabled then
+                    enabled <- state
+                    action.SetEnabled(state)
             | Separator state ->
                 action.SetSeparator(state)
+            | Checkable state ->
+                if state <> checkable then
+                    checkable <- state
+                    action.SetCheckable(state)
+            | Checked state ->
+                if state <> checked_ then
+                    checked_ <- state
+                    action.SetChecked(state)
             | Icon icon ->
                 action.SetIcon(icon.Handle)
             | IconText text ->

@@ -54,8 +54,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 // BUT it can result in certain annoyances and needless calls into the C++ side,
                 // so we should probably always avoid setting identical values since they are probably the result of a previous signal
                 if str <> lastValue then
-                    lineEdit.SetText(str)
                     lastValue <- str
+                    lineEdit.SetText(str)
             | Enabled value ->
                 lineEdit.SetEnabled(value)
                 

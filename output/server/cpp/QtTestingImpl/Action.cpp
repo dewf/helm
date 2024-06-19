@@ -57,6 +57,10 @@ namespace Action
         }
     };
 
+    void Handle_setEnabled(HandleRef _this, bool state) {
+        THIS->setEnabled(state);
+    }
+
     void Handle_setText(HandleRef _this, std::string text) {
         THIS->setText(text.c_str());
     }
@@ -65,8 +69,12 @@ namespace Action
         THIS->setSeparator(state);
     }
 
-    void Handle_setEnabled(HandleRef _this, bool state) {
-        THIS->setEnabled(state);
+    void Handle_setCheckable(HandleRef _this, bool state) {
+        THIS->setCheckable(state);
+    }
+
+    void Handle_setChecked(HandleRef _this, bool state) {
+        THIS->setChecked(state);
     }
 
     void Handle_setIcon(HandleRef _this, Icon::HandleRef icon) {
