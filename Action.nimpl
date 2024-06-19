@@ -2,6 +2,7 @@ module Action;
 
 import KeySequence;
 import Icon;
+import Widget;
 
 flags SignalMask {
     Changed = 1 << 0,
@@ -37,4 +38,4 @@ opaque Handle {
     void setSignalMask(SignalMask mask);
 }
 
-Handle create(SignalHandler handler);
+Handle create(Widget.Handle owner, SignalHandler handler);

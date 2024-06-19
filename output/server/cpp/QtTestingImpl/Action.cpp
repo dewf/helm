@@ -26,7 +26,7 @@ namespace Action
             { SignalMask::VisibleChanged, SIGNAL(visibleChanged()), SLOT(onVisibleChanged()) }
         };
     public:
-        explicit ActionWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
+        ActionWithHandler(QObject *parent, const std::shared_ptr<SignalHandler> &handler) : QAction(parent), handler(handler) {}
         void setSignalMask(uint32_t newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
@@ -97,8 +97,8 @@ namespace Action
         delete THIS;
     }
 
-    HandleRef create(std::shared_ptr<SignalHandler> handler) {
-        return (HandleRef) new ActionWithHandler(std::move(handler));
+    HandleRef create(Widget::HandleRef owner, std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new ActionWithHandler((QObject*)owner, handler);
     }
 }
 

@@ -37,8 +37,16 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
 
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable action = Action.Create(this)
+type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.Handle option) as this =
+    let owner =
+        match maybeContainingWindow with
+        | Some handle ->
+            printfn "MenuAction being created with owner [%A]" handle
+            handle
+        | None ->
+            printfn "MenuAction created with no owner :("
+            null
+    let mutable action = Action.Create(owner, this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Action.SignalMask> 0
     
@@ -96,8 +104,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             action.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) =
-    let model = new Model<'msg>(dispatch)
+let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) (maybeContainingWindow: Widget.Handle option) =
+    let model = new Model<'msg>(dispatch, maybeContainingWindow)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -111,9 +119,16 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
+    
+type BuildState =
+    | Init
+    | Created
+    | DepsAttached
+    | Migrated
             
 type MenuAction<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
+    let mutable buildState = Init
     
     member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
@@ -180,17 +195,40 @@ type MenuAction<'msg>() =
         override this.Dependencies = []
         
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch signalMask
+            // since Actions can be dependencies of multiple nodes (eg MainWindow, menus, context menus, toolbars, etc),
+            // we need to protect against rebuilding the model each time
+            match buildState with
+            | Init ->
+                this.model <- create this.Attrs signalMap dispatch signalMask buildContext.ContainingWindow
+                buildState <- Created
+            | _ ->
+                // ignore
+                ()
             
         override this.AttachDeps () =
-            ()
+            // see .Create node
+            match buildState with
+            | Created ->
+                // not that we're using this, but for any future use ...
+                buildState <- DepsAttached
+            | _ ->
+                // ignore
+                ()
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
-            let left' = (left :?> MenuAction<'msg>)
-            let nextAttrs =
-                diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs signalMap signalMask
+            // see .Create node
+            match buildState with
+            | Init ->
+                // note migration always occurs straight from Init
+                let left' = (left :?> MenuAction<'msg>)
+                let nextAttrs =
+                    diffAttrs left'.Attrs this.Attrs
+                    |> createdOrChanged
+                this.model <- migrate left'.model nextAttrs signalMap signalMask
+                buildState <- Migrated
+            | _ ->
+                // ignore
+                ()
                 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
