@@ -104,30 +104,177 @@ type RectF = {
         { X = rect.X; Y = rect.Y; Width = rect.Width; Height = rect.Height }
     member internal this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
+        
+// various enums needed before widget proxies below:
 
 type ToolButtonStyle =
-    | IconOnly
-    | TextOnly
-    | TextBesideIcon
-    | TextUnderIcon
-    | FollowStyle
-with
-    static member internal From(style: Enums.ToolButtonStyle) =
-        match style with
-        | Enums.ToolButtonStyle.IconOnly -> IconOnly
-        | Enums.ToolButtonStyle.TextOnly -> TextOnly
-        | Enums.ToolButtonStyle.TextBesideIcon -> TextBesideIcon
-        | Enums.ToolButtonStyle.TextUnderIcon -> TextUnderIcon
-        | Enums.ToolButtonStyle.FollowStyle -> FollowStyle
-        | _ -> failwith "ToolButtonStyle.From - unknown enum value"
-    member internal this.QtValue =
-        match this with
-        | IconOnly -> Enums.ToolButtonStyle.IconOnly
-        | TextOnly -> Enums.ToolButtonStyle.TextOnly
-        | TextBesideIcon -> Enums.ToolButtonStyle.TextBesideIcon
-        | TextUnderIcon -> Enums.ToolButtonStyle.TextUnderIcon
-        | FollowStyle -> Enums.ToolButtonStyle.FollowStyle
-        
+    | IconOnly = 0
+    | TextOnly = 1
+    | TextBesideIcon = 2
+    | TextUnderIcon = 3
+    | FollowStyle = 4
+    
+let internal toQtToolButtonStyle (style: ToolButtonStyle) =
+    enum<Enums.ToolButtonStyle> (int style)
+    
+let internal fromQtToolButtonStyle (style: Enums.ToolButtonStyle) =
+    enum<ToolButtonStyle> (int style)
+    
+type ThemeIcon =
+    | AddressBookNew = 0
+    | ApplicationExit = 1
+    | AppointmentNew = 2
+    | CallStart = 3
+    | CallStop = 4
+    | ContactNew = 5
+    | DocumentNew = 6
+    | DocumentOpen = 7
+    | DocumentOpenRecent = 8
+    | DocumentPageSetup = 9
+    | DocumentPrint = 10
+    | DocumentPrintPreview = 11
+    | DocumentProperties = 12
+    | DocumentRevert = 13
+    | DocumentSave = 14
+    | DocumentSaveAs = 15
+    | DocumentSend = 16
+    | EditClear = 17
+    | EditCopy = 18
+    | EditCut = 19
+    | EditDelete = 20
+    | EditFind = 21
+    | EditPaste = 22
+    | EditRedo = 23
+    | EditSelectAll = 24
+    | EditUndo = 25
+    | FolderNew = 26
+    | FormatIndentLess = 27
+    | FormatIndentMore = 28
+    | FormatJustifyCenter = 29
+    | FormatJustifyFill = 30
+    | FormatJustifyLeft = 31
+    | FormatJustifyRight = 32
+    | FormatTextDirectionLtr = 33
+    | FormatTextDirectionRtl = 34
+    | FormatTextBold = 35
+    | FormatTextItalic = 36
+    | FormatTextUnderline = 37
+    | FormatTextStrikethrough = 38
+    | GoDown = 39
+    | GoHome = 40
+    | GoNext = 41
+    | GoPrevious = 42
+    | GoUp = 43
+    | HelpAbout = 44
+    | HelpFaq = 45
+    | InsertImage = 46
+    | InsertLink = 47
+    | InsertText = 48
+    | ListAdd = 49
+    | ListRemove = 50
+    | MailForward = 51
+    | MailMarkImportant = 52
+    | MailMarkRead = 53
+    | MailMarkUnread = 54
+    | MailMessageNew = 55
+    | MailReplyAll = 56
+    | MailReplySender = 57
+    | MailSend = 58
+    | MediaEject = 59
+    | MediaPlaybackPause = 60
+    | MediaPlaybackStart = 61
+    | MediaPlaybackStop = 62
+    | MediaRecord = 63
+    | MediaSeekBackward = 64
+    | MediaSeekForward = 65
+    | MediaSkipBackward = 66
+    | MediaSkipForward = 67
+    | ObjectRotateLeft = 68
+    | ObjectRotateRight = 69
+    | ProcessStop = 70
+    | SystemLockScreen = 71
+    | SystemLogOut = 72
+    | SystemSearch = 73
+    | SystemReboot = 74
+    | SystemShutdown = 75
+    | ToolsCheckSpelling = 76
+    | ViewFullscreen = 77
+    | ViewRefresh = 78
+    | ViewRestore = 79
+    | WindowClose = 80
+    | WindowNew = 81
+    | ZoomFitBest = 82
+    | ZoomIn = 83
+    | ZoomOut = 84
+    | AudioCard = 85
+    | AudioInputMicrophone = 86
+    | Battery = 87
+    | CameraPhoto = 88
+    | CameraVideo = 89
+    | CameraWeb = 90
+    | Computer = 91
+    | DriveHarddisk = 92
+    | DriveOptical = 93
+    | InputGaming = 94
+    | InputKeyboard = 95
+    | InputMouse = 96
+    | InputTablet = 97
+    | MediaFlash = 98
+    | MediaOptical = 99
+    | MediaTape = 100
+    | MultimediaPlayer = 101
+    | NetworkWired = 102
+    | NetworkWireless = 103
+    | Phone = 104
+    | Printer = 105
+    | Scanner = 106
+    | VideoDisplay = 107
+    | AppointmentMissed = 108
+    | AppointmentSoon = 109
+    | AudioVolumeHigh = 110
+    | AudioVolumeLow = 111
+    | AudioVolumeMedium = 112
+    | AudioVolumeMuted = 113
+    | BatteryCaution = 114
+    | BatteryLow = 115
+    | DialogError = 116
+    | DialogInformation = 117
+    | DialogPassword = 118
+    | DialogQuestion = 119
+    | DialogWarning = 120
+    | FolderDragAccept = 121
+    | FolderOpen = 122
+    | FolderVisiting = 123
+    | ImageLoading = 124
+    | ImageMissing = 125
+    | MailAttachment = 126
+    | MailUnread = 127
+    | MailRead = 128
+    | MailReplied = 129
+    | MediaPlaylistRepeat = 130
+    | MediaPlaylistShuffle = 131
+    | NetworkOffline = 132
+    | PrinterPrinting = 133
+    | SecurityHigh = 134
+    | SecurityLow = 135
+    | SoftwareUpdateAvailable = 136
+    | SoftwareUpdateUrgent = 137
+    | SyncError = 138
+    | SyncSynchronizing = 139
+    | UserAvailable = 140
+    | UserOffline = 141
+    | WeatherClear = 142
+    | WeatherClearNight = 143
+    | WeatherFewClouds = 144
+    | WeatherFewCloudsNight = 145
+    | WeatherFog = 146
+    | WeatherShowers = 147
+    | WeatherSnow = 148
+    | WeatherStorm = 149
+    
+let internal toQtThemeIcon (icon: ThemeIcon) =
+    enum<Icon.ThemeIcon> (int icon)
+    
 // for utility widgets (synthetic layout widgets etc)
 
 type internal NullWidgetHandler() =
@@ -153,8 +300,9 @@ type ActionProxy internal(action: Action.Handle) =
     let x = 10
 
 type IconProxy internal(icon: Icon.Handle) =
-    let x = 10
     member internal this.Handle = icon
+    new(themeIcon: ThemeIcon) =
+        IconProxy(Icon.Create(toQtThemeIcon themeIcon))
     
 type DockWidgetProxy internal(widget: DockWidget.Handle) =
     let x = 10

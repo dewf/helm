@@ -118,7 +118,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.TabifiedDockWidgetActivated widget =
             signalDispatch (DockWidgetProxy(widget) |> TabifiedDockWidgetActivated)
         member this.ToolButtonStyleChanged style =
-            signalDispatch (ToolButtonStyle.From style |> ToolButtonStyleChanged)
+            signalDispatch (fromQtToolButtonStyle style |> ToolButtonStyleChanged)
         member this.Closed () =
             signalDispatch Closed
     
