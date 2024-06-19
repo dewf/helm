@@ -162,5 +162,7 @@ enum ThemeIcon {
 
 opaque Handle;
 
-Handle create(ThemeIcon themeIcon);
-Handle create(string filename);
+sumtype Deferred {
+    FromThemeIcon(ThemeIcon themeIcon),
+    FromFilename(string filename)
+}

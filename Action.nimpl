@@ -32,7 +32,7 @@ opaque Handle extends Object.Handle {
     void setCheckable(bool state);
     void setChecked(bool state);
     
-    void setIcon(Icon.Handle icon);
+    void setIcon(Icon.Deferred icon);
     void setIconText(string text);
     void setShortcut(KeySequence.Deferred seq);
     void setStatusTip(string tip);

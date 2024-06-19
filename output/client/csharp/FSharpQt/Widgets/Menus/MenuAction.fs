@@ -20,7 +20,7 @@ type Attr =
     | Separator of state: bool
     | Checkable of state: bool
     | Checked of state: bool
-    | Icon of icon: IconProxy  // "proxy" for now ...
+    | IconAttr of icon: Icon    // + "Attr" to prevent annoying collisions
     | IconText of text: string
     | Shortcut of seq: KeySequence
     | StatusTip of tip: string
@@ -32,7 +32,7 @@ let private keyFunc = function
     | Separator _ -> 2
     | Checkable _ -> 3
     | Checked _ -> 4
-    | Icon _ -> 5
+    | IconAttr _ -> 5
     | IconText _ -> 6
     | Shortcut _ -> 7
     | StatusTip _ -> 8
@@ -93,8 +93,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
                 if state <> checked_ then
                     checked_ <- state
                     action.SetChecked(state)
-            | Icon icon ->
-                action.SetIcon(icon.Handle)
+            | IconAttr icon ->
+                action.SetIcon(icon.QtValue)
             | IconText text ->
                 action.SetIconText(text)
             | Shortcut seq ->

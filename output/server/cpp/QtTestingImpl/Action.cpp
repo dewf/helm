@@ -77,8 +77,26 @@ namespace Action
         THIS->setChecked(state);
     }
 
-    void Handle_setIcon(HandleRef _this, Icon::HandleRef icon) {
-        THIS->setIcon(icon->icon);
+    class SetIconVisitor : public Icon::Deferred::Visitor {
+    private:
+        HandleRef _this;
+    public:
+        explicit SetIconVisitor(HandleRef actionThis) : _this(actionThis) {}
+
+        void onFromThemeIcon(const Icon::Deferred::FromThemeIcon *fromThemeIcon) override {
+            auto icon = QIcon::fromTheme((QIcon::ThemeIcon)fromThemeIcon->themeIcon);
+            THIS->setIcon(icon);
+        }
+
+        void onFromFilename(const Icon::Deferred::FromFilename *fromFilename) override {
+            QIcon icon(fromFilename->filename.c_str());
+            THIS->setIcon(icon);
+        }
+    };
+
+    void Handle_setIcon(HandleRef _this, std::shared_ptr<Icon::Deferred::Base> icon) {
+        SetIconVisitor visitor(_this);
+        icon->accept(&visitor);
     }
 
     void Handle_setIconText(HandleRef _this, std::string text) {
@@ -92,24 +110,24 @@ namespace Action
     public:
         explicit SetShortcutVisitor(HandleRef actionThis) : _this(actionThis) {}
 
-        void onFromString(const Deferred::FromString *fromString) override {
+        void onFromString(const KeySequence::Deferred::FromString *fromString) override {
             QKeySequence seq(fromString->s.c_str());
             THIS->setShortcut(seq);
         }
 
-        void onFromStandard(const Deferred::FromStandard *fromStandard) override {
+        void onFromStandard(const KeySequence::Deferred::FromStandard *fromStandard) override {
             QKeySequence seq((QKeySequence::StandardKey)fromStandard->key);
             THIS->setShortcut(seq);
         }
 
-        void onFromKey(const Deferred::FromKey *fromKey) override {
+        void onFromKey(const KeySequence::Deferred::FromKey *fromKey) override {
             // could have also used a QKeyCombination instead of 'key | mods'
             QKeySequence seq((Qt::Key)fromKey->key | toQtModifiers(fromKey->modifiers));
             THIS->setShortcut(seq);
         }
     };
 
-    void Handle_setShortcut(HandleRef _this, std::shared_ptr<Deferred::Base> seq) {
+    void Handle_setShortcut(HandleRef _this, std::shared_ptr<KeySequence::Deferred::Base> seq) {
         SetShortcutVisitor visitor(_this);
         seq->accept(&visitor);
     }

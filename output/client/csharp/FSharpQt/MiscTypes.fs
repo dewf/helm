@@ -299,9 +299,9 @@ type ActionProxy internal(action: Action.Handle) =
     let x = 10
 
 type IconProxy internal(icon: Icon.Handle) =
-    member internal this.Handle = icon
-    new(themeIcon: ThemeIcon) =
-        IconProxy(Icon.Create(toQtThemeIcon themeIcon))
+    // just put this here due to a signal needing it
+    // user-created icons (for node construction) are further below
+    let x = 10
     
 type DockWidgetProxy internal(widget: DockWidget.Handle) =
     let x = 10
@@ -329,6 +329,17 @@ type PlainTextEditProxy() =
         this.Handle.ToPlainText()
 
 // other =========================
+
+type Icon private(deferred: Org.Whatever.QtTesting.Icon.Deferred) =
+    member val internal QtValue = deferred
+    new (filename: string) =
+        let deferred =
+            Icon.Deferred.FromFilename(filename)
+        Icon(deferred)
+    new (themeIcon: ThemeIcon) =
+        let deferred =
+            Icon.Deferred.FromThemeIcon(toQtThemeIcon themeIcon)
+        Icon(deferred)
 
 type KeySequence private(deferred: Org.Whatever.QtTesting.KeySequence.Deferred) =
     member val internal QtValue = deferred

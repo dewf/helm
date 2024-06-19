@@ -1,7 +1,6 @@
 #include "generated/Icon.h"
 
 #include <QIcon>
-
 #include "IconInternal.h"
 
 namespace Icon
@@ -10,12 +9,8 @@ namespace Icon
         delete _this;
     }
 
-    HandleRef create(ThemeIcon themeIcon) {
-        auto qThemeIcon = (QIcon::ThemeIcon)themeIcon;
-        return new __Handle { QIcon::fromTheme(qThemeIcon) };
-    }
+    // no opaque methods yet, if ever
+    // currently we only need this for a widget signal (WindowIconChanged), might not for anything else
 
-    HandleRef create(std::string filename) {
-        return new __Handle { QIcon(filename.c_str()) };
-    }
+    // F# API will be designed around Deferred version
 }

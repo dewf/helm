@@ -6,7 +6,6 @@ open FSharpQt
 open BuilderNode
 open Reactor
 open InputEnums
-open MiscTypes
 
 open FSharpQt.Widgets
 open MainWindow
@@ -15,6 +14,8 @@ open FSharpQt.Widgets.Menus
 open Menu
 open MenuAction
 open MenuBar
+
+open MiscTypes
 
 type State = {
     NothingYet: int
@@ -38,10 +39,10 @@ let update (state: State) (msg: Msg) =
 let view (state: State) =
     let action =
         let icon =
-            IconProxy(ThemeIcon.CallStart)
+            Icon(ThemeIcon.CallStart)
         let seq =
             KeySequence(Key.K, set [Modifier.Control])
-        MenuAction(Attrs = [ Text "Happy"; Shortcut seq; Icon icon ], OnTriggered = (fun _ -> ActionTriggered))
+        MenuAction(Attrs = [ Text "Happy"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> ActionTriggered))
 
     let menuBar =
         let menu =
