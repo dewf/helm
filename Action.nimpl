@@ -2,7 +2,7 @@ module Action;
 
 import KeySequence;
 import Icon;
-import Widget;
+import Object;
 
 flags SignalMask {
     Changed = 1 << 0,
@@ -24,7 +24,7 @@ interface SignalHandler {
     void visibleChanged();
 }
 
-opaque Handle {
+opaque Handle extends Object.Handle {
     void setEnabled(bool state);
     void setText(string text);
     void setSeparator(bool state);
@@ -41,4 +41,4 @@ opaque Handle {
     void setSignalMask(SignalMask mask);
 }
 
-Handle create(Widget.Handle owner, SignalHandler handler);
+Handle create(Object.Handle owner, SignalHandler handler);

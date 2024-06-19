@@ -1,5 +1,7 @@
 module Timer;
 
+import Object;
+
 flags SignalMask {
     Timeout = 1 << 0
 }
@@ -8,7 +10,7 @@ interface SignalHandler {
     void timeout();
 }
 
-opaque Handle {
+opaque Handle extends Object.Handle {
     void setInterval(int msec);
     void setSingleShot(bool state);
     void start(int msec);

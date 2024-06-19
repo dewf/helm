@@ -94,6 +94,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             syntheticLayoutWidget <- Some widget
         | _ ->
             failwith "MainWindow.Model.AddContent - unknown node type"
+            
+    member this.AddAction(action: Action.Handle) =
+        mainWindow.AddAction(action)
         
     member this.ShowIfVisible () =
         // long story short, this is our workaround for Qt's layout system which doesn't necessarily play nicely with how we want to create our widget trees
@@ -144,12 +147,14 @@ type MainWindow<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attrs: Attr list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
-    let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
+    // window-specific:
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     member this.Content with set value = maybeContent <- Some value
+    let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     member this.MenuBar with set value = maybeMenuBar <- Some value
+    member val Actions: (string * IActionNode<'msg>) list = [] with get, set
+    //
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<MainWindow.SignalMask> 0
     
@@ -243,18 +248,46 @@ type MainWindow<'msg>() =
         | None ->
             // neither side had 'content'
             ()
+            
+        this.Actions
+        |> List.iteri (fun i (key, action) ->
+            let key =
+                StrStrKey("action", key)
+            match changeMap.TryFind key with
+            | Some change ->
+                match change with
+                | Unchanged ->
+                    ()
+                | Removed ->
+                    // we'll never see this, since we're only iterating over the actions we have now
+                    // that aside, we're trusting that Qt knows how to handle action removals gracefully? otherwise we will have to beef up how we handle migrations perhaps,
+                    // and give parent nodes a chance to cleanup just before sub-nodes get disposed?
+                    // would making this Removed <contentKey> be helpful? but the widget would already be destroyed ...
+                    ()
+                | Added ->
+                    this.model.AddAction(action.Action)
+                | Swapped ->
+                    // as above in the removal case, we'll trust that Qt cleaned up whatever previous action was removed at this sub-key
+                    // all that remains is to add this one
+                    this.model.AddAction(action.Action)
+            | None ->
+                // can't happen, if it exists now on this node, it will appear in the changeMap as 'Added' at the very least
+                failwith "can't happen" )
         
     interface IWindowNode<'msg> with
         override this.Dependencies =
             let menuBarList =
                 maybeMenuBar
-                |> Option.map (fun menuBar -> (StrKey "menu", menuBar :> IBuilderNode<'msg>))
+                |> Option.map (fun menuBar -> StrKey "menu", menuBar :> IBuilderNode<'msg>)
                 |> Option.toList
             let contentList =
                 maybeContent
-                |> Option.map (fun content -> (StrKey "content", content :> IBuilderNode<'msg>))
+                |> Option.map (fun content -> StrKey "content", content :> IBuilderNode<'msg>)
                 |> Option.toList
-            menuBarList @ contentList
+            let actions =
+                this.Actions
+                |> List.map (fun (key, action) -> StrStrKey ("action", key), action :> IBuilderNode<'msg>)
+            menuBarList @ contentList @ actions
             
         override this.Create dispatch buildContext =
             this.model <- create2 this.Attrs signalMap dispatch signalMask
@@ -264,6 +297,8 @@ type MainWindow<'msg>() =
             |> Option.iter this.model.AddContent
             maybeMenuBar
             |> Option.iter (fun node -> this.model.AddMenuBar node.MenuBar)
+            this.Actions
+            |> List.iter (fun (_, node) -> this.model.AddAction(node.Action))
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> MainWindow<'msg>)

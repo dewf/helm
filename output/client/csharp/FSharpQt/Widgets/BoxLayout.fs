@@ -29,8 +29,8 @@ let private diffAttrs =
 [<RequireQualifiedAccess>]
 type internal ItemKey<'msg> =
     // used for internal comparisons, since we can't compare builder node interfaces against each other, we use the ContentKeys
-    | WidgetItem of content: Object * maybeStretch: int option * maybeAlign: Alignment option
-    | LayoutItem of content: Object * maybeStretch: int option
+    | WidgetItem of content: ContentKey * maybeStretch: int option * maybeAlign: Alignment option
+    | LayoutItem of content: ContentKey * maybeStretch: int option
     | Spacer of sp: int
     | Stretch of stretch: int
     | Ignore

@@ -105,7 +105,7 @@ namespace Action
         delete THIS;
     }
 
-    HandleRef create(Widget::HandleRef owner, std::shared_ptr<SignalHandler> handler) {
+    HandleRef create(Object::HandleRef owner, std::shared_ptr<SignalHandler> handler) {
         return (HandleRef) new ActionWithHandler((QObject*)owner, handler);
     }
 }

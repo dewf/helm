@@ -5,6 +5,8 @@ import Layout;
 import Painter;
 import Icon;
 import Enums;
+import Action;
+import Object;
 
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
@@ -20,7 +22,9 @@ interface SignalHandler {
     void windowTitleChanged(string title);
 }
 
-opaque Handle {
+opaque Handle extends Object.Handle {
+    void addAction(Action.Handle action);
+    
     void setParent(Handle parent);
     Handle getWindow();
     

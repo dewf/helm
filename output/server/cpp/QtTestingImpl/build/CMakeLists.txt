@@ -117,6 +117,10 @@ add_library(QtTestingImpl STATIC
     ../generated/MessageBox_wrappers.cpp
     ../MessageBox.cpp
 
+    ../generated/Object.h
+    ../generated/Object_wrappers.cpp
+    ../Object.cpp
+
     ../generated/Painter.h
     ../generated/Painter_wrappers.cpp
     ../Painter.cpp

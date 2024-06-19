@@ -1,6 +1,8 @@
 module Layout;
 
-opaque Handle {
+import Object;
+
+opaque Handle extends Object.Handle {
     void removeAll();
     void setSpacing(int spacing);
     void setContentsMargins(int left, int top, int right, int bottom);

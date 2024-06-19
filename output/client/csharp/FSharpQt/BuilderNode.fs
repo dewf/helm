@@ -16,6 +16,8 @@ type DepsKey =
     // used by actual widgets
     | IntKey of i: int
     | StrKey of str: string
+    | StrIntKey of str: string * i: int
+    | StrStrKey of str1: string * str2: string
     // only internally by diff/build
     | AttachKey of str: string
     
@@ -24,6 +26,9 @@ type DepsChange =
     | Added
     | Removed
     | Swapped
+    
+type ContentKey =
+    System.Object
    
 [<RequireQualifiedAccess>]
 type Attachment<'msg> =
@@ -52,7 +57,7 @@ and IBuilderNode<'msg> =
         abstract AttachDeps: unit -> unit
         abstract MigrateFrom: IBuilderNode<'msg> -> (DepsKey * DepsChange) list -> unit // will the dispatch ever change?
         abstract Dispose: unit -> unit
-        abstract ContentKey: System.Object
+        abstract ContentKey: ContentKey
         
         // externally-supplied dependencies of any type, which the node itself has no knowledge of (except for providing the basic property storage)
         // will be added to self-reported dependencies during build/diff process
@@ -160,7 +165,7 @@ let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
             Created right |> Some
         | _ -> failwith "shouldn't happen")
     
-let nullDiffAttrs (a1: 'a list) (a2: 'a list) =
+let nullDiffAttrs (_: 'a list) (_: 'a list) =
     []
     
 let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) (context: BuilderContext<'msg>) =
