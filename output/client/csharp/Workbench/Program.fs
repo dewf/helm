@@ -4,15 +4,17 @@ open System
 
 open FSharpQt
 open BuilderNode
-open FSharpQt.InputEnums
-open FSharpQt.MiscTypes
 open Reactor
+open InputEnums
+open MiscTypes
 
 open FSharpQt.Widgets
 open MainWindow
 
 open FSharpQt.Widgets.Menus
+open Menu
 open MenuAction
+open MenuBar
 
 type State = {
     NothingYet: int
@@ -38,8 +40,16 @@ let view (state: State) =
         let seq =
             KeySequenceProxy(Key.K, set [Modifier.Control])
         MenuAction(Attrs = [ Text "Happy"; Shortcut seq ], OnTriggered = (fun _ -> ActionTriggered))
+
+    let menuBar =
+        let menu =
+            Menu(Attrs = [ Title "&File" ], Items = [ action ])
+        MenuBar(Menus = [ menu ])
         
-    MainWindow(Attrs = [ Title "Wooooot"; Size (640, 480) ], Actions = [ "action01", action ])
+    MainWindow(
+        Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
+        MenuBar = menuBar,
+        Actions = [ "action01", action ])
     :> IBuilderNode<Msg>
     
 [<EntryPoint>]

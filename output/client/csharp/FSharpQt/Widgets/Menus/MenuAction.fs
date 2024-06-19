@@ -145,6 +145,7 @@ type BuildState =
     | Created
     | DepsAttached
     | Migrated
+    | Disposed
             
 type MenuAction<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
@@ -251,7 +252,13 @@ type MenuAction<'msg>() =
                 ()
                 
         override this.Dispose() =
-            (this.model :> IDisposable).Dispose()
+            match buildState with
+            | Disposed ->
+                // already disposed, do nothing
+                ()
+            | _ ->
+                (this.model :> IDisposable).Dispose()
+                buildState <- Disposed
             
         override this.Action =
             this.model.Action
