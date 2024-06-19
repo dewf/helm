@@ -24,6 +24,16 @@ enum Orientation {
     Vertical = 2
 }
 
+flags ToolBarAreas {
+    LeftToolBarArea = 0x1,
+    RightToolBarArea = 0x2,
+    TopToolBarArea = 0x4,
+    BottomToolBarArea = 0x8,
+    ToolBarArea_Mask = 0xf,
+    AllToolBarAreas = ToolBarArea_Mask,
+    NoToolBarArea = 0
+}
+
 enum ToolButtonStyle {
     IconOnly = 0,
     TextOnly = 1,

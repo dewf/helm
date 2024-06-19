@@ -3,6 +3,7 @@
 open Org.Whatever.QtTesting
 open FSharpQt.InputEnums
 
+// convert to enum?
 type Alignment =
     | Left
     | Leading
@@ -32,6 +33,20 @@ with
         | Baseline -> Enums.Alignment.AlignBaseline
         | Center -> Enums.Alignment.AlignCenter
         
+type Orientation =
+    | Horizontal
+    | Vertical
+with
+    member this.QtValue =
+        match this with
+        | Horizontal -> Enums.Orientation.Horizontal
+        | Vertical -> Enums.Orientation.Vertical
+    static member From (o: Enums.Orientation) =
+        match o with
+        | Enums.Orientation.Horizontal -> Horizontal
+        | Enums.Orientation.Vertical -> Vertical
+        | _ -> failwith "Orientation.From - unknown input value"
+    
 type Point = {
     X: int
     Y: int

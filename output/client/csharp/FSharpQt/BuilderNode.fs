@@ -92,20 +92,26 @@ and ILayoutNode<'msg> =
 and IMenuBarNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
-            abstract MenuBar: MenuBar.Handle
+        abstract MenuBar: MenuBar.Handle
     end
     
 and IMenuNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
-            abstract member Menu: Menu.Handle
-            abstract member Popup: Common.Point -> unit
+        abstract member Menu: Menu.Handle
+        abstract member Popup: Common.Point -> unit
     end
     
 and IActionNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
-            abstract member Action: Action.Handle
+        abstract member Action: Action.Handle
+    end
+    
+and IToolBarNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+        abstract member ToolBar: ToolBar.Handle
     end
     
 and ITopLevelNode<'msg> =

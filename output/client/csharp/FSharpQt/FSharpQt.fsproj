@@ -23,6 +23,7 @@
         <Compile Include="Widgets\ComboBox.fs" />
         <Compile Include="Widgets\CustomWidget.fs" />
         <Compile Include="Widgets\Dialog.fs" />
+        <Compile Include="Widgets\FileDialog.fs" />
         <Compile Include="Widgets\Frame.fs" />
         <Compile Include="Widgets\GridLayout.fs" />
         <Compile Include="Widgets\GroupBox.fs" />
@@ -39,9 +40,9 @@
         <Compile Include="Widgets\Slider.fs" />
         <Compile Include="Widgets\TabWidget.fs" />
         <Compile Include="Widgets\Timer.fs" />
+        <Compile Include="Widgets\ToolBar.fs" />
         <Compile Include="Widgets\Widget.fs" />
         <Compile Include="Widgets\WindowSet.fs" />
-        <Compile Include="Widgets\FileDialog.fs" />
     </ItemGroup>
 
     <ItemGroup>

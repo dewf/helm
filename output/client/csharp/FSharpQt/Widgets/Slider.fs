@@ -2,6 +2,7 @@
 
 open System
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
 type SliderAction =
@@ -14,7 +15,7 @@ type SliderAction =
     | ToMaximum
     | Move
 with
-    static member From(value: Slider.SliderAction) =
+    static member internal From (value: Slider.SliderAction) =
         match value with
         | Slider.SliderAction.NoAction -> NoAction
         | Slider.SliderAction.SingleStepAdd -> SingleStepAdd
@@ -24,8 +25,8 @@ with
         | Slider.SliderAction.ToMinimum -> ToMinimum
         | Slider.SliderAction.ToMaximum -> ToMaximum
         | Slider.SliderAction.Move -> Move
-        | _ -> failwith "SliderAction.From: wut"
-
+        | _ -> failwith "SliderAction.From - unknown input value"
+    
 type Signal =
     | ActionTriggered of action: SliderAction
     | RangeChanged of min: int * max: int
@@ -35,16 +36,22 @@ type Signal =
     | ValueChanged of value: int
     
 type TickPos =
+    // not an enum because that forces RequireQualifiedAccess
     | NoTicks
     | Above
     | Left
     | Below
     | Right
     | BothSides
-    
-type Orientation =
-    | Horizontal
-    | Vertical
+with
+    member internal this.QtValue =
+        match this with
+        | NoTicks -> Slider.TickPosition.None
+        | Above -> Slider.TickPosition.Above
+        | Left -> Slider.TickPosition.Left
+        | Below -> Slider.TickPosition.Below
+        | Right -> Slider.TickPosition.Right
+        | BothSides -> Slider.TickPosition.BothSides
     
 type Attr =
     | Orientation of orient: Orientation
@@ -98,11 +105,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         for attr in attrs do
             match attr with
             | Orientation orient ->
-                let orient' =
-                    match orient with
-                    | Horizontal -> Enums.Orientation.Horizontal
-                    | Vertical -> Enums.Orientation.Vertical
-                slider.SetOrientation(orient')
+                slider.SetOrientation(orient.QtValue)
             | Range(min, max) ->
                 slider.SetRange(min, max)
             | Value value ->
@@ -116,15 +119,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             | Tracking track ->
                 slider.SetTracking(track)
             | TickPosition tickPos ->
-                let tickPos' =
-                    match tickPos with
-                    | NoTicks -> Slider.TickPosition.None
-                    | Above -> Slider.TickPosition.Above
-                    | Left -> Slider.TickPosition.Left
-                    | Below -> Slider.TickPosition.Below
-                    | Right -> Slider.TickPosition.Right
-                    | BothSides -> Slider.TickPosition.BothSides
-                slider.SetTickPosition(tickPos')
+                slider.SetTickPosition(tickPos.QtValue)
             | TickInterval interval ->
                 slider.SetTickInterval(interval)
             | MinimumWidth width ->

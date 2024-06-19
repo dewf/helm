@@ -5,24 +5,6 @@ import Widget;
 import Action;
 import Enums;
 
-flags ToolBarAreas {
-    LeftToolBarArea = 0x1,
-    RightToolBarArea = 0x2,
-    TopToolBarArea = 0x4,
-    BottomToolBarArea = 0x8,
-    ToolBarArea_Mask = 0xf,
-    AllToolBarAreas = ToolBarArea_Mask,
-    NoToolBarArea = 0
-}
-
-enum ToolButtonStyle {
-    ToolButtonIconOnly,
-    ToolButtonTextOnly,
-    ToolButtonTextBesideIcon,
-    ToolButtonTextUnderIcon,
-    ToolButtonFollowStyle
-}
-
 flags SignalMask {
     ActionTriggered = 1,
     AllowedAreasChanged = 1 << 1,
@@ -55,6 +37,8 @@ opaque Handle extends Widget.Handle {
     void setMovable(bool value);
     void setOrientation(Orientation value);
     void setToolButtonStyle(ToolButtonStyle style);
+
+    void setSignalMask(SignalMask mask);
 }
 
 Handle create(SignalHandler handler);

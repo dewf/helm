@@ -1,10 +1,10 @@
 ﻿module FSharpQt.Widgets.MainWindow
 
 open System
+open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
 open FSharpQt
-open BuilderNode
 open MiscTypes
 
 type Signal =
@@ -65,14 +65,24 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                     mainWindow.SetVisible(state))
         
     member this.RemoveMenuBar() =
-        printfn "*** not currently possible to remove MenuBar from Window ***"
+        // we can't remove it (especially without a handle, which is no doubt gone because it's been destroyed)
+        // but doesn't widget destruction actually remove it for us? hmmm
+        ()
     
     member this.AddMenuBar(menuBar: MenuBar.Handle) =
         mainWindow.SetMenuBar(menuBar)
         
+    member this.RemoveToolBar() =
+        // see note in .RemoveMenuBar() above
+        ()
+        
+    member this.AddToolBar (toolBar: ToolBar.Handle) =
+        mainWindow.AddToolBar(toolBar)
+        
     member this.RemoveContent() =
         // TODO: need to do some serious testing with all this
         // scrollArea too
+        // if we're doing this ... hasn't the content node actually been disposed? so why all the fuss?
         match syntheticLayoutWidget with
         | Some widget ->
             widget.GetLayout().RemoveAll() // detach any children just in case
@@ -147,14 +157,17 @@ type MainWindow<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attrs: Attr list = [] with get, set
-    // window-specific:
+    member val Actions: (string * IActionNode<'msg>) list = [] with get, set
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     member this.Content with set value = maybeContent <- Some value
+    
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     member this.MenuBar with set value = maybeMenuBar <- Some value
-    member val Actions: (string * IActionNode<'msg>) list = [] with get, set
-    //
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let mutable maybeToolBar: IToolBarNode<'msg> option = None
+    member this.ToolBar with set value = maybeToolBar <- Some value
     
     let mutable signalMask = enum<MainWindow.SignalMask> 0
     
@@ -249,6 +262,22 @@ type MainWindow<'msg>() =
             // neither side had 'content'
             ()
             
+        match changeMap.TryFind (StrKey "toolbar") with
+        | Some change ->
+            match change with
+            | Unchanged ->
+                ()
+            | Added ->
+                this.model.AddToolBar(maybeToolBar.Value.ToolBar)
+            | Removed ->
+                this.model.RemoveToolBar()
+            | Swapped ->
+                this.model.RemoveToolBar()
+                this.model.AddToolBar(maybeToolBar.Value.ToolBar)
+        | None ->
+            // neither side had 'toolbar'
+            ()
+            
         this.Actions
         |> List.iteri (fun i (key, action) ->
             let key =
@@ -284,10 +313,14 @@ type MainWindow<'msg>() =
                 maybeContent
                 |> Option.map (fun content -> StrKey "content", content :> IBuilderNode<'msg>)
                 |> Option.toList
+            let toolBarList =
+                maybeToolBar
+                |> Option.map (fun toolBar -> StrKey "toolbar", toolBar :> IBuilderNode<'msg>)
+                |> Option.toList
             let actions =
                 this.Actions
                 |> List.map (fun (key, action) -> StrStrKey ("action", key), action :> IBuilderNode<'msg>)
-            menuBarList @ contentList @ actions
+            menuBarList @ contentList @ toolBarList @ actions
             
         override this.Create dispatch buildContext =
             this.model <- create2 this.Attrs signalMap dispatch signalMask
@@ -297,6 +330,8 @@ type MainWindow<'msg>() =
             |> Option.iter this.model.AddContent
             maybeMenuBar
             |> Option.iter (fun node -> this.model.AddMenuBar node.MenuBar)
+            maybeToolBar
+            |> Option.iter (fun node -> this.model.AddToolBar node.ToolBar)
             this.Actions
             |> List.iter (fun (_, node) -> this.model.AddAction(node.Action))
 

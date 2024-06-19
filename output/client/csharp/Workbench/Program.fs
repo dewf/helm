@@ -9,6 +9,7 @@ open InputEnums
 
 open FSharpQt.Widgets
 open MainWindow
+open FSharpQt.Widgets.ToolBar
 
 open FSharpQt.Widgets.Menus
 open Menu
@@ -43,15 +44,21 @@ let view (state: State) =
         let seq =
             KeySequence(Key.K, set [Modifier.Control])
         MenuAction(Attrs = [ Text "Happy"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> ActionTriggered))
-
+        
+    let toolBar =
+        ToolBar(Items = [
+            ToolBarItem(action)
+        ])
+        
     let menuBar =
         let menu =
-            Menu(Attrs = [ Title "&File" ], Items = [ action ])
+            Menu(Attrs = [ Title "&File" ], Items = [ action ]) // 
         MenuBar(Menus = [ menu ])
         
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
         MenuBar = menuBar,
+        ToolBar = toolBar,
         Actions = [ "action01", action ])
     :> IBuilderNode<Msg>
     

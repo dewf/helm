@@ -95,7 +95,7 @@ type BoxItem<'msg> private(item: InternalItem<'msg>) =
     member internal this.InternalKey =
         item.Key
         
-let internal addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
+let private addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
     match item with
     | WidgetItem(w, maybeStretch, maybeAlign) ->
         match maybeStretch, maybeAlign with

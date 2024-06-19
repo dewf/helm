@@ -12,6 +12,7 @@ open FSharpQt.Widgets.ScrollArea
 
 open Painting
 open Renderer
+open MiscTypes
 
 type Signal = unit
 type Attr = unit

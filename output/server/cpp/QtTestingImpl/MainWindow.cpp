@@ -78,6 +78,10 @@ namespace MainWindow
         THIS->setMenuBar((QMenuBar*)menubar);
     }
 
+    void Handle_addToolBar(HandleRef _this, ToolBar::HandleRef toolbar) {
+        THIS->addToolBar((QToolBar*)toolbar);
+    }
+
     void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
         THIS->setSignalMask(mask);
     }

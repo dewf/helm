@@ -10,6 +10,7 @@ open PushButton
 open Slider
 open ProgressBar
 open Timer
+open MiscTypes
 
 type Signal = unit
 type Attr = unit
