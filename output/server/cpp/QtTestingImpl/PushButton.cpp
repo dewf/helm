@@ -1,9 +1,6 @@
 #include "generated/PushButton.h"
 
-#include <QObject>
 #include <QPushButton>
-#include <utility>
-
 #include "util/SignalStuff.h"
 
 #define THIS ((PushButtonWithHandler*)_this)

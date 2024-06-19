@@ -165,6 +165,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Timer_wrappers.cpp
     ../Timer.cpp
 
+    ../generated/ToolBar.h
+    ../generated/ToolBar_wrappers.cpp
+    ../ToolBar.cpp
+
     ../generated/Widget.h
     ../generated/Widget_wrappers.cpp
     ../Widget.cpp
