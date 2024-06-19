@@ -76,8 +76,8 @@ enum StandardKey {
     Cancel
 }
 
-opaque Handle;
-
-Handle create(string seq); // eg "Ctrl+P"
-Handle create(StandardKey key);
-Handle create(Key key, Set<Modifier> modifiers); // revisit if/when we change Modifier to simple flags
+sumtype Deferred {
+    FromString(string s),               // eg "Ctrl+P"
+    FromStandard(StandardKey key),
+    FromKey(Key key, Set<Modifier> modifiers)
+}

@@ -34,7 +34,7 @@ opaque Handle extends Object.Handle {
     
     void setIcon(Icon.Handle icon);
     void setIconText(string text);
-    void setShortcut(KeySequence.Handle seq);
+    void setShortcut(KeySequence.Deferred seq);
     void setStatusTip(string tip);
     void setToolTip(string tip);
 

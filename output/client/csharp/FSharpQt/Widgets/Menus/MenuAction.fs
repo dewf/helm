@@ -2,8 +2,8 @@
 
 open System
 open FSharpQt.BuilderNode
-open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
+open FSharpQt.MiscTypes
 
 type Signal =
     | Changed
@@ -22,7 +22,7 @@ type Attr =
     | Checked of state: bool
     | Icon of icon: IconProxy  // "proxy" for now ...
     | IconText of text: string
-    | Shortcut of seq: KeySequenceProxy
+    | Shortcut of seq: KeySequence
     | StatusTip of tip: string
     | ToolTip of tip: string
     
@@ -98,7 +98,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
             | IconText text ->
                 action.SetIconText(text)
             | Shortcut seq ->
-                action.SetShortcut(seq.Handle)
+                action.SetShortcut(seq.QtValue)
             | StatusTip tip ->
                 action.SetStatusTip(tip)
             | ToolTip tip ->

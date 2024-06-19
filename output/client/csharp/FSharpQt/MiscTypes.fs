@@ -1,6 +1,5 @@
 ﻿module FSharpQt.MiscTypes
 
-open System.Collections.Generic
 open Org.Whatever.QtTesting
 open FSharpQt.InputEnums
 
@@ -331,17 +330,19 @@ type PlainTextEditProxy() =
 
 // other =========================
 
-type KeySequenceProxy(seq: KeySequence.Handle) =
-    new(standardKey: StandardKey) =
-        let handle =
-            KeySequence.Create(toQtStandardKey standardKey)
-        KeySequenceProxy(handle)
-    new(key: Key) =
-        let handle =
-            KeySequence.Create(toQtKey key, HashSet<Enums.Modifier>())
-        KeySequenceProxy(handle)
-    new(key: Key, modifiers: Set<Modifier>) =
-        let handle =
-            KeySequence.Create(toQtKey key, Modifier.QtSetFrom(modifiers))
-        KeySequenceProxy(handle)
-    member internal this.Handle = seq
+type KeySequence private(deferred: Org.Whatever.QtTesting.KeySequence.Deferred) =
+    member val internal QtValue = deferred
+    new(str: string) =
+        let deferred =
+            KeySequence.Deferred.FromString(str)
+        KeySequence(deferred)
+    new(stdKey: StandardKey) =
+        let deferred =
+            KeySequence.Deferred.FromStandard(toQtStandardKey stdKey)
+        KeySequence(deferred)
+    new(key: Key, ?modifiers: Set<Modifier>) =
+        let deferred =
+            let mods =
+                defaultArg modifiers Set.empty
+            KeySequence.Deferred.FromKey(toQtKey key, Modifier.QtSetFrom mods)
+        KeySequence(deferred)

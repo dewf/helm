@@ -82,7 +82,6 @@ add_library(QtTestingImpl STATIC
 
     ../generated/KeySequence.h
     ../generated/KeySequence_wrappers.cpp
-    ../KeySequenceInternal.h
     ../KeySequence.cpp
 
     ../generated/Label.h

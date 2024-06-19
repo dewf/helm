@@ -4,8 +4,8 @@
 #include <QAction>
 
 #include "util/SignalStuff.h"
+#include "util/convert.h"
 #include "IconInternal.h"
-#include "KeySequenceInternal.h"
 
 #define THIS ((ActionWithHandler*)_this)
 
@@ -85,8 +85,33 @@ namespace Action
         THIS->setIconText(text.c_str());
     }
 
-    void Handle_setShortcut(HandleRef _this, KeySequence::HandleRef seq) {
-        THIS->setShortcut(seq->seq);
+    // visitor (pattern match) for Handle_setShortcut
+    class SetShortcutVisitor : public KeySequence::Deferred::Visitor {
+    private:
+        HandleRef _this;
+    public:
+        explicit SetShortcutVisitor(HandleRef actionThis) : _this(actionThis) {}
+
+        void onFromString(const Deferred::FromString *fromString) override {
+            QKeySequence seq(fromString->s.c_str());
+            THIS->setShortcut(seq);
+        }
+
+        void onFromStandard(const Deferred::FromStandard *fromStandard) override {
+            QKeySequence seq((QKeySequence::StandardKey)fromStandard->key);
+            THIS->setShortcut(seq);
+        }
+
+        void onFromKey(const Deferred::FromKey *fromKey) override {
+            // could have also used a QKeyCombination instead of 'key | mods'
+            QKeySequence seq((Qt::Key)fromKey->key | toQtModifiers(fromKey->modifiers));
+            THIS->setShortcut(seq);
+        }
+    };
+
+    void Handle_setShortcut(HandleRef _this, std::shared_ptr<Deferred::Base> seq) {
+        SetShortcutVisitor visitor(_this);
+        seq->accept(&visitor);
     }
 
     void Handle_setStatusTip(HandleRef _this, std::string tip) {

@@ -40,7 +40,7 @@ let view (state: State) =
         let icon =
             IconProxy(ThemeIcon.CallStart)
         let seq =
-            KeySequenceProxy(Key.K, set [Modifier.Control])
+            KeySequence(Key.K, set [Modifier.Control])
         MenuAction(Attrs = [ Text "Happy"; Shortcut seq; Icon icon ], OnTriggered = (fun _ -> ActionTriggered))
 
     let menuBar =
