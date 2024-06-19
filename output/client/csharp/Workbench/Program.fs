@@ -29,9 +29,11 @@ let init () =
     }
     nextState, Cmd.None
     
-// unfortunately we need to be able to call some methods on PlainTextEdit(), for example to get the current text value (which isn't sent along with signals, currently)
+// unfortunately we need to be able to call some methods on PlainTextEdit(), for example to get the current text value (which isn't sent along with the stock widget signals)
 // since it's not state-dependent (ie, its existence in our view is unconditional), we can just bind it at global level
-let editProxy = PlainTextEditProxy()
+// when assigned as a methodproxy on the view node, it will have its internal handle assigned in time for the first `update`
+let editProxy =
+    PlainTextEditProxy()
     
 let update (state: State) (msg: Msg) =
     match msg with
