@@ -70,49 +70,70 @@ let private keyFunc = function
 let private diffAttrs =
     genericDiffAttrs keyFunc
     
-[<RequireQualifiedAccess>]
-type private ItemKey<'msg> =
-    | ActionItem of key: ContentKey
-    | Separator
-    | Nothing
+// [<RequireQualifiedAccess>]
+// type internal ItemKey<'msg> =
+//     | ActionItem of key: ContentKey
+//     | WidgetItem of key: ContentKey
+//     | Separator
+//     | Space
+//     | Nothing
 
 type internal InternalItem<'msg> =
     | ActionItem of node: IActionNode<'msg>
+    | WidgetItem of node: IWidgetNode<'msg>
     | Separator
+    | ExpandingSpace
     | Nothing
     
 type ToolBarItem<'msg> internal(item: InternalItem<'msg>) =
     new(node: IActionNode<'msg>) =
         ToolBarItem(InternalItem.ActionItem node)
-    new(?separator: bool) =
+    new(node: IWidgetNode<'msg>) =
+        ToolBarItem(InternalItem.WidgetItem node)
+    new(?separator: bool, ?expandingSpace: bool) =
         let item =
-            match defaultArg separator true with
+            match defaultArg separator false with
             | true -> InternalItem.Separator
-            | false -> InternalItem.Nothing
+            | false ->
+                match defaultArg expandingSpace false with
+                | true -> InternalItem.ExpandingSpace
+                | false -> InternalItem.Nothing
         ToolBarItem(item)
     member internal this.MaybeNode =
         match item with
-        | ActionItem node -> Some node
+        | ActionItem node -> Some (node :> IBuilderNode<'msg>)
+        | WidgetItem node -> Some node
         | Separator -> None
+        | ExpandingSpace -> None
         | Nothing -> None
-    member internal this.InternalKey =
+    member internal this.InternalKey: ContentKey =
         match item with
         | ActionItem node -> node.ContentKey
-        | Separator -> ItemKey.Separator
-        | Nothing -> ItemKey.Nothing
+        | WidgetItem node -> node.ContentKey
+        | Separator -> Separator
+        | ExpandingSpace -> ExpandingSpace
+        | Nothing -> Nothing
     member internal this.AddTo (toolBar: ToolBar.Handle) =
         match item with
         | ActionItem node ->
             toolBar.AddAction(node.Action)
+        | WidgetItem node ->
+            toolBar.AddWidget(node.Widget)
         | Separator ->
             toolBar.AddSeparator()
             |> ignore // we don't do anything with the returned action - hopefully Qt owns it and we're not leaking?
+        | ExpandingSpace ->
+            let w = Widget.Create(new NullWidgetHandler())
+            w.SetSizePolicy(Expanding.QtValue, Expanding.QtValue)
+            toolBar.AddWidget(w)
         | Nothing ->
             ()
 
 type Separator<'msg>() =
     inherit ToolBarItem<'msg>(InternalItem.Separator)
     
+type ExpandingSpace<'msg>() =
+    inherit ToolBarItem<'msg>(InternalItem.ExpandingSpace)
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable toolBar = ToolBar.Create(this)
@@ -256,7 +277,7 @@ type ToolBar<'msg>() =
             |> List.zipWithIndex
             |> List.choose (fun (i, item) ->
                 item.MaybeNode
-                |> Option.map (fun node -> IntKey i, node :> IBuilderNode<'msg>))
+                |> Option.map (fun node -> IntKey i, node))
 
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask

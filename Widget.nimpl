@@ -34,6 +34,8 @@ opaque Handle extends Object.Handle {
     void setMaximumWidth(int maxWidth);
     void setMaximumHeight(int maxHeight);
 
+    void setSizePolicy(SizePolicy.Policy hPolicy, SizePolicy.Policy vPolicy);
+
     Rect getRect();
     Size getSize();
 

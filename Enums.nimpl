@@ -56,12 +56,40 @@ enum ContextMenuPolicy {
     PreventContextMenu
 }
 
+group SizePolicy {
+    flags Policy {
+        // in Qt these are defined separately as "PolicyFlag"
+        // but our flags handling is still primitive so we just put them here
+        GrowFlag = 1,
+        ExpandFlag = 2,
+        ShrinkFlag = 4,
+        IgnoreFlag = 8,
+
+        // actual Policy flags:
+        Fixed = 0,
+        Minimum = GrowFlag,
+        Maximum = ShrinkFlag,
+        Preferred = GrowFlag | ShrinkFlag,
+        MinimumExpanding = GrowFlag | ExpandFlag,
+        Expanding = GrowFlag | ShrinkFlag | ExpandFlag,
+        Ignored = ShrinkFlag | GrowFlag | IgnoreFlag
+    }
+}
+
 enum MouseButton {
     None,
     Left,
     Right,
     Middle,
     Other
+}
+
+enum Modifier {
+    None,
+    Shift,
+    Control,
+    Alt,
+    Meta
 }
 
 enum Key {
@@ -599,12 +627,4 @@ enum Key {
     // as those bits are reserved for the Qt::KeyboardModifier enum below.
 
     Key_unknown = 0x01ffffff
-}
-
-enum Modifier {
-    None,
-    Shift,
-    Control,
-    Alt,
-    Meta
 }

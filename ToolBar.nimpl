@@ -29,6 +29,7 @@ interface SignalHandler {
 
 opaque Handle extends Widget.Handle {
     Action.Handle addSeparator();
+    void addWidget(Widget.Handle widget);
     void clear();
 
     void setAllowedAreas(ToolBarAreas allowed);

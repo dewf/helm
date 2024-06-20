@@ -16,10 +16,12 @@ type Signal =
 type Attr =
     | Items of items: string list
     | CurrentIndex of maybeIndex: int option
+    | MinimumWidth of width: int
 
 let private attrKey = function
     | Items _ -> 0
     | CurrentIndex _ -> 1
+    | MinimumWidth _ -> 2
     
 let private diffAttrs =
     genericDiffAttrs attrKey
@@ -63,6 +65,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                         combo.SetCurrentIndex(value)
                     | None ->
                         combo.SetCurrentIndex(-1)
+            | MinimumWidth width ->
+                combo.SetMinimumWidth(width)
                         
     interface ComboBox.SignalHandler with
         override this.Activated index =

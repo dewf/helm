@@ -84,6 +84,10 @@ namespace Widget
         THIS->setMaximumHeight(maxHeight);
     }
 
+    void Handle_setSizePolicy(HandleRef _this, uint32_t hPolicy, uint32_t vPolicy) {
+        THIS->setSizePolicy((QSizePolicy::Policy)hPolicy, (QSizePolicy::Policy)vPolicy);
+    }
+
     Rect Handle_getRect(HandleRef _this) {
         auto x = THIS->rect();
         return toRect(x);

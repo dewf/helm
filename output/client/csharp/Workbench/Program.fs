@@ -4,12 +4,14 @@ open System
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.Widgets.ComboBox
 open Reactor
 open InputEnums
 
 open FSharpQt.Widgets
 open MainWindow
 open ToolBar
+open PushButton
 
 open FSharpQt.Widgets.Menus
 open Menu
@@ -62,16 +64,29 @@ let view (state: State) =
             KeySequence(Key.Q, [ Control ])
         MenuAction(Attrs = [ Text "E&xit"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> AppExit))
         
+    let combo =
+        let items = [
+            "one"
+            "two"
+            "three"
+        ]
+        ComboBox(Attrs = [ Items items; MinimumWidth 120 ])
+        
+    let button =
+        PushButton(Attrs = [ PushButton.Text "and a button" ])
+        
     let toolBar =
         ToolBar(
             Attrs = [
                 Movable false
-                ToolButtonStyle TextUnderIcon
             ],
             Items = [
                 ToolBarItem(action1)
-                ToolBarItem(separator = true)
                 ToolBarItem(action2)
+                ToolBarItem(separator = true)
+                ToolBarItem(combo)
+                ToolBarItem(button)
+                ToolBarItem(expandingSpace = true)
                 ToolBarItem(exitAction)
             ])
         

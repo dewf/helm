@@ -63,6 +63,10 @@ namespace ToolBar
         return (Action::HandleRef)THIS->addSeparator();
     }
 
+    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget) {
+        THIS->addWidget((QWidget*)widget);
+    }
+
     void Handle_clear(HandleRef _this) {
         THIS->clear();
     }

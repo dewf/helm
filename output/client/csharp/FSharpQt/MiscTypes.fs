@@ -3,6 +3,25 @@
 open Org.Whatever.QtTesting
 open FSharpQt.InputEnums
 
+type SizePolicy =
+    | Fixed
+    | Minimum
+    | Maximum
+    | Preferred
+    | MinimumExpanding
+    | Expanding
+    | Ignored
+with
+    member this.QtValue =
+        match this with
+        | Fixed -> Enums.SizePolicy.Policy.Fixed
+        | Minimum -> Enums.SizePolicy.Policy.Minimum
+        | Maximum -> Enums.SizePolicy.Policy.Maximum
+        | Preferred -> Enums.SizePolicy.Policy.Preferred
+        | MinimumExpanding -> Enums.SizePolicy.Policy.MinimumExpanding
+        | Expanding -> Enums.SizePolicy.Policy.Expanding
+        | Ignored -> Enums.SizePolicy.Policy.Ignored
+
 type Alignment =
     | Left
     | Leading

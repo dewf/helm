@@ -12,9 +12,11 @@ type Signal =
     
 type Attr =
     | Visible of state: bool
+    | SizePolicy of hPolicy: SizePolicy * vPolicy: SizePolicy
     
 let private keyFunc = function
     | Visible _ -> 0
+    | SizePolicy _ -> 1
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -42,6 +44,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             match attr with
             | Visible state ->
                 widget.SetVisible(state)
+            | SizePolicy (hPolicy, vPolicy) ->
+                widget.SetSizePolicy(hPolicy.QtValue, vPolicy.QtValue)
                 
     interface Widget.SignalHandler with
         member this.CustomContextMenuRequested pos =
