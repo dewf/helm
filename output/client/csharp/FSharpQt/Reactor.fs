@@ -146,7 +146,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                     Application.ExecuteOnMainThread(inner)
                 subFunc safeDispatch
     do
-        build dispatch root
+        build dispatch root buildContext
         updateAttachments()
         processCmd initCmd
         
@@ -366,6 +366,7 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
                 
         let context =
             { ContainingWindow = None }
+            
         this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processSignal, context)
         Application.Exec()
         

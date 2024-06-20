@@ -287,7 +287,5 @@ let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (ma
         disposeTree left
         createRight dispatch right
 
-let build (dispatch: 'msg -> unit) (root: IBuilderNode<'msg>) =
-    let context =
-        { ContainingWindow = None }
-    diff dispatch None (Some root) context
+let build (dispatch: 'msg -> unit) (root: IBuilderNode<'msg>) (initialContext: BuilderContext<'msg>) =
+    diff dispatch None (Some root) initialContext
