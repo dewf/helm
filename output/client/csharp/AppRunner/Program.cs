@@ -9,21 +9,15 @@ internal static class Program
     {
         Library.Init();
         
+        foreach (var style in Application.AvailableStyles())
+        {
+            Console.WriteLine($"Style: {style}");
+        }
+        
         using (var app = Application.Create(args))
         {
             // Application.Exec();
             
-//             QObject::connect(button, &QPushButton::clicked, button, [](bool checked){
-//                 QFileDialog dialog;
-// //        dialog.setOptions(QFileDialog::DontUseNativeDialog);
-//                 dialog.setFileMode(QFileDialog::ExistingFile);
-//                 dialog.setNameFilter("Images (*.png *.xpm *.jpg)");
-//                 dialog.setViewMode(QFileDialog::Detail);
-//                 if (dialog.exec()) {
-//                     printf("it was good!\n");
-//                 }
-//             });
-
             // using (var window = MainWindow.Create())
             // {
             //     window.SetWindowTitle("Haloooo");

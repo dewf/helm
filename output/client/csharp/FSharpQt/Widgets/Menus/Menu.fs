@@ -1,9 +1,12 @@
 ﻿module FSharpQt.Widgets.Menus.Menu
 
 open System
+open FSharpQt
 open FSharpQt.BuilderNode
 open FSharpQt.MiscTypes
+open Microsoft.FSharp.Core
 open Org.Whatever.QtTesting
+open Extensions
 
 type Signal =
     | AboutToHide
@@ -19,6 +22,48 @@ let private attrKey = function
     
 let private diffAttrs =
     genericDiffAttrs attrKey
+
+[<RequireQualifiedAccess>]
+type internal ItemKey =
+    | ActionItem of key: ContentKey
+    | Separator
+    | Nothing
+    
+type internal ItemInternal<'msg> =
+    | ActionItem of action: IActionNode<'msg>
+    | Separator
+    | Nothing
+    
+type MenuItem<'msg> internal(item: ItemInternal<'msg>) =
+    new(action: IActionNode<'msg>) =
+        MenuItem(ActionItem action)
+    new(?separator: bool) =
+        match defaultArg separator true with
+        | true -> MenuItem(Separator)
+        | false -> MenuItem(Nothing)
+    // internal stufF:
+    member internal this.ContentKey =
+        match item with
+        | ActionItem action -> ItemKey.ActionItem action.ContentKey
+        | Separator -> ItemKey.Separator
+        | Nothing -> ItemKey.Nothing
+    member internal this.MaybeNode =
+        match item with
+        | ActionItem action -> Some action
+        | Separator -> None
+        | Nothing -> None
+    member internal this.AddTo (menu: Menu.Handle) =
+        match item with
+        | ActionItem action ->
+            menu.AddAction(action.Action)
+        | Separator ->
+            menu.AddSeparator()
+            |> ignore
+        | Nothing ->
+            ()
+        
+type Separator<'msg>() =
+    inherit MenuItem<'msg>(ItemInternal.Separator)
     
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable menu = Menu.Create(this)
@@ -46,10 +91,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             | Title title ->
                 menu.SetTitle(title)
                 
-    member this.Refill(items: Action.Handle list) =
+    member this.Refill(items: MenuItem<'msg> list) =
         menu.Clear()
         for item in items do
-            menu.AddAction(item)
+            item.AddTo(menu)
         
     interface Menu.SignalHandler with
         override this.AboutToHide() =
@@ -85,7 +130,7 @@ type Menu<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
 
     member val Attrs: Attr list = [] with get, set
-    member val Items: IActionNode<'msg> list = [] with get, set
+    member val Items: MenuItem<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable onAboutToHide: 'msg option = None
@@ -128,10 +173,7 @@ type Menu<'msg>() =
             this.Items
             |> List.map (_.ContentKey)
         if leftItems <> thisItems then
-            let actions =
-                this.Items
-                |> List.map (_.Action)
-            this.model.Refill(actions)
+            this.model.Refill(this.Items)
         else
             ()
         
@@ -139,16 +181,16 @@ type Menu<'msg>() =
         override this.Dependencies =
             // see long note on same BoxLayout method
             this.Items
-            |> List.mapi (fun i item -> (IntKey i, item :> IBuilderNode<'msg>))
+            |> List.zipWithIndex
+            |> List.choose (fun (i, item) ->
+                item.MaybeNode
+                |> Option.map (fun node -> IntKey i, node :> IBuilderNode<'msg>))
             
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
             
         override this.AttachDeps () =
-            let actionHandles =
-                this.Items
-                |> List.map (_.Action)
-            this.model.Refill(actionHandles)
+            this.model.Refill(this.Items)
             
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let leftNode = (left :?> Menu<'msg>)

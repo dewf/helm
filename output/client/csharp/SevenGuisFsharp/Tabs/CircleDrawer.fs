@@ -273,7 +273,9 @@ let view (state: State) =
         let contextMenu =
             let action =
                 MenuAction(Attrs = [ MenuAction.Text "Edit Radius" ], OnTriggered = (fun _ -> ShowDialog))
-            Menu(Items = [ action ])
+            Menu(Items = [
+                MenuItem(action)
+            ])
         CustomWidget(
             // first 2 args required
             EventDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],

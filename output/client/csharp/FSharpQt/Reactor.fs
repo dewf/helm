@@ -327,19 +327,43 @@ type WindowReactorNode<'outerMsg,'state,'msg,'attr,'signal>(
 
 type AppSignal =
     | QuitApplication
-
+    
+type AppStyle =
+    | Win11
+    | Vista
+    | Windows
+    | Fusion
+    
 type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>, view: 'state -> IBuilderNode<'msg>) =
     [<DefaultValue>] val mutable reactor: Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>
+    let mutable appStyle: AppStyle option = None
     do
         Library.Init()
+        
+    member this.SetStyle (style: AppStyle) =
+        appStyle <- Some style
         
     member this.Run(argv: string array) =
         use app =
             Application.Create(argv)
+            
+        match appStyle with
+        | Some value ->
+            let str =
+                match value with
+                | Win11 -> "windows11"
+                | Vista -> "windowsvista"
+                | Windows -> "Windows"
+                | Fusion -> "Fusion"
+            Application.SetStyle(str)
+        | None ->
+            ()
+            
         let processSignal signal =
             match signal with
             | QuitApplication ->
                 Application.Quit()
+                
         let context =
             { ContainingWindow = None }
         this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processSignal, context)

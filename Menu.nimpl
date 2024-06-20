@@ -20,8 +20,8 @@ interface SignalHandler {
 
 opaque Handle extends Widget.Handle {
     void clear();
+    Action.Handle addSeparator();
     void setTitle(string title);
-
     void popup(Point p);
 
     void setSignalMask(SignalMask mask);

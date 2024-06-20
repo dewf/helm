@@ -69,15 +69,21 @@ let view (state: State) =
                 ToolButtonStyle TextUnderIcon
             ],
             Items = [
-                Item(action1)
-                Separator()
-                Item(action2)
-                Item(exitAction)
+                ToolBarItem(action1)
+                ToolBarItem(separator = true)
+                ToolBarItem(action2)
+                ToolBarItem(exitAction)
             ])
         
     let menuBar =
         let menu =
-            Menu(Attrs = [ Title "&File" ], Items = [ action1; action2; exitAction ])
+            Menu(Attrs = [ Title "&File" ],
+                 Items = [
+                     MenuItem(action1)
+                     MenuItem(action2)
+                     MenuItem(separator = true)
+                     MenuItem(exitAction)
+                 ])
         MenuBar(Menus = [ menu ])
         
     MainWindow(
@@ -97,4 +103,5 @@ let view (state: State) =
 let main argv =
     use app =
         createApplication init update view
+    app.SetStyle(Windows)
     app.Run argv

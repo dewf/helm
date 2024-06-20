@@ -48,6 +48,10 @@ namespace Menu
         THIS->clear();
     }
 
+    Action::HandleRef Handle_addSeparator(HandleRef _this) {
+        return (Action::HandleRef) THIS->addSeparator();
+    }
+
     void Handle_setTitle(HandleRef _this, std::string title) {
         THIS->setTitle(title.c_str());
     }

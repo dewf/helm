@@ -81,15 +81,15 @@ type internal InternalItem<'msg> =
     | Separator
     | Nothing
     
-type Item<'msg> internal(item: InternalItem<'msg>) =
+type ToolBarItem<'msg> internal(item: InternalItem<'msg>) =
     new(node: IActionNode<'msg>) =
-        Item(InternalItem.ActionItem node)
+        ToolBarItem(InternalItem.ActionItem node)
     new(?separator: bool) =
         let item =
             match defaultArg separator true with
             | true -> InternalItem.Separator
             | false -> InternalItem.Nothing
-        Item(item)
+        ToolBarItem(item)
     member internal this.MaybeNode =
         match item with
         | ActionItem node -> Some node
@@ -111,7 +111,7 @@ type Item<'msg> internal(item: InternalItem<'msg>) =
             ()
 
 type Separator<'msg>() =
-    inherit Item<'msg>(InternalItem.Separator)
+    inherit ToolBarItem<'msg>(InternalItem.Separator)
     
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
@@ -165,11 +165,11 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.VisibilityChanged visible =
             signalDispatch (VisibilityChanged visible)
             
-    member this.AttachDeps (items: Item<'msg> list) =
+    member this.AttachDeps (items: ToolBarItem<'msg> list) =
         for item in items do
             item.AddTo toolBar
             
-    member this.Refill (items: Item<'msg> list) =
+    member this.Refill (items: ToolBarItem<'msg> list) =
         toolBar.Clear()
         for item in items do
             item.AddTo toolBar
@@ -198,7 +198,7 @@ type ToolBar<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attrs: Attr list = [] with get, set
-    member val Items: Item<'msg> list = [] with get, set
+    member val Items: ToolBarItem<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<ToolBar.SignalMask> 0
