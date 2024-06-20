@@ -81,15 +81,15 @@ type internal InternalItem<'msg> =
     | Separator
     | Nothing
     
-type ToolBarItem<'msg> internal(item: InternalItem<'msg>) =
+type Item<'msg> internal(item: InternalItem<'msg>) =
     new(node: IActionNode<'msg>) =
-        ToolBarItem(InternalItem.ActionItem node)
+        Item(InternalItem.ActionItem node)
     new(?separator: bool) =
         let item =
             match defaultArg separator true with
             | true -> InternalItem.Separator
             | false -> InternalItem.Nothing
-        ToolBarItem(item)
+        Item(item)
     member internal this.MaybeNode =
         match item with
         | ActionItem node -> Some node
@@ -111,7 +111,7 @@ type ToolBarItem<'msg> internal(item: InternalItem<'msg>) =
             ()
 
 type Separator<'msg>() =
-    inherit ToolBarItem<'msg>(InternalItem.Separator)
+    inherit Item<'msg>(InternalItem.Separator)
     
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
@@ -145,7 +145,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             | Orientation value ->
                 toolBar.SetOrientation(value.QtValue)
             | ToolButtonStyle style ->
-                toolBar.SetToolButtonStyle(toQtToolButtonStyle style)
+                toolBar.SetToolButtonStyle(style.QtValue)
                 
     interface ToolBar.SignalHandler with
         member this.ActionTriggered action =
@@ -159,17 +159,17 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.OrientationChanged orient =
             signalDispatch (Orientation.From orient |> OrientationChanged)
         member this.ToolButtonStyleChanged style =
-            signalDispatch (fromQtToolButtonStyle style |> ToolButtonStyleChanged)
+            signalDispatch (ToolButtonStyle.From style |> ToolButtonStyleChanged)
         member this.TopLevelChanged topLevel =
             signalDispatch (TopLevelChanged topLevel)
         member this.VisibilityChanged visible =
             signalDispatch (VisibilityChanged visible)
             
-    member this.AttachDeps (items: ToolBarItem<'msg> list) =
+    member this.AttachDeps (items: Item<'msg> list) =
         for item in items do
             item.AddTo toolBar
             
-    member this.Refill (items: ToolBarItem<'msg> list) =
+    member this.Refill (items: Item<'msg> list) =
         toolBar.Clear()
         for item in items do
             item.AddTo toolBar
@@ -198,7 +198,7 @@ type ToolBar<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attrs: Attr list = [] with get, set
-    member val Items: ToolBarItem<'msg> list = [] with get, set
+    member val Items: Item<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<ToolBar.SignalMask> 0

@@ -3,7 +3,6 @@
 open Org.Whatever.QtTesting
 open FSharpQt.InputEnums
 
-// convert to enum?
 type Alignment =
     | Left
     | Leading
@@ -122,17 +121,27 @@ type RectF = {
 // various enums needed before widget proxies below:
 
 type ToolButtonStyle =
-    | IconOnly = 0
-    | TextOnly = 1
-    | TextBesideIcon = 2
-    | TextUnderIcon = 3
-    | FollowStyle = 4
-    
-let internal toQtToolButtonStyle (style: ToolButtonStyle) =
-    enum<Enums.ToolButtonStyle> (int style)
-    
-let internal fromQtToolButtonStyle (style: Enums.ToolButtonStyle) =
-    enum<ToolButtonStyle> (int style)
+    | IconOnly
+    | TextOnly
+    | TextBesideIcon
+    | TextUnderIcon
+    | FollowStyle
+with
+    member internal this.QtValue =
+        match this with
+        | IconOnly -> Enums.ToolButtonStyle.IconOnly
+        | TextOnly -> Enums.ToolButtonStyle.TextOnly
+        | TextBesideIcon -> Enums.ToolButtonStyle.TextBesideIcon
+        | TextUnderIcon -> Enums.ToolButtonStyle.TextUnderIcon
+        | FollowStyle -> Enums.ToolButtonStyle.FollowStyle
+    static member internal From (style: Enums.ToolButtonStyle) =
+        match style with
+        | Enums.ToolButtonStyle.IconOnly -> IconOnly
+        | Enums.ToolButtonStyle.TextOnly -> TextOnly
+        | Enums.ToolButtonStyle.TextBesideIcon -> TextBesideIcon
+        | Enums.ToolButtonStyle.TextUnderIcon -> TextUnderIcon
+        | Enums.ToolButtonStyle.FollowStyle -> FollowStyle
+        | _ -> failwith "ToolButtonStyle.From - unknown input value"
     
 type ThemeIcon =
     | AddressBookNew = 0
@@ -303,6 +312,11 @@ type internal NullWidgetHandler() =
             ()
     
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace (generated C# code)
+// generally these are for signals and callbacks of various kinds where the user might need to query some values
+
+// but ideally the node/view API will use deferred stuff (eg Icon.Deferred) instead of proxies,
+// because we don't want users to be responsible for lifetimes (disposal) on these things
+// anything the user would have created on the stack, ideally shouldn't use a proxy
 
 type WidgetProxy internal(handle: Widget.Handle) =
     // member val widget = widget

@@ -63,13 +63,17 @@ let view (state: State) =
         MenuAction(Attrs = [ Text "E&xit"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> AppExit))
         
     let toolBar =
-        ToolBar(Items = [
-            ToolBarItem(action1)
-            Separator()
-            ToolBarItem(action2)
-            Separator()
-            ToolBarItem(exitAction)
-        ])
+        ToolBar(
+            Attrs = [
+                Movable false
+                ToolButtonStyle TextUnderIcon
+            ],
+            Items = [
+                Item(action1)
+                Separator()
+                Item(action2)
+                Item(exitAction)
+            ])
         
     let menuBar =
         let menu =
