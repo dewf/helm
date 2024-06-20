@@ -23,11 +23,11 @@ let private attrKey = function
 let private diffAttrs =
     genericDiffAttrs attrKey
 
-[<RequireQualifiedAccess>]
-type internal ItemKey =
-    | ActionItem of key: ContentKey
-    | Separator
-    | Nothing
+// [<RequireQualifiedAccess>]
+// type internal ItemKey =
+//     | ActionItem of key: ContentKey
+//     | Separator
+//     | Nothing
     
 type internal ItemInternal<'msg> =
     | ActionItem of action: IActionNode<'msg>
@@ -44,9 +44,9 @@ type MenuItem<'msg> internal(item: ItemInternal<'msg>) =
     // internal stufF:
     member internal this.ContentKey =
         match item with
-        | ActionItem action -> ItemKey.ActionItem action.ContentKey
-        | Separator -> ItemKey.Separator
-        | Nothing -> ItemKey.Nothing
+        | ActionItem action -> action.ContentKey
+        | Separator -> Separator
+        | Nothing -> Nothing
     member internal this.MaybeNode =
         match item with
         | ActionItem action -> Some action
