@@ -142,7 +142,7 @@ let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
 let rec disposeTree(node: IBuilderNode<'msg>) =
     // I feel like this could be improved by stopping at top-level owning windows/widgets
     // but an attempt to do that resulted in leaks, more than would be expected from unowned things like timers
-    // this isn't crashing for now so I guess we'll keep the naive approach for awhile
+    // we probably need a buildernode property like .Ownership (Parent, ContainingWindow, None) to behave intelligently here
     for _, node in (nodeDepsWithAttachments node) do
         disposeTree node
     node.Dispose()

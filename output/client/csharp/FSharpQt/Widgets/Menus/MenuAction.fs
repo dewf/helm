@@ -17,7 +17,7 @@ type Signal =
 type Attr =
     | Text of text: string
     | Enabled of state: bool
-    | Separator of state: bool
+    // | Separator of state: bool
     | Checkable of state: bool
     | Checked of state: bool
     | IconAttr of icon: Icon    // + "Attr" to prevent annoying collisions
@@ -29,7 +29,7 @@ type Attr =
 let private keyFunc = function
     | Text _ -> 0
     | Enabled _ -> 1
-    | Separator _ -> 2
+    // | Separator _ -> 2
     | Checkable _ -> 3
     | Checked _ -> 4
     | IconAttr _ -> 5
@@ -83,8 +83,8 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
                 if state <> enabled then
                     enabled <- state
                     action.SetEnabled(state)
-            | Separator state ->
-                action.SetSeparator(state)
+            // | Separator state ->
+            //     action.SetSeparator(state)
             | Checkable state ->
                 if state <> checkable then
                     checkable <- state
@@ -122,7 +122,12 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
                 
     interface IDisposable with
         member this.Dispose() =
-            action.Dispose()
+            // for now, no action disposal -
+            // since they are supposed to be created as owned by whatever containing window, we really should never have to dispose them otherwise
+            // but anyway the whole problem is that we're getting crashes when QToolBars are involved
+            // so to be on the safe, non-crashy side for now, no disposal ...
+            printfn "MenuAction.Model.Dispose() temporarily bypassed, see note"
+            // action.Dispose()
 
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) (maybeContainingWindow: Widget.Handle option) =
     let model = new Model<'msg>(dispatch, maybeContainingWindow)

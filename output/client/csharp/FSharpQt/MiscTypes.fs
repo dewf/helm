@@ -366,9 +366,10 @@ type KeySequence private(deferred: Org.Whatever.QtTesting.KeySequence.Deferred) 
         let deferred =
             KeySequence.Deferred.FromStandard(toQtStandardKey stdKey)
         KeySequence(deferred)
-    new(key: Key, ?modifiers: Set<Modifier>) =
+    new(key: Key, ?modifiers: Modifier list) =
         let deferred =
             let mods =
-                defaultArg modifiers Set.empty
+                defaultArg modifiers []
+                |> Set.ofList
             KeySequence.Deferred.FromKey(toQtKey key, Modifier.QtSetFrom mods)
         KeySequence(deferred)

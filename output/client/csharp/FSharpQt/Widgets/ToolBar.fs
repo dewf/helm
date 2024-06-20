@@ -76,12 +76,12 @@ type private ItemKey<'msg> =
     | Separator
     | Nothing
 
-type private InternalItem<'msg> =
+type internal InternalItem<'msg> =
     | ActionItem of node: IActionNode<'msg>
     | Separator
     | Nothing
     
-type ToolBarItem<'msg> private(item: InternalItem<'msg>) =
+type ToolBarItem<'msg> internal(item: InternalItem<'msg>) =
     new(node: IActionNode<'msg>) =
         ToolBarItem(InternalItem.ActionItem node)
     new(?separator: bool) =
@@ -90,17 +90,17 @@ type ToolBarItem<'msg> private(item: InternalItem<'msg>) =
             | true -> InternalItem.Separator
             | false -> InternalItem.Nothing
         ToolBarItem(item)
-    member this.MaybeNode =
+    member internal this.MaybeNode =
         match item with
         | ActionItem node -> Some node
         | Separator -> None
         | Nothing -> None
-    member this.InternalKey =
+    member internal this.InternalKey =
         match item with
         | ActionItem node -> node.ContentKey
         | Separator -> ItemKey.Separator
         | Nothing -> ItemKey.Nothing
-    member this.AddTo (toolBar: ToolBar.Handle) =
+    member internal this.AddTo (toolBar: ToolBar.Handle) =
         match item with
         | ActionItem node ->
             toolBar.AddAction(node.Action)
@@ -109,6 +109,10 @@ type ToolBarItem<'msg> private(item: InternalItem<'msg>) =
             |> ignore // we don't do anything with the returned action - hopefully Qt owns it and we're not leaking?
         | Nothing ->
             ()
+
+type Separator<'msg>() =
+    inherit ToolBarItem<'msg>(InternalItem.Separator)
+    
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable toolBar = ToolBar.Create(this)
