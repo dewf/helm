@@ -140,12 +140,16 @@ let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
     node.Dependencies @ attachDeps
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
-    // I feel like this could be improved by stopping at top-level owning windows/widgets
-    // but an attempt to do that resulted in leaks, more than would be expected from unowned things like timers
-    // we probably need a buildernode property like .Ownership (Parent, ContainingWindow, None) to behave intelligently here
-    for _, node in (nodeDepsWithAttachments node) do
-        disposeTree node
-    node.Dispose()
+    // no deletions for now, everything's crashing :((((
+    ()
+    // match node with
+    // | :? IWindowNode<'msg> ->
+    //     // don't go any deeper
+    //     ()
+    // | _ ->
+    //     for _, node in (nodeDepsWithAttachments node) do
+    //         disposeTree node
+    // node.Dispose()
 
 let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
     let leftList = a1 |> List.map (fun a -> keyFunc a, a)
