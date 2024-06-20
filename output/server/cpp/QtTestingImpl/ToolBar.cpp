@@ -96,9 +96,7 @@ namespace ToolBar
     }
 
     void Handle_dispose(HandleRef _this) {
-        printf("just before toolbar dispose\n");
         delete THIS;
-        printf("just after toolbar dispose\n");
     }
 
     HandleRef create(std::shared_ptr<SignalHandler> handler) {

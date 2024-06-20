@@ -9,7 +9,7 @@ open InputEnums
 
 open FSharpQt.Widgets
 open MainWindow
-open FSharpQt.Widgets.ToolBar
+open ToolBar
 
 open FSharpQt.Widgets.Menus
 open Menu
@@ -46,8 +46,13 @@ let view (state: State) =
         MenuAction(Attrs = [ Text "Happy"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> ActionTriggered))
         
     let toolBar =
+        // crashes when we have an action in here
+        // so ... is an action in a toolbar (which would be disposed before it) a problem?
+        // once again we're back to:
+        //   we REALLY need to allow top-level windows to be responsible for all disposal under them, period
+        //   the real problem was stuff slipping through and not being destroyed, right?
         ToolBar(Items = [
-            ToolBarItem(action)
+            // ToolBarItem(action)
         ])
         
     let menuBar =
