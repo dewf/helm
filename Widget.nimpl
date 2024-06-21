@@ -89,6 +89,15 @@ enum DropAction {
     TargetMoveAction = 0x8002 // windows only stuff
 }
 
+flags DropActionSet {
+    Ignore = 0,
+    Copy = 0x1,
+    Move = 0x2,
+    Link = 0x4,
+    ActionMask = 0xff,
+    TargetMoveAction = 0x8002 // windows only stuff
+}
+
 @nodispose
 opaque Event {
     void accept();
@@ -111,7 +120,7 @@ MimeData createMimeData();
 @nodispose // owned by Qt once used
 opaque Drag {
     void setMimeData(MimeData data);
-    DropAction exec(Set<DropAction> supportedActions, DropAction defaultAction);
+    DropAction exec(DropActionSet supportedActions, DropAction defaultAction);
 }
 Drag createDrag(Handle parent);  // the parent will be responsible for cleanup (and neither do we own the MimeData assigned)
 
@@ -119,7 +128,7 @@ Drag createDrag(Handle parent);  // the parent will be responsible for cleanup (
 opaque DragMoveEvent extends Event {
     DropAction proposedAction();
     void acceptProposedAction();
-    Set<DropAction> possibleActions();
+    DropActionSet possibleActions();
 
     // slight variation on the real methods:
     void acceptDropAction(DropAction action); // will internally call either .acceptProposedAction or .accept() after setting drop action

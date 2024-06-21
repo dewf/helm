@@ -32,9 +32,28 @@ with
         | Copy -> Widget.DropAction.Copy
         | Move -> Widget.DropAction.Move
         | Link -> Widget.DropAction.Link
-    static member internal SetFrom (qtDropActionSet: HashSet<Widget.DropAction>) =
-        (set qtDropActionSet)
-        |> Set.map DropAction.From
+    member internal this.QtSetFlag =
+        match this with
+        | Ignore -> Widget.DropActionSet.Ignore
+        | Copy -> Widget.DropActionSet.Copy
+        | Move -> Widget.DropActionSet.Move
+        | Link -> Widget.DropActionSet.Link
+    static member internal SetFrom (qtDropActionSet: Widget.DropActionSet) =
+        let pairs = [
+            // Widget.DropActionSet.Ignore, Ignore // 0 value
+            Widget.DropActionSet.Copy, Copy
+            Widget.DropActionSet.Move, Move
+            Widget.DropActionSet.Link, Link
+        ]
+        (Set.empty<DropAction>, pairs)
+        ||> List.fold (fun acc (flag, action) ->
+            if qtDropActionSet.HasFlag flag then
+                acc.Add(action)
+            else
+                acc)
+    static member internal QtSetFrom (actions: DropAction seq) =
+        (enum<Widget.DropActionSet> 0, actions)
+        ||> Seq.fold (fun acc action -> acc ||| action.QtSetFlag)
     
 [<AbstractClass>]
 type EventDelegateInterface<'msg>() = // obviously it's an abstract class and not a proper interface, but that's mainly because F# doesn't currently support default interface methods / Scala-style traits
@@ -114,7 +133,7 @@ type AbstractEventDelegate<'msg,'state when 'state: equality>(state: 'state) =
         | Urls urls ->
             mimeData.SetUrls(urls |> Array.ofList)
         drag.SetMimeData(mimeData)
-        drag.Exec(HashSet(supported |> List.map (_.QtValue)), defaultAction.QtValue)
+        drag.Exec(supported |> DropAction.QtSetFrom, defaultAction.QtValue)
         |> DropAction.From
         // we're not responsible for either the mimeData nor the drag, as long as the drag was created with an owner
         

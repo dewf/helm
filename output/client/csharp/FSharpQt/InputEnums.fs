@@ -42,7 +42,6 @@ with
                 acc)
     
 type Modifier =
-    | NoModifier
     | Shift
     | Control
     | Alt
@@ -50,15 +49,6 @@ type Modifier =
     | Keypad
     | GroupSwitch
 with
-    static member internal From (qtModifier: Enums.Modifiers) =
-        match qtModifier with
-        | Enums.Modifiers.ShiftModifier -> Shift
-        | Enums.Modifiers.ControlModifier -> Control
-        | Enums.Modifiers.AltModifier -> Alt
-        | Enums.Modifiers.MetaModifier -> Meta
-        | Enums.Modifiers.KeypadModifier -> Keypad
-        | Enums.Modifiers.GroupSwitchModifier -> GroupSwitch
-        | _ -> NoModifier
     static member internal SetFrom (qtModifier: Enums.Modifiers) =
         let pairs =
             [ Enums.Modifiers.ShiftModifier, Shift
@@ -73,10 +63,7 @@ with
                 acc.Add(modifier)
             else
                 acc)
-    static member internal QtSetFrom (modifiers: Set<Modifier>) =
-        (enum<Enums.Modifiers> 0, modifiers |> Set.toList)
-        ||> List.fold (fun acc m -> acc ||| m.QtValue)
-    member internal this.QtValue =
+    member internal this.QtFlag =
         match this with
         | Shift -> Enums.Modifiers.ShiftModifier
         | Control -> Enums.Modifiers.ControlModifier
@@ -84,7 +71,9 @@ with
         | Meta -> Enums.Modifiers.MetaModifier
         | Keypad -> Enums.Modifiers.KeypadModifier
         | GroupSwitch -> Enums.Modifiers.GroupSwitchModifier
-        | NoModifier -> Enums.Modifiers.NoModifier
+    static member internal QtSetFrom (modifiers: Modifier seq) =
+        (enum<Enums.Modifiers> 0, modifiers)
+        ||> Seq.fold (fun acc m -> acc ||| m.QtFlag)
 
 type StandardKey =
     | UnknownKey = 0

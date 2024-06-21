@@ -267,30 +267,13 @@ namespace Widget
 
 #define DRAGTHIS ((QDrag*)_this)
 
-    inline QFlags<Qt::DropAction> toQDropActions(const std::set<DropAction>& supportedActions) {
-        QFlags<Qt::DropAction> result;
-        if (supportedActions.contains(DropAction::Copy)) {
-            result.setFlag(Qt::CopyAction);
-        }
-        if (supportedActions.contains(DropAction::Move)) {
-            result.setFlag(Qt::MoveAction);
-        }
-        if (supportedActions.contains(DropAction::Link)) {
-            result.setFlag(Qt::LinkAction);
-        }
-        if (supportedActions.contains(DropAction::TargetMoveAction)) {
-            result.setFlag(Qt::TargetMoveAction);
-        }
-        return result;
-    }
-
     void Drag_setMimeData(DragRef _this, MimeDataRef data) {
         DRAGTHIS->setMimeData((QMimeData*)data);
     }
 
-    DropAction Drag_exec(DragRef _this, std::set<DropAction> supportedActions, DropAction defaultAction) {
+    DropAction Drag_exec(DragRef _this, uint32_t supportedActions, DropAction defaultAction) {
         auto qDefault = (Qt::DropAction)defaultAction;
-        QFlags<Qt::DropAction> qSupported = toQDropActions(supportedActions);
+        auto qSupported = QFlags<Qt::DropAction>((int)supportedActions);
         return (DropAction) DRAGTHIS->exec(qSupported, qDefault);
     }
 
@@ -312,22 +295,8 @@ namespace Widget
         DRAGMOVETHIS->acceptProposedAction();
     }
 
-    std::set<DropAction> DragMoveEvent_possibleActions(DragMoveEventRef _this) {
-        std::set<DropAction> result;
-        auto possible = DRAGMOVETHIS->possibleActions();
-        if (possible.testFlag(Qt::CopyAction)) {
-            result.emplace(DropAction::Copy);
-        }
-        if (possible.testFlag(Qt::MoveAction)) {
-            result.emplace(DropAction::Move);
-        }
-        if (possible.testFlag(Qt::LinkAction)) {
-            result.emplace(DropAction::Link);
-        }
-        if (possible.testFlag(Qt::TargetMoveAction)) {
-            result.emplace(DropAction::TargetMoveAction);
-        }
-        return result;
+    uint32_t DragMoveEvent_possibleActions(DragMoveEventRef _this) {
+        return (uint32_t) DRAGMOVETHIS->possibleActions();
     }
 
     void DragMoveEvent_acceptDropAction(DragMoveEventRef _this, DropAction action) {
