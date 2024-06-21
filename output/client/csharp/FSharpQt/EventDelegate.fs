@@ -32,12 +32,6 @@ with
         | Copy -> Widget.DropAction.Copy
         | Move -> Widget.DropAction.Move
         | Link -> Widget.DropAction.Link
-    member internal this.QtSetFlag =
-        match this with
-        | Ignore -> Widget.DropActionSet.Ignore
-        | Copy -> Widget.DropActionSet.Copy
-        | Move -> Widget.DropActionSet.Move
-        | Link -> Widget.DropActionSet.Link
     static member internal SetFrom (qtDropActionSet: Widget.DropActionSet) =
         let pairs = [
             // Widget.DropActionSet.Ignore, Ignore // 0 value
@@ -53,7 +47,14 @@ with
                 acc)
     static member internal QtSetFrom (actions: DropAction seq) =
         (enum<Widget.DropActionSet> 0, actions)
-        ||> Seq.fold (fun acc action -> acc ||| action.QtSetFlag)
+        ||> Seq.fold (fun acc action ->
+            let flag =
+                match action with
+                | Ignore -> Widget.DropActionSet.Ignore // 0 value, meaningless in a set
+                | Copy -> Widget.DropActionSet.Copy
+                | Move -> Widget.DropActionSet.Move
+                | Link -> Widget.DropActionSet.Link
+            acc ||| flag)
     
 [<AbstractClass>]
 type EventDelegateInterface<'msg>() = // obviously it's an abstract class and not a proper interface, but that's mainly because F# doesn't currently support default interface methods / Scala-style traits
