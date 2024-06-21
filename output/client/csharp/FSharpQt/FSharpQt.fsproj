@@ -38,6 +38,7 @@
         <Compile Include="Widgets\RadioButton.fs" />
         <Compile Include="Widgets\ScrollArea.fs" />
         <Compile Include="Widgets\Slider.fs" />
+        <Compile Include="Widgets\StatusBar.fs" />
         <Compile Include="Widgets\TabWidget.fs" />
         <Compile Include="Widgets\Timer.fs" />
         <Compile Include="Widgets\ToolBar.fs" />

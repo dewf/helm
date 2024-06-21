@@ -4,7 +4,6 @@ open System
 
 open FSharpQt
 open BuilderNode
-open FSharpQt.Widgets.ComboBox
 open Reactor
 open InputEnums
 
@@ -12,6 +11,8 @@ open FSharpQt.Widgets
 open MainWindow
 open ToolBar
 open PushButton
+open ComboBox
+open StatusBar
 
 open FSharpQt.Widgets.Menus
 open Menu
@@ -48,14 +49,14 @@ let view (state: State) =
             Icon(ThemeIcon.CallStart)
         let seq =
             KeySequence(Key.K, [ Control ])
-        MenuAction(Attrs = [ Text "Happy"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> ActionTriggered))
+        MenuAction(Attrs = [ Text "Happy"; Shortcut seq; IconAttr icon; StatusTip "Testing 123" ], OnTriggered = (fun _ -> ActionTriggered))
         
     let action2 =
         let icon =
             Icon(ThemeIcon.Computer)
         let seq =
             KeySequence(Key.D, [ Alt; Shift ])
-        MenuAction(Attrs = [ Text "Better!"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> ActionTriggered))
+        MenuAction(Attrs = [ Text "Better!"; Shortcut seq; IconAttr icon; StatusTip "Another Tip?" ], OnTriggered = (fun _ -> ActionTriggered))
         
     let exitAction =
         let icon =
@@ -101,10 +102,16 @@ let view (state: State) =
                  ])
         MenuBar(Menus = [ menu ])
         
+    let statusBar =
+        StatusBar()
+        
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
         MenuBar = menuBar,
-        ToolBar = toolBar
+        StatusBar = statusBar,
+        ToolBars = [
+            "one", toolBar
+        ]
         // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either
         // Actions = [
         //     "first", action1

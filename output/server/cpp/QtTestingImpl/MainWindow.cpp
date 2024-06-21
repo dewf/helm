@@ -78,6 +78,10 @@ namespace MainWindow
         THIS->setMenuBar((QMenuBar*)menubar);
     }
 
+    void Handle_setStatusBar(HandleRef _this, StatusBar::HandleRef statusbar) {
+        THIS->setStatusBar((QStatusBar*)statusbar);
+    }
+
     void Handle_addToolBar(HandleRef _this, ToolBar::HandleRef toolbar) {
         THIS->addToolBar((QToolBar*)toolbar);
     }

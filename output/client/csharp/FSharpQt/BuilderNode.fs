@@ -114,6 +114,12 @@ and IToolBarNode<'msg> =
         abstract member ToolBar: ToolBar.Handle
     end
     
+and IStatusBarNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+        abstract member StatusBar: StatusBar.Handle
+    end
+    
 and ITopLevelNode<'msg> =
     interface
         inherit IBuilderNode<'msg>

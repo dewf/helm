@@ -1,0 +1,20 @@
+module StatusBar;
+
+import Widget;
+
+flags SignalMask {
+    MessageChanged = 1
+}
+
+interface SignalHandler {
+    void messageChanged(string message);
+}
+
+opaque Handle extends Widget.Handle {
+    void clearMessage();
+    void showMessage(string message, int timeout);
+
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);

@@ -64,20 +64,20 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                     // on creation we just set the flag
                     mainWindow.SetVisible(state))
         
-    member this.RemoveMenuBar() =
-        // we can't remove it (especially without a handle, which is no doubt gone because it's been destroyed)
-        // but doesn't widget destruction actually remove it for us? hmmm
-        ()
-    
     member this.AddMenuBar(menuBar: MenuBar.Handle) =
         mainWindow.SetMenuBar(menuBar)
-        
-    member this.RemoveToolBar() =
-        // see note in .RemoveMenuBar() above
+
+    member this.RemoveMenuBar() =
+        // should automatically be removed by widget disposal
+        // and in any case we don't have a handle to do it ourselves ...
         ()
         
-    member this.AddToolBar (toolBar: ToolBar.Handle) =
-        mainWindow.AddToolBar(toolBar)
+    member this.AddStatusBar (statusBar: StatusBar.Handle) =
+        mainWindow.SetStatusBar(statusBar)
+        
+    member this.RemoveStatusBar() =
+        // see note in .RemoveMenuBar() above
+        ()
         
     member this.RemoveContent() =
         // TODO: need to do some serious testing with all this
@@ -85,13 +85,13 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         // if we're doing this ... hasn't the content node actually been disposed? so why all the fuss?
         match syntheticLayoutWidget with
         | Some widget ->
-            widget.GetLayout().RemoveAll() // detach any children just in case
-            widget.SetLayout(null)
-            widget.Dispose()
+            // widget.GetLayout().RemoveAll() // detach any children just in case
+            // widget.SetLayout(null)
             // deleting should automatically remove from the parent mainWindow, right?
+            widget.Dispose()
             syntheticLayoutWidget <- None
         | None ->
-            mainWindow.SetCentralWidget(null) // sufficient?
+            ()
         
     member this.AddContent(node: IWidgetOrLayoutNode<'msg>) =
         match node with
@@ -105,8 +105,15 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         | _ ->
             failwith "MainWindow.Model.AddContent - unknown node type"
             
-    member this.AddAction(action: Action.Handle) =
-        mainWindow.AddAction(action)
+    member this.RefillActions (actions: Action.Handle list) =
+        // TODO: some way to remove them all?
+        for action in actions do
+            mainWindow.AddAction(action)
+            
+    member this.AddToolBar (toolBar: ToolBar.Handle) =
+        mainWindow.AddToolBar(toolBar)
+        
+    // no way (or need?) of removing toolbars - if their nodes get deleted, they should be removed
         
     member this.ShowIfVisible () =
         // long story short, this is our workaround for Qt's layout system which doesn't necessarily play nicely with how we want to create our widget trees
@@ -157,7 +164,8 @@ type MainWindow<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attrs: Attr list = [] with get, set
-    member val Actions: (string * IActionNode<'msg>) list = [] with get, set
+    member val Actions: IActionNode<'msg> list = [] with get, set
+    member val ToolBars: (string * IToolBarNode<'msg>) list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
 
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
@@ -166,8 +174,8 @@ type MainWindow<'msg>() =
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     member this.MenuBar with set value = maybeMenuBar <- Some value
     
-    let mutable maybeToolBar: IToolBarNode<'msg> option = None
-    member this.ToolBar with set value = maybeToolBar <- Some value
+    let mutable maybeStatusBar: IStatusBarNode<'msg> option = None
+    member this.StatusBar with set value = maybeStatusBar <- Some value
     
     let mutable signalMask = enum<MainWindow.SignalMask> 0
     
@@ -229,8 +237,8 @@ type MainWindow<'msg>() =
         | Closed ->
             onClosed
     
-    member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
-        match changeMap.TryFind (StrKey "menu") with
+    member private this.MigrateContent (left: MainWindow<'msg>) (changeMap: Map<DepsKey, DepsChange>) =
+        match changeMap.TryFind (StrKey "menubar") with
         | Some change ->
             match change with
             | Unchanged ->
@@ -245,6 +253,26 @@ type MainWindow<'msg>() =
         | None ->
             // neither side had a menubar
             ()
+            
+        this.ToolBars
+        |> List.iter (fun (key, node) ->
+            let key =
+                StrStrKey("toolbar", key)
+            match changeMap.TryFind key with
+            | Some change ->
+                match change with
+                | Unchanged ->
+                    ()
+                | Added ->
+                    this.model.AddToolBar(node.ToolBar)
+                | Removed ->
+                    // nothing to do, should be removed automatically
+                    ()
+                | Swapped ->
+                    // removal should be automatic
+                    this.model.AddToolBar(node.ToolBar)
+            | None ->
+                ())
         
         match changeMap.TryFind (StrKey "content") with
         | Some change ->
@@ -262,78 +290,68 @@ type MainWindow<'msg>() =
             // neither side had 'content'
             ()
             
-        match changeMap.TryFind (StrKey "toolbar") with
+        match changeMap.TryFind (StrKey "status") with
         | Some change ->
             match change with
             | Unchanged ->
                 ()
             | Added ->
-                this.model.AddToolBar(maybeToolBar.Value.ToolBar)
+                this.model.AddStatusBar(maybeStatusBar.Value.StatusBar)
             | Removed ->
-                this.model.RemoveToolBar()
+                this.model.RemoveStatusBar()
             | Swapped ->
-                this.model.RemoveToolBar()
-                this.model.AddToolBar(maybeToolBar.Value.ToolBar)
+                this.model.RemoveStatusBar()
+                this.model.AddStatusBar(maybeStatusBar.Value.StatusBar)
         | None ->
-            // neither side had 'toolbar'
+            // neither side had 'statusbar'
             ()
             
-        this.Actions
-        |> List.iteri (fun i (key, action) ->
-            let key =
-                StrStrKey("action", key)
-            match changeMap.TryFind key with
-            | Some change ->
-                match change with
-                | Unchanged ->
-                    ()
-                | Removed ->
-                    // we'll never see this, since we're only iterating over the actions we have now
-                    // that aside, we're trusting that Qt knows how to handle action removals gracefully? otherwise we will have to beef up how we handle migrations perhaps,
-                    // and give parent nodes a chance to cleanup just before sub-nodes get disposed?
-                    // would making this Removed <contentKey> be helpful? but the widget would already be destroyed ...
-                    ()
-                | Added ->
-                    this.model.AddAction(action.Action)
-                | Swapped ->
-                    // as above in the removal case, we'll trust that Qt cleaned up whatever previous action was removed at this sub-key
-                    // all that remains is to add this one
-                    this.model.AddAction(action.Action)
-            | None ->
-                // can't happen, if it exists now on this node, it will appear in the changeMap as 'Added' at the very least
-                failwith "can't happen" )
+        let leftActionContents =
+            left.Actions
+            |> List.map (_.ContentKey)
+        let thisActionContents =
+            this.Actions
+            |> List.map (_.ContentKey)
+        if leftActionContents <> thisActionContents then
+            this.model.RefillActions(this.Actions |> List.map (_.Action))
+        else
+            ()
         
     interface IWindowNode<'msg> with
         override this.Dependencies =
             let menuBarList =
                 maybeMenuBar
-                |> Option.map (fun menuBar -> StrKey "menu", menuBar :> IBuilderNode<'msg>)
+                |> Option.map (fun menuBar -> StrKey "menubar", menuBar :> IBuilderNode<'msg>)
                 |> Option.toList
+            let toolBarList =
+                this.ToolBars
+                |> List.map (fun (key, toolBar) -> StrStrKey("toolbar", key), toolBar :> IBuilderNode<'msg>)
             let contentList =
                 maybeContent
                 |> Option.map (fun content -> StrKey "content", content :> IBuilderNode<'msg>)
                 |> Option.toList
-            let toolBarList =
-                maybeToolBar
-                |> Option.map (fun toolBar -> StrKey "toolbar", toolBar :> IBuilderNode<'msg>)
+            let statusBarList =
+                maybeStatusBar
+                |> Option.map (fun status -> StrKey "status", status :> IBuilderNode<'msg>)
                 |> Option.toList
-            let actions =
+            let actionList =
                 this.Actions
-                |> List.map (fun (key, action) -> StrStrKey ("action", key), action :> IBuilderNode<'msg>)
-            menuBarList @ contentList @ toolBarList @ actions
+                |> List.mapi (fun i action -> StrIntKey ("action", i), action :> IBuilderNode<'msg>)
+            menuBarList @ toolBarList @ contentList @ statusBarList @ actionList
             
         override this.Create dispatch buildContext =
             this.model <- create2 this.Attrs signalMap dispatch signalMask
             
         override this.AttachDeps () =
-            maybeContent
-            |> Option.iter this.model.AddContent
             maybeMenuBar
             |> Option.iter (fun node -> this.model.AddMenuBar node.MenuBar)
-            maybeToolBar
-            |> Option.iter (fun node -> this.model.AddToolBar node.ToolBar)
-            this.Actions
-            |> List.iter (fun (_, node) -> this.model.AddAction(node.Action))
+            this.ToolBars
+            |> List.iter (fun (_, node) -> this.model.AddToolBar node.ToolBar)
+            maybeContent
+            |> Option.iter this.model.AddContent
+            maybeStatusBar
+            |> Option.iter (fun node -> this.model.AddStatusBar node.StatusBar)
+            this.model.RefillActions(this.Actions |> List.map (_.Action))
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> MainWindow<'msg>)
@@ -341,7 +359,7 @@ type MainWindow<'msg>() =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
             this.model <- migrate left'.model nextAttrs signalMap signalMask
-            this.MigrateContent (depsChanges |> Map.ofList)
+            this.MigrateContent left' (depsChanges |> Map.ofList)
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

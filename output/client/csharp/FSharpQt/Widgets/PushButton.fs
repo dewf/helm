@@ -41,7 +41,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         signalMap s
         |> Option.iter dispatch
         
-    member this.Widget with get() = button
+    member this.PushButton with get() = button
     member this.SignalMap with set value = signalMap <- value
     
     member this.SignalMask with set value =
@@ -161,10 +161,10 @@ type PushButton<'msg>() =
             (this.model :> IDisposable).Dispose()
 
         override this.Widget =
-            (this.model.Widget :> Widget.Handle)
+            this.model.PushButton
             
         override this.ContentKey =
-            this.model.Widget
+            this.model.PushButton
             
         override this.Attachments =
             this.Attachments

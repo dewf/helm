@@ -8,6 +8,7 @@ import Icon;
 import DockWidget;
 import Enums;
 import ToolBar;
+import StatusBar;
 
 flags SignalMask {
     // from QWidget
@@ -42,6 +43,7 @@ interface SignalHandler {
 opaque Handle extends Widget.Handle {
     void setCentralWidget(Widget.Handle widget);
     void setMenuBar(MenuBar.Handle menubar);
+    void setStatusBar(StatusBar.Handle statusbar);
     
     void addToolBar(ToolBar.Handle toolbar); // TODO: area to add
 

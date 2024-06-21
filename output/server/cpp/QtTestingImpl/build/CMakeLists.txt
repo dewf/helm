@@ -157,6 +157,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Slider_wrappers.cpp
     ../Slider.cpp
 
+    ../generated/StatusBar.h
+    ../generated/StatusBar_wrappers.cpp
+    ../StatusBar.cpp
+
     ../generated/TabWidget.h
     ../generated/TabWidget_wrappers.cpp
     ../TabWidget.cpp
