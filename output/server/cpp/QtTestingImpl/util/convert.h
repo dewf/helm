@@ -46,32 +46,3 @@ inline QRect toQRect(const Rect& r) {
 inline QRectF toQRectF(const RectF& r) {
     return { r.x, r.y, r.width, r.height };
 }
-
-inline MouseButton fromQtButton(Qt::MouseButton button) {
-    switch (button) {
-        case Qt::NoButton:
-            return MouseButton::None;
-        case Qt::LeftButton:
-            return MouseButton::Left;
-        case Qt::RightButton:
-            return MouseButton::Right;
-        case Qt::MiddleButton:
-            return MouseButton::Middle;
-        default:
-            return MouseButton::Other;
-    }
-}
-
-inline std::set<MouseButton> fromQtButtons(Qt::MouseButtons buttons) {
-    std::set<MouseButton> ret;
-    if (buttons.testFlag(Qt::LeftButton)) {
-        ret.emplace(MouseButton::Left);
-    }
-    if (buttons.testFlag(Qt::RightButton)) {
-        ret.emplace(MouseButton::Right);
-    }
-    if (buttons.testFlag(Qt::MiddleButton)) {
-        ret.emplace(MouseButton::Middle);
-    }
-    return ret;
-}

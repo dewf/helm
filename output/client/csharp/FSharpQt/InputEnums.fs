@@ -1,30 +1,45 @@
 ﻿module FSharpQt.InputEnums
 
-open System.Collections.Generic
 open Org.Whatever.QtTesting
 
 type MouseButton =
     | LeftButton
     | RightButton
     | MiddleButton
+    | BackButton
+    | ForwardButton
     | OtherButton
 with
     static member internal From (qtButton: Enums.MouseButton) =
         match qtButton with
-        | Enums.MouseButton.None -> failwith "MouseButton.From - .None case - shoudln't happen"
-        | Enums.MouseButton.Left -> LeftButton
-        | Enums.MouseButton.Right -> RightButton
-        | Enums.MouseButton.Middle -> MiddleButton
-        | _ -> OtherButton // also handles other enum cases
+        | Enums.MouseButton.LeftButton -> LeftButton
+        | Enums.MouseButton.RightButton -> RightButton
+        | Enums.MouseButton.MiddleButton -> MiddleButton
+        | Enums.MouseButton.BackButton -> BackButton
+        | Enums.MouseButton.ForwardButton -> ForwardButton
+        | _ -> OtherButton
     member internal this.QtValue =
         match this with
-        | LeftButton -> Enums.MouseButton.Left
-        | RightButton -> Enums.MouseButton.Right
-        | MiddleButton -> Enums.MouseButton.Middle
-        | OtherButton -> Enums.MouseButton.Other
-    static member internal SetFrom (qtButtonSet: HashSet<Enums.MouseButton>) =
-        (set qtButtonSet)
-        |> Set.map MouseButton.From
+        | LeftButton -> Enums.MouseButton.LeftButton
+        | RightButton -> Enums.MouseButton.RightButton
+        | MiddleButton -> Enums.MouseButton.MiddleButton
+        | BackButton -> Enums.MouseButton.BackButton
+        | ForwardButton -> Enums.MouseButton.ForwardButton
+        | OtherButton -> failwith "OtherButton not convertible to Qt value, for Qt -> F# direction only"
+    static member internal SetFrom (qtButtonSet: Enums.MouseButtonSet) =
+        let pairs = [
+            Enums.MouseButtonSet.LeftButton, LeftButton
+            Enums.MouseButtonSet.RightButton, RightButton
+            Enums.MouseButtonSet.MiddleButton, MiddleButton
+            Enums.MouseButtonSet.BackButton, BackButton
+            Enums.MouseButtonSet.ForwardButton, ForwardButton
+        ]
+        (Set.empty<MouseButton>, pairs)
+        ||> List.fold (fun acc (flag, button) ->
+            if qtButtonSet.HasFlag flag then
+                acc.Add(button)
+            else
+                acc)
     
 type Modifier =
     | NoModifier

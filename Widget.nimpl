@@ -145,7 +145,7 @@ interface MethodDelegate {
     Size sizeHint();
     void paintEvent(Painter.Handle painter, Rect updateRect);
     void mousePressEvent(Point pos, MouseButton button, Modifiers modifiers);
-    void mouseMoveEvent(Point pos, Set<MouseButton> buttons, Modifiers modifiers);
+    void mouseMoveEvent(Point pos, MouseButtonSet buttons, Modifiers modifiers);
     void mouseReleaseEvent(Point pos, MouseButton button, Modifiers modifiers);
     void enterEvent(Point pos);
     void leaveEvent();

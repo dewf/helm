@@ -1,6 +1,5 @@
 ﻿module FSharpQt.Widgets.CustomWidget
 
-open System.Collections.Generic
 open System
 
 open FSharpQt
@@ -102,7 +101,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             eventDelegate.MousePress (Point.From pos) (MouseButton.From button) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
             
-        override this.MouseMoveEvent(pos: Common.Point, buttons: HashSet<Enums.MouseButton>, modifiers: Enums.Modifiers) =
+        override this.MouseMoveEvent(pos: Common.Point, buttons: Enums.MouseButtonSet, modifiers: Enums.Modifiers) =
             eventDelegate.MouseMove (Point.From pos) (MouseButton.SetFrom buttons) (Modifier.SetFrom modifiers)
             |> Option.iter dispatch
                 

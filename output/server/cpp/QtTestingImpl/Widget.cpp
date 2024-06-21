@@ -375,7 +375,7 @@ namespace Widget
         void mousePressEvent(QMouseEvent *event) override {
             if (methodMask & MethodMask::MousePressEvent) {
                 auto pos = toPoint(event->pos());
-                auto button = fromQtButton(event->button());
+                auto button = (MouseButton)event->button();
                 auto modifiers = event->modifiers();
                 methodDelegate->mousePressEvent(pos, button, modifiers);
                 // prevent from propagating, see notes above
@@ -388,7 +388,7 @@ namespace Widget
         void mouseMoveEvent(QMouseEvent *event) override {
             if (methodMask & MethodMask::MouseMoveEvent) {
                 auto pos = toPoint(event->pos());
-                auto buttons = fromQtButtons(event->buttons());
+                auto buttons = event->buttons();
                 auto modifiers = event->modifiers();
                 methodDelegate->mouseMoveEvent(pos, buttons, modifiers);
                 // prevent from propagating, see notes above
@@ -401,7 +401,7 @@ namespace Widget
         void mouseReleaseEvent(QMouseEvent *event) override {
             if (methodMask & MethodMask::MouseReleaseEvent) {
                 auto pos = toPoint(event->pos());
-                auto button = fromQtButton(event->button());
+                auto button = (MouseButton)event->button();
                 auto modifiers = event->modifiers();
                 methodDelegate->mouseReleaseEvent(pos, button, modifiers);
                 event->accept();
