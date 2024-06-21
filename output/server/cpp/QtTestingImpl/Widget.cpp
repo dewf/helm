@@ -376,7 +376,7 @@ namespace Widget
             if (methodMask & MethodMask::MousePressEvent) {
                 auto pos = toPoint(event->pos());
                 auto button = fromQtButton(event->button());
-                auto modifiers = fromQtModifiers(event->modifiers());
+                auto modifiers = event->modifiers();
                 methodDelegate->mousePressEvent(pos, button, modifiers);
                 // prevent from propagating, see notes above
                 event->accept();
@@ -389,7 +389,7 @@ namespace Widget
             if (methodMask & MethodMask::MouseMoveEvent) {
                 auto pos = toPoint(event->pos());
                 auto buttons = fromQtButtons(event->buttons());
-                auto modifiers = fromQtModifiers(event->modifiers());
+                auto modifiers = event->modifiers();
                 methodDelegate->mouseMoveEvent(pos, buttons, modifiers);
                 // prevent from propagating, see notes above
                 event->accept();
@@ -402,7 +402,7 @@ namespace Widget
             if (methodMask & MethodMask::MouseReleaseEvent) {
                 auto pos = toPoint(event->pos());
                 auto button = fromQtButton(event->button());
-                auto modifiers = fromQtModifiers(event->modifiers());
+                auto modifiers = event->modifiers();
                 methodDelegate->mouseReleaseEvent(pos, button, modifiers);
                 event->accept();
             } else {
@@ -441,7 +441,7 @@ namespace Widget
         void dragEnterEvent(QDragEnterEvent *event) override {
             if (methodMask & MethodMask::DropEvents) {
                 auto pos = toPoint(event->position().toPoint());
-                auto modifiers = fromQtModifiers(event->modifiers());
+                auto modifiers = event->modifiers();
                 auto mimeOpaque = (MimeDataRef)event->mimeData();
                 auto moveEvent = (DragMoveEventRef)event;
                 methodDelegate->dragMoveEvent(pos, modifiers, mimeOpaque, moveEvent, true);
@@ -454,7 +454,7 @@ namespace Widget
         void dragMoveEvent(QDragMoveEvent *event) override {
             if (methodMask & MethodMask::DropEvents) {
                 auto pos = toPoint(event->position().toPoint());
-                auto modifiers = fromQtModifiers(event->modifiers());
+                auto modifiers = event->modifiers();
                 auto mimeOpaque = (MimeDataRef)event->mimeData();
                 auto moveEvent = (DragMoveEventRef)event;
                 methodDelegate->dragMoveEvent(pos, modifiers, mimeOpaque, moveEvent, false);
@@ -476,7 +476,7 @@ namespace Widget
         void dropEvent(QDropEvent *event) override {
             if (methodMask & MethodMask::DropEvents) {
                 auto pos = toPoint(event->position().toPoint());
-                auto modifiers = fromQtModifiers(event->modifiers());
+                auto modifiers = event->modifiers();
                 auto mimeOpaque = (MimeDataRef)event->mimeData();
                 auto action = (DropAction)event->proposedAction();
                 methodDelegate->dropEvent(pos, modifiers, mimeOpaque, action);

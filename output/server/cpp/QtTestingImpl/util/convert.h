@@ -47,40 +47,6 @@ inline QRectF toQRectF(const RectF& r) {
     return { r.x, r.y, r.width, r.height };
 }
 
-inline std::set<Modifier> fromQtModifiers (Qt::KeyboardModifiers modifiers) {
-    std::set<Modifier> ret;
-    if (modifiers.testFlag(Qt::ShiftModifier)) {
-        ret.emplace(Modifier::Shift);
-    }
-    if (modifiers.testFlag(Qt::ControlModifier)) {
-        ret.emplace(Modifier::Control);
-    }
-    if (modifiers.testFlag(Qt::AltModifier)) {
-        ret.emplace(Modifier::Alt);
-    }
-    if (modifiers.testFlag(Qt::MetaModifier)) {
-        ret.emplace(Modifier::Meta);
-    }
-    return ret;
-}
-
-inline Qt::KeyboardModifiers toQtModifiers (const std::set<Modifier>& modifiers) {
-    Qt::KeyboardModifiers ret;
-    if (modifiers.contains(Modifier::Shift)) {
-        ret.setFlag(Qt::ShiftModifier);
-    }
-    if (modifiers.contains(Modifier::Control)) {
-        ret.setFlag(Qt::ControlModifier);
-    }
-    if (modifiers.contains(Modifier::Alt)) {
-        ret.setFlag(Qt::AltModifier);
-    }
-    if (modifiers.contains(Modifier::Meta)) {
-        ret.setFlag(Qt::MetaModifier);
-    }
-    return ret;
-}
-
 inline MouseButton fromQtButton(Qt::MouseButton button) {
     switch (button) {
         case Qt::NoButton:

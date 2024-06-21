@@ -27,29 +27,49 @@ with
         |> Set.map MouseButton.From
     
 type Modifier =
+    | NoModifier
     | Shift
     | Control
     | Alt
     | Meta
+    | Keypad
+    | GroupSwitch
 with
-    static member internal From (qtModifier: Enums.Modifier) =
+    static member internal From (qtModifier: Enums.Modifiers) =
         match qtModifier with
-        | Enums.Modifier.Shift -> Shift
-        | Enums.Modifier.Control -> Control
-        | Enums.Modifier.Alt -> Alt
-        | Enums.Modifier.Meta -> Meta
-        | _ -> failwith "Modifier.From - unknown enum value (or .None, which shouldn't happen)"
-    static member internal SetFrom (qtModifierSet: HashSet<Enums.Modifier>) =
-        (set qtModifierSet)
-        |> Set.map Modifier.From
+        | Enums.Modifiers.ShiftModifier -> Shift
+        | Enums.Modifiers.ControlModifier -> Control
+        | Enums.Modifiers.AltModifier -> Alt
+        | Enums.Modifiers.MetaModifier -> Meta
+        | Enums.Modifiers.KeypadModifier -> Keypad
+        | Enums.Modifiers.GroupSwitchModifier -> GroupSwitch
+        | _ -> NoModifier
+    static member internal SetFrom (qtModifier: Enums.Modifiers) =
+        let pairs =
+            [ Enums.Modifiers.ShiftModifier, Shift
+              Enums.Modifiers.ControlModifier, Control
+              Enums.Modifiers.AltModifier, Alt
+              Enums.Modifiers.MetaModifier, Meta
+              Enums.Modifiers.KeypadModifier, Keypad
+              Enums.Modifiers.GroupSwitchModifier, GroupSwitch ]
+        (Set.empty<Modifier>, pairs)
+        ||> List.fold (fun acc (flag, modifier) ->
+            if qtModifier.HasFlag flag then
+                acc.Add(modifier)
+            else
+                acc)
     static member internal QtSetFrom (modifiers: Set<Modifier>) =
-        HashSet<Enums.Modifier>(modifiers |> Set.map (_.QtValue))
+        (enum<Enums.Modifiers> 0, modifiers |> Set.toList)
+        ||> List.fold (fun acc m -> acc ||| m.QtValue)
     member internal this.QtValue =
         match this with
-        | Shift -> Enums.Modifier.Shift
-        | Control -> Enums.Modifier.Control
-        | Alt -> Enums.Modifier.Alt
-        | Meta -> Enums.Modifier.Meta
+        | Shift -> Enums.Modifiers.ShiftModifier
+        | Control -> Enums.Modifiers.ControlModifier
+        | Alt -> Enums.Modifiers.AltModifier
+        | Meta -> Enums.Modifiers.MetaModifier
+        | Keypad -> Enums.Modifiers.KeypadModifier
+        | GroupSwitch -> Enums.Modifiers.GroupSwitchModifier
+        | NoModifier -> Enums.Modifiers.NoModifier
 
 type StandardKey =
     | UnknownKey = 0

@@ -144,17 +144,17 @@ flags MethodMask {
 interface MethodDelegate {
     Size sizeHint();
     void paintEvent(Painter.Handle painter, Rect updateRect);
-    void mousePressEvent(Point pos, MouseButton button, Set<Modifier> modifiers);
-    void mouseMoveEvent(Point pos, Set<MouseButton> buttons, Set<Modifier> modifiers);
-    void mouseReleaseEvent(Point pos, MouseButton button, Set<Modifier> modifiers);
+    void mousePressEvent(Point pos, MouseButton button, Modifiers modifiers);
+    void mouseMoveEvent(Point pos, Set<MouseButton> buttons, Modifiers modifiers);
+    void mouseReleaseEvent(Point pos, MouseButton button, Modifiers modifiers);
     void enterEvent(Point pos);
     void leaveEvent();
     void resizeEvent(Size oldSize, Size newSize);
 
     // dragMove does double duty, also an 'enter' event - check isEnterEvent flag
-    void dragMoveEvent(Point pos, Set<Modifier> modifiers, MimeData mimeData, DragMoveEvent moveEvent, bool isEnterEvent);
+    void dragMoveEvent(Point pos, Modifiers modifiers, MimeData mimeData, DragMoveEvent moveEvent, bool isEnterEvent);
     void dragLeaveEvent();
-    void dropEvent(Point pos, Set<Modifier> modifiers, MimeData mimeData, DropAction action);
+    void dropEvent(Point pos, Modifiers modifiers, MimeData mimeData, DropAction action);
 }
 
 Handle createSubclassed(MethodDelegate methodDelegate, MethodMask methodMask, SignalHandler handler);

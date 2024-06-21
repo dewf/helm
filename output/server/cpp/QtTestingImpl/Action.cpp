@@ -122,7 +122,9 @@ namespace Action
 
         void onFromKey(const KeySequence::Deferred::FromKey *fromKey) override {
             // could have also used a QKeyCombination instead of 'key | mods'
-            QKeySequence seq((Qt::Key)fromKey->key | toQtModifiers(fromKey->modifiers));
+            auto key = (Qt::Key)fromKey->key;
+            auto mods = (Qt::Modifiers)fromKey->modifiers;
+            QKeySequence seq(key | mods);
             THIS->setShortcut(seq);
         }
     };
