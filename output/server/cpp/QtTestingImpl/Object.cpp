@@ -1,12 +1,15 @@
 #include "generated/Object.h"
 
+#include <QObject>
+
+#define THIS ((QObject*)_this)
+
 namespace Object
 {
-    struct __Handle {
-        // your content here
-        // (or delete this and cast your own opaque ptr to 'HandleRef' in the stubs below)
-    };
-    void Handle_dispose(HandleRef _this) {
+    void Handle_dumpObjectTree(HandleRef _this) {
+        THIS->dumpObjectTree();
     }
 
+    void Handle_dispose(HandleRef _this) {
+    }
 }

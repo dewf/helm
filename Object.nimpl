@@ -1,6 +1,5 @@
 module Object;
 
-opaque Handle;
-
-// we never create these directly
-// currently just used for inheritance purposes, needing to refer to something more general than Widget
+opaque Handle {
+    void dumpObjectTree();
+}

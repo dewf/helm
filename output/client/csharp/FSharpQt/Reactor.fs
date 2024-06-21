@@ -335,7 +335,6 @@ type AppStyle =
     | Fusion
     
 type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>, view: 'state -> IBuilderNode<'msg>) =
-    [<DefaultValue>] val mutable reactor: Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>
     let mutable appStyle: AppStyle option = None
     do
         Library.Init()
@@ -366,13 +365,13 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
                 
         let context =
             { ContainingWindow = None }
-            
-        this.reactor <- new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processSignal, context)
+
+        use reactor =
+            new Reactor<'state,unit,'msg,AppSignal,IBuilderNode<'msg>>(init, nullAttrUpdate, update, view, processSignal, context)
         Application.Exec()
         
     interface IDisposable with
         member this.Dispose() =
-            (this.reactor :> IDisposable).Dispose()
             Library.DumpTables()
             Library.Shutdown()
             

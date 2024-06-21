@@ -105,10 +105,11 @@ let view (state: State) =
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
         MenuBar = menuBar,
         ToolBar = toolBar
+        // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either
         // Actions = [
         //     "first", action1
-        //     "second", action2
-        //     "last", exitAction
+        //     // "second", action2
+        //     // "last", exitAction
         // ] // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either
         )
     :> IBuilderNode<Msg>

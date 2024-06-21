@@ -138,18 +138,23 @@ let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
         node.Attachments
         |> List.map (fun (id, attach) -> AttachKey id, attach.Node)
     node.Dependencies @ attachDeps
+    
+let dumpTree (node: IBuilderNode<'msg>) =
+    let rec inner (indent: int) (node: IBuilderNode<'msg>) =
+        let indentStr =
+            Array.replicate indent "    "
+            |> String.concat ""
+        printfn "%s - [%A]" indentStr node.ContentKey
+        for _, node in (nodeDepsWithAttachments node) do
+            inner (indent + 1) node
+    inner 0 node
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
-    // no deletions for now, everything's crashing :((((
-    ()
-    // match node with
-    // | :? IWindowNode<'msg> ->
-    //     // don't go any deeper
-    //     ()
-    // | _ ->
-    //     for _, node in (nodeDepsWithAttachments node) do
-    //         disposeTree node
-    // node.Dispose()
+    // ideally we would stop at windows and let them be responsible for anything beneath,
+    // but so far that hasn't worked well - always something remaining alive even with top-level window deletion??
+    for _, node in (nodeDepsWithAttachments node) do
+        disposeTree node
+    node.Dispose()
 
 let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
     let leftList = a1 |> List.map (fun a -> keyFunc a, a)

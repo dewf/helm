@@ -45,10 +45,10 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
     let owner =
         match maybeContainingWindow with
         | Some handle ->
-            printfn "MenuAction being created with owner [%A]" handle
+            // printfn "MenuAction being created with owner [%A]" handle
             handle
         | None ->
-            printfn "MenuAction created with no owner :("
+            printfn "MenuAction created with no owner"
             null
     let mutable action = Action.Create(owner, this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -122,12 +122,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
                 
     interface IDisposable with
         member this.Dispose() =
-            // for now, no action disposal -
-            // since they are supposed to be created as owned by whatever containing window, we really should never have to dispose them otherwise
-            // but anyway the whole problem is that we're getting crashes when QToolBars are involved
-            // so to be on the safe, non-crashy side for now, no disposal ...
-            printfn "MenuAction.Model.Dispose() temporarily bypassed, see note"
-            // action.Dispose()
+            action.Dispose()
 
 let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) (maybeContainingWindow: Widget.Handle option) =
     let model = new Model<'msg>(dispatch, maybeContainingWindow)

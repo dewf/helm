@@ -186,10 +186,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.VisibilityChanged visible =
             signalDispatch (VisibilityChanged visible)
             
-    member this.AttachDeps (items: ToolBarItem<'msg> list) =
-        for item in items do
-            item.AddTo toolBar
-            
     member this.Refill (items: ToolBarItem<'msg> list) =
         toolBar.Clear()
         for item in items do
@@ -283,7 +279,7 @@ type ToolBar<'msg>() =
             this.model <- create this.Attrs signalMap dispatch signalMask
             
         override this.AttachDeps () =
-            this.model.AttachDeps this.Items
+            this.model.Refill this.Items
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ToolBar<'msg>)

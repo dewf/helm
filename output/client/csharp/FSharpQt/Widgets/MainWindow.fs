@@ -350,7 +350,7 @@ type MainWindow<'msg>() =
             this.model.Widget
             
         override this.ContentKey =
-            (this :> IWindowNode<'msg>).WindowWidget
+            this.model.Widget
             
         override this.Attachments = this.Attachments
         
