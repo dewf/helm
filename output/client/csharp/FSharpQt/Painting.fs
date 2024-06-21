@@ -1,7 +1,6 @@
 ﻿module FSharpQt.Painting
 
 open System
-open System.Collections.Generic
 open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
@@ -287,6 +286,18 @@ with
         | VerticalSubpixelPositioning -> Painter.RenderHint.VerticalSubpixelPositioning
         | LosslessImageRendering -> Painter.RenderHint.LosslessImageRendering
         | NonCosmeticBrushPatterns -> Painter.RenderHint.NonCosmeticBrushPatterns
+    static member QtSetFrom (hints: RenderHint seq) =
+        (enum<Painter.RenderHintSet> 0, hints)
+        ||> Seq.fold (fun acc hint ->
+            let flag =
+                match hint with
+                | Antialiasing -> Painter.RenderHintSet.Antialiasing
+                | TextAntialiasing -> Painter.RenderHintSet.TextAntialiasing
+                | SmoothPixmapTransform -> Painter.RenderHintSet.SmoothPixmapTransform
+                | VerticalSubpixelPositioning -> Painter.RenderHintSet.VerticalSubpixelPositioning
+                | LosslessImageRendering -> Painter.RenderHintSet.LosslessImageRendering
+                | NonCosmeticBrushPatterns -> Painter.RenderHintSet.NonCosmeticBrushPatterns
+            acc ||| flag)
 
 type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
     // not disposable (for now) because we don't create them (for now)
@@ -299,10 +310,8 @@ type Painter internal(qtPainter: Org.Whatever.QtTesting.Painter.Handle) =
     member this.SetRenderHint (hint: RenderHint) (state: bool) =
         qtPainter.SetRenderHint(hint.QtValue, state)
         
-    member this.SetRenderHints (hints: Set<RenderHint>) (state: bool) =
-        let qHints =
-            hints |> Set.map (_.QtValue)
-        qtPainter.SetRenderHints(HashSet(qHints), state)
+    member this.SetRenderHints (hints: RenderHint seq) (state: bool) =
+        qtPainter.SetRenderHints(hints |> RenderHint.QtSetFrom, state)
     
     member this.DrawText(rect: Rect, align: Alignment, text: string) =
         qtPainter.DrawText(rect.QtValue, align.QtValue, text)

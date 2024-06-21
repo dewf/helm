@@ -13,12 +13,9 @@ namespace Painter
         THIS->setRenderHint((QPainter::RenderHint)hint, on);
     }
 
-    void Handle_setRenderHints(HandleRef _this, std::set<RenderHint> hints, bool on) {
-        QPainter::RenderHints qHints;
-        for (auto & hint : hints) {
-            qHints.setFlag((QPainter::RenderHint)hint);
-        }
-        THIS->setRenderHints(qHints, on);
+    void Handle_setRenderHints(HandleRef _this, uint32_t hints, bool on) {
+        auto qtHints = QPainter::RenderHints((int)hints);
+        THIS->setRenderHints(qtHints, on);
     }
 
     void Handle_setPen(HandleRef _this, PenRef pen) {
