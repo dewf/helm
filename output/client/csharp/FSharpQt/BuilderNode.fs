@@ -150,8 +150,12 @@ let dumpTree (node: IBuilderNode<'msg>) =
     inner 0 node
         
 let rec disposeTree(node: IBuilderNode<'msg>) =
-    // ideally we would stop at windows and let them be responsible for anything beneath,
-    // but so far that hasn't worked well - always something remaining alive even with top-level window deletion??
+    // disposing everything (bottom to top) is somewhat excessive since things like QMainWindow own (SOME OF) their dependents,
+    // but:
+    // 1. it works for now, Qt seems very well-designed in terms of gracefully removing deleted things from their parents/owners,
+    //    which can work in our favor (not having to worry about dependency removal, eg removing a menubar from a window, widgets from a layout, etc)
+    // 2. things like QMenu aren't owned by their QMenuBar, so until we have a more intelligent deletion mechanism in place,
+    //    for example an IBuilderNode property .OwnedBy ... we might as well be exhaustive. it seems not to cause any problems!
     for _, node in (nodeDepsWithAttachments node) do
         disposeTree node
     node.Dispose()
