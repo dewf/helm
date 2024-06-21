@@ -308,7 +308,7 @@ type EventDelegate(state: State) =
             |> Array.map (_.Position)
         painter.DrawPolyline(points)
 
-        // construct path       
+        // construct path
         let path = stack.PainterPath()
         path.MoveTo(state.ControlPoints[0].Position)
         match state.LineStyle with
@@ -340,7 +340,6 @@ type EventDelegate(state: State) =
         | _ ->
             let pen = stack.Pen(res.LineColorBrush, state.PenWidth, state.PenStyle, state.CapStyle, state.JoinStyle)
             painter.StrokePath(path, pen)
-
         
 let view (state: State) =
     let timer =
@@ -357,7 +356,7 @@ let view (state: State) =
         ]
         CustomWidget(EventDelegate(state), events,
                      Attrs = [ MouseTracking true ],
-                     Attachments = [ "timer", Attachment.NonVisual timer ])
+                     Attachments = [ "timer", Attachment(timer) ])
     custom :> IWidgetNode<Msg>
 
 type PathStrokeRenderer<'outerMsg>() =

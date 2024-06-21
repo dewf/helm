@@ -31,16 +31,24 @@ type ContentKey =
     System.Object
    
 [<RequireQualifiedAccess>]
-type Attachment<'msg> =
+type AttachmentValue<'msg> =
     | NonVisual of node: INonVisualNode<'msg>
     | Dialog of node: IDialogNode<'msg>
     | Menu of node: IMenuNode<'msg>
-with
-    member this.Node =
-        match this with
-        | NonVisual node -> node :> IBuilderNode<'msg>
-        | Dialog node -> node
-        | Menu node -> node
+        
+and Attachment<'msg> private(value: AttachmentValue<'msg>) =
+    member val internal Value = value
+    new(node: INonVisualNode<'msg>) =
+        Attachment(AttachmentValue.NonVisual node)
+    new(node: IDialogNode<'msg>) =
+        Attachment(AttachmentValue.Dialog node)
+    new(node: IMenuNode<'msg>) =
+        Attachment(AttachmentValue.Menu node)
+    member internal this.Node =
+        match value with
+        | AttachmentValue.NonVisual node -> node :> IBuilderNode<'msg>
+        | AttachmentValue.Dialog node -> node
+        | AttachmentValue.Menu node -> node
     
 and BuilderContext<'msg> = {
     // context cannot contain nodes (eg parent node),

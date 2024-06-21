@@ -84,7 +84,7 @@ let view (state: State) =
                       BoxItem(progress)
                       BoxItem(hbox)
                       BoxItem(button)
-                  ], Attachments = [ "timer", Attachment.NonVisual timer ])
+                  ], Attachments = [ "timer", Attachment(timer) ])
     hbox :> ILayoutNode<Msg>
 
 type TimerPage<'outerMsg>() =

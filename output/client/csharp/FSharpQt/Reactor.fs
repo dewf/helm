@@ -64,10 +64,10 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
             // now this node's attachments
             (soFar, node.Attachments)
             ||> List.fold (fun acc (id, attach) ->
-                match attach with
-                | Attachment.NonVisual nonVisualNode ->
+                match attach.Value with
+                | AttachmentValue.NonVisual nonVisualNode ->
                     recInner acc nonVisualNode
-                | Attachment.Dialog dialogNode ->
+                | AttachmentValue.Dialog dialogNode ->
                     // first process anything beneath (subdialogs! ack)
                     let acc =
                         recInner acc dialogNode
@@ -79,7 +79,7 @@ type Reactor<'state, 'attr, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg
                         | :? IDialogNode<'msg> as dialogNode -> Some dialogNode.Dialog
                         | _ -> None
                     acc.Add(id, AttachedDialog(dialogNode, maybeWidget))
-                | Attachment.Menu menuNode ->
+                | AttachmentValue.Menu menuNode ->
                     // deeper attachments
                     let acc =
                         recInner acc menuNode

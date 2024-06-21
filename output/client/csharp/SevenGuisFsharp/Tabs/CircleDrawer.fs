@@ -281,8 +281,8 @@ let view (state: State) =
             EventDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
             Attrs = [ MouseTracking true ], // tracking needed for move events without mouse down
             Attachments = [
-                "context", Attachment.Menu contextMenu
-                "edit", Attachment.Dialog dialog
+                "context", Attachment(contextMenu)
+                "edit", Attachment(dialog)
             ])
         
     let vbox =

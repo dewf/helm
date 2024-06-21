@@ -135,7 +135,7 @@ let view (state: State) =
                 BoxItem(button)
             ],
             Attachments = [
-                "calendar", Attachment.Dialog dialog
+                "calendar", Attachment(dialog)
             ])
     hbox :> ILayoutNode<Msg>
     
