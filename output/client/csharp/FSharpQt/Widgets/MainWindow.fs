@@ -169,7 +169,8 @@ type MainWindow<'msg>() =
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
 
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
-    member this.Content with set value = maybeContent <- Some value
+    member this.CentralWidget with set (value: IWidgetNode<'msg>) = maybeContent <- Some value
+    member this.CentralLayout with set (value: ILayoutNode<'msg>) = maybeContent <- Some value
     
     let mutable maybeMenuBar: IMenuBarNode<'msg> option = None
     member this.MenuBar with set value = maybeMenuBar <- Some value

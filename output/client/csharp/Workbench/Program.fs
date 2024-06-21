@@ -56,7 +56,7 @@ let view (state: State) =
             Icon(ThemeIcon.Computer)
         let seq =
             KeySequence(Key.D, [ Alt; Shift ])
-        MenuAction(Attrs = [ Text "Better!"; Shortcut seq; IconAttr icon; StatusTip "Another Tip?" ], OnTriggered = (fun _ -> ActionTriggered))
+        MenuAction(Attrs = [ Text "Better!"; Shortcut seq; IconAttr icon; StatusTip "Another Tip?"; Enabled false ], OnTriggered = (fun _ -> ActionTriggered))
         
     let exitAction =
         let icon =
@@ -105,8 +105,12 @@ let view (state: State) =
     let statusBar =
         StatusBar()
         
+    let button =
+        PushButton(Attrs = [ PushButton.Text "woot" ])
+        
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
+        CentralWidget = button,
         MenuBar = menuBar,
         StatusBar = statusBar,
         ToolBars = [

@@ -129,7 +129,7 @@ let view (state: State) =
         let window =
             MainWindow(
                 Attrs = [ Title "7GUIs in F#/Qt" ],
-                Content = vbox,
+                CentralLayout = vbox,
                 OnClosed = MainWindowClosed)
         IntKey 0, window :> IWindowNode<Msg>
         
@@ -148,7 +148,7 @@ let view (state: State) =
                 | GuiKind.DropTesting -> "Drop Testing", DropTesting()
                 | GuiKind.PathStroking -> "Path Stroking", PathStroking()
             let window =
-                MainWindow(Attrs = [ Title title ], Content = node, OnClosed = InstanceClosed inst.Key)
+                MainWindow(Attrs = [ Title title ], CentralLayout = node, OnClosed = InstanceClosed inst.Key)
             IntKey inst.Key, window :> IWindowNode<Msg>)
         
     WindowSet(Windows = mainWindow :: instanceWindows)
