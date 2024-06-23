@@ -1,0 +1,13 @@
+module ModelIndex;
+
+@nodispose
+opaque Handle {
+    bool isValid();
+    int row();
+    int column();
+}
+
+sumtype Deferred {
+    Empty,
+    FromHandle(Handle handle)
+}

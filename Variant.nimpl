@@ -1,0 +1,9 @@
+module Variant;
+
+import Icon;
+
+sumtype Deferred {
+    FromString(string value),
+    FromInt(int value),
+    FromIcon(Icon.Deferred value)
+}

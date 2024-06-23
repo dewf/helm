@@ -19,6 +19,10 @@ add_library(QtTestingImpl STATIC
     ../generated/AbstractButton_wrappers.cpp
     ../AbstractButton.cpp
 
+    ../generated/AbstractListModel.h
+    ../generated/AbstractListModel_wrappers.cpp
+    ../AbstractListModel.cpp
+
     ../generated/AbstractScrollArea.h
     ../generated/AbstractScrollArea_wrappers.cpp
     ../AbstractScrollArea.cpp
@@ -82,6 +86,7 @@ add_library(QtTestingImpl STATIC
 
     ../generated/KeySequence.h
     ../generated/KeySequence_wrappers.cpp
+    ../KeySequenceInternal.h
     ../KeySequence.cpp
 
     ../generated/Label.h
@@ -115,6 +120,11 @@ add_library(QtTestingImpl STATIC
     ../generated/MessageBox.h
     ../generated/MessageBox_wrappers.cpp
     ../MessageBox.cpp
+
+    ../generated/ModelIndex.h
+    ../generated/ModelIndex_wrappers.cpp
+    ../ModelIndexInternal.h
+    ../ModelIndex.cpp
 
     ../generated/Object.h
     ../generated/Object_wrappers.cpp
@@ -172,6 +182,11 @@ add_library(QtTestingImpl STATIC
     ../generated/ToolBar.h
     ../generated/ToolBar_wrappers.cpp
     ../ToolBar.cpp
+
+    ../generated/Variant.h
+    ../generated/Variant_wrappers.cpp
+    ../VariantInternal.h
+    ../Variant.cpp
 
     ../generated/Widget.h
     ../generated/Widget_wrappers.cpp
