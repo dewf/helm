@@ -50,7 +50,7 @@ let view (state: State) =
         let text =
             sprintf "%.02fs" (float state.Accumulated / 1000.0)
         ProgressBar(Attrs = [
-            Range (0, 1000) // using 1000 divisions ... setting duration directly here seemed to cause flickering
+            Range (0, 1000) // using 1000 divisions regardless ... using duration as upper limit seemed to cause flickering
             Value value
             InnerText text
         ])
