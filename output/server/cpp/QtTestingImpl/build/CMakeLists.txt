@@ -101,10 +101,6 @@ add_library(QtTestingImpl STATIC
     ../generated/LineEdit_wrappers.cpp
     ../LineEdit.cpp
 
-    ../generated/ListWidget.h
-    ../generated/ListWidget_wrappers.cpp
-    ../ListWidget.cpp
-
     ../generated/MainWindow.h
     ../generated/MainWindow_wrappers.cpp
     ../MainWindow.cpp
@@ -158,10 +154,6 @@ add_library(QtTestingImpl STATIC
     ../generated/ScrollArea.h
     ../generated/ScrollArea_wrappers.cpp
     ../ScrollArea.cpp
-
-    ../generated/Signal.h
-    ../generated/Signal_wrappers.cpp
-    ../Signal.cpp
 
     ../generated/Slider.h
     ../generated/Slider_wrappers.cpp
