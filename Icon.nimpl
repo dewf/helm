@@ -160,6 +160,7 @@ enum ThemeIcon {
     NThemeIcons
 }
 
+@nodispose
 opaque Handle;
 
 sumtype Deferred {

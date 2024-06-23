@@ -48,8 +48,7 @@ namespace MainWindow
             handler->customContextMenuRequested(toPoint(pos));
         };
         void onWindowIconChanged(const QIcon& icon) {
-            Icon::__Handle icon2(icon); // only valid for duration of this call ...
-            handler->windowIconChanged(&icon2);
+            handler->windowIconChanged((Icon::HandleRef)&icon);
         }
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());
