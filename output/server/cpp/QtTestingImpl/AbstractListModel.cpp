@@ -19,7 +19,7 @@ namespace AbstractListModel
         Subclassed(QObject *parent, const std::function<CreateFunc>& createFunc, uint32_t mask)
             : QAbstractListModel(parent)
         {
-            methodDelegate = createFunc((HandleRef)this);
+            methodDelegate = createFunc((InteriorRef)this);
             methodMask = (MethodMask)mask;
         }
 
@@ -52,22 +52,17 @@ namespace AbstractListModel
             }
         }
 
-        // ====== redeclared protected stuff, so we can access it from the method delegate
-        void beginInsertRowsPublic(const QModelIndex& parent, int first, int last) {
-            QAbstractListModel::beginInsertRows(parent, first, last);
-        }
-
-        void endInsertRowsPublic() {
-            QAbstractListModel::endInsertRows();
-        }
+        // 'interior' (friend handle) functions
+        friend void Interior_beginInsertRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last);
+        friend void Interior_endInsertRows(InteriorRef _this);
     };
 
-    void Handle_beginInsertRows(HandleRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last) {
-        THIS->beginInsertRowsPublic(ModelIndex::fromDeferred(parent), first, last);
+    void Interior_beginInsertRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last) {
+        THIS->beginInsertRows(ModelIndex::fromDeferred(parent), first, last);
     }
 
-    void Handle_endInsertRows(HandleRef _this) {
-        THIS->endInsertRowsPublic();
+    void Interior_endInsertRows(InteriorRef _this) {
+        THIS->endInsertRows();
     }
 
     void Handle_dispose(HandleRef _this) {

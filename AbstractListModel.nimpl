@@ -4,7 +4,11 @@ import Enums;
 import Variant;
 import ModelIndex;
 
-opaque Handle {
+opaque Handle;
+
+@nodispose
+opaque Interior extends Handle {
+    // for access to protected stuff from MethodDelegate
     void beginInsertRows(ModelIndex.Deferred parent, int first, int last);
     void endInsertRows();
 }
@@ -28,6 +32,6 @@ interface MethodDelegate {
     Variant.Deferred headerData(int section, Orientation orientation, ItemDataRole role);
 }
 
-delegate MethodDelegate CreateFunc(Handle model); // so we can inject the 'this' into the delegate
+delegate MethodDelegate CreateFunc(Interior model); // so we can inject 'this' when constructing the delegate
 
 Handle createSubclassed(CreateFunc func, MethodMask mask);
