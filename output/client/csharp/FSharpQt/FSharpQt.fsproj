@@ -14,8 +14,10 @@
         <Compile Include="Reactor.fs" />
         <Compile Include="Painting.fs" />
         <Compile Include="EventDelegate.fs" />
-        <Compile Include="Widgets\Menus\MenuAction.fs" />
+
+        <Compile Include="Models\SimpleListModel.fs" />
         
+        <Compile Include="Widgets\Menus\MenuAction.fs" />
         <Compile Include="Widgets\Menus\Menu.fs" />
         <Compile Include="Widgets\Menus\MenuBar.fs" />
         
@@ -29,7 +31,6 @@
         <Compile Include="Widgets\GroupBox.fs" />
         <Compile Include="Widgets\Label.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
-        <Compile Include="Widgets\ListWidget.fs" />
         <Compile Include="Widgets\MainWindow.fs" />
         <Compile Include="Widgets\MessageBox.fs" />
         <Compile Include="Widgets\ProgressBar.fs" />

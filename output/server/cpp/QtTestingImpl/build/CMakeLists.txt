@@ -19,6 +19,10 @@ add_library(QtTestingImpl STATIC
     ../generated/AbstractButton_wrappers.cpp
     ../AbstractButton.cpp
 
+    ../generated/AbstractItemModel.h
+    ../generated/AbstractItemModel_wrappers.cpp
+    ../AbstractItemModel.cpp
+
     ../generated/AbstractListModel.h
     ../generated/AbstractListModel_wrappers.cpp
     ../AbstractListModel.cpp

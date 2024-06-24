@@ -8,6 +8,7 @@ open Extensions
 open MiscTypes
 
 // no signals yet
+type Signal = unit
 
 type DirectionValue =
     | TopToBottom

@@ -10,7 +10,7 @@ open BoxLayout
 open GridLayout
 open PushButton
 open LineEdit
-open ListWidget
+open Widget
 
 open Extensions
 open MiscTypes
@@ -208,13 +208,15 @@ let view (state: State) =
                 let name = fname.Name
                 sprintf "%s, %s" name.Last name.First)
     let listBox =
-        ListWidget(
-            Attrs = [
-                Items items
-                SelectionMode Single
-                CurrentRow state.SelectedIndex
-            ],
-            OnCurrentRowChanged = SelectItem)
+        // Widget() was crashing with some kind of stack overflow, need to look into
+        PushButton(Attrs = [ Text "Wut" ])
+        // ListWidget(
+        //     Attrs = [
+        //         Items items
+        //         SelectionMode Single
+        //         CurrentRow state.SelectedIndex
+        //     ],
+        //     OnCurrentRowChanged = SelectItem)
 
     let firstLabel = Label(Attrs = [ Label.Text "First:" ])
     let firstEdit = LineEdit(Attrs = [ Value state.FirstEdit ], OnTextChanged = SetFirst)

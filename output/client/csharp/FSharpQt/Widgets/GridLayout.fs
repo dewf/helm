@@ -6,7 +6,7 @@ open FSharpQt
 open BuilderNode
 open MiscTypes
 
-// no signals yet
+type Signal = unit
 
 type Attr =
     | Spacing of spacing: int

@@ -16,10 +16,10 @@ namespace AbstractListModel
         std::shared_ptr<MethodDelegate> methodDelegate;
         MethodMask methodMask;
     public:
-        Subclassed(QObject *parent, const std::function<CreateFunc>& createFunc, uint32_t mask)
+        Subclassed(QObject *parent, const std::shared_ptr<MethodDelegate>& methodDelegate, uint32_t mask)
             : QAbstractListModel(parent)
         {
-            methodDelegate = createFunc((InteriorRef)this);
+            this->methodDelegate = methodDelegate;
             methodMask = (MethodMask)mask;
         }
 
@@ -79,6 +79,10 @@ namespace AbstractListModel
         friend void Interior_endResetModel(InteriorRef _this);
     };
 
+    InteriorRef Handle_getInteriorHandle(HandleRef _this) {
+        return (InteriorRef)_this;
+    }
+
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
@@ -119,8 +123,12 @@ namespace AbstractListModel
         THIS->endResetModel();
     }
 
-    HandleRef createSubclassed(std::function<CreateFunc> createFunc, uint32_t mask) {
-        return (HandleRef) new Subclassed(nullptr, createFunc, mask);
+    void Interior_dispose(InteriorRef _this) {
+        delete THIS;
+    }
+
+    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, uint32_t mask) {
+        return (HandleRef) new Subclassed(nullptr, methodDelegate, mask);
     }
 }
 

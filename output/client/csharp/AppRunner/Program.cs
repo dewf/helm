@@ -28,10 +28,27 @@ internal static class Program
         public readonly PaintResources.Color.Constant Color = Color;
     }
     
-    class MyStringModel(AbstractListModel.Interior interior) : AbstractListModel.MethodDelegate
+    class MyStringModel : AbstractListModel.MethodDelegate
     {
-        private readonly List<ModelItem> _items = [];
+        private readonly AbstractListModel.Interior _interior;
+        private List<ModelItem> _items = [];
         private int _nextInsertVal = 1;
+
+        public MyStringModel()
+        {
+            _interior = AbstractListModel
+                .CreateSubclassed(this, AbstractListModel.MethodMask.Flags | AbstractListModel.MethodMask.SetData)
+                .GetInteriorHandle();
+        }
+
+        public void Dispose()
+        {
+            Console.WriteLine("disposing interior");
+            _interior.Dispose();
+            Console.WriteLine("done");
+        }
+
+        public AbstractListModel.Handle QtModel => _interior;
 
         public int RowCount(ModelIndex.Handle parent)
         {
@@ -78,7 +95,7 @@ internal static class Program
             {
                 _items[index.Row()].Text = value.ToString();
                 var deferred = new ModelIndex.Deferred.FromHandle(index);
-                interior.EmitDataChanged(deferred, deferred, []);
+                _interior.EmitDataChanged(deferred, deferred, []);
                 return true;
             }
             return false;
@@ -90,16 +107,36 @@ internal static class Program
             _nextInsertVal += 1;
             //
             var lastIndex = _items.Count;
-            interior.BeginInsertRows(new ModelIndex.Deferred.Empty(), lastIndex, lastIndex);
+            _interior.BeginInsertRows(new ModelIndex.Deferred.Empty(), lastIndex, lastIndex);
             _items.Add(item);
-            interior.EndInsertRows();
+            _interior.EndInsertRows();
         }
 
         public void RemoveFirst()
         {
-            interior.BeginRemoveRows(new ModelIndex.Deferred.Empty(), 0, 0);
+            _interior.BeginRemoveRows(new ModelIndex.Deferred.Empty(), 0, 0);
             _items.RemoveAt(0);
-            interior.EndRemoveRows();
+            _interior.EndRemoveRows();
+        }
+
+        private readonly PaintResources.Color.Constant[] _replacementColors =
+        [
+            PaintResources.Color.Constant.Blue,
+            PaintResources.Color.Constant.Magenta,
+            PaintResources.Color.Constant.Red,
+            PaintResources.Color.Constant.Yellow,
+            PaintResources.Color.Constant.Green,
+        ];
+
+        public void ReplaceAll()
+        {
+            _interior.BeginResetModel();
+            _items =
+                Enumerable
+                    .Range(0, 100)
+                    .Select(i => new ModelItem($"NEW item {i + 1}", _replacementColors[i % _replacementColors.Length]))
+                    .ToList();
+            _interior.EndResetModel();
         }
     }
 
@@ -133,12 +170,7 @@ internal static class Program
     {
         Library.Init();
 
-        MyStringModel? md = null;
-        
-        using(var model = AbstractListModel.CreateSubclassed(interior => {
-                  md = new MyStringModel(interior);
-                  return md;
-              }, AbstractListModel.MethodMask.Flags | AbstractListModel.MethodMask.SetData))
+        using(var model = new MyStringModel())
         using (var app = Application.Create(args))
         {
             using (var widget = Widget.Create(new WidgetHandler()))
@@ -149,12 +181,12 @@ internal static class Program
                 widget.SetLayout(vbox);
 
                 var listView = ListView.Create();
-                listView.SetModel(model);
+                listView.SetModel(model.QtModel);
                 vbox.AddWidget(listView);
 
                 var addButton = PushButton.Create(new ButtonHandler(() =>
                 {
-                    md!.AddOne();
+                    model.AddOne();
                 }));
                 addButton.SetSignalMask(PushButton.SignalMask.Clicked);
                 addButton.SetText("add one item");
@@ -162,11 +194,19 @@ internal static class Program
 
                 var removeButton = PushButton.Create(new ButtonHandler(() =>
                 {
-                    md!.RemoveFirst();
+                    model.RemoveFirst();
                 }));
                 removeButton.SetSignalMask(PushButton.SignalMask.Clicked);
                 removeButton.SetText("remove first");
                 vbox.AddWidget(removeButton);
+
+                var replaceButton = PushButton.Create(new ButtonHandler(() =>
+                {
+                    model.ReplaceAll();
+                }));
+                replaceButton.SetSignalMask(PushButton.SignalMask.Clicked);
+                replaceButton.SetText("replace all");
+                vbox.AddWidget(replaceButton);
                 
                 widget.Show();
                 Application.Exec();

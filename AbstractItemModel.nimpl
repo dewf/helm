@@ -1,0 +1,6 @@
+module AbstractItemModel;
+
+import Object;
+
+@nodispose // for now since we have no way of creating them
+opaque Handle extends Object.Handle;

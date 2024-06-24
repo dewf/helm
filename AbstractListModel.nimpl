@@ -1,12 +1,14 @@
 module AbstractListModel;
 
+import AbstractItemModel;
 import Enums;
 import Variant;
 import ModelIndex;
 
-opaque Handle;
+opaque Handle extends AbstractItemModel.Handle {
+    Interior getInteriorHandle();
+}
 
-@nodispose
 opaque Interior extends Handle { // this opaque allows the method delegate to call internal methods as if it's a direct subclass
     // signal emission
     void emitDataChanged(ModelIndex.Deferred topLeft, ModelIndex.Deferred bottomRight, Array<ItemDataRole> roles);
@@ -57,6 +59,4 @@ interface MethodDelegate {
     bool setData(ModelIndex.Handle index, Variant.Handle value, ItemDataRole role);
 }
 
-delegate MethodDelegate CreateFunc(Interior model); // so we can inject 'this' when constructing the delegate
-
-Handle createSubclassed(CreateFunc createFunc, MethodMask mask);
+Handle createSubclassed(MethodDelegate methodDelegate, MethodMask mask);
