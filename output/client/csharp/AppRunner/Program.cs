@@ -21,25 +21,21 @@ internal static class Program
             throw new NotImplementedException();
         }
     }
+
+    record ModelItem(string Text, PaintResources.Color.Constant Color)
+    {
+        public readonly string Text = Text;
+        public readonly PaintResources.Color.Constant Color = Color;
+    }
     
     class MyStringModel(AbstractListModel.Interior interior) : AbstractListModel.MethodDelegate
     {
-        // private AbstractListModel.Interior _interior = interior;
-        private List<string> _items = ["one", "two", "three", "four", "five"];
-
-        public ModelIndex.Deferred Parent(ModelIndex.Handle child)
-        {
-            return new ModelIndex.Deferred.Empty();
-        }
+        private readonly List<ModelItem> _items = [];
+        private int _nextInsertVal = 1;
 
         public int RowCount(ModelIndex.Handle parent)
         {
             return _items.Count;
-        }
-
-        public int ColumnCount(ModelIndex.Handle parent)
-        {
-            return 1;
         }
 
         public Variant.Deferred Data(ModelIndex.Handle index, Enums.ItemDataRole role)
@@ -50,16 +46,12 @@ internal static class Program
                 {
                     case Enums.ItemDataRole.DisplayRole:
                     {
-                        return new Variant.Deferred.FromString(_items[index.Row()]);
+                        return new Variant.Deferred.FromString(_items[index.Row()].Text);
                     }
                     case Enums.ItemDataRole.DecorationRole:
                     {
-                        var which = index.Row() % 17; // count in enum (minus transparent)
-                        var color = new PaintResources.Color.Deferred.FromConstant((PaintResources.Color.Constant)which);
+                        var color = new PaintResources.Color.Deferred.FromConstant(_items[index.Row()].Color);
                         return new Variant.Deferred.FromColor(color);
-                        // // var which = (Icon.ThemeIcon)(index.Row() % (int)Icon.ThemeIcon.NThemeIcons);
-                        // // var icon = new Icon.Deferred.FromThemeIcon(which);
-                        // return new Variant.Deferred.FromIcon(icon);
                     }
                 }
             }
@@ -73,10 +65,20 @@ internal static class Program
 
         public void AddOne()
         {
+            var item = new ModelItem($"Item {_nextInsertVal}", (PaintResources.Color.Constant)(_nextInsertVal % 17));
+            _nextInsertVal += 1;
+            //
             var lastIndex = _items.Count;
             interior.BeginInsertRows(new ModelIndex.Deferred.Empty(), lastIndex, lastIndex);
-            _items.Add($"Item {_items.Count + 1}");
+            _items.Add(item);
             interior.EndInsertRows();
+        }
+
+        public void RemoveFirst()
+        {
+            interior.BeginRemoveRows(new ModelIndex.Deferred.Empty(), 0, 0);
+            _items.RemoveAt(0);
+            interior.EndRemoveRows();
         }
     }
 
@@ -112,8 +114,7 @@ internal static class Program
 
         MyStringModel? md = null;
         
-        using(var model = AbstractListModel.CreateSubclassed(interior =>
-              {
+        using(var model = AbstractListModel.CreateSubclassed(interior => {
                   md = new MyStringModel(interior);
                   return md;
               }, 0))
@@ -130,13 +131,21 @@ internal static class Program
                 listView.SetModel(model);
                 vbox.AddWidget(listView);
 
-                var button = PushButton.Create(new ButtonHandler(() =>
+                var addButton = PushButton.Create(new ButtonHandler(() =>
                 {
                     md!.AddOne();
                 }));
-                button.SetSignalMask(PushButton.SignalMask.Clicked);
-                button.SetText("add one item");
-                vbox.AddWidget(button);
+                addButton.SetSignalMask(PushButton.SignalMask.Clicked);
+                addButton.SetText("add one item");
+                vbox.AddWidget(addButton);
+
+                var removeButton = PushButton.Create(new ButtonHandler(() =>
+                {
+                    md!.RemoveFirst();
+                }));
+                removeButton.SetSignalMask(PushButton.SignalMask.Clicked);
+                removeButton.SetText("remove first");
+                vbox.AddWidget(removeButton);
                 
                 widget.Show();
                 Application.Exec();

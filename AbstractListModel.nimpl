@@ -11,23 +11,25 @@ opaque Interior extends Handle {
     // for access to protected stuff from MethodDelegate
     void beginInsertRows(ModelIndex.Deferred parent, int first, int last);
     void endInsertRows();
+
+    void beginRemoveRows(ModelIndex.Deferred parent, int first, int last);
+    void endRemoveRows();
+
+    void beginResetModel();
+    void endResetModel();
 }
 
 flags MethodMask {
-    // these 4 are required:
-    // Parent
+    // required, so not in mask:
     // RowCount
-    // ColumnCount
     // Data
-    
+
     // optional:
     HeaderData = 1
 }
 
 interface MethodDelegate {
-    ModelIndex.Deferred parent(ModelIndex.Handle child);
     int rowCount(ModelIndex.Handle parent);
-    int columnCount(ModelIndex.Handle parent);
     Variant.Deferred data(ModelIndex.Handle index, ItemDataRole role);
     
     // "optional" (we still have to implement, but only active if mask flag is set)
@@ -36,4 +38,4 @@ interface MethodDelegate {
 
 delegate MethodDelegate CreateFunc(Interior model); // so we can inject 'this' when constructing the delegate
 
-Handle createSubclassed(CreateFunc func, MethodMask mask);
+Handle createSubclassed(CreateFunc createFunc, MethodMask mask);

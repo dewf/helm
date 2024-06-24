@@ -24,17 +24,8 @@ namespace AbstractListModel
         }
 
         // ==== must-implement abstract methods ===========================
-        QModelIndex parent(const QModelIndex &child) const override {
-            auto deferred = methodDelegate->parent((ModelIndex::HandleRef)&child);
-            return ModelIndex::fromDeferred(deferred);
-        }
-
         int rowCount(const QModelIndex &parent) const override {
             return methodDelegate->rowCount((ModelIndex::HandleRef)&parent);
-        }
-
-        int columnCount(const QModelIndex &parent) const override {
-            return methodDelegate->columnCount((ModelIndex::HandleRef)&parent);
         }
 
         QVariant data(const QModelIndex &index, int role) const override {
@@ -42,20 +33,28 @@ namespace AbstractListModel
             return Variant::fromDeferred(deferred);
         }
 
-        // ==== OPTIONAL methods ================================================
+        // ==== optional methods ==========================================
         QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
             if (methodMask & MethodMask::HeaderData) {
                 auto deferred = methodDelegate->headerData(section, (Enums::Orientation)orientation, (ItemDataRole)role);
                 return Variant::fromDeferred(deferred);
             } else {
-                return QAbstractItemModel::headerData(section, orientation, role);
+                return QAbstractListModel::headerData(section, orientation, role);
             }
         }
 
         // 'interior' (friend handle) functions
         friend void Interior_beginInsertRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last);
         friend void Interior_endInsertRows(InteriorRef _this);
+        friend void Interior_beginRemoveRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last);
+        friend void Interior_endRemoveRows(InteriorRef _this);
+        friend void Interior_beginResetModel(InteriorRef _this);
+        friend void Interior_endResetModel(InteriorRef _this);
     };
+
+    void Handle_dispose(HandleRef _this) {
+        delete THIS;
+    }
 
     void Interior_beginInsertRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last) {
         THIS->beginInsertRows(ModelIndex::fromDeferred(parent), first, last);
@@ -65,12 +64,24 @@ namespace AbstractListModel
         THIS->endInsertRows();
     }
 
-    void Handle_dispose(HandleRef _this) {
-        delete THIS;
+    void Interior_beginRemoveRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last) {
+        THIS->beginRemoveRows(ModelIndex::fromDeferred(parent), first, last);
     }
 
-    HandleRef createSubclassed(std::function<CreateFunc> func, uint32_t mask) {
-        return (HandleRef) new Subclassed(nullptr, func, mask);
+    void Interior_endRemoveRows(InteriorRef _this) {
+        THIS->endRemoveRows();
+    }
+
+    void Interior_beginResetModel(InteriorRef _this) {
+        THIS->beginResetModel();
+    }
+
+    void Interior_endResetModel(InteriorRef _this) {
+        THIS->endResetModel();
+    }
+
+    HandleRef createSubclassed(std::function<CreateFunc> createFunc, uint32_t mask) {
+        return (HandleRef) new Subclassed(nullptr, createFunc, mask);
     }
 }
 
