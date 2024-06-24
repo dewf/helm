@@ -24,7 +24,7 @@ internal static class Program
 
     record ModelItem(string Text, PaintResources.Color.Constant Color)
     {
-        public readonly string Text = Text;
+        public string Text = Text;
         public readonly PaintResources.Color.Constant Color = Color;
     }
     
@@ -60,7 +60,28 @@ internal static class Program
 
         public Variant.Deferred HeaderData(int section, Enums.Orientation orientation, Enums.ItemDataRole role)
         {
-            return new Variant.Deferred.Empty();
+            throw new NotImplementedException();
+        }
+
+        public AbstractListModel.ItemFlags GetFlags(ModelIndex.Handle index, AbstractListModel.ItemFlags baseFlags)
+        {
+            if (index.IsValid() && index.Column() == 0 && index.Row() < _items.Count)
+            {
+                return baseFlags | AbstractListModel.ItemFlags.ItemIsEditable;
+            }
+            return baseFlags;
+        }
+
+        public bool SetData(ModelIndex.Handle index, Variant.Handle value, Enums.ItemDataRole role)
+        {
+            if (index.IsValid() && index.Column() == 0 && index.Row() < _items.Count && role == Enums.ItemDataRole.EditRole)
+            {
+                _items[index.Row()].Text = value.ToString();
+                var deferred = new ModelIndex.Deferred.FromHandle(index);
+                interior.EmitDataChanged(deferred, deferred, []);
+                return true;
+            }
+            return false;
         }
 
         public void AddOne()
@@ -117,7 +138,7 @@ internal static class Program
         using(var model = AbstractListModel.CreateSubclassed(interior => {
                   md = new MyStringModel(interior);
                   return md;
-              }, 0))
+              }, AbstractListModel.MethodMask.Flags | AbstractListModel.MethodMask.SetData))
         using (var app = Application.Create(args))
         {
             using (var widget = Widget.Create(new WidgetHandler()))

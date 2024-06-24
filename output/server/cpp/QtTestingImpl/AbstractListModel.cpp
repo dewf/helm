@@ -43,6 +43,33 @@ namespace AbstractListModel
             }
         }
 
+        Qt::ItemFlags flags(const QModelIndex &index) const override {
+            auto baseFlags = QAbstractListModel::flags(index);
+            if (methodMask & MethodMask::Flags) {
+                auto raw = (int)methodDelegate->getFlags((ModelIndex::HandleRef)&index, baseFlags);
+                return (Qt::ItemFlags) raw;
+            } else {
+                return baseFlags;
+            }
+        }
+
+        bool setData(const QModelIndex &index, const QVariant &value, int role) override {
+            if (methodMask & MethodMask::SetData) {
+                return methodDelegate->setData((ModelIndex::HandleRef)&index, (Variant::HandleRef)&value, (ItemDataRole)role);
+            } else {
+                return QAbstractListModel::setData(index, value, role);
+            }
+        }
+
+        // signal emission wrappers
+        void emitDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QList<int>& roles) {
+            emit dataChanged(topLeft, bottomRight, roles);
+        }
+
+        void emitHeaderDataChanged(Qt::Orientation orientation, int first, int last) {
+            emit headerDataChanged(orientation, first, last);
+        }
+
         // 'interior' (friend handle) functions
         friend void Interior_beginInsertRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last);
         friend void Interior_endInsertRows(InteriorRef _this);
@@ -54,6 +81,18 @@ namespace AbstractListModel
 
     void Handle_dispose(HandleRef _this) {
         delete THIS;
+    }
+
+    void Interior_emitDataChanged(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> topLeft, std::shared_ptr<ModelIndex::Deferred::Base> bottomRight, std::vector<ItemDataRole> roles) {
+        QList<int> qRoles;
+        for (auto role : roles) {
+            qRoles.push_back((int)role);
+        }
+        THIS->emitDataChanged(ModelIndex::fromDeferred(topLeft), ModelIndex::fromDeferred(bottomRight), qRoles);
+    }
+
+    void Interior_emitHeaderDataChanged(InteriorRef _this, Orientation orientation, int32_t first, int32_t last) {
+        THIS->emitHeaderDataChanged((Qt::Orientation)orientation, first, last);
     }
 
     void Interior_beginInsertRows(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> parent, int32_t first, int32_t last) {

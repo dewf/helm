@@ -160,7 +160,7 @@ enum ThemeIcon {
     NThemeIcons
 }
 
-@nodispose
+@nodispose     // as of now, client can't ever create these, and doesn't own them
 opaque Handle;
 
 sumtype Deferred {

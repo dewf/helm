@@ -3,6 +3,16 @@ module Variant;
 import Icon;
 import PaintResources; // for color, brush, etc (deferred)
 
+@nodispose
+opaque Handle {
+    bool isValid();
+    string toString();
+    int toInt();
+    
+    // no toIcon() yet, because ownership is murky (Icon is currently @nodispose)
+    // same for toColor()
+}
+
 sumtype Deferred {
     Empty,
     FromString(string value),

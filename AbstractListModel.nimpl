@@ -7,7 +7,11 @@ import ModelIndex;
 opaque Handle;
 
 @nodispose
-opaque Interior extends Handle {
+opaque Interior extends Handle { // this opaque allows the method delegate to call internal methods as if it's a direct subclass
+    // signal emission
+    void emitDataChanged(ModelIndex.Deferred topLeft, ModelIndex.Deferred bottomRight, Array<ItemDataRole> roles);
+    void emitHeaderDataChanged(Orientation orientation, int first, int last);
+
     // for access to protected stuff from MethodDelegate
     void beginInsertRows(ModelIndex.Deferred parent, int first, int last);
     void endInsertRows();
@@ -19,13 +23,28 @@ opaque Interior extends Handle {
     void endResetModel();
 }
 
+flags ItemFlags {
+    NoItemFlags = 0,
+    ItemIsSelectable = 1,
+    ItemIsEditable = 2,
+    ItemIsDragEnabled = 4,
+    ItemIsDropEnabled = 8,
+    ItemIsUserCheckable = 16,
+    ItemIsEnabled = 32,
+    ItemIsAutoTristate = 64,
+    ItemNeverHasChildren = 128,
+    ItemIsUserTristate = 256
+}
+
 flags MethodMask {
     // required, so not in mask:
     // RowCount
     // Data
 
     // optional:
-    HeaderData = 1
+    HeaderData = 1,
+    Flags = 1 << 1,
+    SetData = 1 << 2
 }
 
 interface MethodDelegate {
@@ -34,6 +53,8 @@ interface MethodDelegate {
     
     // "optional" (we still have to implement, but only active if mask flag is set)
     Variant.Deferred headerData(int section, Orientation orientation, ItemDataRole role);
+    ItemFlags getFlags(ModelIndex.Handle index, ItemFlags baseFlags);
+    bool setData(ModelIndex.Handle index, Variant.Handle value, ItemDataRole role);
 }
 
 delegate MethodDelegate CreateFunc(Interior model); // so we can inject 'this' when constructing the delegate

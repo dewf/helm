@@ -3,8 +3,24 @@
 #include "VariantInternal.h"
 #include "PaintResourcesInternal.h"
 
+#include <QVariant>
+#define THIS ((QVariant*)_this)
+
 namespace Variant
 {
+    bool Handle_isValid(HandleRef _this) {
+        return THIS->isValid();
+    }
+
+    std::string Handle_toString(HandleRef _this) {
+        return THIS->toString().toStdString();
+    }
+
+    int32_t Handle_toInt(HandleRef _this) {
+        return THIS->toInt();
+    }
+
+    // deferred stuff ========================================
     class FromDeferred : public Deferred::Visitor {
     private:
         QVariant &variant;
