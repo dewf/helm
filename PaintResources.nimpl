@@ -25,6 +25,13 @@ opaque Color {
             DarkYellow,
             Transparent
         }
+        sumtype Deferred {
+            FromConstant(Color.Constant name),
+            FromRGB(int r, int g, int b),
+            FromRGBA(int r, int g, int b, int a),
+            FromRGBF(float r, float g, float b),
+            FromRGBAF(float r, float g, float b, float a)
+        }
     }
 }
 

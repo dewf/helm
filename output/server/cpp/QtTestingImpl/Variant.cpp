@@ -1,6 +1,7 @@
 #include "generated/Variant.h"
 
 #include "VariantInternal.h"
+#include "PaintResourcesInternal.h"
 
 namespace Variant
 {
@@ -24,6 +25,10 @@ namespace Variant
 
         void onFromIcon(const Deferred::FromIcon *fromIcon) override {
             variant = Icon::fromDeferred(fromIcon->value);
+        }
+
+        void onFromColor(const Deferred::FromColor *fromColor) override {
+            variant = Color::fromDeferred(fromColor->value);
         }
     };
 

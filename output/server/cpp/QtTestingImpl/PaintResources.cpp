@@ -51,6 +51,35 @@ namespace PaintResources
             }
             return QColorConstants::Black;
         }
+
+        class FromDeferred : public Deferred::Visitor {
+        private:
+            QColor &color;
+        public:
+            explicit FromDeferred(QColor &color) : color(color) {}
+            void onFromConstant(const Deferred::FromConstant *fromConstant) override {
+                color = Color::fromConstant(fromConstant->name);
+            }
+            void onFromRGB(const Deferred::FromRGB *fromRGB) override {
+                color = QColor::fromRgb(fromRGB->r, fromRGB->g, fromRGB->b);
+            }
+            void onFromRGBA(const Deferred::FromRGBA *fromRGBA) override {
+                color = QColor::fromRgb(fromRGBA->r, fromRGBA->g, fromRGBA->b, fromRGBA->a);
+            }
+            void onFromRGBF(const Deferred::FromRGBF *fromRGBF) override {
+                color = QColor::fromRgbF(fromRGBF->r, fromRGBF->g, fromRGBF->b);
+            }
+            void onFromRGBAF(const Deferred::FromRGBAF *fromRGBAF) override {
+                color = QColor::fromRgbF(fromRGBAF->r, fromRGBAF->g, fromRGBAF->b, fromRGBAF->a);
+            }
+        };
+
+        QColor fromDeferred(const std::shared_ptr<Deferred::Base>& deferred) {
+            QColor ret;
+            FromDeferred visitor(ret);
+            deferred->accept(&visitor);
+            return ret;
+        }
     }
 
     // gradient ====================

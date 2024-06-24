@@ -1,10 +1,12 @@
 module Variant;
 
 import Icon;
+import PaintResources; // for color, brush, etc (deferred)
 
 sumtype Deferred {
     Empty,
     FromString(string value),
     FromInt(int value),
-    FromIcon(Icon.Deferred value)
+    FromIcon(Icon.Deferred value),
+    FromColor(Color.Deferred value)
 }

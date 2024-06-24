@@ -24,8 +24,8 @@ internal static class Program
     
     class MyStringModel(AbstractListModel.Interior interior) : AbstractListModel.MethodDelegate
     {
-        private AbstractListModel.Interior _interior = interior;
-        private List<string> _items = ["one", "two", "three", "four"];
+        // private AbstractListModel.Interior _interior = interior;
+        private List<string> _items = ["one", "two", "three", "four", "five"];
 
         public ModelIndex.Deferred Parent(ModelIndex.Handle child)
         {
@@ -54,9 +54,12 @@ internal static class Program
                     }
                     case Enums.ItemDataRole.DecorationRole:
                     {
-                        var which = (Icon.ThemeIcon)(index.Row() % (int)Icon.ThemeIcon.NThemeIcons);
-                        var icon = new Icon.Deferred.FromThemeIcon(which);
-                        return new Variant.Deferred.FromIcon(icon);
+                        var which = index.Row() % 17; // count in enum (minus transparent)
+                        var color = new PaintResources.Color.Deferred.FromConstant((PaintResources.Color.Constant)which);
+                        return new Variant.Deferred.FromColor(color);
+                        // // var which = (Icon.ThemeIcon)(index.Row() % (int)Icon.ThemeIcon.NThemeIcons);
+                        // // var icon = new Icon.Deferred.FromThemeIcon(which);
+                        // return new Variant.Deferred.FromIcon(icon);
                     }
                 }
             }
@@ -64,6 +67,39 @@ internal static class Program
         }
 
         public Variant.Deferred HeaderData(int section, Enums.Orientation orientation, Enums.ItemDataRole role)
+        {
+            return new Variant.Deferred.Empty();
+        }
+
+        public void AddOne()
+        {
+            var lastIndex = _items.Count;
+            interior.BeginInsertRows(new ModelIndex.Deferred.Empty(), lastIndex, lastIndex);
+            _items.Add($"Item {_items.Count + 1}");
+            interior.EndInsertRows();
+        }
+    }
+
+    delegate void ClickHandler();
+
+    class ButtonHandler(ClickHandler onClick) : PushButton.SignalHandler
+    {
+        public void Clicked(bool checkState)
+        {
+            onClick();
+        }
+
+        public void Pressed()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Released()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Toggled(bool checkState)
         {
             throw new NotImplementedException();
         }
@@ -73,8 +109,14 @@ internal static class Program
     private static void Main(string[] args)
     {
         Library.Init();
+
+        MyStringModel? md = null;
         
-        using(var model = AbstractListModel.CreateSubclassed(interior => new MyStringModel(interior), 0))
+        using(var model = AbstractListModel.CreateSubclassed(interior =>
+              {
+                  md = new MyStringModel(interior);
+                  return md;
+              }, 0))
         using (var app = Application.Create(args))
         {
             using (var widget = Widget.Create(new WidgetHandler()))
@@ -82,14 +124,21 @@ internal static class Program
                 widget.Resize(400, 400);
 
                 var vbox = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
+                widget.SetLayout(vbox);
 
                 var listView = ListView.Create();
                 listView.SetModel(model);
                 vbox.AddWidget(listView);
+
+                var button = PushButton.Create(new ButtonHandler(() =>
+                {
+                    md!.AddOne();
+                }));
+                button.SetSignalMask(PushButton.SignalMask.Clicked);
+                button.SetText("add one item");
+                vbox.AddWidget(button);
                 
-                widget.SetLayout(vbox);
                 widget.Show();
-                
                 Application.Exec();
             }
         }

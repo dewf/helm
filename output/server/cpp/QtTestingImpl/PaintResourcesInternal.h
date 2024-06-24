@@ -13,6 +13,10 @@
 
 namespace PaintResources
 {
+    namespace Color {
+        QColor fromDeferred(const std::shared_ptr<Deferred::Base>& deferred);
+    }
+
     struct PaintStackItem {
     };
 
