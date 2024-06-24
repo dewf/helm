@@ -101,6 +101,10 @@ add_library(QtTestingImpl STATIC
     ../generated/LineEdit_wrappers.cpp
     ../LineEdit.cpp
 
+    ../generated/ListView.h
+    ../generated/ListView_wrappers.cpp
+    ../ListView.cpp
+
     ../generated/MainWindow.h
     ../generated/MainWindow_wrappers.cpp
     ../MainWindow.cpp

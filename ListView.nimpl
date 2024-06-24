@@ -1,0 +1,11 @@
+module ListView;
+
+import AbstractListModel;
+import Widget;
+
+// todo: inherit from AbstractItemView instead
+opaque Handle extends Widget.Handle {
+    void setModel(AbstractListModel.Handle model);
+}
+
+Handle create();

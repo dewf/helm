@@ -29,6 +29,8 @@ interface MethodDelegate {
     int rowCount(ModelIndex.Handle parent);
     int columnCount(ModelIndex.Handle parent);
     Variant.Deferred data(ModelIndex.Handle index, ItemDataRole role);
+    
+    // "optional" (we still have to implement, but only active if mask flag is set)
     Variant.Deferred headerData(int section, Orientation orientation, ItemDataRole role);
 }
 

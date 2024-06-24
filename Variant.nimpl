@@ -3,6 +3,7 @@ module Variant;
 import Icon;
 
 sumtype Deferred {
+    Empty,
     FromString(string value),
     FromInt(int value),
     FromIcon(Icon.Deferred value)

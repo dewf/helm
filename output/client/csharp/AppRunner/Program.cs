@@ -1,17 +1,11 @@
 ﻿using Org.Whatever.QtTesting;
-using Action = Org.Whatever.QtTesting.Action;
 
 namespace AppRunner;
 
 internal static class Program
 {
-    class WindowHandler : MainWindow.SignalHandler
+    class WidgetHandler : Widget.SignalHandler
     {
-        public void Dispose()
-        {
-            Console.WriteLine("WindowHandler DISPOSE");
-        }
-
         public void CustomContextMenuRequested(Common.Point pos)
         {
             throw new NotImplementedException();
@@ -26,114 +20,50 @@ internal static class Program
         {
             throw new NotImplementedException();
         }
-
-        public void IconSizeChanged(Common.Size iconSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void TabifiedDockWidgetActivated(DockWidget.Handle dockWidget)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ToolButtonStyleChanged(Enums.ToolButtonStyle style)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Closed()
-        {
-            throw new NotImplementedException();
-        }
     }
-
-    class ToolBarHandler : ToolBar.SignalHandler
+    
+    class MyStringModel(AbstractListModel.Interior interior) : AbstractListModel.MethodDelegate
     {
-        public void Dispose()
+        private AbstractListModel.Interior _interior = interior;
+        private List<string> _items = ["one", "two", "three", "four"];
+
+        public ModelIndex.Deferred Parent(ModelIndex.Handle child)
         {
-            Console.WriteLine("ToolBarHandler DISPOSE");
-        }
-        
-        public void ActionTriggered(Action.Handle action)
-        {
-            throw new NotImplementedException();
+            return new ModelIndex.Deferred.Empty();
         }
 
-        public void AllowedAreasChanged(Enums.ToolBarAreas allowed)
+        public int RowCount(ModelIndex.Handle parent)
         {
-            throw new NotImplementedException();
+            return _items.Count;
         }
 
-        public void IconSizeChanged(Common.Size size)
+        public int ColumnCount(ModelIndex.Handle parent)
         {
-            throw new NotImplementedException();
+            return 1;
         }
 
-        public void MovableChanged(bool movable)
+        public Variant.Deferred Data(ModelIndex.Handle index, Enums.ItemDataRole role)
         {
-            throw new NotImplementedException();
+            if (index.IsValid() && index.Column() == 0 && index.Row() < _items.Count)
+            {
+                switch (role)
+                {
+                    case Enums.ItemDataRole.DisplayRole:
+                    {
+                        return new Variant.Deferred.FromString(_items[index.Row()]);
+                    }
+                    case Enums.ItemDataRole.DecorationRole:
+                    {
+                        var which = (Icon.ThemeIcon)(index.Row() % (int)Icon.ThemeIcon.NThemeIcons);
+                        var icon = new Icon.Deferred.FromThemeIcon(which);
+                        return new Variant.Deferred.FromIcon(icon);
+                    }
+                }
+            }
+            return new Variant.Deferred.Empty();
         }
 
-        public void OrientationChanged(Enums.Orientation value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ToolButtonStyleChanged(Enums.ToolButtonStyle style)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void TopLevelChanged(bool topLevel)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void VisibilityChanged(bool visible)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    class ActionHandler : Action.SignalHandler
-    {
-        public void Dispose()
-        {
-            Console.WriteLine("ActionHandler DISPOSE");
-        }
-        
-        public void Changed()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CheckableChanged(bool checkable)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void EnabledChanged(bool enabled)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Hovered()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Toggled(bool checked_)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Triggered(bool checked_)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void VisibleChanged()
+        public Variant.Deferred HeaderData(int section, Enums.Orientation orientation, Enums.ItemDataRole role)
         {
             throw new NotImplementedException();
         }
@@ -144,29 +74,23 @@ internal static class Program
     {
         Library.Init();
         
+        using(var model = AbstractListModel.CreateSubclassed(interior => new MyStringModel(interior), 0))
         using (var app = Application.Create(args))
         {
-            using (var windowHandler = new WindowHandler())
-            using (var toolbarHandler = new ToolBarHandler())
-            using (var actionHandler = new ActionHandler())
+            using (var widget = Widget.Create(new WidgetHandler()))
             {
-                using (var window = MainWindow.Create(windowHandler))
-                {
-                    window.SetWindowTitle("Haloooo");
-                    window.Resize(640, 480);
+                widget.Resize(400, 400);
 
-                    var action01 = Action.Create(window, actionHandler);
+                var vbox = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
 
-                    var tb = ToolBar.Create(toolbarHandler);
-                    tb.AddAction(action01);
-                    
-                    window.AddToolBar(tb);
-            
-                    window.Show();
+                var listView = ListView.Create();
+                listView.SetModel(model);
+                vbox.AddWidget(listView);
                 
-                    // runloop, before window destroyed plz
-                    Application.Exec();
-                }
+                widget.SetLayout(vbox);
+                widget.Show();
+                
+                Application.Exec();
             }
         }
         

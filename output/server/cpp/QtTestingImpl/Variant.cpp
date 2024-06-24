@@ -10,6 +10,10 @@ namespace Variant
     public:
         explicit FromDeferred(QVariant &variant) : variant(variant) {}
 
+        void onEmpty(const Deferred::Empty *empty) override {
+            variant = QVariant();
+        }
+
         void onFromString(const Deferred::FromString *fromString) override {
             variant = fromString->value.c_str();
         }
