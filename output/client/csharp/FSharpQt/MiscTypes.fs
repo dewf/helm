@@ -447,6 +447,9 @@ type MimeDataProxy internal(qMimeData: Widget.MimeData) =
         qMimeData.Text()
     member this.Urls =
         qMimeData.Urls()
+        
+type ModelIndexProxy internal(index: ModelIndex.Handle) =
+    let x = 10
     
 // experimenting for extreme cases:
    

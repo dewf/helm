@@ -164,6 +164,54 @@ internal static class Program
             throw new NotImplementedException();
         }
     }
+
+    class ListViewHandler : ListView.SignalHandler
+    {
+        public void CustomContextMenuRequested(Common.Point pos)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Activated(ModelIndex.Handle index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Clicked(ModelIndex.Handle index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DoubleClicked(ModelIndex.Handle index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Entered(ModelIndex.Handle index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void IconSizeChanged(Common.Size size)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Pressed(ModelIndex.Handle index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ViewportEntered()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void IndexesMoved(ModelIndex.Handle[] indexes)
+        {
+            throw new NotImplementedException();
+        }
+    }
     
     [STAThread]
     private static void Main(string[] args)
@@ -180,7 +228,7 @@ internal static class Program
                 var vbox = BoxLayout.Create(BoxLayout.Direction.TopToBottom);
                 widget.SetLayout(vbox);
 
-                var listView = ListView.Create();
+                var listView = ListView.Create(new ListViewHandler());
                 listView.SetModel(model.QtModel);
                 vbox.AddWidget(listView);
 

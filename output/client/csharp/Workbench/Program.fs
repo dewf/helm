@@ -13,6 +13,7 @@ open ToolBar
 open PushButton
 open ComboBox
 open StatusBar
+open ListView
 
 open FSharpQt.Widgets.Menus
 open Menu
@@ -105,12 +106,12 @@ let view (state: State) =
     let statusBar =
         StatusBar()
         
-    let button =
-        PushButton(Attrs = [ PushButton.Text "woot" ])
+    let listView =
+        ListView()
         
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
-        CentralWidget = button,
+        CentralWidget = listView,
         MenuBar = menuBar,
         StatusBar = statusBar,
         ToolBars = [

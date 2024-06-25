@@ -1,0 +1,9 @@
+module AbstractItemView;
+
+import AbstractItemModel;
+import AbstractScrollArea;
+
+@nodispose
+opaque Handle extends AbstractScrollArea.Handle {
+    void setModel(AbstractItemModel.Handle model);
+}

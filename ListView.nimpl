@@ -1,11 +1,73 @@
 module ListView;
 
+import Common;
 import AbstractListModel;
-import Widget;
+import ModelIndex;
+import AbstractItemView;
 
-// todo: inherit from AbstractItemView instead
-opaque Handle extends Widget.Handle {
-    void setModel(AbstractListModel.Handle model);
+flags SignalMask {
+    CustomContextMenuRequested = 1,
+    Activated = 1 << 1,
+    Clicked = 1 << 2,
+    DoubleClicked = 1 << 3,
+    Entered = 1 << 4,
+    IconSizeChanged = 1 << 5,
+    Pressed = 1 << 6,
+    ViewportEntered = 1 << 7,
+    IndexesMoved = 1 << 8
 }
 
-Handle create();
+interface SignalHandler {
+    // (some) Widget signals:
+    void customContextMenuRequested(Point pos);
+
+    // AbstractItemView signals:
+    void activated(ModelIndex.Handle index);
+    void clicked(ModelIndex.Handle index);
+    void doubleClicked(ModelIndex.Handle index);
+    void entered(ModelIndex.Handle index);
+    void iconSizeChanged(Size size);
+    void pressed(ModelIndex.Handle index);
+    void viewportEntered();
+
+    // ListView signals:
+    void indexesMoved(Array<ModelIndex.Handle> indexes);
+}
+
+enum Movement {
+    Static,
+    Free,
+    Snap
+}
+
+enum Flow {
+    LeftToRight,
+    TopToBottom
+}
+
+enum ResizeMode {
+    Fixed,
+    Adjust
+}
+
+enum LayoutMode {
+    SinglePass,
+    Batched
+}
+
+enum ViewMode {
+    ListMode,
+    IconMode
+}
+
+opaque Handle extends AbstractItemView.Handle {
+    void setMovement(Movement movement);
+    void setFlow(Flow flow);
+    void setResizeMode(ResizeMode mode);
+    void setLayoutMode(LayoutMode mode);
+    void setViewMode(ViewMode mode);
+
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);

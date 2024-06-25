@@ -45,3 +45,19 @@ type SimpleListModel<'row>(initialRows: 'row seq, rowFunc: 'row -> DataRole -> V
             
         member this.Dispose() =
             interior.Dispose()
+
+type Whatever<'row> = {
+    Seq: int
+    Model: SimpleListModel<'row>
+} with
+    interface QtItemModel with
+        member this.QtModel = (this.Model :> QtItemModel).QtModel
+    static member Create(initialRows: 'row seq, rowFunc: 'row -> DataRole -> Variant) =
+        { Seq = 1; Model = new SimpleListModel<'row>(initialRows, rowFunc) }
+    member this.InsertRow(row: 'row, index: int) =
+        failwith "not yet implemented"
+    member this.RemoveRow(row: 'row, index: int) =
+        failwith "not yet implemented"
+    member this.AppendRow(row: 'row) =
+        failwith "not yet implemented"
+
