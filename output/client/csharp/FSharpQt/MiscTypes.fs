@@ -317,6 +317,91 @@ type ThemeIcon =
 let internal toQtThemeIcon (icon: ThemeIcon) =
     enum<Icon.ThemeIcon> (int icon)
     
+type DataRole =
+    | DisplayRole
+    | DecorationRole
+    | EditRole
+    | ToolTipRole
+    | StatusTipRole
+    | WhatsThisRole
+    | FontRole
+    | TextAlignmentRole
+    | BackgroundRole
+    | ForegroundRole
+    | CheckStateRole
+    | AccessibleTextRole
+    | AccessibleDescriptionRole
+    | SizeHintRole
+    | InitialSortOrderRole
+    | DisplayPropertyRole
+    | DecorationPropertyRole
+    | ToolTipPropertyRole
+    | StatusTipPropertyRole
+    | WhatsThisPropertyRole
+    | UserRole of value: int   // over 0x0100
+with
+    member this.QtRole =
+        match this with
+        | DisplayRole -> Enums.ItemDataRole.DisplayRole
+        | DecorationRole -> Enums.ItemDataRole.DecorationRole
+        | EditRole -> Enums.ItemDataRole.EditRole
+        | ToolTipRole -> Enums.ItemDataRole.ToolTipRole
+        | StatusTipRole -> Enums.ItemDataRole.StatusTipRole
+        | WhatsThisRole -> Enums.ItemDataRole.WhatsThisRole
+        | FontRole -> Enums.ItemDataRole.FontRole
+        | TextAlignmentRole -> Enums.ItemDataRole.TextAlignmentRole
+        | BackgroundRole -> Enums.ItemDataRole.BackgroundRole
+        | ForegroundRole -> Enums.ItemDataRole.ForegroundRole
+        | CheckStateRole -> Enums.ItemDataRole.CheckStateRole
+        | AccessibleTextRole -> Enums.ItemDataRole.AccessibleTextRole
+        | AccessibleDescriptionRole -> Enums.ItemDataRole.AccessibleDescriptionRole
+        | SizeHintRole -> Enums.ItemDataRole.SizeHintRole
+        | InitialSortOrderRole -> Enums.ItemDataRole.InitialSortOrderRole
+        | DisplayPropertyRole -> Enums.ItemDataRole.DisplayPropertyRole
+        | DecorationPropertyRole -> Enums.ItemDataRole.DecorationPropertyRole
+        | ToolTipPropertyRole -> Enums.ItemDataRole.ToolTipPropertyRole
+        | StatusTipPropertyRole -> Enums.ItemDataRole.StatusTipPropertyRole
+        | WhatsThisPropertyRole -> Enums.ItemDataRole.WhatsThisPropertyRole
+        | UserRole value -> enum<Enums.ItemDataRole> value
+    static member From (role: Enums.ItemDataRole) =
+        match role with
+        | Enums.ItemDataRole.DisplayRole -> DisplayRole
+        | Enums.ItemDataRole.DecorationRole -> DecorationRole
+        | Enums.ItemDataRole.EditRole -> EditRole
+        | Enums.ItemDataRole.ToolTipRole -> ToolTipRole
+        | Enums.ItemDataRole.StatusTipRole -> StatusTipRole
+        | Enums.ItemDataRole.WhatsThisRole -> WhatsThisRole
+        | Enums.ItemDataRole.FontRole -> FontRole
+        | Enums.ItemDataRole.TextAlignmentRole -> TextAlignmentRole
+        | Enums.ItemDataRole.BackgroundRole -> BackgroundRole
+        | Enums.ItemDataRole.ForegroundRole -> ForegroundRole
+        | Enums.ItemDataRole.CheckStateRole -> CheckStateRole
+        | Enums.ItemDataRole.AccessibleTextRole -> AccessibleTextRole
+        | Enums.ItemDataRole.AccessibleDescriptionRole -> AccessibleDescriptionRole
+        | Enums.ItemDataRole.SizeHintRole -> SizeHintRole
+        | Enums.ItemDataRole.InitialSortOrderRole -> InitialSortOrderRole
+        | Enums.ItemDataRole.DisplayPropertyRole -> DisplayPropertyRole
+        | Enums.ItemDataRole.DecorationPropertyRole -> DecorationPropertyRole
+        | Enums.ItemDataRole.ToolTipPropertyRole -> ToolTipPropertyRole
+        | Enums.ItemDataRole.StatusTipPropertyRole -> StatusTipPropertyRole
+        | Enums.ItemDataRole.WhatsThisPropertyRole -> WhatsThisPropertyRole
+        | _ ->
+            let value = int role
+            if value >= 0x100 then
+                UserRole value
+            else
+                failwithf "DataRole.From: unknown input value [%d]" value
+    
+[<RequireQualifiedAccess>]
+type Variant =
+    | Empty
+    | String of str: string
+with
+    member this.QtValue =
+        match this with
+        | Empty -> Variant.Deferred.Empty() :> Org.Whatever.QtTesting.Variant.Deferred
+        | String str -> Variant.Deferred.FromString(str)
+    
 // for utility widgets (synthetic layout widgets etc)
 
 type internal NullWidgetHandler() =
