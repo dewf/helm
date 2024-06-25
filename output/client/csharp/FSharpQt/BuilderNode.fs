@@ -147,6 +147,12 @@ and IDialogNode<'msg> =
         abstract member Dialog: Dialog.Handle
     end
     
+and IModelNode<'msg> =
+    interface
+        inherit IBuilderNode<'msg>
+        abstract member QtModel: AbstractItemModel.Handle
+    end
+    
 let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
     let attachDeps =
         node.Attachments

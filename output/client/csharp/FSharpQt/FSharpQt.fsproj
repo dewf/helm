@@ -16,6 +16,10 @@
         <Compile Include="EventDelegate.fs" />
 
         <Compile Include="Models\SimpleListModel.fs" />
+
+        <Compile Include="Models\TrackedRows.fs" />
+
+        <Compile Include="Models\ListModelNode.fs" />
         
         <Compile Include="Widgets\Menus\MenuAction.fs" />
         <Compile Include="Widgets\Menus\Menu.fs" />
