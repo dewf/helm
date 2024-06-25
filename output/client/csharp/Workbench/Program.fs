@@ -4,6 +4,7 @@ open System
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.MiscTypes
 open FSharpQt.Models.ListModelNode
 open FSharpQt.Widgets.BoxLayout
 open Reactor
@@ -24,6 +25,7 @@ open Models.TrackedRows
 
 type ListRow = {
     Content: string
+    Color: Color
 }
 
 type State = {
@@ -36,9 +38,9 @@ type Msg =
 
 let init () =
     let initRows = TrackedRows.Init([
-        { Content = "One" }
-        { Content = "Two" }
-        { Content = "Three" }
+        { Content = "One"; Color = Color(ColorConstant.Green) }
+        { Content = "Two"; Color = Color(ColorConstant.Magenta) }
+        { Content = "Three"; Color = Color(ColorConstant.Red) }
     ])
     let nextState = {
         ListData = initRows
@@ -51,9 +53,17 @@ let update (state: State) (msg: Msg) =
         let nextData =
             let text =
                 sprintf "new row %d" (state.ListData.RowCount + 1)
+            let color =
+                let steps = 15
+                let interp start end' current =
+                    ((end' - start) * current) / steps + start
+                let r = 40
+                let g = interp 80 160 state.ListData.RowCount |> min 255
+                let b = interp 120 145 state.ListData.RowCount |> min 255
+                Color(r, g, b)
             state.ListData
                 .BeginChanges()
-                .AddRow({ Content = text })
+                .AddRow({ Content = text; Color = color })
         let nextState =
             { state with ListData = nextData }
         nextState, Cmd.None
@@ -62,8 +72,6 @@ let update (state: State) (msg: Msg) =
     
 let view (state: State) =
     let exitAction =
-        // let icon =
-        //     Icon(ThemeIcon.ApplicationExit)
         let seq =
             KeySequence(Key.Q, [ Control ])
         MenuAction(Attrs = [ Text "E&xit"; Shortcut seq ], OnTriggered = (fun _ -> AppExit))
@@ -80,6 +88,7 @@ let view (state: State) =
         let rowFunc (row: ListRow) (role: DataRole) =
             match role with
             | DisplayRole -> Variant.String row.Content
+            | DecorationRole -> Variant.Color row.Color
             | _ -> Variant.Empty
         ListModelNode(rowFunc, Attrs = [ Rows state.ListData ])
         

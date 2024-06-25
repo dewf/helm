@@ -7,47 +7,6 @@ open Org.Whatever.QtTesting
 type Color internal(qtColor: PaintResources.Color) =
     member val internal qtColor = qtColor
 
-type ColorConstant =
-    | Black
-    | White
-    | DarkGray
-    | Gray
-    | LightGray
-    | Red
-    | Green
-    | Blue
-    | Cyan
-    | Magenta
-    | Yellow
-    | DarkRed
-    | DarkGreen
-    | DarkBlue
-    | DarkCyan
-    | DarkMagenta
-    | DarkYellow
-    | Transparent
-with
-    member internal this.QtValue =
-        match this with
-        | Black -> PaintResources.Color.Constant.Black
-        | White -> PaintResources.Color.Constant.White
-        | DarkGray -> PaintResources.Color.Constant.DarkGray
-        | Gray -> PaintResources.Color.Constant.Gray
-        | LightGray -> PaintResources.Color.Constant.LightGray
-        | Red -> PaintResources.Color.Constant.Red
-        | Green -> PaintResources.Color.Constant.Green
-        | Blue -> PaintResources.Color.Constant.Blue
-        | Cyan -> PaintResources.Color.Constant.Cyan
-        | Magenta -> PaintResources.Color.Constant.Magenta
-        | Yellow -> PaintResources.Color.Constant.Yellow
-        | DarkRed -> PaintResources.Color.Constant.DarkRed
-        | DarkGreen -> PaintResources.Color.Constant.DarkGreen
-        | DarkBlue -> PaintResources.Color.Constant.DarkBlue
-        | DarkCyan -> PaintResources.Color.Constant.DarkCyan
-        | DarkMagenta -> PaintResources.Color.Constant.Magenta
-        | DarkYellow -> PaintResources.Color.Constant.Yellow
-        | Transparent -> PaintResources.Color.Constant.Transparent
-        
 type Gradient internal(qtGradient: PaintResources.Gradient) =
     member val qtGradient = qtGradient
     member this.SetColorAt(location: double, color: Color) =

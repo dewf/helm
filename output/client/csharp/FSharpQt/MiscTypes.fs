@@ -391,17 +391,7 @@ with
                 UserRole value
             else
                 failwithf "DataRole.From: unknown input value [%d]" value
-    
-[<RequireQualifiedAccess>]
-type Variant =
-    | Empty
-    | String of str: string
-with
-    member this.QtValue =
-        match this with
-        | Empty -> Variant.Deferred.Empty() :> Org.Whatever.QtTesting.Variant.Deferred
-        | String str -> Variant.Deferred.FromString(str)
-    
+                
 // for utility widgets (synthetic layout widgets etc)
 
 type internal NullWidgetHandler() =
@@ -476,6 +466,60 @@ type Icon private(deferred: Org.Whatever.QtTesting.Icon.Deferred) =
         let deferred =
             Icon.Deferred.FromThemeIcon(toQtThemeIcon themeIcon)
         Icon(deferred)
+        
+type ColorConstant =
+    | Black
+    | White
+    | DarkGray
+    | Gray
+    | LightGray
+    | Red
+    | Green
+    | Blue
+    | Cyan
+    | Magenta
+    | Yellow
+    | DarkRed
+    | DarkGreen
+    | DarkBlue
+    | DarkCyan
+    | DarkMagenta
+    | DarkYellow
+    | Transparent
+with
+    member internal this.QtValue =
+        match this with
+        | Black -> PaintResources.Color.Constant.Black
+        | White -> PaintResources.Color.Constant.White
+        | DarkGray -> PaintResources.Color.Constant.DarkGray
+        | Gray -> PaintResources.Color.Constant.Gray
+        | LightGray -> PaintResources.Color.Constant.LightGray
+        | Red -> PaintResources.Color.Constant.Red
+        | Green -> PaintResources.Color.Constant.Green
+        | Blue -> PaintResources.Color.Constant.Blue
+        | Cyan -> PaintResources.Color.Constant.Cyan
+        | Magenta -> PaintResources.Color.Constant.Magenta
+        | Yellow -> PaintResources.Color.Constant.Yellow
+        | DarkRed -> PaintResources.Color.Constant.DarkRed
+        | DarkGreen -> PaintResources.Color.Constant.DarkGreen
+        | DarkBlue -> PaintResources.Color.Constant.DarkBlue
+        | DarkCyan -> PaintResources.Color.Constant.DarkCyan
+        | DarkMagenta -> PaintResources.Color.Constant.Magenta
+        | DarkYellow -> PaintResources.Color.Constant.Yellow
+        | Transparent -> PaintResources.Color.Constant.Transparent
+        
+type Color private(deferred: PaintResources.Color.Deferred) =
+    member val internal QtValue = deferred
+    new(constant: ColorConstant) =
+        Color(PaintResources.Color.Deferred.FromConstant(constant.QtValue))
+    new(r: int, g: int, b: int) =
+        Color(PaintResources.Color.Deferred.FromRGB(r, g, b))
+    new(r: int, g: int, b: int, a: int) =
+        Color(PaintResources.Color.Deferred.FromRGBA(r, g, b, a))
+    new(r: float, g: float, b: float) =
+        Color(PaintResources.Color.Deferred.FromRGBF(float32 r, float32 g, float32 b))
+    new(r: float, g: float, b: float, a: float) =
+        Color(PaintResources.Color.Deferred.FromRGBAF(float32 r, float32 g, float32 b, float32 a))
 
 type KeySequence private(deferred: Org.Whatever.QtTesting.KeySequence.Deferred) =
     member val internal QtValue = deferred
@@ -494,3 +538,17 @@ type KeySequence private(deferred: Org.Whatever.QtTesting.KeySequence.Deferred) 
                 |> Set.ofList
             KeySequence.Deferred.FromKey(toQtKey key, Modifier.QtSetFrom mods)
         KeySequence(deferred)
+    
+[<RequireQualifiedAccess>]
+type Variant =
+    | Empty
+    | String of str: string
+    | Icon of icon: Icon
+    | Color of color: Color
+with
+    member this.QtValue =
+        match this with
+        | Empty -> Variant.Deferred.Empty() :> Org.Whatever.QtTesting.Variant.Deferred
+        | String str -> Variant.Deferred.FromString(str)
+        | Icon icon -> Variant.Deferred.FromIcon(icon.QtValue)
+        | Color color -> Variant.Deferred.FromColor(color.QtValue)
