@@ -5,15 +5,13 @@ open System
 open FSharpQt
 open BuilderNode
 open FSharpQt.Models.ListModelNode
+open FSharpQt.Widgets.BoxLayout
 open Reactor
 open InputEnums
 
 open FSharpQt.Widgets
 open MainWindow
-open ToolBar
 open PushButton
-open ComboBox
-open StatusBar
 open ListView
 
 open FSharpQt.Widgets.Menus
@@ -29,125 +27,81 @@ type ListRow = {
 }
 
 type State = {
-    Rows: TrackedRows<ListRow>
+    ListData: TrackedRows<ListRow>
 }
 
 type Msg =
-    | ActionTriggered
+    | AddRow
     | AppExit
 
 let init () =
-    let initRows = [
+    let initRows = TrackedRows.Init([
         { Content = "One" }
         { Content = "Two" }
         { Content = "Three" }
-    ]
+    ])
     let nextState = {
-        Rows = TrackedRows.Init(initRows)
+        ListData = initRows
     }
     nextState, Cmd.None
     
 let update (state: State) (msg: Msg) =
     match msg with
-    | ActionTriggered ->
-        let nextRows =
+    | AddRow ->
+        let nextData =
             let text =
-                sprintf "new row %d" state.Rows.Count
-            state.Rows
+                sprintf "new row %d" (state.ListData.RowCount + 1)
+            state.ListData
                 .BeginChanges()
                 .AddRow({ Content = text })
         let nextState =
-            { state with Rows = nextRows }
+            { state with ListData = nextData }
         nextState, Cmd.None
     | AppExit ->
         state, Cmd.Signal QuitApplication
     
 let view (state: State) =
-    let action1 =
-        let icon =
-            Icon(ThemeIcon.CallStart)
-        let seq =
-            KeySequence(Key.K, [ Control ])
-        MenuAction(Attrs = [ Text "Happy"; Shortcut seq; IconAttr icon; StatusTip "Testing 123" ], OnTriggered = (fun _ -> ActionTriggered))
-        
-    let action2 =
-        let icon =
-            Icon(ThemeIcon.Computer)
-        let seq =
-            KeySequence(Key.D, [ Alt; Shift ])
-        MenuAction(Attrs = [ Text "Better!"; Shortcut seq; IconAttr icon; StatusTip "Another Tip?" ], OnTriggered = (fun _ -> ActionTriggered))
-        
     let exitAction =
-        let icon =
-            Icon(ThemeIcon.ApplicationExit)
+        // let icon =
+        //     Icon(ThemeIcon.ApplicationExit)
         let seq =
             KeySequence(Key.Q, [ Control ])
-        MenuAction(Attrs = [ Text "E&xit"; Shortcut seq; IconAttr icon ], OnTriggered = (fun _ -> AppExit))
-        
-    let combo =
-        let items = [
-            "one"
-            "two"
-            "three"
-        ]
-        ComboBox(Attrs = [ Items items; MinimumWidth 120 ])
-        
-    let button =
-        PushButton(Attrs = [ PushButton.Text "and a button" ])
-        
-    let toolBar =
-        ToolBar(
-            Attrs = [
-                Movable false
-            ],
-            Items = [
-                ToolBarItem(action1)
-                ToolBarItem(action2)
-                ToolBarItem(separator = true)
-                ToolBarItem(combo)
-                ToolBarItem(button)
-                ToolBarItem(expandingSpace = true)
-                ToolBarItem(exitAction)
-            ])
-        
+        MenuAction(Attrs = [ Text "E&xit"; Shortcut seq ], OnTriggered = (fun _ -> AppExit))
+
     let menuBar =
         let menu =
             Menu(Attrs = [ Title "&File" ],
                  Items = [
-                     MenuItem(action1)
-                     MenuItem(action2)
-                     MenuItem(separator = true)
                      MenuItem(exitAction)
                  ])
         MenuBar(Menus = [ menu ])
-        
-    let statusBar =
-        StatusBar()
         
     let listModel =
         let rowFunc (row: ListRow) (role: DataRole) =
             match role with
             | DisplayRole -> Variant.String row.Content
             | _ -> Variant.Empty
-        ListModelNode(rowFunc, Attrs = [ Rows state.Rows ])
+        ListModelNode(rowFunc, Attrs = [ Rows state.ListData ])
         
     let listView =
         ListView(ListModel = listModel)
         
+    let button =
+        PushButton(Attrs = [ PushButton.Text "Add One" ], OnClicked = AddRow)
+        
+    let vbox =
+        VBoxLayout(Items = [ BoxItem(listView); BoxItem(button) ])
+        
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
-        CentralWidget = listView,
-        MenuBar = menuBar,
-        StatusBar = statusBar,
-        ToolBars = [
-            "one", toolBar
-        ]
+        CentralLayout = vbox,
+        MenuBar = menuBar
         // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either
         // Actions = [
         //     "first", action1
         //     // "second", action2
         //     // "last", exitAction
-        // ] // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either
+        // ]
         )
     :> IBuilderNode<Msg>
     
