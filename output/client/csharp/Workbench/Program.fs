@@ -4,6 +4,7 @@ open System
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.Models.ListModelNode
 open Reactor
 open InputEnums
 
@@ -21,9 +22,14 @@ open MenuAction
 open MenuBar
 
 open MiscTypes
+open Models.TrackedRows
+
+type ListRow = {
+    Content: string
+}
 
 type State = {
-    NothingYet: int
+    Rows: TrackedRows<ListRow>
 }
 
 type Msg =
@@ -31,16 +37,28 @@ type Msg =
     | AppExit
 
 let init () =
+    let initRows = [
+        { Content = "One" }
+        { Content = "Two" }
+        { Content = "Three" }
+    ]
     let nextState = {
-        NothingYet = 0
+        Rows = TrackedRows.Init(initRows)
     }
     nextState, Cmd.None
     
 let update (state: State) (msg: Msg) =
     match msg with
     | ActionTriggered ->
-        printfn "wooot!"
-        state, Cmd.None
+        let nextRows =
+            let text =
+                sprintf "new row %d" state.Rows.Count
+            state.Rows
+                .BeginChanges()
+                .AddRow({ Content = text })
+        let nextState =
+            { state with Rows = nextRows }
+        nextState, Cmd.None
     | AppExit ->
         state, Cmd.Signal QuitApplication
     
@@ -106,8 +124,15 @@ let view (state: State) =
     let statusBar =
         StatusBar()
         
+    let listModel =
+        let rowFunc (row: ListRow) (role: DataRole) =
+            match role with
+            | DisplayRole -> Variant.String row.Content
+            | _ -> Variant.Empty
+        ListModelNode(rowFunc, Attrs = [ Rows state.Rows ])
+        
     let listView =
-        ListView()
+        ListView(ListModel = listModel)
         
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],

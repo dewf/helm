@@ -55,11 +55,12 @@ type Model<'msg,'row>(dispatch: 'msg -> unit, rowFunc: 'row -> DataRole -> Varia
         for attr in attrs do
             match attr with
             | Rows rows ->
-                // apply the row changes to the list model
                 for change in rows.Changes do
                     match change with
-                    | Added(index, row) -> failwith "todo"
-                    | RangeAdded(index, rows) -> failwith "todo"
+                    | Added(index, row) ->
+                        listModel.AddRowAt(index, row)
+                    | RangeAdded(index, rows) ->
+                        listModel.AddRowsAt(index, rows)
     
     interface IDisposable with
         member this.Dispose() =
@@ -76,7 +77,6 @@ let private migrate (model: Model<'msg,'row>) (attrs: Attr<'row> list) =
 
 let private dispose (model: Model<'msg,'row>) =
     (model :> IDisposable).Dispose()
-
 
 
 type ListModelNode<'msg,'row>(rowFunc: 'row -> DataRole -> Variant) =

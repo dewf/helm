@@ -9,6 +9,7 @@ type RowChangeItem<'row> =
 type TrackedRows<'row> = {
     Step: int                           // for attr diffing
     Rows: 'row list
+    Count: int
     Changes: RowChangeItem<'row> list
 } with
     override this.Equals other =
@@ -29,18 +30,22 @@ type TrackedRows<'row> = {
             this.Rows.Length
         let nextRows =
             this.Rows @ [ row ]
+        let nextCount =
+            this.Count + 1
         let nextChanges =
             this.Changes @ [ Added (index, row) ]
-        { this with Rows = nextRows; Changes = nextChanges }
+        { this with Rows = nextRows; Count = nextCount; Changes = nextChanges }
         
     member this.AddRows(rows: 'row list) =
         let index =
             this.Rows.Length
         let nextRows =
             this.Rows @ rows
+        let nextCount =
+            this.Count + rows.Length
         let nextChanges =
             this.Changes @ [ RangeAdded(index, rows) ]
-        { this with Rows = nextRows; Changes = nextChanges }
+        { this with Rows = nextRows; Count = nextCount; Changes = nextChanges }
         
     static member Init(rows: 'row list) =
-        { Step = 0; Rows = []; Changes = [] }.AddRows(rows)
+        { Step = 0; Rows = []; Count = 0; Changes = [] }.AddRows(rows)

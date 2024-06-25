@@ -97,6 +97,13 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         if value <> currentMask then
             listView.SetSignalMask(value)
             currentMask <- value
+            
+    member this.AddQtModel (model: AbstractItemModel.Handle) =
+        listView.SetModel(model)
+        
+    member this.RemoveQtModel () =
+        // well if it gets deleted (as a dependency), won't that delete from the listView automatically?
+        ()
     
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
@@ -157,6 +164,9 @@ type ListView<'msg>() =
     
     member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    let mutable maybeListModel: IModelNode<'msg> option = None
+    member this.ListModel with set value = maybeListModel <- Some value
     
     let mutable signalMask = enum<ListView.SignalMask> 0
     
@@ -233,20 +243,43 @@ type ListView<'msg>() =
         | IndexesMoved indexes ->
             onIndexesMoved
             |> Option.map (fun f -> f indexes)
+            
+    member this.MigrateDeps (changeMap: Map<DepsKey, DepsChange>) =
+        match changeMap.TryFind (StrKey "model") with
+        | Some change ->
+            match change with
+            | Unchanged ->
+                ()
+            | Added ->
+                this.model.AddQtModel(maybeListModel.Value.QtModel)
+            | Removed ->
+                this.model.RemoveQtModel()
+            | Swapped ->
+                this.model.RemoveQtModel()
+                this.model.AddQtModel(maybeListModel.Value.QtModel)
+        | None ->
+            // neither side had one
+            ()
     
     interface IWidgetNode<'msg> with
-        override this.Dependencies = []
+        override this.Dependencies =
+            maybeListModel
+            |> Option.map (fun node -> StrKey "model", node :> IBuilderNode<'msg>)
+            |> Option.toList
 
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
             
         override this.AttachDeps () =
-            ()
+            maybeListModel
+            |> Option.iter (fun node ->
+                this.model.AddQtModel(node.QtModel))
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ListView<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
             this.model <- migrate left'.model nextAttrs signalMap signalMask
+            this.MigrateDeps(depsChanges |> Map.ofList)
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

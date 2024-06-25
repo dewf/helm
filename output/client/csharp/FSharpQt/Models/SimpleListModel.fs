@@ -5,6 +5,9 @@ open FSharpQt
 open Org.Whatever.QtTesting
 open MiscTypes
 
+let emptyIndex =
+    ModelIndex.Deferred.Empty()
+
 type SimpleListModel<'row>(initialRows: 'row seq, rowFunc: 'row -> DataRole -> Variant) as this =
     let mutable rows = initialRows |> Seq.toArray
     
@@ -42,3 +45,13 @@ type SimpleListModel<'row>(initialRows: 'row seq, rowFunc: 'row -> DataRole -> V
     interface IDisposable with
         member this.Dispose() =
             interior.Dispose()
+            
+    member this.AddRowAt(index: int, row: 'row) =
+        interior.BeginInsertRows(emptyIndex, index, index)
+        rows <- Array.insertAt index row rows
+        interior.EndInsertRows()
+        
+    member this.AddRowsAt(index: int, newRows: 'row list) =
+        interior.BeginInsertRows(emptyIndex, index, index + newRows.Length - 1)
+        rows <- Array.insertManyAt index newRows rows
+        interior.EndInsertRows()
