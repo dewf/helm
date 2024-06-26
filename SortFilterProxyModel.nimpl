@@ -3,11 +3,22 @@ module SortFilterProxyModel;
 import AbstractProxyModel;
 import RegularExpression;
 
+flags SignalMask {
+    AutoAcceptChildRowsChanged
+    // + several more, being lazy right now
+}
+
+interface SignalHandler {
+    void autoAcceptChildRowsChanged(bool autoAcceptChildRows);
+}
+
 opaque Handle extends AbstractProxyModel.Handle {
     void setFilterRegularExpression(RegularExpression.Deferred regex);
     void setFilterKeyColumn(int column); // -1 = all columns
+
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
+Handle create(SignalHandler handler);
 
 // no subclassing yet

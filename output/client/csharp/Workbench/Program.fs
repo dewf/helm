@@ -5,7 +5,11 @@ open System
 open FSharpQt
 open BuilderNode
 open FSharpQt.MiscTypes
-open FSharpQt.Models.ListModelNode
+open FSharpQt.Models
+open FSharpQt.Widgets.LineEdit
+open ListModelNode
+open SortFilterProxyModel
+
 open FSharpQt.Widgets.BoxLayout
 open Reactor
 open InputEnums
@@ -67,12 +71,14 @@ type ListRow = {
 type State = {
     ListData: TrackedRows<ListRow>
     HeadersToggled: bool
+    CurrentFilter: string option
 }
 
 type Msg =
     | AddRow
     | AppExit
     | ToggleHeaders
+    | FilterTextEdited of text: string
 
 let init () =
     let initRows = TrackedRows.Init([
@@ -83,6 +89,7 @@ let init () =
     let nextState = {
         ListData = initRows
         HeadersToggled = false
+        CurrentFilter = None
     }
     nextState, Cmd.None
     
@@ -112,6 +119,10 @@ let update (state: State) (msg: Msg) =
         state, Cmd.Signal QuitApplication
     | ToggleHeaders ->
         { state with HeadersToggled = not state.HeadersToggled }, Cmd.None
+    | FilterTextEdited text ->
+        let nextFilter =
+            if text = "" then None else Some text
+        { state with CurrentFilter = nextFilter }, Cmd.None
     
 let view (state: State) =
     let exitAction =
@@ -141,8 +152,20 @@ let view (state: State) =
                 [ "Primary"; "Secondary" ]
         ListModelNode(dataFunc, 2, Attrs = [ Rows state.ListData; Headers headers ])
         
+    let proxyModel =
+        let regex =
+            match state.CurrentFilter with
+            | Some filter -> Regex(filter)
+            | None -> Regex()
+        SortFilterProxyModel(
+            Attrs = [
+                FilterRegex regex
+                FilterKeyColumn (Some 1)
+            ],
+            SourceModel = listModel)
+        
     let treeView =
-        TreeView(TreeModel = listModel)
+        TreeView(TreeModel = proxyModel)
         
     let button =
         PushButton(Attrs = [ PushButton.Text "Add One" ], OnClicked = AddRow)
@@ -150,11 +173,15 @@ let view (state: State) =
     let toggleButton =
         PushButton(Attrs = [ PushButton.Text "Toggle Headers" ], OnClicked = ToggleHeaders)
         
+    let filterEdit =
+        LineEdit(OnTextEdited = FilterTextEdited)
+        
     let vbox =
         VBoxLayout(Items = [
             BoxItem(treeView)
             BoxItem(button)
             BoxItem(toggleButton)
+            BoxItem(filterEdit)
         ])
         
     MainWindow(

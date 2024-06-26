@@ -10,8 +10,8 @@ type Signal =
     | InputRejected
     | ReturnPressed
     | SelectionChanged
-    | TextChanged of text: string
-    | TextEdited of text: string
+    | TextChanged of text: string  // also emitted when the text is changed programmatically
+    | TextEdited of text: string   // user input only
     
 type Attr =
     | Value of string

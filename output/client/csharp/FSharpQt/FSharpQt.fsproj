@@ -20,6 +20,8 @@
         <Compile Include="Models\TrackedRows.fs" />
 
         <Compile Include="Models\ListModelNode.fs" />
+
+        <Compile Include="Models\SortFilterProxyModel.fs" />
         
         <Compile Include="Widgets\Menus\MenuAction.fs" />
         <Compile Include="Widgets\Menus\Menu.fs" />

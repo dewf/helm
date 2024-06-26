@@ -552,3 +552,38 @@ with
         | String str -> Variant.Deferred.FromString(str)
         | Icon icon -> Variant.Deferred.FromIcon(icon.QtValue)
         | Color color -> Variant.Deferred.FromColor(color.QtValue)
+        
+type RegexOption =
+    | CaseInsensitive
+    | DotMatchesEverything
+    | Multiline
+    | ExtendedPatternSyntax
+    | InvertedGreediness
+    | DontCapture
+    | UseUnicodeProperties
+with
+    static member QtSetFrom (options: RegexOption seq) =
+        (enum<RegularExpression.PatternOptions> 0, options)
+        ||> Seq.fold (fun acc option ->
+            let flag =
+                match option with
+                | CaseInsensitive -> RegularExpression.PatternOptions.CaseInsensitiveOption
+                | DotMatchesEverything -> RegularExpression.PatternOptions.DotMatchesEverythingOption
+                | Multiline -> RegularExpression.PatternOptions.MultilineOption
+                | ExtendedPatternSyntax -> RegularExpression.PatternOptions.ExtendedPatternSyntaxOption
+                | InvertedGreediness -> RegularExpression.PatternOptions.InvertedGreedinessOption
+                | DontCapture -> RegularExpression.PatternOptions.DontCaptureOption
+                | UseUnicodeProperties -> RegularExpression.PatternOptions.UseUnicodePropertiesOption
+            acc ||| flag)
+    
+type Regex private(deferred: RegularExpression.Deferred) =
+    member val internal QtValue = deferred
+    new() =
+        Regex(RegularExpression.Deferred.Empty())
+    new(pattern: string, ?options: RegexOption seq)=
+        let deferred =
+            let options' =
+                defaultArg options Set.empty
+                |> RegexOption.QtSetFrom
+            RegularExpression.Deferred.Regex(pattern, options')
+        Regex(deferred)
