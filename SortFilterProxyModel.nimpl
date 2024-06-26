@@ -1,0 +1,13 @@
+module SortFilterProxyModel;
+
+import AbstractProxyModel;
+import RegularExpression;
+
+opaque Handle extends AbstractProxyModel.Handle {
+    void setFilterRegularExpression(RegularExpression.Deferred regex);
+    void setFilterKeyColumn(int column); // -1 = all columns
+}
+
+Handle create();
+
+// no subclassing yet

@@ -8,7 +8,7 @@ open MiscTypes
 let emptyIndex =
     ModelIndex.Deferred.Empty()
 
-type SimpleListModel<'row>(initialRows: 'row seq, rowFunc: 'row -> DataRole -> Variant) as this =
+type SimpleListModel<'row>(initialRows: 'row seq, dataFunc: 'row -> DataRole -> Variant) as this =
     let mutable rows = initialRows |> Seq.toArray
     
     let interior =
@@ -28,7 +28,7 @@ type SimpleListModel<'row>(initialRows: 'row seq, rowFunc: 'row -> DataRole -> V
                 let value =
                     let row =
                         rows[index.Row()]
-                    rowFunc row (DataRole.From role)
+                    dataFunc row (DataRole.From role)
                 value.QtValue
             else
                 Variant.Empty.QtValue

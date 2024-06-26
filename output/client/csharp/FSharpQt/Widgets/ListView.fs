@@ -3,7 +3,6 @@
 open FSharpQt.BuilderNode
 open System
 open Org.Whatever.QtTesting
-
 open FSharpQt.MiscTypes
 
 type Signal =

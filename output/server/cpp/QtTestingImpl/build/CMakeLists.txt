@@ -31,6 +31,10 @@ add_library(QtTestingImpl STATIC
     ../generated/AbstractListModel_wrappers.cpp
     ../AbstractListModel.cpp
 
+    ../generated/AbstractProxyModel.h
+    ../generated/AbstractProxyModel_wrappers.cpp
+    ../AbstractProxyModel.cpp
+
     ../generated/AbstractScrollArea.h
     ../generated/AbstractScrollArea_wrappers.cpp
     ../AbstractScrollArea.cpp
@@ -163,6 +167,11 @@ add_library(QtTestingImpl STATIC
     ../generated/RadioButton_wrappers.cpp
     ../RadioButton.cpp
 
+    ../generated/RegularExpression.h
+    ../generated/RegularExpression_wrappers.cpp
+    ../RegularExpressionInternal.h
+    ../RegularExpression.cpp
+
     ../generated/ScrollArea.h
     ../generated/ScrollArea_wrappers.cpp
     ../ScrollArea.cpp
@@ -170,6 +179,10 @@ add_library(QtTestingImpl STATIC
     ../generated/Slider.h
     ../generated/Slider_wrappers.cpp
     ../Slider.cpp
+
+    ../generated/SortFilterProxyModel.h
+    ../generated/SortFilterProxyModel_wrappers.cpp
+    ../SortFilterProxyModel.cpp
 
     ../generated/StatusBar.h
     ../generated/StatusBar_wrappers.cpp
@@ -186,6 +199,10 @@ add_library(QtTestingImpl STATIC
     ../generated/ToolBar.h
     ../generated/ToolBar_wrappers.cpp
     ../ToolBar.cpp
+
+    ../generated/TreeView.h
+    ../generated/TreeView_wrappers.cpp
+    ../TreeView.cpp
 
     ../generated/Variant.h
     ../generated/Variant_wrappers.cpp

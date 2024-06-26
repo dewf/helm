@@ -1,0 +1,8 @@
+module AbstractProxyModel;
+
+import AbstractItemModel;
+
+@nodispose
+opaque Handle extends AbstractItemModel.Handle {
+    void setSourceModel(AbstractItemModel.Handle sourceModel);
+}

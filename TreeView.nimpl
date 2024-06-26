@@ -1,0 +1,20 @@
+module TreeView;
+
+import AbstractItemView;
+import ModelIndex;
+
+opaque Handle extends AbstractItemView.Handle {
+    void setSignalMask(SignalMask mask);
+}
+
+flags SignalMask {
+    Collapsed = 1,
+    Expanded = 1 << 1
+}
+
+interface SignalHandler {
+    void Collapsed(ModelIndex.Handle index);
+    void Expanded(ModelIndex.Handle index);
+}
+
+Handle create(SignalHandler handler);

@@ -14,6 +14,7 @@ type Attr<'row> =
 let private keyFunc = function
     | Rows _ -> 0
 
+// ===============================================================================
 // redeclared locally because of the dreaded "x would escape its scope" type errors
 let diffAttrs (a1: Attr<'row> list) (a2: Attr<'row> list)  =
     let leftList = a1 |> List.map (fun a -> keyFunc a, a)
@@ -38,12 +39,11 @@ let diffAttrs (a1: Attr<'row> list) (a2: Attr<'row> list)  =
         | None, Some right ->
             Created right |> Some
         | _ -> failwith "shouldn't happen")
-    
 // same as above
 let createdOrChanged (changes: AttrChange<Attr<'row>> list) =
     changes
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
-
+// ===============================================================================
 
 type Model<'msg,'row>(dispatch: 'msg -> unit, dataFunc: 'row -> DataRole -> Variant) =
     let listModel = new SimpleListModel<'row>([], dataFunc)
