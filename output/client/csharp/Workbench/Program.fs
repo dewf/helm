@@ -13,19 +13,55 @@ open InputEnums
 open FSharpQt.Widgets
 open MainWindow
 open PushButton
-open ListView
+open TreeView
 
 open FSharpQt.Widgets.Menus
 open Menu
 open MenuAction
 open MenuBar
 
-open MiscTypes
 open Models.TrackedRows
 
+let SECONDARY_VALUES = [|
+    "argument"
+    "paste"
+    "store"
+    "spectacular"
+    "befitting"
+    "sweep"
+    "macho"
+    "explain"
+    "encourage"
+    "hush"
+    "probable"
+    "admire"
+    "uninterested"
+    "incredible"
+    "opposite"
+    "pushy"
+    "efficient"
+    "spotty"
+    "connection"
+    "account"
+    "abnormal"
+    "dusty"
+    "apparel"
+    "infuse"
+    "subdued"
+    "impolite"
+    "roomy"
+    "understand"
+    "majestic"
+    "observant"
+    "scissors"
+    "cumbersome"
+    "trip"
+|]
+
 type ListRow = {
-    Content: string
+    First: string
     Color: Color
+    Second: string
 }
 
 type State = {
@@ -38,9 +74,9 @@ type Msg =
 
 let init () =
     let initRows = TrackedRows.Init([
-        { Content = "One"; Color = Color(ColorConstant.Green) }
-        { Content = "Two"; Color = Color(ColorConstant.Magenta) }
-        { Content = "Three"; Color = Color(ColorConstant.Red) }
+        { First = "One"; Color = Color(ColorConstant.Green); Second = "Woot" }
+        { First = "Two"; Color = Color(ColorConstant.Magenta); Second = "Doot" }
+        { First = "Three"; Color = Color(ColorConstant.Red); Second = "McGroot" }
     ])
     let nextState = {
         ListData = initRows
@@ -61,9 +97,11 @@ let update (state: State) (msg: Msg) =
                 let g = interp 80 160 state.ListData.RowCount |> min 255
                 let b = interp 120 145 state.ListData.RowCount |> min 255
                 Color(r, g, b)
+            let secondaryText =
+                SECONDARY_VALUES[state.ListData.RowCount % SECONDARY_VALUES.Length]
             state.ListData
                 .BeginChanges()
-                .AddRow({ Content = text; Color = color })
+                .AddRow({ First = text; Color = color; Second = secondaryText })
         let nextState =
             { state with ListData = nextData }
         nextState, Cmd.None
@@ -85,21 +123,22 @@ let view (state: State) =
         MenuBar(Menus = [ menu ])
         
     let listModel =
-        let dataFunc (row: ListRow) (role: DataRole) =
-            match role with
-            | DisplayRole -> Variant.String row.Content
-            | DecorationRole -> Variant.Color row.Color
+        let dataFunc row col role =
+            match col, role with
+            | 0, DisplayRole -> Variant.String row.First
+            | 0, DecorationRole -> Variant.Color row.Color
+            | 1, DisplayRole -> Variant.String row.Second
             | _ -> Variant.Empty
-        ListModelNode(dataFunc, Attrs = [ Rows state.ListData ])
+        ListModelNode(dataFunc, 2, Attrs = [ Rows state.ListData ])
         
-    let listView =
-        ListView(ListModel = listModel)
+    let treeView =
+        TreeView(TreeModel = listModel)
         
     let button =
         PushButton(Attrs = [ PushButton.Text "Add One" ], OnClicked = AddRow)
         
     let vbox =
-        VBoxLayout(Items = [ BoxItem(listView); BoxItem(button) ])
+        VBoxLayout(Items = [ BoxItem(treeView); BoxItem(button) ])
         
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],

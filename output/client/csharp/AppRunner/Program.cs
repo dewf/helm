@@ -101,6 +101,11 @@ internal static class Program
             return false;
         }
 
+        public int ColumnCount(ModelIndex.Handle parent)
+        {
+            throw new NotImplementedException();
+        }
+
         public void AddOne()
         {
             var item = new ModelItem($"Item {_nextInsertVal}", (PaintResources.Color.Constant)(_nextInsertVal % 17));

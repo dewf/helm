@@ -45,8 +45,8 @@ let createdOrChanged (changes: AttrChange<Attr<'row>> list) =
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
 // ===============================================================================
 
-type Model<'msg,'row>(dispatch: 'msg -> unit, dataFunc: 'row -> DataRole -> Variant) =
-    let listModel = new SimpleListModel<'row>([], dataFunc)
+type Model<'msg,'row>(dispatch: 'msg -> unit, dataFunc: 'row -> int -> DataRole -> Variant, numColumns: int) =
+    let listModel = new SimpleListModel<'row>(dataFunc, numColumns)
     
     member this.QtModel =
         listModel.QtModel
@@ -66,8 +66,8 @@ type Model<'msg,'row>(dispatch: 'msg -> unit, dataFunc: 'row -> DataRole -> Vari
         member this.Dispose() =
             (listModel :> IDisposable).Dispose()
             
-let private create (attrs: Attr<'row> list) (dispatch: 'msg -> unit) (dataFunc: 'row -> DataRole -> Variant) =
-    let model = new Model<'msg, 'row>(dispatch, dataFunc)
+let private create (attrs: Attr<'row> list) (dispatch: 'msg -> unit) (dataFunc: 'row -> int -> DataRole -> Variant) (numColumns: int) =
+    let model = new Model<'msg, 'row>(dispatch, dataFunc, numColumns)
     model.ApplyAttrs attrs
     model
 
@@ -79,7 +79,7 @@ let private dispose (model: Model<'msg,'row>) =
     (model :> IDisposable).Dispose()
 
 
-type ListModelNode<'msg,'row>(dataFunc: 'row -> DataRole -> Variant) =
+type ListModelNode<'msg,'row>(dataFunc: 'row -> int -> DataRole -> Variant, ?numColumns: int) =
     [<DefaultValue>] val mutable model: Model<'msg,'row>
 
     member val Attrs: Attr<'row> list = [] with get, set
@@ -89,7 +89,7 @@ type ListModelNode<'msg,'row>(dataFunc: 'row -> DataRole -> Variant) =
         override this.Dependencies = []
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs dispatch dataFunc
+            this.model <- create this.Attrs dispatch dataFunc (defaultArg numColumns 1)
             
         override this.AttachDeps () =
             ()

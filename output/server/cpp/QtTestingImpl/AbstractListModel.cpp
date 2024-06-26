@@ -61,6 +61,15 @@ namespace AbstractListModel
             }
         }
 
+        int columnCount(const QModelIndex &parent) const override {
+            if (methodMask & MethodMask::ColumnCount) {
+                return methodDelegate->columnCount((ModelIndex::HandleRef)&parent);
+            } else {
+                // QAbstractListModel::columnCount() is private, we're technically not supposed to be doing this in AbstractListModel
+                return 1;
+            }
+        }
+
         // signal emission wrappers
         void emitDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QList<int>& roles) {
             emit dataChanged(topLeft, bottomRight, roles);

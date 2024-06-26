@@ -8,12 +8,17 @@ open MiscTypes
 let emptyIndex =
     ModelIndex.Deferred.Empty()
 
-type SimpleListModel<'row>(initialRows: 'row seq, dataFunc: 'row -> DataRole -> Variant) as this =
-    let mutable rows = initialRows |> Seq.toArray
+type SimpleListModel<'row>(dataFunc: 'row -> int -> DataRole -> Variant, numColumns: int) as this =
+    let mutable rows = [||]
     
     let interior =
+        let methodMask =
+            if numColumns > 1 then
+                AbstractListModel.MethodMask.ColumnCount
+            else
+                enum<AbstractListModel.MethodMask> 0
         AbstractListModel
-            .CreateSubclassed(this, enum<AbstractListModel.MethodMask> 0) // no extra methods yet
+            .CreateSubclassed(this, methodMask)
             .GetInteriorHandle()
             
     member this.QtModel =
@@ -24,15 +29,21 @@ type SimpleListModel<'row>(initialRows: 'row seq, dataFunc: 'row -> DataRole -> 
             rows.Length
             
         member this.Data(index: ModelIndex.Handle, role: Enums.ItemDataRole) =
-            if index.IsValid() && index.Row() < rows.Length then
+            let rowIndex =
+                index.Row()
+            let colIndex =
+                index.Column()
+            if index.IsValid() && rowIndex < rows.Length && colIndex < numColumns then
                 let value =
                     let row =
-                        rows[index.Row()]
-                    dataFunc row (DataRole.From role)
+                        rows[rowIndex]
+                    dataFunc row colIndex (DataRole.From role)
                 value.QtValue
             else
                 Variant.Empty.QtValue
-            
+                
+        // optional depending on mask: ==================================================
+        
         member this.HeaderData(section: int, orientation: Enums.Orientation, role: Enums.ItemDataRole) =
             failwith "not yet implemented"
             
@@ -41,6 +52,9 @@ type SimpleListModel<'row>(initialRows: 'row seq, dataFunc: 'row -> DataRole -> 
             
         member this.SetData(index: ModelIndex.Handle, value: Org.Whatever.QtTesting.Variant.Handle, role: Enums.ItemDataRole) =
             failwith "not yet implemented"
+            
+        member this.ColumnCount(parent: ModelIndex.Handle) =
+            numColumns
             
     interface IDisposable with
         member this.Dispose() =
