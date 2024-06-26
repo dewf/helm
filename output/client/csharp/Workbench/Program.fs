@@ -155,7 +155,7 @@ let view (state: State) =
     let proxyModel =
         let regex =
             match state.CurrentFilter with
-            | Some filter -> Regex(filter)
+            | Some filter -> Regex(filter, [RegexOption.CaseInsensitive])
             | None -> Regex()
         SortFilterProxyModel(
             Attrs = [
