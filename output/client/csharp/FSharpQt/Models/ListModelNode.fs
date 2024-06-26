@@ -10,9 +10,11 @@ type Signal = unit
     
 type Attr<'row> =
     | Rows of rows: TrackedRows<'row>
+    | Headers of names: string list
     
 let private keyFunc = function
     | Rows _ -> 0
+    | Headers _ -> 1
 
 // ===============================================================================
 // redeclared locally because of the dreaded "x would escape its scope" type errors
@@ -45,11 +47,15 @@ let createdOrChanged (changes: AttrChange<Attr<'row>> list) =
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
 // ===============================================================================
 
-type Model<'msg,'row>(dispatch: 'msg -> unit, dataFunc: 'row -> int -> DataRole -> Variant, numColumns: int) =
-    let listModel = new SimpleListModel<'row>(dataFunc, numColumns)
+type Model<'msg,'row>(dispatch: 'msg -> unit, numColumns: int) =
+    let listModel = new SimpleListModel<'row>(numColumns)
+    let mutable headers: string list = []
     
     member this.QtModel =
         listModel.QtModel
+        
+    member this.DataFunc with set value =
+        listModel.DataFunc <- value
             
     member this.ApplyAttrs(attrs: Attr<'row> list) =
         for attr in attrs do
@@ -61,18 +67,24 @@ type Model<'msg,'row>(dispatch: 'msg -> unit, dataFunc: 'row -> int -> DataRole 
                         listModel.AddRowAt(index, row)
                     | RangeAdded(index, rows) ->
                         listModel.AddRowsAt(index, rows)
+            | Headers names ->
+                if headers <> names then
+                    headers <- names
+                    listModel.Headers <- names
     
     interface IDisposable with
         member this.Dispose() =
             (listModel :> IDisposable).Dispose()
             
-let private create (attrs: Attr<'row> list) (dispatch: 'msg -> unit) (dataFunc: 'row -> int -> DataRole -> Variant) (numColumns: int) =
-    let model = new Model<'msg, 'row>(dispatch, dataFunc, numColumns)
+let private create (attrs: Attr<'row> list) (dispatch: 'msg -> unit) (numColumns: int) (dataFunc: 'row -> int -> DataRole -> Variant) =
+    let model = new Model<'msg, 'row>(dispatch, numColumns)
     model.ApplyAttrs attrs
+    model.DataFunc <- dataFunc
     model
 
-let private migrate (model: Model<'msg,'row>) (attrs: Attr<'row> list) =
+let private migrate (model: Model<'msg,'row>) (attrs: Attr<'row> list) (dataFunc: 'row -> int -> DataRole -> Variant) =
     model.ApplyAttrs attrs
+    model.DataFunc <- dataFunc
     model
 
 let private dispose (model: Model<'msg,'row>) =
@@ -89,7 +101,7 @@ type ListModelNode<'msg,'row>(dataFunc: 'row -> int -> DataRole -> Variant, ?num
         override this.Dependencies = []
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs dispatch dataFunc (defaultArg numColumns 1)
+            this.model <- create this.Attrs dispatch (defaultArg numColumns 1) dataFunc
             
         override this.AttachDeps () =
             ()
@@ -97,7 +109,7 @@ type ListModelNode<'msg,'row>(dataFunc: 'row -> int -> DataRole -> Variant, ?num
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ListModelNode<'msg,'row>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs
+            this.model <- migrate left'.model nextAttrs dataFunc
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

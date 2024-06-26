@@ -66,11 +66,13 @@ type ListRow = {
 
 type State = {
     ListData: TrackedRows<ListRow>
+    HeadersToggled: bool
 }
 
 type Msg =
     | AddRow
     | AppExit
+    | ToggleHeaders
 
 let init () =
     let initRows = TrackedRows.Init([
@@ -80,6 +82,7 @@ let init () =
     ])
     let nextState = {
         ListData = initRows
+        HeadersToggled = false
     }
     nextState, Cmd.None
     
@@ -107,6 +110,8 @@ let update (state: State) (msg: Msg) =
         nextState, Cmd.None
     | AppExit ->
         state, Cmd.Signal QuitApplication
+    | ToggleHeaders ->
+        { state with HeadersToggled = not state.HeadersToggled }, Cmd.None
     
 let view (state: State) =
     let exitAction =
@@ -129,7 +134,12 @@ let view (state: State) =
             | 0, DecorationRole -> Variant.Color row.Color
             | 1, DisplayRole -> Variant.String row.Second
             | _ -> Variant.Empty
-        ListModelNode(dataFunc, 2, Attrs = [ Rows state.ListData ])
+        let headers =
+            if state.HeadersToggled then
+                [ "CHANGED 01"; "CHANGED 02" ]
+            else
+                [ "Primary"; "Secondary" ]
+        ListModelNode(dataFunc, 2, Attrs = [ Rows state.ListData; Headers headers ])
         
     let treeView =
         TreeView(TreeModel = listModel)
@@ -137,8 +147,15 @@ let view (state: State) =
     let button =
         PushButton(Attrs = [ PushButton.Text "Add One" ], OnClicked = AddRow)
         
+    let toggleButton =
+        PushButton(Attrs = [ PushButton.Text "Toggle Headers" ], OnClicked = ToggleHeaders)
+        
     let vbox =
-        VBoxLayout(Items = [ BoxItem(treeView); BoxItem(button) ])
+        VBoxLayout(Items = [
+            BoxItem(treeView)
+            BoxItem(button)
+            BoxItem(toggleButton)
+        ])
         
     MainWindow(
         Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],

@@ -8,18 +8,30 @@ open MiscTypes
 let emptyIndex =
     ModelIndex.Deferred.Empty()
 
-type SimpleListModel<'row>(dataFunc: 'row -> int -> DataRole -> Variant, numColumns: int) as this =
+type SimpleListModel<'row>(numColumns: int) as this =
     let mutable rows = [||]
     
     let interior =
         let methodMask =
             if numColumns > 1 then
-                AbstractListModel.MethodMask.ColumnCount
+                AbstractListModel.MethodMask.HeaderData ||| AbstractListModel.MethodMask.ColumnCount
             else
-                enum<AbstractListModel.MethodMask> 0
+                AbstractListModel.MethodMask.HeaderData
         AbstractListModel
             .CreateSubclassed(this, methodMask)
             .GetInteriorHandle()
+            
+    let mutable maybeHeaders: string array option = None
+    let mutable dataFunc: 'row -> int -> DataRole -> Variant = (fun _ _ _ -> Variant.Empty)
+    
+    member this.DataFunc with set value =
+        dataFunc <- value
+        
+    member this.Headers with set value =
+        let newValue = Some (value |> List.toArray)
+        if maybeHeaders <> newValue then
+            maybeHeaders <- newValue
+            interior.EmitHeaderDataChanged(Enums.Orientation.Horizontal, 0, numColumns - 1)
             
     member this.QtModel =
         interior :> AbstractItemModel.Handle
@@ -45,7 +57,19 @@ type SimpleListModel<'row>(dataFunc: 'row -> int -> DataRole -> Variant, numColu
         // optional depending on mask: ==================================================
         
         member this.HeaderData(section: int, orientation: Enums.Orientation, role: Enums.ItemDataRole) =
-            failwith "not yet implemented"
+            let variant =
+                if role = Enums.ItemDataRole.DisplayRole then
+                    match maybeHeaders with
+                    | Some headers ->
+                        if section < headers.Length then
+                            Variant.String headers[section]
+                        else
+                            Variant.String ""
+                    | None ->
+                        Variant.Empty
+                else
+                    Variant.Empty
+            variant.QtValue
             
         member this.GetFlags(index: ModelIndex.Handle, baseFlags: AbstractListModel.ItemFlags) =
             failwith "not yet implemented"
