@@ -85,12 +85,12 @@ let view (state: State) =
         MenuBar(Menus = [ menu ])
         
     let listModel =
-        let rowFunc (row: ListRow) (role: DataRole) =
+        let dataFunc (row: ListRow) (role: DataRole) =
             match role with
             | DisplayRole -> Variant.String row.Content
             | DecorationRole -> Variant.Color row.Color
             | _ -> Variant.Empty
-        ListModelNode(rowFunc, Attrs = [ Rows state.ListData ])
+        ListModelNode(dataFunc, Attrs = [ Rows state.ListData ])
         
     let listView =
         ListView(ListModel = listModel)

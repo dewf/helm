@@ -45,8 +45,8 @@ let createdOrChanged (changes: AttrChange<Attr<'row>> list) =
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
 
 
-type Model<'msg,'row>(dispatch: 'msg -> unit, rowFunc: 'row -> DataRole -> Variant) =
-    let listModel = new SimpleListModel<'row>([], rowFunc)
+type Model<'msg,'row>(dispatch: 'msg -> unit, dataFunc: 'row -> DataRole -> Variant) =
+    let listModel = new SimpleListModel<'row>([], dataFunc)
     
     member this.QtModel =
         listModel.QtModel
@@ -66,8 +66,8 @@ type Model<'msg,'row>(dispatch: 'msg -> unit, rowFunc: 'row -> DataRole -> Varia
         member this.Dispose() =
             (listModel :> IDisposable).Dispose()
             
-let private create (attrs: Attr<'row> list) (dispatch: 'msg -> unit) (rowFunc: 'row -> DataRole -> Variant) =
-    let model = new Model<'msg, 'row>(dispatch, rowFunc)
+let private create (attrs: Attr<'row> list) (dispatch: 'msg -> unit) (dataFunc: 'row -> DataRole -> Variant) =
+    let model = new Model<'msg, 'row>(dispatch, dataFunc)
     model.ApplyAttrs attrs
     model
 
@@ -79,7 +79,7 @@ let private dispose (model: Model<'msg,'row>) =
     (model :> IDisposable).Dispose()
 
 
-type ListModelNode<'msg,'row>(rowFunc: 'row -> DataRole -> Variant) =
+type ListModelNode<'msg,'row>(dataFunc: 'row -> DataRole -> Variant) =
     [<DefaultValue>] val mutable model: Model<'msg,'row>
 
     member val Attrs: Attr<'row> list = [] with get, set
@@ -89,7 +89,7 @@ type ListModelNode<'msg,'row>(rowFunc: 'row -> DataRole -> Variant) =
         override this.Dependencies = []
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs dispatch rowFunc
+            this.model <- create this.Attrs dispatch dataFunc
             
         override this.AttachDeps () =
             ()
