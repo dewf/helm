@@ -1,20 +1,59 @@
 module TreeView;
 
+import Common;
 import AbstractItemView;
 import ModelIndex;
 
 opaque Handle extends AbstractItemView.Handle {
+    void setAllColumnsShowFocus(bool value);
+    void setAnimated(bool value);
+    void setAutoExpandDelay(int value);
+    void setExpandsOnDoubleClick(bool value);
+    void setHeaderHidden(bool value);
+    void setIndentation(int value);
+    void setItemsExpandable(bool value);
+    void setRootIsDecorated(bool value);
+    void setSortingEnabled(bool value);
+    void setUniformRowHeights(bool value);
+    void setWordWrap(bool value);
+
     void setSignalMask(SignalMask mask);
 }
 
 flags SignalMask {
-    Collapsed = 1,
-    Expanded = 1 << 1
+    // widget
+    CustomContextMenuRequested = 1,
+
+    // abstract item view
+    Activated = 1 << 1,
+    Clicked = 1 << 2,
+    DoubleClicked = 1 << 3,
+    Entered = 1 << 4,
+    IconSizeChanged = 1 << 5,
+    Pressed = 1 << 6,
+    ViewportEntered = 1 << 7,
+
+    // treeview
+    Collapsed = 1 << 8,
+    Expanded = 1 << 9
 }
 
 interface SignalHandler {
-    void Collapsed(ModelIndex.Handle index);
-    void Expanded(ModelIndex.Handle index);
+    // widget
+    void customContextMenuRequested(Point pos);
+
+    // abstract item view
+    void activated(ModelIndex.Handle index);
+    void clicked(ModelIndex.Handle index);
+    void doubleClicked(ModelIndex.Handle index);
+    void entered(ModelIndex.Handle index);
+    void iconSizeChanged(Size size);
+    void pressed(ModelIndex.Handle index);
+    void viewportEntered();
+
+    // treeview
+    void collapsed(ModelIndex.Handle index);
+    void expanded(ModelIndex.Handle index);
 }
 
 Handle create(SignalHandler handler);

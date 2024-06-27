@@ -26,7 +26,7 @@ open MenuBar
 
 open Models.TrackedRows
 
-let SECONDARY_VALUES = [|
+let wordList = [|
     "argument"
     "paste"
     "store"
@@ -64,14 +64,16 @@ let SECONDARY_VALUES = [|
 
 type ListRow = {
     First: string
-    Color: Color
     Second: string
+    Color: Color
+    IntValue: int
 }
 
 type State = {
     ListData: TrackedRows<ListRow>
     HeadersToggled: bool
     CurrentFilter: string option
+    NextIntValue: int
 }
 
 type Msg =
@@ -82,14 +84,15 @@ type Msg =
 
 let init () =
     let initRows = TrackedRows.Init([
-        { First = "One"; Color = Color(ColorConstant.Green); Second = "Woot" }
-        { First = "Two"; Color = Color(ColorConstant.Magenta); Second = "Doot" }
-        { First = "Three"; Color = Color(ColorConstant.Red); Second = "McGroot" }
+        { First = "One"; Second = "Woot"; Color = Color(ColorConstant.Green); IntValue = 1 }
+        { First = "Two"; Second = "Doot"; Color = Color(ColorConstant.Magenta); IntValue = 2 }
+        { First = "Three"; Second = "McGroot"; Color = Color(ColorConstant.Red); IntValue = 3 }
     ])
     let nextState = {
         ListData = initRows
         HeadersToggled = false
         CurrentFilter = None
+        NextIntValue = 4 
     }
     nextState, Cmd.None
     
@@ -108,12 +111,12 @@ let update (state: State) (msg: Msg) =
                 let b = interp 120 145 state.ListData.RowCount |> min 255
                 Color(r, g, b)
             let secondaryText =
-                SECONDARY_VALUES[state.ListData.RowCount % SECONDARY_VALUES.Length]
+                wordList[state.ListData.RowCount % wordList.Length]
             state.ListData
                 .BeginChanges()
-                .AddRow({ First = text; Color = color; Second = secondaryText })
+                .AddRow({ First = text; Color = color; Second = secondaryText; IntValue = state.NextIntValue })
         let nextState =
-            { state with ListData = nextData }
+            { state with ListData = nextData; NextIntValue = state.NextIntValue + 1 }
         nextState, Cmd.None
     | AppExit ->
         state, Cmd.Signal QuitApplication
@@ -144,13 +147,14 @@ let view (state: State) =
             | 0, DisplayRole -> Variant.String row.First
             | 0, DecorationRole -> Variant.Color row.Color
             | 1, DisplayRole -> Variant.String row.Second
+            | 2, DisplayRole -> Variant.Int row.IntValue
             | _ -> Variant.Empty
         let headers =
             if state.HeadersToggled then
-                [ "CHANGED 01"; "CHANGED 02" ]
+                [ "CHANGED 01"; "CHANGED 02"; "CHANGED 03" ]
             else
-                [ "Primary"; "Secondary" ]
-        ListModelNode(dataFunc, 2, Attrs = [ Rows state.ListData; Headers headers ])
+                [ "Primary"; "Secondary"; "Sequence" ]
+        ListModelNode(dataFunc, 3, Attrs = [ Rows state.ListData; Headers headers ])
         
     let proxyModel =
         let regex =
@@ -165,7 +169,7 @@ let view (state: State) =
             SourceModel = listModel)
         
     let treeView =
-        TreeView(TreeModel = proxyModel)
+        TreeView(Attrs = [ SortingEnabled true ], TreeModel = proxyModel)
         
     let button =
         PushButton(Attrs = [ PushButton.Text "Add One" ], OnClicked = AddRow)

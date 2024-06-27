@@ -543,6 +543,7 @@ type KeySequence private(deferred: Org.Whatever.QtTesting.KeySequence.Deferred) 
 type Variant =
     | Empty
     | String of str: string
+    | Int of value: int
     | Icon of icon: Icon
     | Color of color: Color
 with
@@ -550,6 +551,7 @@ with
         match this with
         | Empty -> Variant.Deferred.Empty() :> Org.Whatever.QtTesting.Variant.Deferred
         | String str -> Variant.Deferred.FromString(str)
+        | Int value -> Variant.Deferred.FromInt(value)
         | Icon icon -> Variant.Deferred.FromIcon(icon.QtValue)
         | Color color -> Variant.Deferred.FromColor(color.QtValue)
         

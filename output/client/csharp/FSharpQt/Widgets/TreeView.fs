@@ -6,14 +6,42 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 
 type Signal =
+    | CustomContextMenuRequested of pos: Point
+    | Activated of index: ModelIndexProxy
+    | Clicked of index: ModelIndexProxy
+    | DoubleClicked of index: ModelIndexProxy
+    | Entered of index: ModelIndexProxy
+    | IconSizeChanged of size: Size
+    | Pressed of index: ModelIndexProxy
+    | ViewportEntered
     | Collapsed of index: ModelIndexProxy
     | Expanded of index: ModelIndexProxy
     
 type Attr =
-    | NothingYet
+    | AllColumnsShowFocus of enabled: bool
+    | Animated of enabled: bool
+    | AutoExpandDelay of delay: int
+    | ExpandsOnDoubleClick of enabled: bool
+    | HeaderHidden of hidden: bool
+    | Indentation of indent: int
+    | ItemsExpandable of enabled: bool
+    | RootIsDecorated of show: bool
+    | SortingEnabled of enabled: bool
+    | UniformRowHeights of uniform: bool
+    | WordWrap of enabled: bool
     
 let private keyFunc = function
-    | NothingYet -> 0
+    | AllColumnsShowFocus _ -> 0
+    | Animated _ -> 1
+    | AutoExpandDelay _ -> 2
+    | ExpandsOnDoubleClick _ -> 3
+    | HeaderHidden _ -> 4
+    | Indentation _ -> 5
+    | ItemsExpandable _ -> 6
+    | RootIsDecorated _ -> 7
+    | SortingEnabled _ -> 8
+    | UniformRowHeights _ -> 9
+    | WordWrap _ -> 10
     
 let private diffAttrs =
     genericDiffAttrs keyFunc
@@ -45,10 +73,46 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     member this.ApplyAttrs(attrs: Attr list) =
         for attr in attrs do
             match attr with
-            | NothingYet ->
-                ()
-
+            | AllColumnsShowFocus enabled ->
+                treeView.SetAllColumnsShowFocus(enabled)
+            | Animated enabled ->
+                treeView.SetAnimated(enabled)
+            | AutoExpandDelay delay ->
+                treeView.SetAutoExpandDelay(delay)
+            | ExpandsOnDoubleClick enabled ->
+                treeView.SetExpandsOnDoubleClick(enabled)
+            | HeaderHidden hidden ->
+                treeView.SetHeaderHidden(hidden)
+            | Indentation indent ->
+                treeView.SetIndentation(indent)
+            | ItemsExpandable enabled ->
+                treeView.SetItemsExpandable(enabled)
+            | RootIsDecorated show ->
+                treeView.SetRootIsDecorated(show)
+            | SortingEnabled enabled ->
+                treeView.SetSortingEnabled(enabled)
+            | UniformRowHeights uniform ->
+                treeView.SetUniformRowHeights(uniform)
+            | WordWrap enabled ->
+                treeView.SetWordWrap(enabled)
+                
     interface TreeView.SignalHandler with
+        member this.CustomContextMenuRequested pos =
+            signalDispatch (Point.From pos |> CustomContextMenuRequested)
+        member this.Activated index =
+            signalDispatch (ModelIndexProxy(index) |> Activated)
+        member this.Clicked index =
+            signalDispatch (ModelIndexProxy(index) |> Clicked)
+        member this.DoubleClicked index =
+            signalDispatch (ModelIndexProxy(index) |> DoubleClicked)
+        member this.Entered index =
+            signalDispatch (ModelIndexProxy(index) |> Entered)
+        member this.IconSizeChanged size =
+            signalDispatch (Size.From size |> IconSizeChanged)
+        member this.Pressed index =
+            signalDispatch (ModelIndexProxy(index) |> Pressed)
+        member this.ViewportEntered() =
+            signalDispatch ViewportEntered
         member this.Collapsed index =
             signalDispatch (ModelIndexProxy(index) |> Collapsed)
         member this.Expanded index =
@@ -86,8 +150,48 @@ type TreeView<'msg>() =
     
     let mutable signalMask = enum<TreeView.SignalMask> 0
     
+    let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
+    let mutable onActivated: (ModelIndexProxy -> 'msg) option = None
+    let mutable onClicked: (ModelIndexProxy -> 'msg) option = None
+    let mutable onDoubleClicked: (ModelIndexProxy -> 'msg) option = None
+    let mutable onEntered: (ModelIndexProxy -> 'msg) option = None
+    let mutable onIconSizeChanged: (Size -> 'msg) option = None
+    let mutable onPressed: (ModelIndexProxy -> 'msg) option = None
+    let mutable onViewportEntered: 'msg option = None
     let mutable onCollapsed: (ModelIndexProxy -> 'msg) option = None
     let mutable onExpanded: (ModelIndexProxy -> 'msg) option = None
+    
+    member this.OnCustomContextMenuRequested with set value =
+        onCustomContextMenuRequested <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.CustomContextMenuRequested
+        
+    member this.OnActivated with set value =
+        onActivated <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.Activated
+        
+    member this.OnClicked with set value =
+        onClicked <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.Clicked
+        
+    member this.OnDoubleClicked with set value =
+        onDoubleClicked <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.DoubleClicked
+        
+    member this.OnEntered with set value =
+        onEntered <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.Entered
+        
+    member this.OnIconSizeChanged with set value =
+        onIconSizeChanged <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.IconSizeChanged
+        
+    member this.OnPressed with set value =
+        onPressed <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.Pressed
+        
+    member this.OnViewportEntered with set value =
+        onViewportEntered <- Some value
+        signalMask <- signalMask ||| TreeView.SignalMask.ViewportEntered
     
     member this.OnCollapsed with set value =
         onCollapsed <- Some value
@@ -98,6 +202,29 @@ type TreeView<'msg>() =
         signalMask <- signalMask ||| TreeView.SignalMask.Expanded
         
     let signalMap = function
+        | CustomContextMenuRequested pos ->
+            onCustomContextMenuRequested
+            |> Option.map (fun f -> f pos)
+        | Activated index ->
+            onActivated
+            |> Option.map (fun f -> f index)
+        | Clicked index ->
+            onClicked
+            |> Option.map (fun f -> f index)
+        | DoubleClicked index ->
+            onDoubleClicked
+            |> Option.map (fun f -> f index)
+        | Entered index ->
+            onEntered
+            |> Option.map (fun f -> f index)
+        | IconSizeChanged size ->
+            onIconSizeChanged
+            |> Option.map (fun f -> f size)
+        | Pressed index ->
+            onPressed
+            |> Option.map (fun f -> f index)
+        | ViewportEntered ->
+            onViewportEntered
         | Collapsed index ->
             onCollapsed
             |> Option.map (fun f -> f index)
