@@ -71,8 +71,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.SelectionChanged () =
             signalDispatch SelectionChanged
         member this.TextChanged text =
+            lastValue <- text
             signalDispatch (TextChanged text)
         member this.TextEdited text =
+            lastValue <- text
             signalDispatch (TextEdited text)
                 
     interface IDisposable with

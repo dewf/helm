@@ -441,8 +441,9 @@ type MimeDataProxy internal(qMimeData: Widget.MimeData) =
         
 
 // might merge these ModelIndex types in the future, going to see how it plays out
-// kind of don't like putting IDisposable on the proxy version since it does nothing and then get IDE warnings about using 'new' etc
-// but we'll see
+// kind of don't like putting IDisposable on the proxy/deferred versions since they aren't owned, and then get IDE warnings about using 'new' etc
+// but we'll see. juggling 3 different ones for different purposes seems kind of crazy (when they all represent a C++ QModelIndex in the end)
+// even 'from scratch' they need to be created from a model somewhere, so would the 'new' be that big a deal?
 
 type ModelIndexProxy internal(index: ModelIndex.Handle) =
     member val internal Index = index
@@ -500,7 +501,7 @@ type AbstractProxyModelProxy() =
         base.Handle <- handle
         AbstractProxyModelProxy()
     member this.MapToSource (proxyIndex: ModelIndexProxy) =
-        let ret = this.Handle.MapToSource(proxyIndex.Index)
+        let ret = this.Handle.MapToSource(ModelIndex.Deferred.FromHandle(proxyIndex.Index))
         new ModelIndexOwned(ret)
 
 // other =========================

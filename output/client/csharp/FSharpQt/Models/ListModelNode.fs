@@ -63,12 +63,16 @@ type Model<'msg,'row>(dispatch: 'msg -> unit, numColumns: int) =
             | Rows rows ->
                 for change in rows.Changes do
                     match change with
-                    | Added(index, row) ->
+                    | RowAdded(index, row) ->
                         listModel.AddRowAt(index, row)
                     | RangeAdded(index, rows) ->
                         listModel.AddRowsAt(index, rows)
-                    | Replaced(index, newRow) ->
+                    | RowReplaced(index, newRow) ->
                         listModel.ReplaceRowAt(index, newRow)
+                    | RowDeleted index ->
+                        listModel.DeleteRowAt(index)
+                    | RangeDeleted(index, count) ->
+                        listModel.DeleteRowsAt(index, count)
             | Headers names ->
                 if headers <> names then
                     headers <- names

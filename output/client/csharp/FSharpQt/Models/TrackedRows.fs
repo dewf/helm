@@ -3,9 +3,11 @@
 open FSharpQt.Extensions
 
 type RowChangeItem<'row> =
-    | Added of index: int * row: 'row
+    | RowAdded of index: int * row: 'row
     | RangeAdded of index: int * rows: 'row list
-    | Replaced of index: int * newRow: 'row
+    | RowDeleted of index: int
+    | RangeDeleted of index: int * count: int
+    | RowReplaced of index: int * newRow: 'row
 
 [<CustomEquality>]
 [<NoComparison>]
@@ -36,7 +38,7 @@ type TrackedRows<'row> = {
         let nextCount =
             this.RowCount + 1
         let nextChanges =
-            this.Changes @ [ Added (index, row) ]
+            this.Changes @ [ RowAdded (index, row) ]
         { this with Rows = nextRows; RowCount = nextCount; Changes = nextChanges }
         
     member this.AddRows(rows: 'row list) =
@@ -50,12 +52,32 @@ type TrackedRows<'row> = {
             this.Changes @ [ RangeAdded(index, rows) ]
         { this with Rows = nextRows; RowCount = nextCount; Changes = nextChanges }
         
+    member this.DeleteRow(index: int) =
+        let nextRows =
+            this.Rows
+            |> List.removeAt index
+        let nextCount =
+            this.RowCount - 1
+        let nextChanges =
+            this.Changes @ [ RowDeleted(index) ]
+        { this with Rows = nextRows; RowCount = nextCount; Changes = nextChanges }
+        
+    member this.DeleteRows(index: int, count: int) =
+        let nextRows =
+            this.Rows
+            |> List.removeManyAt index count
+        let nextCount =
+            this.RowCount - count
+        let nextChanges =
+            this.Changes @ [ RangeDeleted(index, count) ]
+        { this with Rows = nextRows; RowCount = nextCount; Changes = nextChanges }
+        
     member this.ReplaceAtIndex(index: int, row: 'row) =
         let nextRows =
             this.Rows
             |> List.replaceAtIndex index (fun _ -> row)
         let nextChanges =
-            this.Changes @ [ Replaced(index, row) ]
+            this.Changes @ [ RowReplaced(index, row) ]
         { this with Rows = nextRows; Changes = nextChanges }
         
     static member Init(rows: 'row list) =

@@ -3,6 +3,8 @@
 #include <QAbstractProxyModel>
 #include <QModelIndex>
 
+#include "ModelIndexInternal.h"
+
 #define THIS ((QAbstractProxyModel*)_this)
 
 namespace AbstractProxyModel
@@ -11,9 +13,8 @@ namespace AbstractProxyModel
         THIS->setSourceModel((QAbstractItemModel*)sourceModel);
     }
 
-    OwnedHandleRef Handle_mapToSource(HandleRef _this, ModelIndex::HandleRef proxyIndex) {
-        auto proxyValue = *((QModelIndex*)proxyIndex);
-        auto retValue = THIS->mapToSource(proxyValue);
+    OwnedHandleRef Handle_mapToSource(HandleRef _this, std::shared_ptr<Deferred::Base> proxyIndex) {
+        auto retValue = THIS->mapToSource(ModelIndex::fromDeferred(proxyIndex));
         // most model indexes are pointers to stack-allocated stuff on the C++ side, but this one we are responsible for!
         return (OwnedHandleRef) new QModelIndex(retValue);
     }

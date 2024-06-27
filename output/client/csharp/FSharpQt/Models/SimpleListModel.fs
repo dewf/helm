@@ -94,6 +94,16 @@ type SimpleListModel<'row>(numColumns: int) as this =
         rows <- Array.insertManyAt index newRows rows
         interior.EndInsertRows()
         
+    member this.DeleteRowAt(index: int) =
+        interior.BeginRemoveRows(emptyIndex, index, index)
+        rows <- Array.removeAt index rows
+        interior.EndRemoveRows()
+        
+    member this.DeleteRowsAt(index: int, count: int) =
+        interior.BeginRemoveRows(emptyIndex, index, index + count - 1)
+        rows <- Array.removeManyAt index count rows
+        interior.EndRemoveRows()
+        
     member this.ReplaceRowAt(index: int, row: 'row) =
         rows[index] <- row
         use topLeft =

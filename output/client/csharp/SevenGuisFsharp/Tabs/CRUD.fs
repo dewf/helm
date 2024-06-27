@@ -123,36 +123,20 @@ let update (state: State) (msg: Msg) =
                 state
         nextState, Cmd.None
     | Delete ->
-        state, Cmd.None
-        // let nextState =
-        //     match state.SelectedIndex with
-        //     | Some index ->
-        //         match state.Mode with
-        //         | Unfiltered ->
-        //             if index < state.AllNames.Length then
-        //                 let nextNames =
-        //                     state.AllNames
-        //                     |> List.removeAt index
-        //                 { state with AllNames = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
-        //             else
-        //                 state
-        //         | Filtered(filter, filteredNames) ->
-        //             if index < filteredNames.Length then
-        //                 let originalIndex =
-        //                     filteredNames
-        //                     |> List.item index
-        //                     |> (_.OriginalIndex)
-        //                 let nextNames =
-        //                     state.AllNames
-        //                     |> List.removeAt originalIndex
-        //                 let nextMode =
-        //                     Filtered(filter, filterNames nextNames filter)
-        //                 { state with AllNames = nextNames; Mode = nextMode; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
-        //             else
-        //                 state
-        //     | None ->
-        //         state
-        // nextState, Cmd.None
+        let nextState =
+            match state.SelectedIndex with
+            | Some index ->
+                if index < state.Names.RowCount then
+                    let nextNames =
+                        state.Names
+                            .BeginChanges()
+                            .DeleteRow(index)
+                    { state with Names = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
+                else
+                    state
+            | None ->
+                state
+        nextState, Cmd.None
         
 let view (state: State) =
     let filterLabel = Label(Attrs = [ Label.Text "Filter prefix:" ])
