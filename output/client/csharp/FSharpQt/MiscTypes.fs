@@ -480,30 +480,6 @@ type ModelIndexDeferred private(deferred: ModelIndex.Deferred) =
     internal new(handle: ModelIndex.Handle) =
         ModelIndexDeferred(ModelIndex.Deferred.FromHandle(handle))
     
-// experimenting for extreme cases:
-   
-type ProxyBase<'handle> internal() =
-    member val internal Handle: 'handle = Unchecked.defaultof<'handle> with get, set
-    
-// should these be declared in the modules, as <module>.MethodProxy ?
-
-type PlainTextEditProxy() =
-    inherit ProxyBase<PlainTextEdit.Handle>()
-    internal new(handle: PlainTextEdit.Handle) =
-        base.Handle <- handle
-        PlainTextEditProxy()
-    member this.ToPlainText () =
-        this.Handle.ToPlainText()
-        
-type AbstractProxyModelProxy() =
-    inherit ProxyBase<AbstractProxyModel.Handle>()
-    internal new(handle: AbstractProxyModel.Handle) =
-        base.Handle <- handle
-        AbstractProxyModelProxy()
-    member this.MapToSource (proxyIndex: ModelIndexProxy) =
-        let ret = this.Handle.MapToSource(ModelIndex.Deferred.FromHandle(proxyIndex.Index))
-        new ModelIndexOwned(ret)
-
 // other =========================
 
 type Icon private(deferred: Org.Whatever.QtTesting.Icon.Deferred) =

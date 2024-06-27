@@ -10,17 +10,15 @@
         <Compile Include="Extensions.fs" />
         <Compile Include="InputEnums.fs" />
         <Compile Include="MiscTypes.fs" />
+        <Compile Include="ModelBindings.fs" />
         <Compile Include="BuilderNode.fs" />
         <Compile Include="Reactor.fs" />
         <Compile Include="Painting.fs" />
         <Compile Include="EventDelegate.fs" />
 
         <Compile Include="Models\SimpleListModel.fs" />
-
         <Compile Include="Models\TrackedRows.fs" />
-
         <Compile Include="Models\ListModelNode.fs" />
-
         <Compile Include="Models\SortFilterProxyModel.fs" />
         
         <Compile Include="Widgets\Menus\MenuAction.fs" />

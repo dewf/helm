@@ -2,6 +2,7 @@
 
 open System
 open FSharpQt.MiscTypes
+open FSharpQt.ModelBindings
 open Org.Whatever.QtTesting
 
 open FSharpQt
@@ -107,8 +108,8 @@ type PlainTextEdit<'msg>() =
     member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable maybeMethodProxy: PlainTextEditProxy option = None
-    member this.MethodProxy with set value = maybeMethodProxy <- Some value
+    let mutable maybeModelBinding: PlainTextEditBinding option = None
+    member this.ModelBinding with set value = maybeModelBinding <- Some value
     
     let mutable signalMask = enum<PlainTextEdit.SignalMask> 0
     
@@ -182,7 +183,7 @@ type PlainTextEdit<'msg>() =
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
             // assign the method proxy if one is requested
-            maybeMethodProxy
+            maybeModelBinding
             |> Option.iter (fun mp -> mp.Handle <- this.model.Widget)
             
         override this.AttachDeps () =

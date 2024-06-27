@@ -16,6 +16,7 @@ open LineEdit
 open Models.ListModelNode
 open Models.SortFilterProxyModel
 open TreeView
+open FSharpQt.ModelBindings
 
 type Attr = unit
 type Signal = unit
@@ -58,8 +59,8 @@ let init () =
     
 // because we need to invoke .MapToSource to convert the selected proxy indices, to something we can use
 // maybe these should be called "bindings" instead - AbstactProxyModelBinding in this case
-let modelProxy =
-    AbstractProxyModelProxy()
+let proxyModel =
+    AbstractProxyModelBinding()
     
 let update (state: State) (msg: Msg) =
     match msg with
@@ -73,7 +74,7 @@ let update (state: State) (msg: Msg) =
     | SelectItem index ->
         // note 'converted' would be safely GC'ed even if we didn't know it was disposable
         use converted =
-            modelProxy.MapToSource(index)
+            proxyModel.MapToSource(index)
         let selectedIndex, nextFirstEdit, nextLastEdit =
             if converted.IsValid then
                 state.Names.Rows
@@ -156,7 +157,7 @@ let view (state: State) =
             match state.FilterPattern with
             | "" -> Regex()
             | value -> Regex(value, [ RegexOption.CaseInsensitive ])
-        SortFilterProxyModel(SourceModel = model, Attrs = [ FilterRegex regex; FilterKeyColumn None ], MethodProxy = modelProxy)
+        SortFilterProxyModel(SourceModel = model, Attrs = [ FilterRegex regex; FilterKeyColumn None ], ModelBinding = proxyModel)
         
     let treeView =
         TreeView(Attrs = [ SortingEnabled true ], TreeModel = filterModel, OnClicked = SelectItem)
