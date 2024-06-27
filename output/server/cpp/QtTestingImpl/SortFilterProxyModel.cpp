@@ -31,7 +31,7 @@ namespace SortFilterProxyModel
         };
     };
 
-    void Handle_setFilterRegularExpression(HandleRef _this, std::shared_ptr<Deferred::Base> regex) {
+    void Handle_setFilterRegularExpression(HandleRef _this, std::shared_ptr<RegularExpression::Deferred::Base> regex) {
         THIS->setFilterRegularExpression(RegularExpression::fromDeferred(regex));
     }
 

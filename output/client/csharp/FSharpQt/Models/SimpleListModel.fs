@@ -93,3 +93,11 @@ type SimpleListModel<'row>(numColumns: int) as this =
         interior.BeginInsertRows(emptyIndex, index, index + newRows.Length - 1)
         rows <- Array.insertManyAt index newRows rows
         interior.EndInsertRows()
+        
+    member this.ReplaceRowAt(index: int, row: 'row) =
+        rows[index] <- row
+        use topLeft =
+            interior.Index(index, 0)
+        use bottomRight =
+            interior.Index(index, numColumns - 1)
+        interior.EmitDataChanged(ModelIndexDeferred(topLeft).QtValue, ModelIndexDeferred(bottomRight).QtValue, [||])

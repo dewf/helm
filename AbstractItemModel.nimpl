@@ -1,6 +1,11 @@
 module AbstractItemModel;
 
 import Object;
+import ModelIndex;
 
 @nodispose // for now since we have no way of creating them
-opaque Handle extends Object.Handle;
+opaque Handle extends Object.Handle {
+    // overloads of a single method:
+    ModelIndex.OwnedHandle index(int row, int column);
+    ModelIndex.OwnedHandle index(int row, int column, ModelIndex.Deferred parent);
+}

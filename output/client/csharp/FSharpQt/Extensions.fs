@@ -13,6 +13,17 @@ module List =
         | _ ->
             failwith "List.replaceAtIndex fail"
             
+    let replaceAtIndexWithChanged (index: int) (replaceFunc: 'a -> 'a) (xs: 'a list) =
+        let before, after =
+            List.splitAt index xs
+        match after with
+        | h :: etc ->
+            let changed =
+                replaceFunc h
+            (before @ changed :: etc), changed
+        | _ ->
+            failwith "List.replaceAtIndexWithChanged fail"
+            
     let removeAt (index: int) (xs: 'a list) =
         let before, after =
             List.splitAt index xs

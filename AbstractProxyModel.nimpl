@@ -1,8 +1,12 @@
 module AbstractProxyModel;
 
 import AbstractItemModel;
+import ModelIndex;
 
 @nodispose
 opaque Handle extends AbstractItemModel.Handle {
     void setSourceModel(AbstractItemModel.Handle sourceModel);
+
+    // owned, must be released! (heap allocated copy)
+    ModelIndex.OwnedHandle mapToSource(ModelIndex.Handle proxyIndex);
 }

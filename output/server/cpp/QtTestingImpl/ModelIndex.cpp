@@ -19,6 +19,10 @@ namespace ModelIndex
         return THIS->column();
     }
 
+    void OwnedHandle_dispose(OwnedHandleRef _this) {
+        delete THIS;
+    }
+
     class FromDeferred : public ModelIndex::Deferred::Visitor {
     private:
         QModelIndex &modelIndex;
@@ -32,6 +36,10 @@ namespace ModelIndex
 
         void onFromHandle(const Deferred::FromHandle *fromHandle) override {
             modelIndex = *((QModelIndex*)fromHandle->handle);
+        }
+
+        void onFromOwned(const Deferred::FromOwned *fromOwned) override {
+            modelIndex = *((QModelIndex*)fromOwned->owned);
         }
     };
 

@@ -2,6 +2,8 @@
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.MiscTypes
+open FSharpQt.Models.TrackedRows
 open Reactor
 
 open FSharpQt.Widgets
@@ -10,10 +12,10 @@ open BoxLayout
 open GridLayout
 open PushButton
 open LineEdit
-open Widget
 
-open Extensions
-open MiscTypes
+open Models.ListModelNode
+open Models.SortFilterProxyModel
+open TreeView
 
 type Attr = unit
 type Signal = unit
@@ -23,18 +25,9 @@ type Name = {
     Last: string
 }
 
-type FilteredName = {
-    OriginalIndex: int
-    Name: Name
-}
-
-type Mode =
-    | Unfiltered
-    | Filtered of filter: string * names: FilteredName list
-
 type State = {
-    AllNames: Name list
-    Mode: Mode
+    Names: TrackedRows<Name>
+    FilterPattern: string
     SelectedIndex: int option
     FirstEdit: string
     LastEdit: string
@@ -42,7 +35,7 @@ type State = {
 
 type Msg =
     | SetFilter of filter: string
-    | SelectItem of maybeIndex: int option
+    | SelectItem of modelIndex: ModelIndexProxy
     | SetFirst of string
     | SetLast of string
     | Create
@@ -51,58 +44,49 @@ type Msg =
 
 let init () =
     let state = {
-        AllNames = [
+        Names = TrackedRows.Init([
             { First = "Hans"; Last = "Emil" }
             { First = "Max"; Last = "MusterMann" }
-            { First = "Roman"; Last = "Tisch" } ]
-        Mode = Unfiltered
+            { First = "Roman"; Last = "Tisch" }             
+        ])
+        FilterPattern = ""
         SelectedIndex = None
         FirstEdit = ""
         LastEdit = ""
     }
     state, Cmd.None
     
-let filterNames (names: Name list) (filter: string) =
-    names
-    |> List.mapi (fun i name -> i, name)
-    |> List.choose (fun (index, name) ->
-        if name.First.ToLower().StartsWith filter || name.Last.ToLower().StartsWith filter then
-            Some { OriginalIndex = index; Name = name }
-        else
-            None)
+// because we need to invoke .MapToSource to convert the selected proxy indices, to something we can use
+// maybe these should be called "bindings" instead - AbstactProxyModelBinding in this case
+let modelProxy =
+    AbstractProxyModelProxy()
     
 let update (state: State) (msg: Msg) =
     match msg with
     | SetFilter filter ->
         let nextState =
-            if filter = "" then
-                { state with Mode = Unfiltered; SelectedIndex = None; FirstEdit = ""; LastEdit = "" }
-            else
-                { state with Mode = Filtered (filter, filterNames state.AllNames filter); SelectedIndex = None; FirstEdit = ""; LastEdit = "" }
+            { state with
+                FilterPattern = filter
+                FirstEdit = ""
+                LastEdit = "" }
         nextState, Cmd.None
-    | SelectItem maybeIndex ->
-        let nextFirstEdit, nextLastEdit =
-            match state.Mode with
-            | Unfiltered ->
-                match maybeIndex with
-                | Some index ->
-                    state.AllNames
-                    |> List.item index
-                    |> (fun name -> name.First, name.Last)
-                | None ->
-                    "", ""
-            | Filtered(_, filteredNames) ->
-                match maybeIndex with
-                | Some index ->
-                    filteredNames
-                    |> List.item index
-                    |> (fun fname -> fname.Name.First, fname.Name.Last)
-                | None ->
-                    "", ""
-        { state with
-            FirstEdit = nextFirstEdit
-            LastEdit = nextLastEdit 
-            SelectedIndex = maybeIndex }, Cmd.None
+    | SelectItem index ->
+        // note 'converted' would be safely GC'ed even if we didn't know it was disposable
+        use converted =
+            modelProxy.MapToSource(index)
+        let selectedIndex, nextFirstEdit, nextLastEdit =
+            if converted.IsValid then
+                state.Names.Rows
+                |> List.item converted.Row
+                |> (fun name -> Some converted.Row, name.First, name.Last)
+            else
+                None, "", ""
+        let nextState =
+            { state with
+                FirstEdit = nextFirstEdit
+                LastEdit = nextLastEdit
+                SelectedIndex = selectedIndex }
+        nextState, Cmd.None
     | SetFirst text ->
         { state with FirstEdit = text }, Cmd.None
     | SetLast text ->
@@ -112,15 +96,11 @@ let update (state: State) (msg: Msg) =
             if state.FirstEdit.Length > 0 && state.LastEdit.Length > 0 then
                 let name = { First = state.FirstEdit; Last = state.LastEdit }
                 let nextNames =
-                    state.AllNames @ [ name ]
-                let nextMode =
-                    match state.Mode with
-                    | Unfiltered -> Unfiltered
-                    | Filtered(filter, _) ->
-                        Filtered(filter, filterNames nextNames filter)
+                    state.Names
+                        .BeginChanges()
+                        .AddRow(name)
                 { state with
-                    Mode = nextMode
-                    AllNames = nextNames
+                    Names = nextNames
                     FirstEdit = ""
                     LastEdit = ""
                     SelectedIndex = None }
@@ -131,92 +111,71 @@ let update (state: State) (msg: Msg) =
         let nextState =
             match state.SelectedIndex, state.FirstEdit.Length, state.LastEdit.Length with
             | Some index, firstLen, lastLen when firstLen > 0 && lastLen > 0 ->
-                match state.Mode with
-                | Unfiltered ->
-                    if index < state.AllNames.Length then
-                        let nextNames =
-                            state.AllNames
-                            |> List.replaceAtIndex index (fun _ -> { First = state.FirstEdit; Last = state.LastEdit })
-                        { state with AllNames = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
-                    else
-                        state
-                | Filtered(filter, filteredNames) ->
-                    if index < filteredNames.Length then
-                        let originalIndex =
-                            filteredNames
-                            |> List.item index
-                            |> (_.OriginalIndex)
-                        let nextNames =
-                            state.AllNames
-                            |> List.replaceAtIndex originalIndex (fun _ -> { First = state.FirstEdit; Last = state.LastEdit })
-                        let nextMode =
-                            Filtered(filter, filterNames nextNames filter)
-                        { state with AllNames = nextNames; Mode = nextMode; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
-                    else
-                        state
+                if index < state.Names.Rows.Length then
+                    let nextNames =
+                        state.Names
+                            .BeginChanges()
+                            .ReplaceAtIndex(index, { First = state.FirstEdit; Last = state.LastEdit })
+                    { state with Names = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
+                else
+                    state
             | _ ->
                 state
         nextState, Cmd.None
     | Delete ->
-        let nextState =
-            match state.SelectedIndex with
-            | Some index ->
-                match state.Mode with
-                | Unfiltered ->
-                    if index < state.AllNames.Length then
-                        let nextNames =
-                            state.AllNames
-                            |> List.removeAt index
-                        { state with AllNames = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
-                    else
-                        state
-                | Filtered(filter, filteredNames) ->
-                    if index < filteredNames.Length then
-                        let originalIndex =
-                            filteredNames
-                            |> List.item index
-                            |> (_.OriginalIndex)
-                        let nextNames =
-                            state.AllNames
-                            |> List.removeAt originalIndex
-                        let nextMode =
-                            Filtered(filter, filterNames nextNames filter)
-                        { state with AllNames = nextNames; Mode = nextMode; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
-                    else
-                        state
-            | None ->
-                state
-        nextState, Cmd.None
+        state, Cmd.None
+        // let nextState =
+        //     match state.SelectedIndex with
+        //     | Some index ->
+        //         match state.Mode with
+        //         | Unfiltered ->
+        //             if index < state.AllNames.Length then
+        //                 let nextNames =
+        //                     state.AllNames
+        //                     |> List.removeAt index
+        //                 { state with AllNames = nextNames; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
+        //             else
+        //                 state
+        //         | Filtered(filter, filteredNames) ->
+        //             if index < filteredNames.Length then
+        //                 let originalIndex =
+        //                     filteredNames
+        //                     |> List.item index
+        //                     |> (_.OriginalIndex)
+        //                 let nextNames =
+        //                     state.AllNames
+        //                     |> List.removeAt originalIndex
+        //                 let nextMode =
+        //                     Filtered(filter, filterNames nextNames filter)
+        //                 { state with AllNames = nextNames; Mode = nextMode; FirstEdit = ""; LastEdit = ""; SelectedIndex = None }
+        //             else
+        //                 state
+        //     | None ->
+        //         state
+        // nextState, Cmd.None
         
 let view (state: State) =
     let filterLabel = Label(Attrs = [ Label.Text "Filter prefix:" ])
     let filterEdit =
-        let value =
-            match state.Mode with
-            | Unfiltered -> ""
-            | Filtered(filter, _) -> filter
-        LineEdit(Attrs = [ Value value ], OnTextChanged = SetFilter)
+        LineEdit(Attrs = [ Value state.FilterPattern ], OnTextChanged = SetFilter)
 
-    let items =
-        match state.Mode with
-        | Unfiltered ->
-            state.AllNames
-            |> List.map (fun name -> sprintf "%s, %s" name.Last name.First)
-        | Filtered(_, names) ->
-            names
-            |> List.map (fun fname ->
-                let name = fname.Name
-                sprintf "%s, %s" name.Last name.First)
-    let listBox =
-        // Widget() was crashing with some kind of stack overflow, need to look into
-        PushButton(Attrs = [ Text "Wut" ])
-        // ListWidget(
-        //     Attrs = [
-        //         Items items
-        //         SelectionMode Single
-        //         CurrentRow state.SelectedIndex
-        //     ],
-        //     OnCurrentRowChanged = SelectItem)
+    let model =
+        let dataFunc row col role =
+            match col, role with
+            | 0, DisplayRole -> Variant.String row.Last
+            | 1, DisplayRole -> Variant.String row.First
+            | _ -> Variant.Empty
+        ListModelNode(dataFunc, 2, Attrs = [ Rows state.Names; Headers [ "Last"; "First" ] ])
+        
+    let filterModel =
+        let regex =
+            match state.FilterPattern with
+            | "" -> Regex()
+            | value -> Regex(value, [ RegexOption.CaseInsensitive ])
+        SortFilterProxyModel(SourceModel = model, Attrs = [ FilterRegex regex; FilterKeyColumn None ], MethodProxy = modelProxy)
+        
+    let treeView =
+        TreeView(Attrs = [ SortingEnabled true ], TreeModel = filterModel, OnClicked = SelectItem)
 
     let firstLabel = Label(Attrs = [ Label.Text "First:" ])
     let firstEdit = LineEdit(Attrs = [ Value state.FirstEdit ], OnTextChanged = SetFirst)
@@ -250,7 +209,7 @@ let view (state: State) =
         Items = [
             GridItem(filterLabel, 0, 0)
             GridItem(filterEdit, 0, 1)
-            GridItem(listBox, 1, 0, 4, 2)
+            GridItem(treeView, 1, 0, 4, 2)
             GridItem(firstLabel, 1, 2, align = Alignment.Right)
             GridItem(firstEdit, 1, 3)
             GridItem(lastLabel, 2, 2, align = Alignment.Right)

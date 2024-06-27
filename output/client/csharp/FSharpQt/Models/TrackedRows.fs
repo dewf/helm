@@ -1,8 +1,11 @@
 ﻿module FSharpQt.Models.TrackedRows
 
+open FSharpQt.Extensions
+
 type RowChangeItem<'row> =
     | Added of index: int * row: 'row
     | RangeAdded of index: int * rows: 'row list
+    | Replaced of index: int * newRow: 'row
 
 [<CustomEquality>]
 [<NoComparison>]
@@ -46,6 +49,14 @@ type TrackedRows<'row> = {
         let nextChanges =
             this.Changes @ [ RangeAdded(index, rows) ]
         { this with Rows = nextRows; RowCount = nextCount; Changes = nextChanges }
+        
+    member this.ReplaceAtIndex(index: int, row: 'row) =
+        let nextRows =
+            this.Rows
+            |> List.replaceAtIndex index (fun _ -> row)
+        let nextChanges =
+            this.Changes @ [ Replaced(index, row) ]
+        { this with Rows = nextRows; Changes = nextChanges }
         
     static member Init(rows: 'row list) =
         { Step = 0; Rows = []; RowCount = 0; Changes = [] }.AddRows(rows)

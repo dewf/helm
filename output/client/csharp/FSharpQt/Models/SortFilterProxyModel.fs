@@ -83,6 +83,9 @@ type SortFilterProxyModel<'msg>() =
     member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
+    let mutable maybeMethodProxy: AbstractProxyModelProxy option = None
+    member this.MethodProxy with set value = maybeMethodProxy <- Some value
+    
     let mutable maybeSourceModel: IModelNode<'msg> option = None
     member this.SourceModel with set value = maybeSourceModel <- Some value
     
@@ -124,6 +127,9 @@ type SortFilterProxyModel<'msg>() =
 
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs signalMap dispatch signalMask
+            // assign the method proxy if one is requested
+            maybeMethodProxy
+            |> Option.iter (fun mp -> mp.Handle <- this.model.ProxyModel)
             
         override this.AttachDeps () =
             maybeSourceModel

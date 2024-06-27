@@ -67,6 +67,8 @@ type Model<'msg,'row>(dispatch: 'msg -> unit, numColumns: int) =
                         listModel.AddRowAt(index, row)
                     | RangeAdded(index, rows) ->
                         listModel.AddRowsAt(index, rows)
+                    | Replaced(index, newRow) ->
+                        listModel.ReplaceRowAt(index, newRow)
             | Headers names ->
                 if headers <> names then
                     headers <- names

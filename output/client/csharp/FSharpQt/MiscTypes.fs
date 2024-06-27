@@ -1,5 +1,6 @@
 ﻿module FSharpQt.MiscTypes
 
+open System
 open Org.Whatever.QtTesting
 open FSharpQt.InputEnums
 
@@ -438,13 +439,52 @@ type MimeDataProxy internal(qMimeData: Widget.MimeData) =
     member this.Urls =
         qMimeData.Urls()
         
+
+// might merge these ModelIndex types in the future, going to see how it plays out
+// kind of don't like putting IDisposable on the proxy version since it does nothing and then get IDE warnings about using 'new' etc
+// but we'll see
+
 type ModelIndexProxy internal(index: ModelIndex.Handle) =
-    let x = 10
+    member val internal Index = index
+    member this.IsValid =
+        index.IsValid()
+    member this.Row =
+        index.Row()
+    member this.Column =
+        index.Column()
+    
+type ModelIndexOwned internal(index: Org.Whatever.QtTesting.ModelIndex.OwnedHandle) =
+    let mutable disposed = false
+    
+    override this.Finalize() =
+        (this :> IDisposable).Dispose()
+        
+    interface IDisposable with
+        member this.Dispose() =
+            if not disposed then
+                index.Dispose()
+                disposed <- true
+                
+    member this.IsValid =
+        index.IsValid()
+    member this.Row =
+        index.Row()
+    member this.Column =
+        index.Column()
+        
+type ModelIndexDeferred private(deferred: ModelIndex.Deferred) =
+    member val internal QtValue = deferred
+    internal new(owned: ModelIndex.OwnedHandle) =
+        ModelIndexDeferred(ModelIndex.Deferred.FromOwned(owned))
+    internal new(handle: ModelIndex.Handle) =
+        ModelIndexDeferred(ModelIndex.Deferred.FromHandle(handle))
     
 // experimenting for extreme cases:
    
 type ProxyBase<'handle> internal() =
     member val internal Handle: 'handle = Unchecked.defaultof<'handle> with get, set
+    
+// should these be declared in the modules, as <module>.MethodProxy ?
 
 type PlainTextEditProxy() =
     inherit ProxyBase<PlainTextEdit.Handle>()
@@ -453,6 +493,15 @@ type PlainTextEditProxy() =
         PlainTextEditProxy()
     member this.ToPlainText () =
         this.Handle.ToPlainText()
+        
+type AbstractProxyModelProxy() =
+    inherit ProxyBase<AbstractProxyModel.Handle>()
+    internal new(handle: AbstractProxyModel.Handle) =
+        base.Handle <- handle
+        AbstractProxyModelProxy()
+    member this.MapToSource (proxyIndex: ModelIndexProxy) =
+        let ret = this.Handle.MapToSource(proxyIndex.Index)
+        new ModelIndexOwned(ret)
 
 // other =========================
 
