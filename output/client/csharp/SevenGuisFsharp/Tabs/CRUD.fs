@@ -113,7 +113,7 @@ let update (state: State) (msg: Msg) =
         let nextState =
             match state.SelectedIndex, state.FirstEdit.Length, state.LastEdit.Length with
             | Some index, firstLen, lastLen when firstLen > 0 && lastLen > 0 ->
-                if index < state.Names.Rows.Length then
+                if index < state.Names.RowCount then
                     let nextNames =
                         state.Names
                             .BeginChanges()
