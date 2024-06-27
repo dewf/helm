@@ -58,7 +58,8 @@ let init () =
     state, Cmd.None
     
 // because we need to invoke .MapToSource to convert the selected proxy indices, to something we can use
-// maybe these should be called "bindings" instead - AbstactProxyModelBinding in this case
+// this lets us invoke methods on the Qt objects, which are normally invisible to us
+// but first it needs to be assigned in the view() function, via ModelBinding properties
 let proxyModel =
     AbstractProxyModelBinding()
     
