@@ -28,7 +28,7 @@ let diffAttrs (left: IAttr list) (right: IAttr list) =
         (leftList @ rightList)
         |> List.map fst
         |> List.distinct
-        |> List.sort        // why?
+        |> List.sort        // ohhh, we used to do this for priority ordering I think - like making sure a button's "checkable" happens before its "checked"
 
     allKeys
     |> List.choose (fun key ->
@@ -47,7 +47,9 @@ let diffAttrs (left: IAttr list) (right: IAttr list) =
 
 let createdOrChanged (changes: AttrDiffResult list) =
     changes
-    |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
+    |> List.choose (function
+        | Created attr | Changed (_, attr) -> Some attr
+        | _ -> None)
 
 // various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
 // if you want to support a given type of attribute, you have to implement the target interface

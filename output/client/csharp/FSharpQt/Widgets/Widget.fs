@@ -13,8 +13,7 @@ type Signal =
     | WindowIconChanged of icon: IconProxy
     | WindowTitleChanged of title: string
     
-[<RequireQualifiedAccess>]
-type internal AttrValue =
+type Attr =
     | Size of width: int * height: int
     | Enabled of state: bool
     | MinimumWidth of width: int
@@ -32,139 +31,85 @@ type internal AttrValue =
     | UpdatesEnabled of enabled: bool
     | MouseTracking of enabled: bool
     | AcceptDrops of enabled: bool
-
-[<AbstractClass>]
-type Attr internal(value: AttrValue) =
-    member val private Value = value
+with
     interface IAttr with
         override this.AttrEquals other =
             match other with
-            | :? Attr as attr ->
-                this.Value = attr.Value
+            | :? Attr as attrOther ->
+                this = attrOther
             | _ ->
                 false
         override this.Key =
-            match value with
-            | AttrValue.Size _ -> "widget:size"
-            | AttrValue.Enabled _ -> "widget:enabled"
-            | AttrValue.MinimumWidth _ -> "widget:minwidth"
-            | AttrValue.MinimumHeight _ -> "widget:minheight"
-            | AttrValue.MaximumWidth _ -> "widget:maxwidth"
-            | AttrValue.MaximumHeight _ -> "widget:maxheight"
-            | AttrValue.SizePolicy _ -> "widget:sizepolicy"
-            | AttrValue.FixedWidth _ -> "widget:fixedwidth"
-            | AttrValue.FixedHeight _ -> "widget:fixedheight"
-            | AttrValue.FixedSize _ -> "widget:fixedsize"
-            | AttrValue.Visible _ -> "widget:visible"
-            | AttrValue.WindowTitle _ -> "widget:windowtitle"
-            | AttrValue.WindowModality _ -> "widget:windowmodality"
-            | AttrValue.ContextMenuPolicy _ -> "widget:contextmenupolicy"
-            | AttrValue.UpdatesEnabled _ -> "widget:updatesenabled"
-            | AttrValue.MouseTracking _ -> "widget:mousetracking"
-            | AttrValue.AcceptDrops _ -> "widget:acceptdrops"
+            match this with
+            | Size _ -> "widget:size"
+            | Enabled _ -> "widget:enabled"
+            | MinimumWidth _ -> "widget:minwidth"
+            | MinimumHeight _ -> "widget:minheight"
+            | MaximumWidth _ -> "widget:maxwidth"
+            | MaximumHeight _ -> "widget:maxheight"
+            | SizePolicy _ -> "widget:sizepolicy"
+            | FixedWidth _ -> "widget:fixedwidth"
+            | FixedHeight _ -> "widget:fixedheight"
+            | FixedSize _ -> "widget:fixedsize"
+            | Visible _ -> "widget:visible"
+            | WindowTitle _ -> "widget:windowtitle"
+            | WindowModality _ -> "widget:windowmodality"
+            | ContextMenuPolicy _ -> "widget:contextmenupolicy"
+            | UpdatesEnabled _ -> "widget:updatesenabled"
+            | MouseTracking _ -> "widget:mousetracking"
+            | AcceptDrops _ -> "widget:acceptdrops"
         override this.ApplyTo (target: IAttrTarget) =
             match target with
             | :? WidgetAttrTarget as widgetTarget ->
                 let widget =
                     widgetTarget.Widget
-                match value with
-                | AttrValue.Size (width, height) ->
+                match this with
+                | Size (width, height) ->
                     widget.Resize(width, height)
-                | AttrValue.Enabled state ->
+                | Enabled state ->
                     widget.SetEnabled(state)
-                | AttrValue.MinimumWidth width ->
+                | MinimumWidth width ->
                     widget.SetMinimumWidth(width)
-                | AttrValue.MinimumHeight height ->
+                | MinimumHeight height ->
                     widget.SetMinimumHeight(height)
-                | AttrValue.MaximumWidth width ->
+                | MaximumWidth width ->
                     widget.SetMaximumWidth(width)
-                | AttrValue.MaximumHeight height ->
+                | MaximumHeight height ->
                     widget.SetMaximumHeight(height)
-                | AttrValue.SizePolicy(hPolicy, vPolicy) ->
+                | SizePolicy(hPolicy, vPolicy) ->
                     widget.SetSizePolicy(hPolicy.QtValue, vPolicy.QtValue)
-                | AttrValue.FixedWidth width ->
+                | FixedWidth width ->
                     widget.SetFixedWidth(width)
-                | AttrValue.FixedHeight height ->
+                | FixedHeight height ->
                     widget.SetFixedHeight(height)
-                | AttrValue.FixedSize(width, height) ->
+                | FixedSize(width, height) ->
                     widget.SetFixedSize(width, height)
-                | AttrValue.Visible state ->
+                | Visible state ->
                     widget.SetVisible(state)
-                | AttrValue.WindowTitle title ->
+                | WindowTitle title ->
                     widget.SetWindowTitle(title)
-                | AttrValue.WindowModality modality ->
+                | WindowModality modality ->
                     widget.SetWindowModality(modality.QtValue)
-                | AttrValue.ContextMenuPolicy policy ->
+                | ContextMenuPolicy policy ->
                     widget.SetContextMenuPolicy(policy.QtValue)
-                | AttrValue.UpdatesEnabled enabled ->
+                | UpdatesEnabled enabled ->
                     widget.SetUpdatesEnabled(enabled)
-                | AttrValue.MouseTracking enabled ->
+                | MouseTracking enabled ->
                     widget.SetMouseTracking(enabled)
-                | AttrValue.AcceptDrops enabled ->
+                | AcceptDrops enabled ->
                     widget.SetAcceptDrops(enabled)
             | _ ->
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
-                
-type Size(width: int, height: int) =
-    inherit Attr(AttrValue.Size(width, height))
-                
-type Enabled(state: bool) =
-    inherit Attr(AttrValue.Enabled state)
-
-type MinimumWidth(width: int) =
-    inherit Attr(AttrValue.MinimumWidth width)
-
-type MinimumHeight(height: int) =
-    inherit Attr(AttrValue.MinimumHeight height)
-
-type MaximumWidth(width: int) =
-    inherit Attr(AttrValue.MaximumWidth width)
-    
-type MaximumHeight(height: int) =
-    inherit Attr(AttrValue.MaximumHeight height)
-            
-type SizePolicy(hPolicy: MiscTypes.SizePolicy, vPolicy: MiscTypes.SizePolicy) =
-    inherit Attr(AttrValue.SizePolicy(hPolicy, vPolicy))
-    
-type FixedWidth(width: int) =
-    inherit Attr(AttrValue.FixedWidth(width))
-    
-type FixedHeight(height: int) =
-    inherit Attr(AttrValue.FixedHeight(height))
-
-type FixedSize(width: int, height: int) =
-    inherit Attr(AttrValue.FixedSize(width, height))
-    
-type Visible(state: bool) =
-    inherit Attr(AttrValue.Visible(state))
-
-type WindowTitle(title: string) =
-    inherit Attr(AttrValue.WindowTitle(title))
-    
-type WindowModality(modality: MiscTypes.WindowModality) =
-    inherit Attr(AttrValue.WindowModality(modality))
-    
-type ContextMenuPolicy(policy: MiscTypes.ContextMenuPolicy) =
-    inherit Attr(AttrValue.ContextMenuPolicy(policy))
-    
-type UpdatesEnabled(enabled: bool) =
-    inherit Attr(AttrValue.UpdatesEnabled(enabled))
-    
-type MouseTracking(enabled: bool) =
-    inherit Attr(AttrValue.MouseTracking(enabled))
-    
-type AcceptDrops(enabled: bool) =
-    inherit Attr(AttrValue.AcceptDrops(enabled))
     
 type WidgetProps() =
     let mutable attrs: IAttr list = []
     member this.WidgetAttrs = attrs
     
     member this.Size with set (w, h) =
-        attrs <- Size(w,h) :: attrs
+        attrs <- Size (w,h) :: attrs
         
     member this.Enabled with set value =
-        attrs <- Enabled(value) :: attrs
+        attrs <- Enabled value :: attrs
         
     // | MinimumWidth of width: int
     // | MinimumHeight of height: int

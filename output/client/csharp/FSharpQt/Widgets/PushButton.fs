@@ -13,51 +13,38 @@ type Signal =
     | Released
     | Toggled of state: bool
     
-[<RequireQualifiedAccess>]
-type internal AttrValue =
+type Attr =
     | AutoDefault of state: bool
     | Default of state: bool
     | Flat of state: bool
-    
-[<AbstractClass>]
-type Attr internal(value: AttrValue) =
-    member val private Value = value
+with
     interface IAttr with
         override this.AttrEquals other =
             match other with
-            | :? Attr as attr ->
-                this.Value = attr.Value
+            | :? Attr as otherAttr ->
+                this = otherAttr
             | _ ->
                 false
         override this.Key =
-            match value with
-            | AttrValue.AutoDefault state -> "pushbutton:autodefault"
-            | AttrValue.Default state -> "pushbutton:default"
-            | AttrValue.Flat state -> "pushbutton:flat"
+            match this with
+            | AutoDefault _ -> "pushbutton:autodefault"
+            | Default _ -> "pushbutton:default"
+            | Flat _ -> "pushbutton:flat"
         override this.ApplyTo (target: IAttrTarget) =
             match target with
             | :? PushButtonAttrTarget as buttonTarget ->
                 let button =
                     buttonTarget.PushButton
-                match value with
-                | AttrValue.AutoDefault state ->
+                match this with
+                | AutoDefault state ->
                     button.SetAutoDefault(state)
-                | AttrValue.Default state ->
+                | Default state ->
                     button.SetDefault(state)
-                | AttrValue.Flat state ->
+                | Flat state ->
                     button.SetFlat(state)
             | _ ->
                 printfn "warning: PushButton.Attr couldn't ApplyTo() unknown target type [%A]" target
-
-type AutoDefault(state: bool) =
-    inherit Attr(AttrValue.AutoDefault(state))
     
-type Default(state: bool) =
-    inherit Attr(AttrValue.Default(state))
-    
-type Flat(state: bool) =
-    inherit Attr(AttrValue.Default(state))
-     
 type PushButtonProps() =
     inherit AbstractButton.AbstractButtonProps()
     
@@ -65,13 +52,13 @@ type PushButtonProps() =
     member this.PushButtonAttrs = attrs @ this.AbstractButtonAttrs
     
     member this.AutoDefault with set value =
-        attrs <- AutoDefault(value) :: attrs
+        attrs <- AutoDefault value :: attrs
         
     member this.Default with set value =
-        attrs <- Default(value) :: attrs
+        attrs <- Default value :: attrs
         
     member this.Flat with set value =
-        attrs <- Flat(value) :: attrs
+        attrs <- Flat value :: attrs
     
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable button = PushButton.Create(this)
@@ -120,6 +107,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Released() =
             signalDispatch Released
         member this.Toggled(checkState: bool) =
+            printfn "toggled raw event, checkstate: %A" checkState
             checked_ <- checkState
             signalDispatch (Toggled checkState)
             
