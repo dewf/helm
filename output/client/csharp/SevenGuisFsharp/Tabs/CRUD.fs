@@ -173,21 +173,21 @@ let view (state: State) =
     let createButton =
         let enabled =
             state.FirstEdit.Length > 0 && state.LastEdit.Length > 0
-        PushButton(Attrs = [ Text "Create"; Widget.Enabled enabled ], OnClicked = Create)
+        PushButton(Text = "Create", Enabled = enabled, OnClicked = Create)
 
     let updateButton =
         let enabled =
             match state.SelectedIndex, state.FirstEdit.Length, state.LastEdit.Length with
             | Some _, firstLen, lastLen when firstLen > 0 && lastLen > 0 -> true
             | _ -> false
-        PushButton(Attrs = [ Text "Update"; Widget.Enabled enabled ], OnClicked = Update)
+        PushButton(Text = "Update", Enabled = enabled, OnClicked = Update)
         
     let deleteButton =
         let enabled =
             match state.SelectedIndex with
             | Some _ -> true
             | None -> false
-        PushButton(Attrs = [ Text "Delete"; Widget.Enabled enabled ], OnClicked = Delete)
+        PushButton(Text = "Delete", Enabled = enabled, OnClicked = Delete)
     
     GridLayout(
         Attrs = [

@@ -2,6 +2,7 @@
 
 open FSharpQt.Attrs
 open FSharpQt.MiscTypes
+open FSharpQt.Widgets
 
 [<RequireQualifiedAccess>]
 type internal AttrValue =
@@ -104,4 +105,24 @@ type Shortcut(seq: KeySequence) =
     
 type Text(text: string) =
     inherit Attr(AttrValue.Text(text))
- 
+
+type AbstractButtonProps() =
+    inherit Widget.WidgetProps()
+    
+    let mutable attrs: IAttr list = []
+    member this.AbstractButtonAttrs = attrs @ this.WidgetAttrs
+    
+    member this.AutoExclusive with set value =
+        attrs <- AutoExclusive(value) :: attrs
+        
+    member this.AutoRepeat with set value =
+        attrs <- AutoRepeat(value) :: attrs
+        
+    member this.Checkable with set value =
+        attrs <- Checkable(value) :: attrs
+        
+    member this.Checked with set value =
+        attrs <- Checked(value) :: attrs
+        
+    member this.Text with set value =
+        attrs <- Text(value) :: attrs

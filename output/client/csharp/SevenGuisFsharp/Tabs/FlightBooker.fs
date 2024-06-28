@@ -134,7 +134,7 @@ let view (state: State) =
     let status =
         Label(Attrs = [ Label.Text status ])
     let bookButton =
-        PushButton(Attrs = [ Text "Book Trip"; Enabled canBook ])
+        PushButton(Text = "Book Trip", Enabled = canBook)
     VBoxLayout(
         Items = [
             BoxItem(combo)

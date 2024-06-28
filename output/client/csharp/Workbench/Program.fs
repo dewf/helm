@@ -173,10 +173,10 @@ let view (state: State) =
         TreeView(Attrs = [ SortingEnabled true ], TreeModel = proxyModel)
         
     let button =
-        PushButton(Attrs = [ AbstractButton.Text "Add One" ], OnClicked = AddRow)
+        PushButton(Text = "Add One", OnClicked = AddRow)
         
     let toggleButton =
-        PushButton(Attrs = [ AbstractButton.Text "Toggle Headers" ], OnClicked = ToggleHeaders)
+        PushButton(Text = "Toggle Headers", OnClicked = ToggleHeaders)
         
     let filterEdit =
         LineEdit(OnTextEdited = FilterTextEdited)

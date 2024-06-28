@@ -75,7 +75,7 @@ let view (state: State) =
                       BoxItem(slider)
                   ])
     let button =
-        PushButton(Attrs = [ Text "Reset" ], OnClicked = Reset)
+        PushButton(Text = "Reset", OnClicked = Reset)
         
     let timer =
         Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)

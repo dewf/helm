@@ -109,12 +109,12 @@ let view (state: State) =
         LineEdit(
             Attrs = [ LineEdit.Value state.Raw; LineEdit.Enabled state.Enabled ], OnTextChanged = EditChanged, OnReturnPressed = EditSubmitted)
     let button =
-        PushButton(Attrs = [ Text "Pick"; Widget.Enabled state.Enabled ], OnClicked = ShowCalendar)
+        PushButton(Text = "Pick", Enabled = state.Enabled, OnClicked = ShowCalendar)
     let dialog =
         let reject =
-            PushButton(Attrs = [ Text "Reject" ], OnClicked = CalendarOp Reject)
+            PushButton(Text = "Reject", OnClicked = CalendarOp Reject)
         let accept =
-            PushButton(Attrs = [ Text "Woot!" ], OnClicked = CalendarOp Accept)
+            PushButton(Text = "Woot!", OnClicked = CalendarOp Accept)
         let layout =
             BoxLayout(Attrs = [ Direction TopToBottom ],
                       Items = [

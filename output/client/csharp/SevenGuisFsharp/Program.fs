@@ -97,7 +97,7 @@ let view (state: State) =
                     match kind with
                     | GuiKind.Spreadsheet -> false
                     | _ -> true
-                PushButton(Attrs = [ Text name; Enabled enabled ], OnClicked = LaunchInstance kind))
+                PushButton(Text = name, Enabled = enabled, OnClicked = LaunchInstance kind))
         let items =
             buttons
             |> List.map BoxItem
@@ -110,7 +110,7 @@ let view (state: State) =
             [ "DropTesting", GuiKind.DropTesting
               "PathStroking", GuiKind.PathStroking ]
             |> List.map (fun (name, kind) ->
-                PushButton(Attrs = [ Text name ], OnClicked = LaunchInstance kind))
+                PushButton(Text = name, OnClicked = LaunchInstance kind))
         let items =
             buttons
             |> List.map BoxItem

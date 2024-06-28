@@ -124,11 +124,10 @@ let view (state: State) =
         
     let animateButton =
         PushButton(
-            Attrs = [
-                AbstractButton.Checkable true
-                AbstractButton.Text (if state.Animating then "Animating" else "Not Animating")
-                AbstractButton.Checked state.Animating
-            ], OnToggled = SetAnimating)
+                Checkable = true,
+                Text = (if state.Animating then "Animating" else "Not Animating"),
+                Checked = state.Animating,
+                OnToggled = SetAnimating)
         
     let rightPanel =
         VBoxLayout(Items = [

@@ -7,7 +7,6 @@ open FSharpQt.Widgets
 open BoxLayout
 open Label
 open PushButton
-open AbstractButton
 
 type Attr = unit
 type Signal = unit
@@ -34,7 +33,7 @@ let view (state: State) =
             Alignment Center
         ])
     let button =
-        PushButton(Attrs = [ Text "Increment" ], OnClicked = Increment)
+        PushButton(Text = "Increment", OnClicked = Increment)
     HBoxLayout(
         Items = [
             BoxItem(label)
