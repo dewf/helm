@@ -5,6 +5,8 @@ open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 
+open FSharpQt.Attrs
+
 type Signal =
     | Changed
     | CheckableChanged of checkable: bool
@@ -14,33 +16,6 @@ type Signal =
     | Triggered of checked_: bool
     | VisibleChanged
     
-type Attr =
-    | Text of text: string
-    | Enabled of state: bool
-    // | Separator of state: bool
-    | Checkable of state: bool
-    | Checked of state: bool
-    | IconAttr of icon: Icon    // + "Attr" to prevent annoying collisions
-    | IconText of text: string
-    | Shortcut of seq: KeySequence
-    | StatusTip of tip: string
-    | ToolTip of tip: string
-    
-let private keyFunc = function
-    | Text _ -> 0
-    | Enabled _ -> 1
-    // | Separator _ -> 2
-    | Checkable _ -> 3
-    | Checked _ -> 4
-    | IconAttr _ -> 5
-    | IconText _ -> 6
-    | Shortcut _ -> 7
-    | StatusTip _ -> 8
-    | ToolTip _ -> 9
-    
-let private diffAttrs =
-    genericDiffAttrs keyFunc
-
 type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.Handle option) as this =
     let owner =
         match maybeContainingWindow with
@@ -73,48 +48,48 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
         if value <> currentMask then
             action.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: Attr list) =
+            
+    member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | Text text ->
-                action.SetText(text)
-            | Enabled state ->
-                if state <> enabled then
-                    enabled <- state
-                    action.SetEnabled(state)
-            // | Separator state ->
-            //     action.SetSeparator(state)
-            | Checkable state ->
-                if state <> checkable then
-                    checkable <- state
-                    action.SetCheckable(state)
-            | Checked state ->
-                if state <> checked_ then
-                    checked_ <- state
-                    action.SetChecked(state)
-            | IconAttr icon ->
-                action.SetIcon(icon.QtValue)
-            | IconText text ->
-                action.SetIconText(text)
-            | Shortcut seq ->
-                action.SetShortcut(seq.QtValue)
-            | StatusTip tip ->
-                action.SetStatusTip(tip)
-            | ToolTip tip ->
-                action.SetToolTip(tip)
-                
+            attr.ApplyTo(this)
+            
+    // I guess we would have to implement any interface up the whole hierarchy? hmmm
+    // but if we could inherit Models (as we'd like for signals), it would ease some of that trouble
+    interface ActionAttrTarget with
+        override this.Action = action
+        override this.SetEnabled state =
+            if state <> enabled then
+                enabled <- state
+                true
+            else
+                false
+        override this.SetCheckable state =
+            if checkable <> state then
+                checkable <- state
+                true
+            else
+                false
+        override this.SetChecked state =
+            if checked_ <> state then
+                checked_ <- state
+                true
+            else
+                false
+    
     interface Action.SignalHandler with
         override this.Changed () =
             signalDispatch Changed
-        override this.CheckableChanged checkable =
-            signalDispatch (CheckableChanged checkable)
-        override this.EnabledChanged enabled =
-            signalDispatch (EnabledChanged enabled)
+        override this.CheckableChanged newState =
+            checkable <- newState
+            signalDispatch (CheckableChanged newState)
+        override this.EnabledChanged newState =
+            enabled <- newState
+            signalDispatch (EnabledChanged newState)
         override this.Hovered () =
             signalDispatch Hovered
-        override this.Toggled checked_ =
-            signalDispatch (Toggled checked_)
+        override this.Toggled newState =
+            checked_ <- newState
+            signalDispatch (Toggled newState)
         override this.Triggered checked_ =
             signalDispatch (Triggered checked_)
         override this.VisibleChanged () =
@@ -124,14 +99,14 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
         member this.Dispose() =
             action.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) (maybeContainingWindow: Widget.Handle option) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) (maybeContainingWindow: Widget.Handle option) =
     let model = new Model<'msg>(dispatch, maybeContainingWindow)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: Action.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: Action.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -151,7 +126,7 @@ type MenuAction<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     let mutable buildState = Init
     
-    member val Attrs: Attr list = [] with get, set
+    member val Attrs: IAttr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<Action.SignalMask> 0
@@ -268,3 +243,97 @@ type MenuAction<'msg>() =
             
         override this.Attachments =
             this.Attachments
+
+[<RequireQualifiedAccess>]
+type internal AttrValue =
+    | Text of text: string
+    | Enabled of state: bool    // why does QAction redeclare this? ohhh it's a QObject, not a widget
+    | Separator of state: bool
+    | Checkable of state: bool
+    | Checked of state: bool
+    | IconAttr of icon: Icon    // + "Attr" to prevent annoying collisions
+    | IconText of text: string
+    | Shortcut of seq: KeySequence
+    | StatusTip of tip: string
+    | ToolTip of tip: string
+            
+[<AbstractClass>]
+type Attr internal(value: AttrValue) =
+    member val private Value = value
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as attr ->
+                this.Value = attr.Value
+            | _ ->
+                false
+        override this.Key =
+            match value with
+            | AttrValue.Text _ -> "action:text"
+            | AttrValue.Enabled _ -> "action:enabled"
+            | AttrValue.Separator _ -> "action:separator"
+            | AttrValue.Checkable _ -> "action:checkable"
+            | AttrValue.Checked _ -> "action:checked"
+            | AttrValue.IconAttr _ -> "action:iconattr"
+            | AttrValue.IconText _ -> "action:icontext"
+            | AttrValue.Shortcut _ -> "action:shortcut"
+            | AttrValue.StatusTip _ -> "action:statustip"
+            | AttrValue.ToolTip _ -> "action:tooltip"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? ActionAttrTarget as actionTarget ->
+                let action =
+                    actionTarget.Action
+                match value with
+                | AttrValue.Text text ->
+                    action.SetText(text)
+                | AttrValue.Enabled state ->
+                    if actionTarget.SetEnabled(state) then
+                        action.SetEnabled(state)
+                | AttrValue.Separator state ->
+                    action.SetSeparator(state)
+                | AttrValue.Checkable state ->
+                    if actionTarget.SetCheckable(state) then
+                        action.SetCheckable(state)
+                | AttrValue.Checked state ->
+                    if actionTarget.SetChecked(state) then
+                        action.SetChecked(state)
+                | AttrValue.IconAttr icon ->
+                    action.SetIcon(icon.QtValue)
+                | AttrValue.IconText text ->
+                    action.SetIconText(text)
+                | AttrValue.Shortcut seq ->
+                    action.SetShortcut(seq.QtValue)
+                | AttrValue.StatusTip tip ->
+                    action.SetStatusTip(tip)
+                | AttrValue.ToolTip tip ->
+                    action.SetToolTip(tip)
+            | _ ->
+                printfn "warning: MenuAction.Attr couldn't ApplyTo() unknown object type [%A]" target
+
+type Text(text: string) =
+    inherit Attr(AttrValue.Text(text))
+    
+type Separator(state: bool) =
+    inherit Attr(AttrValue.Separator(state))
+
+type Checkable(state: bool) =
+    inherit Attr(AttrValue.Checkable(state))
+    
+type Checked(state: bool) =
+    inherit Attr(AttrValue.Checked(state))
+
+type IconAttr(icon: Icon) =
+    inherit Attr(AttrValue.IconAttr(icon))
+
+type IconText(text: string) =
+    inherit Attr(AttrValue.IconText(text))
+
+type Shortcut(seq: KeySequence) =
+    inherit Attr(AttrValue.Shortcut(seq))
+
+type StatusTip(tip: string) =
+    inherit Attr(AttrValue.StatusTip(tip))
+
+type ToolTip(tip: string) =
+    inherit Attr(AttrValue.ToolTip(tip))

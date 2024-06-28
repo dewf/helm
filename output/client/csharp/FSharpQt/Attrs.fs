@@ -1,10 +1,16 @@
 ﻿module FSharpQt.Attrs
 
+open Org.Whatever.QtTesting
+
+type IAttrTarget =
+    interface
+    end
+    
 type IAttr =
     interface
         abstract member Key: string
         abstract member AttrEquals: IAttr -> bool
-        abstract member ApplyTo: Org.Whatever.QtTesting.Object.Handle -> unit
+        abstract member ApplyTo: IAttrTarget -> unit
     end
     
 type AttrDiffResult =
@@ -42,3 +48,25 @@ let diffAttrs (left: IAttr list) (right: IAttr list) =
 let createdOrChanged (changes: AttrDiffResult list) =
     changes
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
+
+// various interfaces for accessing qobjects/widgets, + 2-way binding guard setters
+type internal WidgetAttrTarget =
+    interface
+        inherit IAttrTarget
+        abstract member Widget: Widget.Handle
+    end
+    
+type internal ActionAttrTarget =
+    interface
+        inherit IAttrTarget
+        abstract member Action: Action.Handle
+        abstract member SetEnabled: bool -> bool   // return value: internal value did change
+        abstract member SetCheckable: bool -> bool
+        abstract member SetChecked: bool -> bool
+    end
+  
+type internal SortFilterProxyModelAttrTarget =
+    interface
+        inherit IAttrTarget
+        abstract member ProxyModel: SortFilterProxyModel.Handle
+    end

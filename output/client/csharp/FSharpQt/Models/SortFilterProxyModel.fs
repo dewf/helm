@@ -6,19 +6,10 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.ModelBindings
 
+open FSharpQt.Attrs
+
 type Signal =
     | AutoAcceptChildRowsChanged of autoAcceptChildRows: bool
-
-type Attr =
-    | FilterRegex of regex: Regex
-    | FilterKeyColumn of column: int option
-
-let private keyFunc = function
-    | FilterRegex _ -> 0
-    | FilterKeyColumn _ -> 1
-    
-let private diffAttrs =
-    genericDiffAttrs keyFunc
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable proxyModel = SortFilterProxyModel.Create(this)
@@ -44,13 +35,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         // well if it gets deleted (as a dependency), won't that delete from the listView automatically?
         ()
     
-    member this.ApplyAttrs(attrs: Attr list) =
+    member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | FilterRegex regex ->
-                proxyModel.SetFilterRegularExpression(regex.QtValue)
-            | FilterKeyColumn column ->
-                proxyModel.SetFilterKeyColumn(column |> Option.defaultValue -1)
+            attr.ApplyTo(this)
+            
+    interface SortFilterProxyModelAttrTarget with
+        member this.ProxyModel = proxyModel
                 
     interface SortFilterProxyModel.SignalHandler with
         member this.AutoAcceptChildRowsChanged value =
@@ -61,14 +51,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             proxyModel.Dispose()
 
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: SortFilterProxyModel.SignalMask) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: SortFilterProxyModel.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: SortFilterProxyModel.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: SortFilterProxyModel.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -81,7 +71,7 @@ let private dispose (model: Model<'msg>) =
 type SortFilterProxyModel<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
+    member val Attrs: IAttr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable maybeModelBinding: AbstractProxyModelBinding option = None
@@ -154,3 +144,41 @@ type SortFilterProxyModel<'msg>() =
             
         override this.Attachments =
             this.Attachments
+            
+[<RequireQualifiedAccess>]
+type internal AttrValue =
+    | FilterRegex of regex: Regex
+    | FilterKeyColumn of column: int option
+
+[<AbstractClass>]
+type Attr internal(value: AttrValue) =
+    member val private Value = value
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as attr ->
+                this.Value = attr.Value
+            | _ ->
+                false
+        override this.Key =
+            match value with
+            | AttrValue.FilterRegex _ -> "sortfilterproxymodel:filterregex"
+            | AttrValue.FilterKeyColumn _ -> "sortfilterproxymodel:filterkeycolumn"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? SortFilterProxyModelAttrTarget as proxyModeltarget ->
+                let proxyModel =
+                    proxyModeltarget.ProxyModel
+                match value with
+                | AttrValue.FilterRegex regex ->
+                    proxyModel.SetFilterRegularExpression(regex.QtValue)
+                | AttrValue.FilterKeyColumn column ->
+                    proxyModel.SetFilterKeyColumn(column |> Option.defaultValue -1)
+            | _ ->
+                printfn "warning: SortFilterProxyModel.Attr couldn't ApplyTo() unknown object type [%A]" target
+
+type FilterRegex(regex: Regex) =
+    inherit Attr(AttrValue.FilterRegex(regex))
+
+type FilterKeyColumn(column: int option) =
+    inherit Attr(AttrValue.FilterKeyColumn(column))

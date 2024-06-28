@@ -33,7 +33,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     
     member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            attr.ApplyTo(widget)
+            attr.ApplyTo(this)
+            
+    interface WidgetAttrTarget with
+        override this.Widget = widget
                 
     interface Widget.SignalHandler with
         member this.CustomContextMenuRequested pos =
@@ -209,9 +212,11 @@ type Attr internal(value: AttrValue) =
             | AttrValue.UpdatesEnabled _ -> "widget:updatesenabled"
             | AttrValue.MouseTracking _ -> "widget:mousetracking"
             | AttrValue.AcceptDrops _ -> "widget:acceptdrops"
-        override this.ApplyTo (thing: Org.Whatever.QtTesting.Object.Handle) =
-            match thing with
-            | :? Widget.Handle as widget ->
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? WidgetAttrTarget as widgetTarget ->
+                let widget =
+                    widgetTarget.Widget
                 match value with
                 | AttrValue.Size (width, height) ->
                     widget.Resize(width, height)
@@ -248,7 +253,7 @@ type Attr internal(value: AttrValue) =
                 | AttrValue.AcceptDrops enabled ->
                     widget.SetAcceptDrops(enabled)
             | _ ->
-                printfn "warning: Widget.Attr couldn't ApplyTo() unknown object type [%A]" thing
+                printfn "warning: Widget.Attr couldn't ApplyTo() unknown object type [%A]" target
                 
 type Size(width: int, height: int) =
     inherit Attr(AttrValue.Size(width, height))
