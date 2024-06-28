@@ -27,6 +27,8 @@
         <Compile Include="Widgets\Menus\MenuBar.fs" />
         
         <Compile Include="Widgets\BoxLayout.fs" />
+        
+        <Compile Include="Widgets\AbstractButton.fs" />
         <Compile Include="Widgets\ComboBox.fs" />
         <Compile Include="Widgets\CustomWidget.fs" />
         <Compile Include="Widgets\Dialog.fs" />

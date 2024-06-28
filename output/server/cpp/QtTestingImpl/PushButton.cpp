@@ -41,12 +41,16 @@ namespace PushButton
         }
     };
 
-    void Handle_setText(HandleRef _this, std::string label) {
-        THIS->setText(label.c_str());
-    }
-
     void Handle_setAutoDefault(HandleRef _this, bool value) {
         THIS->setAutoDefault(value);
+    }
+
+    void Handle_setDefault(HandleRef _this, bool value) {
+        THIS->setDefault(value);
+    }
+
+    void Handle_setFlat(HandleRef _this, bool value) {
+        THIS->setFlat(value);
     }
 
     void Handle_setSignalMask(HandleRef _this, uint32_t mask) {

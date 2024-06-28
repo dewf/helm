@@ -16,6 +16,7 @@ open InputEnums
 
 open FSharpQt.Widgets
 open MainWindow
+open AbstractButton
 open PushButton
 open TreeView
 
@@ -172,10 +173,10 @@ let view (state: State) =
         TreeView(Attrs = [ SortingEnabled true ], TreeModel = proxyModel)
         
     let button =
-        PushButton(Attrs = [ PushButton.Text "Add One" ], OnClicked = AddRow)
+        PushButton(Attrs = [ AbstractButton.Text "Add One" ], OnClicked = AddRow)
         
     let toggleButton =
-        PushButton(Attrs = [ PushButton.Text "Toggle Headers" ], OnClicked = ToggleHeaders)
+        PushButton(Attrs = [ AbstractButton.Text "Toggle Headers" ], OnClicked = ToggleHeaders)
         
     let filterEdit =
         LineEdit(OnTextEdited = FilterTextEdited)

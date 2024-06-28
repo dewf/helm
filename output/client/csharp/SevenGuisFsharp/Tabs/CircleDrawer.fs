@@ -229,11 +229,11 @@ let view (state: State) =
         let undo =
             let enabled =
                 not state.UndoStack.IsEmpty
-            PushButton(Attrs = [ Text "Undo"; Enabled enabled ], OnClicked = Undo)
+            PushButton(Attrs = [ AbstractButton.Text "Undo"; Widget.Enabled enabled ], OnClicked = Undo)
         let redo =
             let enabled =
                 not state.RedoStack.IsEmpty
-            PushButton(Attrs = [ Text "Redo"; Enabled enabled ], OnClicked = Redo)
+            PushButton(Attrs = [ AbstractButton.Text "Redo"; Widget.Enabled enabled ], OnClicked = Redo)
         HBoxLayout(
             Items = [
                 BoxItem(stretch = 1)
@@ -250,9 +250,9 @@ let view (state: State) =
                 Value state.EditingRadius
             ], OnValueChanged = SetRadius )
         let cancel =
-            PushButton(Attrs = [ Text "Cancel" ], OnClicked = CancelEdit)
+            PushButton(Attrs = [ AbstractButton.Text "Cancel" ], OnClicked = CancelEdit)
         let apply =
-            PushButton(Attrs = [ Text "OK" ], OnClicked = ApplyEdit)
+            PushButton(Attrs = [ AbstractButton.Text "OK" ], OnClicked = ApplyEdit)
         let vbox =
             let hbox =
                 HBoxLayout(

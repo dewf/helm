@@ -6,6 +6,7 @@ open FSharpQt.Reactor
 open FSharpQt.Widgets.BoxLayout
 open FSharpQt.Widgets.GroupBox
 open FSharpQt.Widgets.PushButton
+open FSharpQt.Widgets
 open FSharpQt.Widgets.RadioButton
 open FSharpQt.Widgets.Slider
 open FSharpQt.Widgets.ScrollArea
@@ -124,9 +125,9 @@ let view (state: State) =
     let animateButton =
         PushButton(
             Attrs = [
-                Checkable true
-                FSharpQt.Widgets.PushButton.Text (if state.Animating then "Animating" else "Not Animating")
-                FSharpQt.Widgets.PushButton.Checked state.Animating
+                AbstractButton.Checkable true
+                AbstractButton.Text (if state.Animating then "Animating" else "Not Animating")
+                AbstractButton.Checked state.Animating
             ], OnToggled = SetAnimating)
         
     let rightPanel =

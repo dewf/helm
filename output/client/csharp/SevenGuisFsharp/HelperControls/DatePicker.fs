@@ -12,6 +12,7 @@ open Dialog
 
 open LineEdit
 open PushButton
+open AbstractButton
 
 type Value =
     | Empty
@@ -108,7 +109,7 @@ let view (state: State) =
         LineEdit(
             Attrs = [ LineEdit.Value state.Raw; LineEdit.Enabled state.Enabled ], OnTextChanged = EditChanged, OnReturnPressed = EditSubmitted)
     let button =
-        PushButton(Attrs = [ Text "Pick"; PushButton.Enabled state.Enabled ], OnClicked = ShowCalendar)
+        PushButton(Attrs = [ Text "Pick"; Widget.Enabled state.Enabled ], OnClicked = ShowCalendar)
     let dialog =
         let reject =
             PushButton(Attrs = [ Text "Reject" ], OnClicked = CalendarOp Reject)
@@ -121,7 +122,7 @@ let view (state: State) =
                           BoxItem(accept)
                       ])
         Dialog(
-            Attrs = [ Size (320, 200); Title state.DialogTitle ],
+            Attrs = [ Dialog.Size (320, 200); Title state.DialogTitle ],
             Layout = layout)
     let hbox =
         BoxLayout(

@@ -49,11 +49,27 @@ let createdOrChanged (changes: AttrDiffResult list) =
     changes
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
 
-// various interfaces for accessing qobjects/widgets, + 2-way binding guard setters
+// various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
+// if you want to support a given type of attribute, you have to implement the target interface
+// reasonable enough!
+
 type internal WidgetAttrTarget =
     interface
         inherit IAttrTarget
         abstract member Widget: Widget.Handle
+    end
+    
+type internal AbstractButtonAttrTarget =
+    interface
+        inherit WidgetAttrTarget
+        abstract member AbstractButton: AbstractButton.Handle
+        abstract member SetChecked: bool -> bool   // binding guard - for example, toggled signal emits 'checked' value
+    end
+    
+type internal PushButtonAttrTarget =
+    interface
+        inherit AbstractButtonAttrTarget
+        abstract member PushButton: PushButton.Handle
     end
     
 type internal ActionAttrTarget =

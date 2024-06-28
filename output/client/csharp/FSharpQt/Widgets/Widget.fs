@@ -253,7 +253,7 @@ type Attr internal(value: AttrValue) =
                 | AttrValue.AcceptDrops enabled ->
                     widget.SetAcceptDrops(enabled)
             | _ ->
-                printfn "warning: Widget.Attr couldn't ApplyTo() unknown object type [%A]" target
+                printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
                 
 type Size(width: int, height: int) =
     inherit Attr(AttrValue.Size(width, height))

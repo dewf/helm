@@ -8,6 +8,8 @@ open Reactor
 open FSharpQt.Widgets
 open BoxLayout
 open GroupBox
+open Widget
+open AbstractButton
 open PushButton
 open MainWindow
 open WindowSet

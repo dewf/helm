@@ -7,6 +7,7 @@ open FSharpQt.Widgets
 open BoxLayout
 open Label
 open PushButton
+open AbstractButton
 
 type Attr = unit
 type Signal = unit

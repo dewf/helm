@@ -1,11 +1,23 @@
 module AbstractButton;
 
+import Common;
+import KeySequence;
 import Widget;
+import Icon;
 
+@nodispose
 opaque Handle extends Widget.Handle {
+    void setAutoExclusive(bool state);
+    void setAutoRepeat(bool state);
+    void setAutoRepeatDelay(int delay);
+    void setAutoRepeatInterval(int interval);
+    void setCheckable(bool state);
+    void setChecked(bool state);
+    void setDown(bool state);
+    void setIcon(Icon.Deferred icon);
+    void setIconSize(Size size);
+    void setShortcut(KeySequence.Deferred seq);
     void setText(string text);
-    void setCheckable(bool checkable);
-    void setChecked(bool checkState);       // 'checked' is a C# keyword
 }
 
 // can't create directly

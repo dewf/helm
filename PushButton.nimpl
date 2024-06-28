@@ -25,7 +25,9 @@ interface SignalHandler {
 
 opaque Handle extends AbstractButton.Handle {
     void setAutoDefault(bool value);
-
+    void setDefault(bool value);
+    void setFlat(bool value);
+    
     void setSignalMask(SignalMask mask);
 }
 

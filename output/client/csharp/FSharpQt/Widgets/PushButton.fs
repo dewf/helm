@@ -4,6 +4,8 @@ open FSharpQt.BuilderNode
 open System
 open Org.Whatever.QtTesting
 
+open FSharpQt.Attrs
+
 type Signal =
     | Clicked
     | ClickedWithState of state: bool // this is the full version of the Qt signal, but we offer simpler parameterless Clicked as well
@@ -11,31 +13,13 @@ type Signal =
     | Released
     | Toggled of state: bool
     
-type Attr =
-    | Text of string
-    | Checked of bool
-    | Enabled of bool
-    | Checkable of bool
-    | AutoDefault of bool
-    | MinWidth of width: int
-    | MinHeight of width: int
-
-let private keyFunc = function
-    | Text _ -> 0
-    | Checked _ -> 1
-    | Enabled _ -> 2
-    | Checkable _ -> 3
-    | AutoDefault _ -> 4
-    | MinWidth _ -> 5
-    | MinHeight _ -> 6
-
-let private diffAttrs =
-    genericDiffAttrs keyFunc
-
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable button = PushButton.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<PushButton.SignalMask> 0
+    
+    // binding guards
+    let mutable checked_ = false
     
     let signalDispatch (s: Signal) =
         signalMap s
@@ -49,23 +33,23 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             button.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: Attr list) =
+    member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | Text text ->
-                button.SetText(text)
-            | Checked state ->
-                button.SetChecked(state)
-            | Enabled state ->
-                button.SetEnabled(state)
-            | Checkable state ->
-                button.SetCheckable(state)
-            | AutoDefault state ->
-                button.SetAutoDefault(state)
-            | MinWidth width ->
-                button.SetMinimumWidth(width)
-            | MinHeight height ->
-                button.SetMinimumHeight(height)
+            attr.ApplyTo(this)
+            
+    interface PushButtonAttrTarget with
+        // widget
+        member this.Widget = button
+        // abstractbutton:
+        member this.AbstractButton = button
+        member this.SetChecked newState =
+            if newState <> checked_ then
+                checked_ <- newState
+                true
+            else
+                false
+        // pushbutton:
+        member this.PushButton = button
                 
     interface PushButton.SignalHandler with
         member this.Clicked(checkState: bool) =
@@ -82,14 +66,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             button.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: PushButton.SignalMask) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: PushButton.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: PushButton.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: PushButton.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -101,7 +85,7 @@ let private dispose (model: Model<'msg>) =
 type PushButton<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
+    member val Attrs: IAttr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<PushButton.SignalMask> 0
@@ -168,3 +152,49 @@ type PushButton<'msg>() =
             
         override this.Attachments =
             this.Attachments
+
+[<RequireQualifiedAccess>]
+type internal AttrValue =
+    | AutoDefault of state: bool
+    | Default of state: bool
+    | Flat of state: bool
+    
+[<AbstractClass>]
+type Attr internal(value: AttrValue) =
+    member val private Value = value
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as attr ->
+                this.Value = attr.Value
+            | _ ->
+                false
+        override this.Key =
+            match value with
+            | AttrValue.AutoDefault state -> "pushbutton:autodefault"
+            | AttrValue.Default state -> "pushbutton:default"
+            | AttrValue.Flat state -> "pushbutton:flat"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? PushButtonAttrTarget as buttonTarget ->
+                let button =
+                    buttonTarget.PushButton
+                match value with
+                | AttrValue.AutoDefault state ->
+                    button.SetAutoDefault(state)
+                | AttrValue.Default state ->
+                    button.SetDefault(state)
+                | AttrValue.Flat state ->
+                    button.SetFlat(state)
+            | _ ->
+                printfn "warning: PushButton.Attr couldn't ApplyTo() unknown target type [%A]" target
+
+type AutoDefault(state: bool) =
+    inherit Attr(AttrValue.AutoDefault(state))
+    
+type Default(state: bool) =
+    inherit Attr(AttrValue.Default(state))
+    
+type Flat(state: bool) =
+    inherit Attr(AttrValue.Default(state))
+ 
