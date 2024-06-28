@@ -1,7 +1,6 @@
 ﻿module FSharpQt.Widgets.Widget
 
 open System
-open FSharpQt
 open FSharpQt.BuilderNode
 open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
@@ -102,30 +101,62 @@ with
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
     
 type WidgetProps() =
-    let mutable attrs: IAttr list = []
-    member this.WidgetAttrs = attrs
+    // internal attribute-from-properties storage that will be shared by all subclasses (eg Widget -> AbstractButton -> PushButton)
+    // needs to be reversed before use to maintain the order that was originally assigned
+    member val internal _attrs: IAttr list = [] with get, set
+    member internal this.PushAttr(attr: IAttr) =
+        this._attrs <- attr :: this._attrs
     
-    member this.Size with set (w, h) =
-        attrs <- Size (w,h) :: attrs
+    member this.Size with set value =
+        this.PushAttr(Size value)
         
     member this.Enabled with set value =
-        attrs <- Enabled value :: attrs
+        this.PushAttr(Enabled value)
         
-    // | MinimumWidth of width: int
-    // | MinimumHeight of height: int
-    // | MaximumWidth of width: int
-    // | MaximumHeight of height: int
-    // | SizePolicy of hPolicy: SizePolicy * vPolicy: SizePolicy
-    // | FixedWidth of width: int
-    // | FixedHeight of height: int
-    // | FixedSize of width: int * height: int
-    // | Visible of state: bool
-    // | WindowTitle of title: string
-    // | WindowModality of modality: WindowModality
-    // | ContextMenuPolicy of policy: ContextMenuPolicy
-    // | UpdatesEnabled of enabled: bool
-    // | MouseTracking of enabled: bool
-    // | AcceptDrops of enabled: bool
+    member this.MinimumWidth with set value =
+        this.PushAttr(MinimumWidth value)
+        
+    member this.MinimumHeight with set value =
+        this.PushAttr(MinimumHeight value)
+        
+    member this.MaximumWidth with set value =
+        this.PushAttr(MaximumWidth value)
+        
+    member this.MaximumHeight with set value =
+        this.PushAttr(MaximumHeight value)
+        
+    member this.SizePolicy with set value =
+        this.PushAttr(SizePolicy value)
+        
+    member this.FixedWidth with set value =
+        this.PushAttr(FixedWidth value)
+        
+    member this.FixedHeight with set value =
+        this.PushAttr(FixedHeight value)
+        
+    member this.FixedSize with set value =
+        this.PushAttr(FixedSize value)
+        
+    member this.Visible with set value =
+        this.PushAttr(Visible value)
+        
+    member this.WindowTitle with set value =
+        this.PushAttr(WindowTitle value)
+        
+    member this.WindowModality with set value =
+        this.PushAttr(WindowModality value)
+        
+    member this.ContextMenuPolicy with set value =
+        this.PushAttr(ContextMenuPolicy value)
+        
+    member this.UpdatesEnabled with set value =
+        this.PushAttr(UpdatesEnabled value)
+        
+    member this.MouseTracking with set value =
+        this.PushAttr(MouseTracking value)
+        
+    member this.AcceptDrops with set value =
+        this.PushAttr(AcceptDrops value)
     
     
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
@@ -195,7 +226,7 @@ type Widget<'msg>() =
     
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member this.Attrs = this.WidgetAttrs
+    member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable maybeLayout: ILayoutNode<'msg> option = None

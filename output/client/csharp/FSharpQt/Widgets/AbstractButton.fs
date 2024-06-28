@@ -52,15 +52,10 @@ with
                 | AutoRepeatInterval interval ->
                     abstractButton.SetAutoRepeatInterval(interval)
                 | Checkable state ->
-                    printfn "setting checkable"
                     abstractButton.SetCheckable(state)
                 | Checked state ->
-                    printfn "setting checked"
                     if buttonTarget.SetChecked(state) then
-                        printfn "button target successfully setChecked(%A)" state
                         abstractButton.SetChecked(state)
-                    else
-                        printfn "button target refused change"
                 | Down state ->
                     abstractButton.SetDown(state)
                 | IconAttr icon ->
@@ -77,20 +72,35 @@ with
 type AbstractButtonProps() =
     inherit Widget.WidgetProps()
     
-    let mutable attrs: IAttr list = []
-    member this.AbstractButtonAttrs = attrs @ this.WidgetAttrs
-    
     member this.AutoExclusive with set value =
-        attrs <- AutoExclusive value :: attrs
+        this.PushAttr(AutoExclusive value)
         
     member this.AutoRepeat with set value =
-        attrs <- AutoRepeat value :: attrs
+        this.PushAttr(AutoRepeat value)
         
+    member this.AutoRepeatDelay with set value =
+        this.PushAttr(AutoRepeatDelay value)
+        
+    member this.AutoRepeatInterval with set value =
+        this.PushAttr(AutoRepeatInterval value)
+
     member this.Checkable with set value =
-        attrs <- Checkable value :: attrs
+        this.PushAttr(Checkable value)
         
     member this.Checked with set value =
-        attrs <- Checked value :: attrs
+        this.PushAttr(Checked value)
+        
+    member this.Down with set value =
+        this.PushAttr(Down value)
+        
+    member this.IconAttr with set value =
+        this.PushAttr(IconAttr value)
+        
+    member this.IconSize with set value =
+        this.PushAttr(IconSize value)
+        
+    member this.Shortcut with set value =
+        this.PushAttr(Shortcut value)
         
     member this.Text with set value =
-        attrs <- Text value :: attrs
+        this.PushAttr(Text value)

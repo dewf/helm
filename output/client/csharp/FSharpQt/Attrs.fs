@@ -28,7 +28,7 @@ let diffAttrs (left: IAttr list) (right: IAttr list) =
         (leftList @ rightList)
         |> List.map fst
         |> List.distinct
-        |> List.sort        // ohhh, we used to do this for priority ordering I think - like making sure a button's "checkable" happens before its "checked"
+        // |> List.sort        // I think we used to do this for numeric key ordering? but we don't use those anymore
 
     allKeys
     |> List.choose (fun key ->

@@ -48,17 +48,14 @@ with
 type PushButtonProps() =
     inherit AbstractButton.AbstractButtonProps()
     
-    let mutable attrs: IAttr list = []
-    member this.PushButtonAttrs = attrs @ this.AbstractButtonAttrs
-    
     member this.AutoDefault with set value =
-        attrs <- AutoDefault value :: attrs
+        this.PushAttr(AutoDefault value)
         
     member this.Default with set value =
-        attrs <- Default value :: attrs
+        this.PushAttr(Default value)
         
     member this.Flat with set value =
-        attrs <- Flat value :: attrs
+        this.PushAttr(Flat value)
     
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable button = PushButton.Create(this)
@@ -107,7 +104,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Released() =
             signalDispatch Released
         member this.Toggled(checkState: bool) =
-            printfn "toggled raw event, checkstate: %A" checkState
             checked_ <- checkState
             signalDispatch (Toggled checkState)
             
@@ -135,7 +131,7 @@ type PushButton<'msg>() =
     inherit PushButtonProps()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member this.Attrs = this.PushButtonAttrs
+    member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<PushButton.SignalMask> 0

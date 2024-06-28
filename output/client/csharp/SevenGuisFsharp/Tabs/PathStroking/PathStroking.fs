@@ -125,8 +125,8 @@ let view (state: State) =
     let animateButton =
         PushButton(
                 Checkable = true,
-                Text = (if state.Animating then "Animating" else "Not Animating"),
                 Checked = state.Animating,
+                Text = (if state.Animating then "Animating" else "Not Animating"),
                 OnToggled = SetAnimating)
         
     let rightPanel =
