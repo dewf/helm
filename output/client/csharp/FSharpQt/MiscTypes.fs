@@ -138,6 +138,32 @@ type RectF = {
     member internal this.QtValue =
         Common.RectF(X = this.X, Y = this.Y, Width = this.Width, Height = this.Height)
         
+type WindowModality =
+    | NonModal
+    | WindowModal
+    | ApplicationModal
+with
+    member internal this.QtValue =
+        match this with
+        | NonModal -> Enums.WindowModality.NonModal
+        | WindowModal -> Enums.WindowModality.WindowModal
+        | ApplicationModal -> Enums.WindowModality.ApplicationModal
+        
+type ContextMenuPolicy =
+    | NoContextMenu
+    | DefaultContextMenu
+    | ActionsContextMenu
+    | CustomContextMenu
+    | PreventContextMenu
+with
+    member internal this.QtValue =
+        match this with
+        | NoContextMenu -> Enums.ContextMenuPolicy.NoContextMenu
+        | DefaultContextMenu -> Enums.ContextMenuPolicy.DefaultContextMenu
+        | ActionsContextMenu -> Enums.ContextMenuPolicy.ActionsContextMenu
+        | CustomContextMenu -> Enums.ContextMenuPolicy.CustomContextMenu
+        | PreventContextMenu -> Enums.ContextMenuPolicy.PreventContextMenu
+        
 // various enums needed before widget proxies below:
 
 type ToolButtonStyle =
