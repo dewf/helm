@@ -112,7 +112,7 @@ let view (state: State) =
             | Some 0 -> ModeChanged OneWay
             | Some 1 -> ModeChanged RoundTrip
             | _ -> failwith "whoops"
-        ComboBox(Attrs = [ Items items ], OnCurrentIndexChanged = indexToMsg)
+        ComboBox(StringItems = items, OnCurrentIndexChanged = indexToMsg)
     let labeledPicker labelText value changeMsg enabled =
         let label =
             Label(Attrs = [ Label.Text labelText ])

@@ -3,6 +3,7 @@
 #include <QModelIndex>
 #include "ModelIndexInternal.h"
 
+// note that ModelIndex is usually stack allocated, but we deal with either pointers to Qt-owned stack indexes or heap-allocated ones of our own ("OwnedHandle")
 #define THIS ((QModelIndex*)_this)
 
 namespace ModelIndex
@@ -20,6 +21,7 @@ namespace ModelIndex
     }
 
     void Handle_dispose(HandleRef _this) {
+        // method only exists due to codegen deficiency
         printf("QModelIndex Handle_dispose - you should never see this, and it needs to be removed (via @nodispose) Handle isn't owned (vs. OwnedHandle)\n");
     }
 

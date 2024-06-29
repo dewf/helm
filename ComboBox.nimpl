@@ -1,6 +1,11 @@
 module ComboBox;
 
+import Common;
+import Enums;
 import Widget;
+import Variant;
+import AbstractItemModel;
+import Icon;
 
 flags SignalMask {
     Activated = 1 << 0,
@@ -22,10 +27,49 @@ interface SignalHandler {
     void textHighlighted(string text);
 }
 
+enum InsertPolicy {
+    NoInsert,
+    InsertAtTop,
+    InsertAtCurrent,
+    InsertAtBottom,
+    InsertAfterCurrent,
+    InsertBeforeCurrent,
+    InsertAlphabetically
+}
+
+enum SizeAdjustPolicy {
+    AdjustToContents,
+    AdjustToContentsOnFirstShow,
+    AdjustToMinimumContentsLengthWithIcon
+}
+
 opaque Handle extends Widget.Handle {
     void clear();
-    void setItems(Array<string> items);
+
+    void addItem(string text, Variant.Deferred userData);
+    void addItem(Icon.Deferred icon, string text, Variant.Deferred userData);
+    void addItems(Array<string> texts);
+    void setModel(AbstractItemModel.Handle model);
+
+    // properties =====================================
+    int count();                                        // read-only
+    Variant.OwnedHandle currentData();                  // read-only
+    Variant.OwnedHandle currentData(ItemDataRole role); // read-only
+
     void setCurrentIndex(int index);
+    void setCurrentText(string text);
+    void setDuplicatesEnabled(bool enabled);
+    void setEditable(bool editable);
+    void setFrame(bool hasFrame);
+    void setIconSize(Size size);
+    void setInsertPolicy(InsertPolicy policy);
+    void setMaxCount(int count);
+    void setMaxVisibleItems(int count);
+    void setMinimumContentsLength(int length);
+    void setModelColumn(int column);
+    void setPlaceholderText(string text);
+    void setSizeAdjustPolicy(SizeAdjustPolicy policy);
+    // end properties =================================
 
     void setSignalMask(SignalMask mask);
 }

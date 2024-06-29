@@ -2,7 +2,11 @@
 
 open System
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
+open FSharpQt.Widgets.Widget
 open Org.Whatever.QtTesting
+
+open FSharpQt.Attrs
 
 type Signal =
     | Activated of index: int option
@@ -13,18 +17,162 @@ type Signal =
     | TextActivated of text: string
     | TextHighlighted of text: string
     
-type Attr =
-    | Items of items: string list
-    | CurrentIndex of maybeIndex: int option
-    | MinimumWidth of width: int
-
-let private attrKey = function
-    | Items _ -> 0
-    | CurrentIndex _ -> 1
-    | MinimumWidth _ -> 2
+type InsertPolicy =
+    | NoInsert
+    | InsertAtTop
+    | InsertAtCurrent
+    | InsertAtBottom
+    | InsertAfterCurrent
+    | InsertBeforeCurrent
+    | InsertAlphabetically
+with
+    member this.QtValue =
+        match this with
+        | NoInsert -> ComboBox.InsertPolicy.NoInsert
+        | InsertAtTop -> ComboBox.InsertPolicy.InsertAtTop
+        | InsertAtCurrent -> ComboBox.InsertPolicy.InsertAtCurrent
+        | InsertAtBottom -> ComboBox.InsertPolicy.InsertAtBottom
+        | InsertAfterCurrent -> ComboBox.InsertPolicy.InsertAfterCurrent
+        | InsertBeforeCurrent -> ComboBox.InsertPolicy.InsertBeforeCurrent
+        | InsertAlphabetically -> ComboBox.InsertPolicy.InsertAlphabetically
+        
+type SizeAdjustPolicy =
+    | AdjustToContents
+    | AdjustToContentsOnFirstShow
+    | AdjustToMinimumContentsLengthWithIcon
+with
+    member this.QtValue =
+        match this with
+        | AdjustToContents -> ComboBox.SizeAdjustPolicy.AdjustToContents
+        | AdjustToContentsOnFirstShow -> ComboBox.SizeAdjustPolicy.AdjustToContentsOnFirstShow
+        | AdjustToMinimumContentsLengthWithIcon -> ComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
     
-let private diffAttrs =
-    genericDiffAttrs attrKey
+type internal Attr =
+    | CurrentIndex of maybeIndex: int option
+    | CurrentText of maybeText: string option
+    | DuplicatesEnabled of enabled: bool
+    | Editable of editable: bool
+    | Frame of hasFrame: bool
+    | IconSize of size: Size
+    | InsertPolicy of policy: InsertPolicy
+    | MaxCount of count: int
+    | MaxVisibleItems of count: int
+    | MinimumContentsLength of length: int
+    | ModelColumn of column: int
+    | PlaceholderText of text: string
+    | SizeAdjustPolicy of policy: SizeAdjustPolicy
+    // ours:
+    | StringItems of items: string list
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | CurrentIndex _ -> "combobox:currentindex"
+            | CurrentText _ -> "combobox:currenttext"
+            | DuplicatesEnabled _ -> "combobox:duplicatesenabled"
+            | Editable _ -> "combobox:editable"
+            | Frame _ -> "combobox:hasframe"
+            | IconSize _ -> "combobox:iconsize"
+            | InsertPolicy _ -> "combobox:insertpolicy"
+            | MaxCount _ -> "combobox:maxcount"
+            | MaxVisibleItems _ -> "combobox:maxvisibleitems"
+            | MinimumContentsLength _ -> "combobox:minimumcontentslength"
+            | ModelColumn _ -> "combobox:modelcolumn"
+            | PlaceholderText _ -> "combobox:placeholdertext"
+            | SizeAdjustPolicy _ -> "combobox:sizeadjustpolicy"
+            | StringItems _ -> "combobox:stringitems"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? ComboBoxAttrTarget as comboTarget ->
+                let comboBox =
+                    comboTarget.ComboBox
+                match this with
+                | CurrentIndex maybeIndex ->
+                    if comboTarget.SetCurrentIndex maybeIndex then
+                        comboBox.SetCurrentIndex(maybeIndex |> Option.defaultValue -1)
+                | CurrentText maybeText ->
+                    if comboTarget.SetCurrentText maybeText then
+                        comboBox.SetCurrentText(maybeText |> Option.defaultValue "")
+                | DuplicatesEnabled enabled ->
+                    comboBox.SetDuplicatesEnabled(enabled)
+                | Editable editable ->
+                    comboBox.SetEditable(editable)
+                | Frame hasFrame ->
+                    comboBox.SetFrame(hasFrame)
+                | IconSize size ->
+                    comboBox.SetIconSize(size.QtValue)
+                | InsertPolicy policy ->
+                    comboBox.SetInsertPolicy(policy.QtValue)
+                | MaxCount count ->
+                    comboBox.SetMaxCount(count)
+                | MaxVisibleItems count ->
+                    comboBox.SetMaxVisibleItems(count)
+                | MinimumContentsLength length ->
+                    comboBox.SetMinimumContentsLength(length)
+                | ModelColumn column ->
+                    comboBox.SetModelColumn(column)
+                | PlaceholderText text ->
+                    comboBox.SetPlaceholderText(text)
+                | SizeAdjustPolicy policy ->
+                    comboBox.SetSizeAdjustPolicy(policy.QtValue)
+                | StringItems items ->
+                    comboTarget.Clear()
+                    comboBox.Clear()
+                    comboBox.AddItems(items |> Array.ofList)
+            | _ ->
+                printfn "warning: ComboBox.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+type ComboBoxProps() =
+    inherit WidgetProps()
+    
+    member this.CurrentIndex with set value =
+        this.PushAttr(CurrentIndex value)
+
+    member this.CurrentText with set value =
+        this.PushAttr(CurrentText value)
+
+    member this.DuplicatesEnabled with set value =
+        this.PushAttr(DuplicatesEnabled value)
+
+    member this.Editable with set value =
+        this.PushAttr(Editable value)
+
+    member this.Frame with set value =
+        this.PushAttr(Frame value)
+
+    member this.IconSize with set value =
+        this.PushAttr(IconSize value)
+
+    member this.InsertPolicy with set value =
+        this.PushAttr(InsertPolicy value)
+
+    member this.MaxCount with set value =
+        this.PushAttr(MaxCount value)
+
+    member this.MaxVisibleItems with set value =
+        this.PushAttr(MaxVisibleItems value)
+
+    member this.MinimumContentsLength with set value =
+        this.PushAttr(MinimumContentsLength value)
+
+    member this.ModelColumn with set value =
+        this.PushAttr(ModelColumn value)
+
+    member this.PlaceholderText with set value =
+        this.PushAttr(PlaceholderText value)
+
+    member this.SizeAdjustPolicy with set value =
+        this.PushAttr(SizeAdjustPolicy value)
+        
+    member this.StringItems with set value =
+        this.PushAttr(StringItems value)
+        
     
 let someIfPositive (i: int) =
     if i >= 0 then Some i else None
@@ -33,7 +181,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable combo = ComboBox.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<ComboBox.SignalMask> 0
-    let mutable selectedIndex: int option = None
+    
+    // binding guards:
+    let mutable currentIndex: int option = None
+    let mutable currentText: string option = None
     
     let signalDispatch (s: Signal) =
         match signalMap s with
@@ -50,23 +201,28 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             combo.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: Attr list) =
+    member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | Items items ->
-                combo.Clear()
-                combo.SetItems(items |> Array.ofList)
-            | CurrentIndex maybeIndex ->
-                // short-circuit identical values, see LineEdit comments for explanation why
-                if maybeIndex <> selectedIndex then
-                    selectedIndex <- maybeIndex
-                    match maybeIndex with
-                    | Some value ->
-                        combo.SetCurrentIndex(value)
-                    | None ->
-                        combo.SetCurrentIndex(-1)
-            | MinimumWidth width ->
-                combo.SetMinimumWidth(width)
+            attr.ApplyTo(this)
+            
+    interface ComboBoxAttrTarget with
+        member this.Widget = combo
+        member this.ComboBox = combo
+        member this.Clear() =
+            currentIndex <- None
+            currentText <- None
+        member this.SetCurrentIndex newIndex =
+            if newIndex <> currentIndex then
+                currentIndex <- newIndex
+                true
+            else
+                false
+        member this.SetCurrentText newText =
+            if newText <> currentText then
+                currentText <- newText
+                true
+            else
+                false
                         
     interface ComboBox.SignalHandler with
         override this.Activated index =
@@ -88,14 +244,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             combo.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: ComboBox.SignalMask) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: ComboBox.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: ComboBox.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: ComboBox.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -103,11 +259,13 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
+    
 
 type ComboBox<'msg>() =
+    inherit ComboBoxProps()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
+    member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<ComboBox.SignalMask> 0

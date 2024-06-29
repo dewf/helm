@@ -20,6 +20,14 @@ namespace Variant
         return THIS->toInt();
     }
 
+    void Handle_dispose(HandleRef _this) {
+        printf("Variant::Handle_dispose() - should never be called (in fact should be @nodispose, long story)\n");
+    }
+
+    void OwnedHandle_dispose(OwnedHandleRef _this) {
+        delete THIS;
+    }
+
     // deferred stuff ========================================
     class FromDeferred : public Deferred::Visitor {
     private:

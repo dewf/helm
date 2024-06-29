@@ -3,9 +3,11 @@
 #include <QObject>
 #include <QComboBox>
 #include <QStringList>
-#include <utility>
 
 #include "util/SignalStuff.h"
+#include "util/convert.h"
+#include "VariantInternal.h"
+#include "IconInternal.h"
 
 #define THIS ((ComboBoxWithHandler*)_this)
 
@@ -61,17 +63,90 @@ namespace ComboBox
         THIS->clear();
     }
 
-    void Handle_setItems(HandleRef _this, std::vector<std::string> items) {
-        QStringList items2;
-        for (auto & str : items) {
-            items2.push_back(QString::fromStdString(str));
+    void Handle_addItem(HandleRef _this, std::string text, std::shared_ptr<Variant::Deferred::Base> userData) {
+        THIS->addItem(QString::fromStdString(text), Variant::fromDeferred(userData));
+    }
+
+    void Handle_addItem(HandleRef _this, std::shared_ptr<Icon::Deferred::Base> icon, std::string text, std::shared_ptr<Variant::Deferred::Base> userData) {
+        THIS->addItem(Icon::fromDeferred(icon), QString::fromStdString(text), Variant::fromDeferred(userData));
+    }
+
+    void Handle_addItems(HandleRef _this, std::vector<std::string> texts) {
+        QStringList items;
+        for (auto & str : texts) {
+            items.push_back(QString::fromStdString(str));
         }
-//        std::transform(items.begin(), items.end(), std::back_inserter(items2), std::mem_fn(&std::string::c_str));
-        THIS->addItems(items2);
+        THIS->addItems(items);
+    }
+
+    void Handle_setModel(HandleRef _this, AbstractItemModel::HandleRef model) {
+        THIS->setModel((QAbstractItemModel*)model);
+    }
+
+    int32_t Handle_count(HandleRef _this) {
+        return THIS->count();
+    }
+
+    Variant::OwnedHandleRef Handle_currentData(HandleRef _this) {
+        auto ret = THIS->currentData();
+        return (Variant::OwnedHandleRef) new QVariant(ret);
+    }
+
+    Variant::OwnedHandleRef Handle_currentData(HandleRef _this, ItemDataRole role) {
+        auto ret = THIS->currentData((Qt::ItemDataRole)role);
+        return (Variant::OwnedHandleRef) new QVariant(ret);
     }
 
     void Handle_setCurrentIndex(HandleRef _this, int32_t index) {
         THIS->setCurrentIndex(index);
+    }
+
+    void Handle_setCurrentText(HandleRef _this, std::string text) {
+        THIS->setCurrentText(QString::fromStdString(text));
+    }
+
+    void Handle_setDuplicatesEnabled(HandleRef _this, bool enabled) {
+        THIS->setDuplicatesEnabled(enabled);
+    }
+
+    void Handle_setEditable(HandleRef _this, bool editable) {
+        THIS->setEditable(editable);
+    }
+
+    void Handle_setFrame(HandleRef _this, bool hasFrame) {
+        THIS->setFrame(hasFrame);
+    }
+
+    void Handle_setIconSize(HandleRef _this, Size size) {
+        THIS->setIconSize(toQSize(size));
+    }
+
+    void Handle_setInsertPolicy(HandleRef _this, InsertPolicy policy) {
+        THIS->setInsertPolicy((QComboBox::InsertPolicy)policy);
+    }
+
+    void Handle_setMaxCount(HandleRef _this, int32_t count) {
+        THIS->setMaxCount(count);
+    }
+
+    void Handle_setMaxVisibleItems(HandleRef _this, int32_t count) {
+        THIS->setMaxVisibleItems(count);
+    }
+
+    void Handle_setMinimumContentsLength(HandleRef _this, int32_t length) {
+        THIS->setMinimumContentsLength(length);
+    }
+
+    void Handle_setModelColumn(HandleRef _this, int32_t column) {
+        THIS->setModelColumn(column);
+    }
+
+    void Handle_setPlaceholderText(HandleRef _this, std::string text) {
+        THIS->setPlaceholderText(QString::fromStdString(text));
+    }
+
+    void Handle_setSizeAdjustPolicy(HandleRef _this, SizeAdjustPolicy policy) {
+        THIS->setSizeAdjustPolicy((QComboBox::SizeAdjustPolicy)policy);
     }
 
     void Handle_setSignalMask(HandleRef _this, SignalMask mask) {

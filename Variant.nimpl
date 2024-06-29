@@ -3,15 +3,18 @@ module Variant;
 import Icon;
 import PaintResources; // for color, brush, etc (deferred)
 
-@nodispose
+// @nodispose // temporarily removed because our codegen sucks and we're inheriting for OnwedHandle
 opaque Handle {
     bool isValid();
     string toString2(); // toString() is a C# thing
     int toInt();
     
-    // no toIcon() yet, because ownership is murky (Icon is currently @nodispose)
+    // no toIcon() yet, because ownership is murky (Icon is currently @nodispose) [TODO: need an Icon.OwnedHandle, similar to how we're dealing with ModelIndex]
     // same for toColor()
 }
+
+// see long note in ModelIndex module
+opaque OwnedHandle extends Handle;
 
 sumtype Deferred {
     Empty,
