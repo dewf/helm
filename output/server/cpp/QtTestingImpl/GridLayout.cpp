@@ -11,7 +11,7 @@ namespace GridLayout
         THIS->addWidget((QWidget*)widget, row, col);
     }
 
-    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t row, int32_t col, uint32_t align) {
+    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t row, int32_t col, Alignment align) {
         THIS->addWidget((QWidget*)widget, row, col, (Qt::AlignmentFlag)align);
     }
 
@@ -19,7 +19,7 @@ namespace GridLayout
         THIS->addWidget((QWidget*)widget, row, col, rowSpan, colSpan);
     }
 
-    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t row, int32_t col, int32_t rowSpan, int32_t colSpan, uint32_t align) {
+    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t row, int32_t col, int32_t rowSpan, int32_t colSpan, Enums::Alignment align) {
         THIS->addWidget((QWidget*)widget, row, col, rowSpan, colSpan, (Qt::AlignmentFlag)align);
     }
 
@@ -27,7 +27,7 @@ namespace GridLayout
         THIS->addLayout((QLayout*)layout, row, col);
     }
 
-    void Handle_addLayout(HandleRef _this, Layout::HandleRef layout, int32_t row, int32_t col, uint32_t align) {
+    void Handle_addLayout(HandleRef _this, Layout::HandleRef layout, int32_t row, int32_t col, Enums::Alignment align) {
         THIS->addLayout((QLayout*)layout, row, col, (Qt::AlignmentFlag)align);
     }
 
@@ -35,7 +35,7 @@ namespace GridLayout
         THIS->addLayout((QLayout*)layout, row, col, rowSpan, colSpan);
     }
 
-    void Handle_addLayout(HandleRef _this, Layout::HandleRef layout, int32_t row, int32_t col, int32_t rowSpan, int32_t colSpan, uint32_t align) {
+    void Handle_addLayout(HandleRef _this, Layout::HandleRef layout, int32_t row, int32_t col, int32_t rowSpan, int32_t colSpan, Enums::Alignment align) {
         THIS->addLayout((QLayout*)layout, row, col, rowSpan, colSpan, (Qt::AlignmentFlag)align);
     }
 

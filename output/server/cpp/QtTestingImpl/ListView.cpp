@@ -13,21 +13,21 @@ namespace ListView
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
-            { SignalMask::Activated, SIGNAL(activated(QModelIndex)), SLOT(onActivated(QModelIndex)) },
-            { SignalMask::Clicked, SIGNAL(clicked(QModelIndex)), SLOT(onClicked(QModelIndex)) },
-            { SignalMask::DoubleClicked, SIGNAL(doubleClicked(QModelIndex)), SLOT(onDoubleClicked(QModelIndex)) },
-            { SignalMask::Entered, SIGNAL(entered(QModelIndex)), SLOT(onEntered(QModelIndex)) },
-            { SignalMask::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
-            { SignalMask::Pressed, SIGNAL(pressed(QModelIndex)), SLOT(onPressed(QModelIndex)) },
-            { SignalMask::ViewportEntered, SIGNAL(viewportEntered()), SLOT(onViewportEntered) },
-            { SignalMask::IndexesMoved, SIGNAL(indexesMoved(QModelIndexList)), SLOT(onIndexesMoved(QModelIndexList)) },
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::Activated, SIGNAL(activated(QModelIndex)), SLOT(onActivated(QModelIndex)) },
+            { SignalMaskFlags::Clicked, SIGNAL(clicked(QModelIndex)), SLOT(onClicked(QModelIndex)) },
+            { SignalMaskFlags::DoubleClicked, SIGNAL(doubleClicked(QModelIndex)), SLOT(onDoubleClicked(QModelIndex)) },
+            { SignalMaskFlags::Entered, SIGNAL(entered(QModelIndex)), SLOT(onEntered(QModelIndex)) },
+            { SignalMaskFlags::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
+            { SignalMaskFlags::Pressed, SIGNAL(pressed(QModelIndex)), SLOT(onPressed(QModelIndex)) },
+            { SignalMaskFlags::ViewportEntered, SIGNAL(viewportEntered()), SLOT(onViewportEntered) },
+            { SignalMaskFlags::IndexesMoved, SIGNAL(indexesMoved(QModelIndexList)), SLOT(onIndexesMoved(QModelIndexList)) },
         };
     public:
         explicit ListViewWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -88,7 +88,7 @@ namespace ListView
         THIS->setViewMode((QListView::ViewMode)mode);
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

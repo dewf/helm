@@ -23,15 +23,15 @@ namespace Widget
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
-            { SignalMask::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
-            { SignalMask::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) }
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) }
         };
     public:
         explicit WidgetWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -83,7 +83,7 @@ namespace Widget
         THIS->setMaximumHeight(maxHeight);
     }
 
-    void Handle_setSizePolicy(HandleRef _this, uint32_t hPolicy, uint32_t vPolicy) {
+    void Handle_setSizePolicy(HandleRef _this, Enums::SizePolicy::Policy hPolicy, Enums::SizePolicy::Policy vPolicy) {
         THIS->setSizePolicy((QSizePolicy::Policy)hPolicy, (QSizePolicy::Policy)vPolicy);
     }
 
@@ -189,7 +189,7 @@ namespace Widget
         THIS->setAcceptDrops(enabled);
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 
@@ -270,9 +270,9 @@ namespace Widget
         DRAGTHIS->setMimeData((QMimeData*)data);
     }
 
-    DropAction Drag_exec(DragRef _this, uint32_t supportedActions, DropAction defaultAction) {
+    DropAction Drag_exec(DragRef _this, DropActionSet supportedActions, DropAction defaultAction) {
         auto qDefault = (Qt::DropAction)defaultAction;
-        auto qSupported = QFlags<Qt::DropAction>((int)supportedActions);
+        auto qSupported = QFlags<Qt::DropAction>(supportedActions);
         return (DropAction) DRAGTHIS->exec(qSupported, qDefault);
     }
 
@@ -294,8 +294,8 @@ namespace Widget
         DRAGMOVETHIS->acceptProposedAction();
     }
 
-    uint32_t DragMoveEvent_possibleActions(DragMoveEventRef _this) {
-        return (uint32_t) DRAGMOVETHIS->possibleActions();
+    DropActionSet DragMoveEvent_possibleActions(DragMoveEventRef _this) {
+        return (DropActionSet) DRAGMOVETHIS->possibleActions();
     }
 
     void DragMoveEvent_acceptDropAction(DragMoveEventRef _this, DropAction action) {
@@ -321,16 +321,16 @@ namespace Widget
     class WidgetSubclass : public WidgetWithHandler {
     private:
         std::shared_ptr<MethodDelegate> methodDelegate;
-        uint32_t methodMask;
+        MethodMask methodMask;
     public:
-        WidgetSubclass(std::shared_ptr<MethodDelegate> &methodDelegate, uint32_t methodMask, std::shared_ptr<SignalHandler> handler) :
+        WidgetSubclass(std::shared_ptr<MethodDelegate> &methodDelegate, MethodMask methodMask, std::shared_ptr<SignalHandler> handler) :
             methodDelegate(methodDelegate),
             methodMask(methodMask),
             WidgetWithHandler(std::move(handler))
             {}
     protected:
         void paintEvent(QPaintEvent *event) override {
-            if (methodMask & MethodMask::PaintEvent) {
+            if (methodMask & MethodMaskFlags::PaintEvent) {
                 QPainter painter(this);
                 methodDelegate->paintEvent((Painter::HandleRef)&painter, toRect(event->rect()));
                 // prevent it from propagating:
@@ -341,7 +341,7 @@ namespace Widget
             }
         }
         void mousePressEvent(QMouseEvent *event) override {
-            if (methodMask & MethodMask::MousePressEvent) {
+            if (methodMask & MethodMaskFlags::MousePressEvent) {
                 auto pos = toPoint(event->pos());
                 auto button = (MouseButton)event->button();
                 auto modifiers = event->modifiers();
@@ -354,7 +354,7 @@ namespace Widget
         }
 
         void mouseMoveEvent(QMouseEvent *event) override {
-            if (methodMask & MethodMask::MouseMoveEvent) {
+            if (methodMask & MethodMaskFlags::MouseMoveEvent) {
                 auto pos = toPoint(event->pos());
                 auto buttons = event->buttons();
                 auto modifiers = event->modifiers();
@@ -367,7 +367,7 @@ namespace Widget
         }
 
         void mouseReleaseEvent(QMouseEvent *event) override {
-            if (methodMask & MethodMask::MouseReleaseEvent) {
+            if (methodMask & MethodMaskFlags::MouseReleaseEvent) {
                 auto pos = toPoint(event->pos());
                 auto button = (MouseButton)event->button();
                 auto modifiers = event->modifiers();
@@ -379,7 +379,7 @@ namespace Widget
         }
 
         void enterEvent(QEnterEvent *event) override {
-            if (methodMask & MethodMask::EnterEvent) {
+            if (methodMask & MethodMaskFlags::EnterEvent) {
                 auto pos = toPoint(event->position().toPoint());
                 methodDelegate->enterEvent(pos);
                 event->accept();
@@ -389,7 +389,7 @@ namespace Widget
         }
 
         void leaveEvent(QEvent *event) override {
-            if (methodMask & MethodMask::LeaveEvent) {
+            if (methodMask & MethodMaskFlags::LeaveEvent) {
                 methodDelegate->leaveEvent();
                 event->accept();
             } else {
@@ -398,7 +398,7 @@ namespace Widget
         }
 
         void resizeEvent(QResizeEvent *event) override {
-            if (methodMask & MethodMask::ResizeEvent) {
+            if (methodMask & MethodMaskFlags::ResizeEvent) {
                 methodDelegate->resizeEvent(toSize(event->oldSize()), toSize(event->size()));
                 event->accept();
             } else {
@@ -407,7 +407,7 @@ namespace Widget
         }
 
         void dragEnterEvent(QDragEnterEvent *event) override {
-            if (methodMask & MethodMask::DropEvents) {
+            if (methodMask & MethodMaskFlags::DropEvents) {
                 auto pos = toPoint(event->position().toPoint());
                 auto modifiers = event->modifiers();
                 auto mimeOpaque = (MimeDataRef)event->mimeData();
@@ -420,7 +420,7 @@ namespace Widget
         }
 
         void dragMoveEvent(QDragMoveEvent *event) override {
-            if (methodMask & MethodMask::DropEvents) {
+            if (methodMask & MethodMaskFlags::DropEvents) {
                 auto pos = toPoint(event->position().toPoint());
                 auto modifiers = event->modifiers();
                 auto mimeOpaque = (MimeDataRef)event->mimeData();
@@ -433,7 +433,7 @@ namespace Widget
         }
 
         void dragLeaveEvent(QDragLeaveEvent *event) override {
-            if (methodMask & MethodMask::DropEvents) {
+            if (methodMask & MethodMaskFlags::DropEvents) {
                 methodDelegate->dragLeaveEvent();
                 event->accept();
             } else {
@@ -442,7 +442,7 @@ namespace Widget
         }
 
         void dropEvent(QDropEvent *event) override {
-            if (methodMask & MethodMask::DropEvents) {
+            if (methodMask & MethodMaskFlags::DropEvents) {
                 auto pos = toPoint(event->position().toPoint());
                 auto modifiers = event->modifiers();
                 auto mimeOpaque = (MimeDataRef)event->mimeData();
@@ -456,7 +456,7 @@ namespace Widget
 
     public:
         [[nodiscard]] QSize sizeHint() const override {
-            if (methodMask & MethodMask::SizeHint) {
+            if (methodMask & MethodMaskFlags::SizeHint) {
                 auto size = methodDelegate->sizeHint();
                 return toQSize(size);
             } else {
@@ -465,7 +465,7 @@ namespace Widget
         }
     };
 
-    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, uint32_t methodMask, std::shared_ptr<SignalHandler> handler) {
+    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, MethodMask methodMask, std::shared_ptr<SignalHandler> handler) {
         return (HandleRef) new WidgetSubclass(methodDelegate, methodMask, std::move(handler));
     }
 }

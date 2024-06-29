@@ -13,13 +13,13 @@ namespace SortFilterProxyModel
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::AutoAcceptChildRowsChanged, SIGNAL(autoAcceptChildRowsChanged(bool)), SLOT(onAutoAcceptChildRowsChanged(bool)) },
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::AutoAcceptChildRowsChanged, SIGNAL(autoAcceptChildRowsChanged(bool)), SLOT(onAutoAcceptChildRowsChanged(bool)) },
         };
     public:
         explicit SortFilterProxyModelWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -39,7 +39,7 @@ namespace SortFilterProxyModel
         THIS->setFilterKeyColumn(column);
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

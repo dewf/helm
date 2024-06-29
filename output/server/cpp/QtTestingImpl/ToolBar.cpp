@@ -13,20 +13,20 @@ namespace ToolBar
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::ActionTriggered, SIGNAL(actionTriggered(QAction)), SLOT(onActionTriggered(QAction)) },
-            { SignalMask::AllowedAreasChanged, SIGNAL(allowedAreasChanged(Qt::ToolBarAreas)), SLOT(onAllowedAreasChanged(Qt::ToolBarAreas)) },
-            { SignalMask::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
-            { SignalMask::MoveableChanged, SIGNAL(movableChanged(bool)), SLOT(onMovableChanged(bool)) },
-            { SignalMask::OrientationChanged, SIGNAL(orientationChanged(Qt::Orientation)), SLOT(onOrientationChanged(Qt::Orientation)) },
-            { SignalMask::ToolButtonStyleChanged, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), SLOT(onToolButtonStyleChanged(Qt::ToolButtonStyle)) },
-            { SignalMask::TopLevelChanged, SIGNAL(topLevelChanged(bool)), SLOT(onTopLevelChanged(bool)) },
-            { SignalMask::VisibilityChanged, SIGNAL(visibilityChanged(bool)), SLOT(onVisibilityChanged(bool)) },
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::ActionTriggered, SIGNAL(actionTriggered(QAction)), SLOT(onActionTriggered(QAction)) },
+            { SignalMaskFlags::AllowedAreasChanged, SIGNAL(allowedAreasChanged(Qt::ToolBarAreas)), SLOT(onAllowedAreasChanged(Qt::ToolBarAreas)) },
+            { SignalMaskFlags::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
+            { SignalMaskFlags::MoveableChanged, SIGNAL(movableChanged(bool)), SLOT(onMovableChanged(bool)) },
+            { SignalMaskFlags::OrientationChanged, SIGNAL(orientationChanged(Qt::Orientation)), SLOT(onOrientationChanged(Qt::Orientation)) },
+            { SignalMaskFlags::ToolButtonStyleChanged, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), SLOT(onToolButtonStyleChanged(Qt::ToolButtonStyle)) },
+            { SignalMaskFlags::TopLevelChanged, SIGNAL(topLevelChanged(bool)), SLOT(onTopLevelChanged(bool)) },
+            { SignalMaskFlags::VisibilityChanged, SIGNAL(visibilityChanged(bool)), SLOT(onVisibilityChanged(bool)) },
         };
     public:
         explicit ToolBarWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -37,7 +37,7 @@ namespace ToolBar
             handler->actionTriggered((Action::HandleRef)action);
         };
         void onAllowedAreasChanged(Qt::ToolBarAreas allowed) {
-            handler->allowedAreasChanged((uint32_t)allowed);
+            handler->allowedAreasChanged(allowed);
         }
         void onIconSizeChanged(const QSize& size) {
             handler->iconSizeChanged(toSize(size));
@@ -71,7 +71,7 @@ namespace ToolBar
         THIS->clear();
     }
 
-    void Handle_setAllowedAreas(HandleRef _this, uint32_t allowed) {
+    void Handle_setAllowedAreas(HandleRef _this, Enums::ToolBarAreas allowed) {
         THIS->setAllowedAreas((Qt::ToolBarAreas)allowed);
     }
 
@@ -95,7 +95,7 @@ namespace ToolBar
         THIS->setToolButtonStyle((Qt::ToolButtonStyle)style);
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

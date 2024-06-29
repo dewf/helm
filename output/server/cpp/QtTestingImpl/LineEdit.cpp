@@ -13,19 +13,19 @@ namespace LineEdit
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::CursorPositionChanged, SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int,int)) },
-            { SignalMask::EditingFinished, SIGNAL(editingFinished()), SLOT(onEditingFinished()) },
-            { SignalMask::InputRejected, SIGNAL(inputRejected()), SLOT(onInputRejected()) },
-            { SignalMask::ReturnPressed, SIGNAL(returnPressed()), SLOT(onReturnPressed()) },
-            { SignalMask::SelectionChanged, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()) },
-            { SignalMask::TextChanged, SIGNAL(textChanged(QString)), SLOT(onTextChanged(QString)) },
-            { SignalMask::TextEdited, SIGNAL(textEdited(QString)), SLOT(onTextEdited(QString)) }
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::CursorPositionChanged, SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int,int)) },
+            { SignalMaskFlags::EditingFinished, SIGNAL(editingFinished()), SLOT(onEditingFinished()) },
+            { SignalMaskFlags::InputRejected, SIGNAL(inputRejected()), SLOT(onInputRejected()) },
+            { SignalMaskFlags::ReturnPressed, SIGNAL(returnPressed()), SLOT(onReturnPressed()) },
+            { SignalMaskFlags::SelectionChanged, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()) },
+            { SignalMaskFlags::TextChanged, SIGNAL(textChanged(QString)), SLOT(onTextChanged(QString)) },
+            { SignalMaskFlags::TextEdited, SIGNAL(textEdited(QString)), SLOT(onTextEdited(QString)) }
         };
     public:
         explicit LineEditWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -59,9 +59,8 @@ namespace LineEdit
         return THIS->hasAcceptableInput();
     }
 
-    void Handle_setAlignment(HandleRef _this, uint32_t align) {
-        auto intValue = (int)align;
-        THIS->setAlignment((Qt::Alignment)intValue);
+    void Handle_setAlignment(HandleRef _this, Enums::Alignment align) {
+        THIS->setAlignment((Qt::Alignment)align);
     }
 
     void Handle_setClearButtonEnabled(HandleRef _this, bool enabled) {
@@ -136,7 +135,7 @@ namespace LineEdit
         return THIS->isUndoAvailable();
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

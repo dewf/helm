@@ -14,11 +14,11 @@ namespace MessageBox
         THIS->setInformativeText(QString::fromStdString(text));
     }
 
-    void Handle_setStandardButtons(HandleRef _this, uint32_t buttons) {
+    void Handle_setStandardButtons(HandleRef _this, StandardButtonSet buttons) {
         THIS->setStandardButtons((QMessageBox::StandardButtons)buttons);
     }
 
-    void Handle_setDefaultButton(HandleRef _this, uint32_t button) {
+    void Handle_setDefaultButton(HandleRef _this, StandardButton button) {
         THIS->setDefaultButton((QMessageBox::StandardButton)button);
     }
 

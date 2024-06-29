@@ -13,11 +13,11 @@ namespace Dialog
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-                { SignalMask::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
-                { SignalMask::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
-                { SignalMask::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+                { SignalMaskFlags::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
+                { SignalMaskFlags::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
+                { SignalMaskFlags::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
         };
     public:
         DialogWithHandler(QWidget *parent, const std::shared_ptr<SignalHandler> &handler)
@@ -26,7 +26,7 @@ namespace Dialog
             // nothing yet
         }
 
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -60,7 +60,7 @@ namespace Dialog
         return THIS->exec();
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

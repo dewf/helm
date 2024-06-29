@@ -50,7 +50,7 @@ with
         | MessageBox.StandardButton.Reset -> Reset
         | MessageBox.StandardButton.RestoreDefaults -> RestoreDefaults
         | _ -> failwithf "MessageBox.StandardButton.FromQtValue - unknown input %A" raw
-        
+
     member internal this.QtValue =
         match this with
         | Ok -> MessageBox.StandardButton.Ok
@@ -71,6 +71,10 @@ with
         | Apply -> MessageBox.StandardButton.Apply
         | Reset -> MessageBox.StandardButton.Reset
         | RestoreDefaults -> MessageBox.StandardButton.RestoreDefaults
+        
+    member internal this.QtFlag =
+        int this.QtValue
+        |> enum<MessageBox.StandardButtonSet>
         
 type Icon =
     | Information
@@ -121,9 +125,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                 messageBox.SetInformativeText(text)
             | Buttons buttons ->
                 let mask =
-                    ((enum<MessageBox.StandardButton> 0), buttons)
+                    ((enum<MessageBox.StandardButtonSet> 0), buttons)
                     ||> List.fold (fun acc b ->
-                        acc ||| b.QtValue)
+                        acc ||| b.QtFlag)
                 messageBox.SetStandardButtons(mask)
             | DefaultButton button ->
                 messageBox.SetDefaultButton(button.QtValue)

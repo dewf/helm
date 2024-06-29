@@ -12,27 +12,27 @@ namespace FileDialog
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
             // from Dialog:
-            { SignalMask::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
-            { SignalMask::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
-            { SignalMask::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
+            { SignalMaskFlags::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
+            { SignalMaskFlags::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
+            { SignalMaskFlags::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
             // FileDialog:
-            { SignalMask::CurrentChanged, SIGNAL(currentChanged(QString)), SLOT(onCurrentChanged(QString)) },
-            { SignalMask::CurrentUrlChanged, SIGNAL(currentUrlChanged(QUrl)), SLOT(onCurrentUrlChanged(QUrl)) },
-            { SignalMask::DirectoryEntered, SIGNAL(directoryEntered(QString)), SLOT(onDirectoryEntered(QString)) },
-            { SignalMask::DirectoryUrlEntered, SIGNAL(directoryUrlEntered(QUrl)), SLOT(onDirectoryUrlEntered(QUrl)) },
-            { SignalMask::FileSelected, SIGNAL(fileSelected(QString)), SLOT(onFileSelected(QString)) },
-            { SignalMask::FilesSelected, SIGNAL(filesSelected(QStringList)), SLOT(onFilesSelected(QStringList)) },
-            { SignalMask::FilterSelected, SIGNAL(filterSelected(QString)), SLOT(onFilterSelected(QString)) },
-            { SignalMask::UrlSelected, SIGNAL(urlSelected(QUrl)), SLOT(onUrlSelected(QUrl)) },
-            { SignalMask::UrlsSelected, SIGNAL(urlsSelected(QList<QUrl>)), SLOT(onUrlsSelected(QList<QUrl>)) },
+            { SignalMaskFlags::CurrentChanged, SIGNAL(currentChanged(QString)), SLOT(onCurrentChanged(QString)) },
+            { SignalMaskFlags::CurrentUrlChanged, SIGNAL(currentUrlChanged(QUrl)), SLOT(onCurrentUrlChanged(QUrl)) },
+            { SignalMaskFlags::DirectoryEntered, SIGNAL(directoryEntered(QString)), SLOT(onDirectoryEntered(QString)) },
+            { SignalMaskFlags::DirectoryUrlEntered, SIGNAL(directoryUrlEntered(QUrl)), SLOT(onDirectoryUrlEntered(QUrl)) },
+            { SignalMaskFlags::FileSelected, SIGNAL(fileSelected(QString)), SLOT(onFileSelected(QString)) },
+            { SignalMaskFlags::FilesSelected, SIGNAL(filesSelected(QStringList)), SLOT(onFilesSelected(QStringList)) },
+            { SignalMaskFlags::FilterSelected, SIGNAL(filterSelected(QString)), SLOT(onFilterSelected(QString)) },
+            { SignalMaskFlags::UrlSelected, SIGNAL(urlSelected(QUrl)), SLOT(onUrlSelected(QUrl)) },
+            { SignalMaskFlags::UrlsSelected, SIGNAL(urlsSelected(QList<QUrl>)), SLOT(onUrlsSelected(QList<QUrl>)) },
         };
     public:
         explicit FileDialogWithHandler(const std::shared_ptr<SignalHandler> &handler)
             : handler(handler) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -137,7 +137,7 @@ namespace FileDialog
         return ret;
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

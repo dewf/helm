@@ -10,9 +10,9 @@ enum SignalState {
 };
 
 template <typename T>
-std::map<T, SignalState> getSignalChanges(uint32_t oldMask, uint32_t newMask, int signalCount) {
+std::map<T, SignalState> getSignalChanges(int32_t oldMask, int32_t newMask, int signalCount) {
     std::map<T, SignalState> result;
-    uint32_t checkSignal = 1;
+    int32_t checkSignal = 1;
     for (int i = 0; i< signalCount; i++, checkSignal <<= 1) {
         auto lastState = ((oldMask & checkSignal) != 0);
         auto thisState = ((newMask & checkSignal) != 0);
@@ -37,7 +37,7 @@ struct SignalMapItem {
 };
 
 template <typename T>
-void processChanges(uint32_t lastMask, uint32_t newMask, std::vector<SignalMapItem<T>> mapItems, QObject* thisPtr) {
+void processChanges(int32_t lastMask, int32_t newMask, std::vector<SignalMapItem<T>> mapItems, QObject* thisPtr) {
     auto changes = getSignalChanges<T>(lastMask, newMask, (int)mapItems.size());
 
     for (auto item : mapItems) {

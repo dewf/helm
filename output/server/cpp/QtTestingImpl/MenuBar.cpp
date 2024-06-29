@@ -13,14 +13,14 @@ namespace MenuBar
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::Hovered, SIGNAL(hovered(QAction*)), SLOT(onHovered(QAction*)) },
-            { SignalMask::Triggered, SIGNAL(triggered(QAction*)), SLOT(onTriggered(QAction*))}
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::Hovered, SIGNAL(hovered(QAction*)), SLOT(onHovered(QAction*)) },
+            { SignalMaskFlags::Triggered, SIGNAL(triggered(QAction*)), SLOT(onTriggered(QAction*))}
         };
     public:
         explicit MenuBarWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -43,7 +43,7 @@ namespace MenuBar
         THIS->addMenu((QMenu*)menu);
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

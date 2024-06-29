@@ -15,19 +15,19 @@ namespace ComboBox
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::Activated, SIGNAL(activated(int)), SLOT(onActivated(int)) },
-            { SignalMask::CurrentIndexChanged, SIGNAL(currentIndexChanged(int)), SLOT(onCurrentIndexChanged(int)) },
-            { SignalMask::CurrentTextChanged, SIGNAL(currentTextChanged(QString)), SLOT(onCurrentTextChanged(QString)) },
-            { SignalMask::EditTextChanged, SIGNAL(editTextChanged(QString)), SLOT(onEditTextChanged(QString)) },
-            { SignalMask::Highlighted, SIGNAL(highlighted(int)), SLOT(onHighlighted(int)) },
-            { SignalMask::TextActivated, SIGNAL(textActivated(QString)), SLOT(onTextActivated(QString)) },
-            { SignalMask::TextHighlighted, SIGNAL(textHighlighted(QString)), SLOT(onTextHighlighted(QString)) },
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::Activated, SIGNAL(activated(int)), SLOT(onActivated(int)) },
+            { SignalMaskFlags::CurrentIndexChanged, SIGNAL(currentIndexChanged(int)), SLOT(onCurrentIndexChanged(int)) },
+            { SignalMaskFlags::CurrentTextChanged, SIGNAL(currentTextChanged(QString)), SLOT(onCurrentTextChanged(QString)) },
+            { SignalMaskFlags::EditTextChanged, SIGNAL(editTextChanged(QString)), SLOT(onEditTextChanged(QString)) },
+            { SignalMaskFlags::Highlighted, SIGNAL(highlighted(int)), SLOT(onHighlighted(int)) },
+            { SignalMaskFlags::TextActivated, SIGNAL(textActivated(QString)), SLOT(onTextActivated(QString)) },
+            { SignalMaskFlags::TextHighlighted, SIGNAL(textHighlighted(QString)), SLOT(onTextHighlighted(QString)) },
         };
     public:
         explicit ComboBoxWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -74,7 +74,7 @@ namespace ComboBox
         THIS->setCurrentIndex(index);
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

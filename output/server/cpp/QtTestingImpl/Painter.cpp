@@ -13,8 +13,8 @@ namespace Painter
         THIS->setRenderHint((QPainter::RenderHint)hint, on);
     }
 
-    void Handle_setRenderHints(HandleRef _this, uint32_t hints, bool on) {
-        auto qtHints = QPainter::RenderHints((int)hints);
+    void Handle_setRenderHints(HandleRef _this, RenderHintSet hints, bool on) {
+        auto qtHints = QPainter::RenderHints(hints);
         THIS->setRenderHints(qtHints, on);
     }
 
@@ -30,7 +30,7 @@ namespace Painter
         THIS->setFont(font->qFont);
     }
 
-    void Handle_drawText(HandleRef _this, Rect rect, uint32_t align, std::string text) {
+    void Handle_drawText(HandleRef _this, Common::Rect rect, Enums::Alignment align, std::string text) {
         THIS->drawText(toQRect(rect), (Qt::AlignmentFlag)align, QString::fromStdString(text));
     }
 

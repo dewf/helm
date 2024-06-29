@@ -16,11 +16,11 @@ namespace AbstractListModel
         std::shared_ptr<MethodDelegate> methodDelegate;
         MethodMask methodMask;
     public:
-        Subclassed(QObject *parent, const std::shared_ptr<MethodDelegate>& methodDelegate, uint32_t mask)
+        Subclassed(QObject *parent, const std::shared_ptr<MethodDelegate>& methodDelegate, MethodMask mask)
             : QAbstractListModel(parent)
         {
             this->methodDelegate = methodDelegate;
-            methodMask = (MethodMask)mask;
+            methodMask = mask;
         }
 
         // ==== must-implement abstract methods ===========================
@@ -35,7 +35,7 @@ namespace AbstractListModel
 
         // ==== optional methods ==========================================
         QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
-            if (methodMask & MethodMask::HeaderData) {
+            if (methodMask & MethodMaskFlags::HeaderData) {
                 auto deferred = methodDelegate->headerData(section, (Enums::Orientation)orientation, (ItemDataRole)role);
                 return Variant::fromDeferred(deferred);
             } else {
@@ -45,7 +45,7 @@ namespace AbstractListModel
 
         Qt::ItemFlags flags(const QModelIndex &index) const override {
             auto baseFlags = QAbstractListModel::flags(index);
-            if (methodMask & MethodMask::Flags) {
+            if (methodMask & MethodMaskFlags::Flags) {
                 auto raw = (int)methodDelegate->getFlags((ModelIndex::HandleRef)&index, baseFlags);
                 return (Qt::ItemFlags) raw;
             } else {
@@ -54,7 +54,7 @@ namespace AbstractListModel
         }
 
         bool setData(const QModelIndex &index, const QVariant &value, int role) override {
-            if (methodMask & MethodMask::SetData) {
+            if (methodMask & MethodMaskFlags::SetData) {
                 return methodDelegate->setData((ModelIndex::HandleRef)&index, (Variant::HandleRef)&value, (ItemDataRole)role);
             } else {
                 return QAbstractListModel::setData(index, value, role);
@@ -62,7 +62,7 @@ namespace AbstractListModel
         }
 
         int columnCount(const QModelIndex &parent) const override {
-            if (methodMask & MethodMask::ColumnCount) {
+            if (methodMask & MethodMaskFlags::ColumnCount) {
                 return methodDelegate->columnCount((ModelIndex::HandleRef)&parent);
             } else {
                 // QAbstractListModel::columnCount() is private, we're technically not supposed to be doing this in AbstractListModel
@@ -136,7 +136,7 @@ namespace AbstractListModel
         delete THIS;
     }
 
-    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, uint32_t mask) {
+    HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, MethodMask mask) {
         return (HandleRef) new Subclassed(nullptr, methodDelegate, mask);
     }
 }

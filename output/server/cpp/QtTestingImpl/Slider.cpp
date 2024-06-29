@@ -13,18 +13,18 @@ namespace Slider
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::ActionTriggered, SIGNAL(actionTriggered(int)), SLOT(onActionTriggered(int)) },
-            { SignalMask::RangeChanged, SIGNAL(rangeChanged(int, int)), SLOT(onRangeChanged(int,int)) },
-            { SignalMask::SliderMoved, SIGNAL(sliderMoved(int)), SLOT(onSliderMoved(int)) },
-            { SignalMask::SliderPressed, SIGNAL(sliderPressed()), SLOT(onSliderPressed()) },
-            { SignalMask::SliderReleased, SIGNAL(sliderReleased()), SLOT(onSliderReleased()) },
-            { SignalMask::ValueChanged, SIGNAL(valueChanged(int)), SLOT(onValueChanged(int)) },
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::ActionTriggered, SIGNAL(actionTriggered(int)), SLOT(onActionTriggered(int)) },
+            { SignalMaskFlags::RangeChanged, SIGNAL(rangeChanged(int, int)), SLOT(onRangeChanged(int,int)) },
+            { SignalMaskFlags::SliderMoved, SIGNAL(sliderMoved(int)), SLOT(onSliderMoved(int)) },
+            { SignalMaskFlags::SliderPressed, SIGNAL(sliderPressed()), SLOT(onSliderPressed()) },
+            { SignalMaskFlags::SliderReleased, SIGNAL(sliderReleased()), SLOT(onSliderReleased()) },
+            { SignalMaskFlags::ValueChanged, SIGNAL(valueChanged(int)), SLOT(onValueChanged(int)) },
         };
     public:
         explicit SliderWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -59,7 +59,7 @@ namespace Slider
         THIS->setTickInterval(interval);
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

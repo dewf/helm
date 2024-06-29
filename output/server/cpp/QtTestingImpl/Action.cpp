@@ -16,19 +16,19 @@ namespace Action
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-            { SignalMask::Changed, SIGNAL(changed()), SLOT(onChanged) },
-            { SignalMask::CheckableChanged, SIGNAL(checkableChanged(bool)), SLOT(onCheckableChanged(bool)) },
-            { SignalMask::EnabledChanged, SIGNAL(enabledChanged(bool)), SLOT(onEnabledChanged(bool) )},
-            { SignalMask::Hovered, SIGNAL(hovered()), SLOT(onHovered()) },
-            { SignalMask::Toggled, SIGNAL(toggled(bool)), SLOT(onToggled(bool)) },
-            { SignalMask::Triggered, SIGNAL(triggered(bool)), SLOT(onTriggered(bool)) },
-            { SignalMask::VisibleChanged, SIGNAL(visibleChanged()), SLOT(onVisibleChanged()) }
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            { SignalMaskFlags::Changed, SIGNAL(changed()), SLOT(onChanged) },
+            { SignalMaskFlags::CheckableChanged, SIGNAL(checkableChanged(bool)), SLOT(onCheckableChanged(bool)) },
+            { SignalMaskFlags::EnabledChanged, SIGNAL(enabledChanged(bool)), SLOT(onEnabledChanged(bool) )},
+            { SignalMaskFlags::Hovered, SIGNAL(hovered()), SLOT(onHovered()) },
+            { SignalMaskFlags::Toggled, SIGNAL(toggled(bool)), SLOT(onToggled(bool)) },
+            { SignalMaskFlags::Triggered, SIGNAL(triggered(bool)), SLOT(onTriggered(bool)) },
+            { SignalMaskFlags::VisibleChanged, SIGNAL(visibleChanged()), SLOT(onVisibleChanged()) }
         };
     public:
         ActionWithHandler(QObject *parent, const std::shared_ptr<SignalHandler> &handler) : QAction(parent), handler(handler) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -98,7 +98,7 @@ namespace Action
         THIS->setToolTip(QString::fromStdString(tip));
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 

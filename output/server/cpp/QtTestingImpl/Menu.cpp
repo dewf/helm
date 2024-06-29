@@ -14,16 +14,16 @@ namespace Menu
         Q_OBJECT
     private:
         std::shared_ptr<SignalHandler> handler;
-        uint32_t lastMask = 0;
-        std::vector<SignalMapItem<SignalMask>> signalMap = {
-                { SignalMask::AboutToHide, SIGNAL(aboutToHide()), SLOT(onAboutToHide()) },
-                { SignalMask::AboutToShow, SIGNAL(aboutToShow()), SLOT(onAboutToShow()) },
-                { SignalMask::Hovered, SIGNAL(hovered(QAction*)), SLOT(onHovered(QAction*)) },
-                { SignalMask::Triggered, SIGNAL(triggered(QAction*)), SLOT(onTriggered(QAction*)) }
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+                { SignalMaskFlags::AboutToHide, SIGNAL(aboutToHide()), SLOT(onAboutToHide()) },
+                { SignalMaskFlags::AboutToShow, SIGNAL(aboutToShow()), SLOT(onAboutToShow()) },
+                { SignalMaskFlags::Hovered, SIGNAL(hovered(QAction*)), SLOT(onHovered(QAction*)) },
+                { SignalMaskFlags::Triggered, SIGNAL(triggered(QAction*)), SLOT(onTriggered(QAction*)) }
         };
     public:
         explicit MenuWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
-        void setSignalMask(uint32_t newMask) {
+        void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
                 lastMask = newMask;
@@ -60,7 +60,7 @@ namespace Menu
         THIS->popup(toQPoint(p));
     }
 
-    void Handle_setSignalMask(HandleRef _this, uint32_t mask) {
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
         THIS->setSignalMask(mask);
     }
 
