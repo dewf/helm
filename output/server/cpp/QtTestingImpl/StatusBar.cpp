@@ -35,7 +35,7 @@ namespace StatusBar
     }
 
     void Handle_showMessage(HandleRef _this, std::string message, int32_t timeout) {
-        THIS->showMessage(message.c_str(), timeout);
+        THIS->showMessage(QString::fromStdString(message), timeout);
     }
 
     void Handle_setSignalMask(HandleRef _this, uint32_t mask) {

@@ -63,7 +63,7 @@ namespace Action
     }
 
     void Handle_setText(HandleRef _this, std::string text) {
-        THIS->setText(text.c_str());
+        THIS->setText(QString::fromStdString(text));
     }
 
     void Handle_setSeparator(HandleRef _this, bool state) {
@@ -83,7 +83,7 @@ namespace Action
     }
 
     void Handle_setIconText(HandleRef _this, std::string text) {
-        THIS->setIconText(text.c_str());
+        THIS->setIconText(QString::fromStdString(text));
     }
 
     void Handle_setShortcut(HandleRef _this, std::shared_ptr<KeySequence::Deferred::Base> seq) {
@@ -91,11 +91,11 @@ namespace Action
     }
 
     void Handle_setStatusTip(HandleRef _this, std::string tip) {
-        THIS->setStatusTip(tip.c_str());
+        THIS->setStatusTip(QString::fromStdString(tip));
     }
 
     void Handle_setToolTip(HandleRef _this, std::string tip) {
-        THIS->setToolTip(tip.c_str());
+        THIS->setToolTip(QString::fromStdString(tip));
     }
 
     void Handle_setSignalMask(HandleRef _this, uint32_t mask) {

@@ -153,7 +153,7 @@ namespace Widget
     }
 
     void Handle_setWindowTitle(HandleRef _this, std::string title) {
-        THIS->setWindowTitle(title.c_str());
+        THIS->setWindowTitle(QString::fromStdString(title));
     }
 
     void Handle_setWindowModality(HandleRef _this, WindowModality modality) {
@@ -228,7 +228,7 @@ namespace Widget
     }
 
     bool MimeData_hasFormat(MimeDataRef _this, std::string mimeType) {
-        return MIMETHIS->hasFormat(mimeType.c_str());
+        return MIMETHIS->hasFormat(QString::fromStdString(mimeType));
     }
 
     std::string MimeData_text(MimeDataRef _this) {
@@ -236,7 +236,7 @@ namespace Widget
     }
 
     void MimeData_setText(MimeDataRef _this, std::string text) {
-        MIMETHIS->setText(text.c_str());
+        MIMETHIS->setText(QString::fromStdString(text));
     }
 
     std::vector<std::string> MimeData_urls(MimeDataRef _this) {
@@ -250,7 +250,7 @@ namespace Widget
     void MimeData_setUrls(MimeDataRef _this, std::vector<std::string> urls) {
         QList<QUrl> qUrls;
         for (auto & url : urls) {
-            qUrls.append(QUrl(url.c_str()));
+            qUrls.append(QUrl(QString::fromStdString(url)));
         }
         MIMETHIS->setUrls(qUrls);
     }

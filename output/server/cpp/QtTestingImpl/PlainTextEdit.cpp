@@ -69,7 +69,7 @@ namespace PlainTextEdit
     }
 
     void Handle_setPlainText(HandleRef _this, std::string text) {
-        THIS->setPlainText(text.c_str());
+        THIS->setPlainText(QString::fromStdString(text));
     }
 
     void Handle_setSignalMask(HandleRef _this, uint32_t mask) {

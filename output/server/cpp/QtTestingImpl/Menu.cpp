@@ -53,7 +53,7 @@ namespace Menu
     }
 
     void Handle_setTitle(HandleRef _this, std::string title) {
-        THIS->setTitle(title.c_str());
+        THIS->setTitle(QString::fromStdString(title));
     }
 
     void Handle_popup(HandleRef _this, Point p) {

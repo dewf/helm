@@ -94,13 +94,13 @@ namespace FileDialog
     }
 
     void Handle_setNameFilter(HandleRef _this, std::string filter) {
-        THIS->setNameFilter(filter.c_str());
+        THIS->setNameFilter(QString::fromStdString(filter));
     }
 
     void Handle_setNameFilters(HandleRef _this, std::vector<std::string> filters) {
         QStringList qFilters;
         for (auto &filter: filters) {
-            qFilters.append(filter.c_str());
+            qFilters.append(QString::fromStdString(filter));
         }
         THIS->setNameFilters(qFilters);
     }
@@ -108,7 +108,7 @@ namespace FileDialog
     void Handle_setMimeTypeFilters(HandleRef _this, std::vector<std::string> filters) {
         QStringList qFilters;
         for (auto &filter: filters) {
-            qFilters.append(filter.c_str());
+            qFilters.append(QString::fromStdString(filter));
         }
         THIS->setMimeTypeFilters(qFilters);
     }
@@ -118,15 +118,15 @@ namespace FileDialog
     }
 
     void Handle_setDefaultSuffix(HandleRef _this, std::string suffix) {
-        THIS->setDefaultSuffix(suffix.c_str());
+        THIS->setDefaultSuffix(QString::fromStdString(suffix));
     }
 
     void Handle_setDirectory(HandleRef _this, std::string dir) {
-        THIS->setDirectory(dir.c_str());
+        THIS->setDirectory(QString::fromStdString(dir));
     }
 
     void Handle_selectFile(HandleRef _this, std::string file) {
-        THIS->selectFile(file.c_str());
+        THIS->selectFile(QString::fromStdString(file));
     }
 
     std::vector<std::string> Handle_selectedFiles(HandleRef _this) {

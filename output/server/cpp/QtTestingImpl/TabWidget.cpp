@@ -46,11 +46,11 @@ namespace TabWidget
     };
 
     void Handle_addTab(HandleRef _this, Widget::HandleRef page, std::string label) {
-        THIS->addTab(WIDGET(page), label.c_str());
+        THIS->addTab(WIDGET(page), QString::fromStdString(label));
     }
 
     void Handle_insertTab(HandleRef _this, int32_t index, Widget::HandleRef page, std::string label) {
-        THIS->insertTab(index, WIDGET(page), label.c_str());
+        THIS->insertTab(index, WIDGET(page), QString::fromStdString(label));
     }
 
     Widget::HandleRef Handle_widgetAt(HandleRef _this, int32_t index) {

@@ -16,7 +16,7 @@ namespace RegularExpression {
 
         void onRegex(const Deferred::Regex *regex) override {
             auto opts = (int)regex->opts;
-            qRegex = QRegularExpression(regex->pattern.c_str(), (QRegularExpression::PatternOptions)opts);
+            qRegex = QRegularExpression(QString::fromStdString(regex->pattern), (QRegularExpression::PatternOptions)opts);
         }
     };
 

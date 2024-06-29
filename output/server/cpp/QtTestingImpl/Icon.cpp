@@ -23,7 +23,7 @@ namespace Icon
         }
 
         void onFromFilename(const Deferred::FromFilename *fromFilename) override {
-            icon = QIcon(fromFilename->filename.c_str());
+            icon = QIcon(QString::fromStdString(fromFilename->filename));
         }
     };
 

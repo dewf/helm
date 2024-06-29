@@ -284,19 +284,19 @@ namespace PaintResources
     }
 
     FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize) {
-        auto ret = new __Font { QFont(family.c_str(), pointSize) };
+        auto ret = new __Font { QFont(QString::fromStdString(family), pointSize) };
         _this->items.push_back(ret);
         return ret;
     }
 
     FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize, Font::Weight weight) {
-        auto ret = new __Font { QFont( family.c_str(), pointSize, Font::toQtWeight(weight)) };
+        auto ret = new __Font { QFont(QString::fromStdString(family), pointSize, Font::toQtWeight(weight)) };
         _this->items.push_back(ret);
         return ret;
     }
 
     FontRef Handle_createFont(HandleRef _this, std::string family, int32_t pointSize, Font::Weight weight, bool italic) {
-        auto ret = new __Font { QFont( family.c_str(), pointSize, Font::toQtWeight(weight), italic) };
+        auto ret = new __Font { QFont(QString::fromStdString(family), pointSize, Font::toQtWeight(weight), italic) };
         _this->items.push_back(ret);
         return ret;
     }

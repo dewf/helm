@@ -11,7 +11,7 @@ namespace KeySequence
         explicit FromDeferred(QKeySequence &seq) : seq(seq) {}
 
         void onFromString(const KeySequence::Deferred::FromString *fromString) override {
-            seq = { fromString->s.c_str() };
+            seq = { QString::fromStdString(fromString->s) };
         }
 
         void onFromStandard(const KeySequence::Deferred::FromStandard *fromStandard) override {

@@ -29,6 +29,7 @@
         <Compile Include="Widgets\Widget.fs" />
         <Compile Include="Widgets\AbstractButton.fs" />
         <Compile Include="Widgets\PushButton.fs" />
+        <Compile Include="Widgets\LineEdit.fs" />
         
         <Compile Include="Widgets\BoxLayout.fs" />
         <Compile Include="Widgets\ComboBox.fs" />
@@ -39,7 +40,6 @@
         <Compile Include="Widgets\GridLayout.fs" />
         <Compile Include="Widgets\GroupBox.fs" />
         <Compile Include="Widgets\Label.fs" />
-        <Compile Include="Widgets\LineEdit.fs" />
         <Compile Include="Widgets\ListView.fs" />
         <Compile Include="Widgets\MainWindow.fs" />
         <Compile Include="Widgets\MessageBox.fs" />

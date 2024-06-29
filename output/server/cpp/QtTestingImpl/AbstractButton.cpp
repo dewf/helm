@@ -1,6 +1,5 @@
 #include "generated/AbstractButton.h"
 
-#include <QObject>
 #include <QAbstractButton>
 
 #include "IconInternal.h"
@@ -52,6 +51,6 @@ namespace AbstractButton
     }
 
     void Handle_setText(HandleRef _this, std::string text) {
-        THIS->setText(text.c_str());
+        THIS->setText(QString::fromStdString(text));
     }
 }

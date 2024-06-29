@@ -32,7 +32,7 @@ namespace Variant
         }
 
         void onFromString(const Deferred::FromString *fromString) override {
-            variant = fromString->value.c_str();
+            variant = QString::fromStdString(fromString->value);
         }
 
         void onFromInt(const Deferred::FromInt *fromInt) override {

@@ -8,7 +8,7 @@
 namespace Label
 {
     void Handle_setText(HandleRef _this, std::string text) {
-        THIS->setText(text.c_str());
+        THIS->setText(QString::fromStdString(text));
     }
 
     void Handle_setAlignment(HandleRef _this, uint32_t align) {

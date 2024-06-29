@@ -31,7 +31,7 @@ namespace Painter
     }
 
     void Handle_drawText(HandleRef _this, Rect rect, uint32_t align, std::string text) {
-        THIS->drawText(toQRect(rect), (Qt::AlignmentFlag)align, text.c_str());
+        THIS->drawText(toQRect(rect), (Qt::AlignmentFlag)align, QString::fromStdString(text));
     }
 
     void Handle_fillPath(HandleRef _this, PainterPathRef path, BrushRef brush) {

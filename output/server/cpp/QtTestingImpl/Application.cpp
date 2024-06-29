@@ -12,7 +12,7 @@ namespace Application
     }
 
     void setStyle(std::string name) {
-        QApplication::setStyle(name.c_str());
+        QApplication::setStyle(QString::fromStdString(name));
     }
 
     int32_t exec() {

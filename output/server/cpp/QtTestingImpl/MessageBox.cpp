@@ -7,11 +7,11 @@
 namespace MessageBox
 {
     void Handle_setText(HandleRef _this, std::string text) {
-        THIS->setText(text.c_str());
+        THIS->setText(QString::fromStdString(text));
     }
 
     void Handle_setInformativeText(HandleRef _this, std::string text) {
-        THIS->setInformativeText(text.c_str());
+        THIS->setInformativeText(QString::fromStdString(text));
     }
 
     void Handle_setStandardButtons(HandleRef _this, uint32_t buttons) {
