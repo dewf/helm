@@ -144,7 +144,7 @@ let update (state: State) (msg: Msg) =
 let view (state: State) =
     let filterLabel = Label(Attrs = [ Label.Text "Filter prefix:" ])
     let filterEdit =
-        LineEdit(Attrs = [ Value state.FilterPattern ], OnTextChanged = SetFilter)
+        LineEdit(Text = state.FilterPattern, OnTextChanged = SetFilter)
 
     let model =
         let dataFunc row col role =
@@ -165,10 +165,10 @@ let view (state: State) =
         TreeView(Attrs = [ SortingEnabled true ], TreeModel = filterModel, OnClicked = SelectItem)
 
     let firstLabel = Label(Attrs = [ Label.Text "First:" ])
-    let firstEdit = LineEdit(Attrs = [ Value state.FirstEdit ], OnTextChanged = SetFirst)
+    let firstEdit = LineEdit(Text = state.FirstEdit, OnTextChanged = SetFirst)
 
     let lastLabel = Label(Attrs = [ Label.Text "Last:" ])
-    let lastEdit = LineEdit(Attrs = [ Value state.LastEdit ], OnTextChanged = SetLast)
+    let lastEdit = LineEdit(Text = state.LastEdit, OnTextChanged = SetLast)
 
     let createButton =
         let enabled =

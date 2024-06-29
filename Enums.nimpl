@@ -77,6 +77,11 @@ group SizePolicy {
     }
 }
 
+enum CursorMoveStyle {
+    LogicalMoveStyle,
+    VisualMoveStyle
+}
+
 enum ItemDataRole {
     DisplayRole = 0,
     DecorationRole = 1,

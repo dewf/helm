@@ -1,8 +1,11 @@
 ﻿module FSharpQt.Widgets.LineEdit
 
 open System
+open FSharpQt
 open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
+
+open FSharpQt.Attrs
 
 type Signal =
     | CursorPositionChanged of oldPos: int * newPos: int
@@ -13,16 +16,134 @@ type Signal =
     | TextChanged of text: string  // also emitted when the text is changed programmatically
     | TextEdited of text: string   // user input only
     
-type Attr =
-    | Value of string
-    | Enabled of bool
+type EchoMode =
+    | Normal
+    | NoEcho
+    | Password
+    | PasswordEchoOnEdit
+with
+    member internal this.QtValue =
+        match this with
+        | Normal -> LineEdit.EchoMode.Normal
+        | NoEcho -> LineEdit.EchoMode.NoEcho
+        | Password -> LineEdit.EchoMode.Password
+        | PasswordEchoOnEdit -> LineEdit.EchoMode.PasswordEchoOnEdit
     
-let private attrKey = function
-    | Value _ -> 0
-    | Enabled _ -> 1
-
-let private diffAttrs =
-    genericDiffAttrs attrKey
+type Attr =
+    | Alignment of align: MiscTypes.Alignment
+    | ClearButtonEnabled of enabled: bool
+    | CursorMoveStyle of style: MiscTypes.CursorMoveStyle
+    | CursorPosition of pos: int
+    | DragEnabled of enabled: bool
+    | EchoMode of mode: EchoMode
+    | Frame of enabled: bool
+    | InputMask of mask: string
+    | MaxLength of length: int
+    | Modified of state: bool
+    | PlaceholderText of text: string
+    | ReadOnly of value: bool
+    | Text of text: string
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Alignment _ -> "lineedit:alignment"
+            | ClearButtonEnabled _ -> "lineedit:clearbuttonenabled"
+            | CursorMoveStyle _ -> "lineedit:cursormovestyle"
+            | CursorPosition _ -> "lineedit:cursorposition"
+            | DragEnabled _ -> "lineedit:dragenabled"
+            | EchoMode _ -> "lineedit:echomode"
+            | Frame _ -> "lineedit:frame"
+            | InputMask _ -> "lineedit:inputmask"
+            | MaxLength _ -> "lineedit:maxlength"
+            | Modified _ -> "lineedit:modified"
+            | PlaceholderText _ -> "lineedit:placeholdertext"
+            | ReadOnly _ -> "lineedit:readonly"
+            | Text _ -> "lineedit:text"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? LineEditAttrTarget as editTarget ->
+                let lineEdit =
+                    editTarget.LineEdit
+                match this with
+                | Alignment align ->
+                    lineEdit.SetAlignment(align.QtValue)
+                | ClearButtonEnabled enabled ->
+                    lineEdit.SetClearButtonEnabled(enabled)
+                | CursorMoveStyle style ->
+                    lineEdit.SetCursorMoveStyle(style.QtValue)
+                | CursorPosition pos ->
+                    if editTarget.SetCursorPos(pos) then
+                        lineEdit.SetCursorPosition(pos)
+                | DragEnabled enabled ->
+                    lineEdit.SetDragEnabled(enabled)
+                | EchoMode mode ->
+                    lineEdit.SetEchoMode(mode.QtValue)
+                | Frame enabled ->
+                    lineEdit.SetFrame(enabled)
+                | InputMask mask ->
+                    lineEdit.SetInputMask(mask)
+                | MaxLength length ->
+                    lineEdit.SetMaxLength(length)
+                | Modified state ->
+                    lineEdit.SetModified(state)
+                | PlaceholderText text ->
+                    lineEdit.SetPlaceholderText(text)
+                | ReadOnly value ->
+                    lineEdit.SetReadOnly(value)
+                | Text text ->
+                    if editTarget.SetText(text) then
+                        lineEdit.SetText(text)
+            | _ ->
+                printfn "warning: LineEdit.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+type LineEditProps() =
+    inherit Widget.WidgetProps()
+    
+    member this.Alignment with set value =
+        this.PushAttr(Alignment value)
+        
+    member this.ClearButtonEnabled with set value =
+        this.PushAttr(ClearButtonEnabled value)
+        
+    member this.CursorMoveStyle with set value =
+        this.PushAttr(CursorMoveStyle value)
+        
+    member this.CursorPosition with set value =
+        this.PushAttr(CursorPosition value)
+        
+    member this.DragEnabled with set value =
+        this.PushAttr(DragEnabled value)
+        
+    member this.EchoMode with set value =
+        this.PushAttr(EchoMode value)
+        
+    member this.Frame with set value =
+        this.PushAttr(Frame value)
+        
+    member this.InputMask with set value =
+        this.PushAttr(InputMask value)
+        
+    member this.MaxLength with set value =
+        this.PushAttr(MaxLength value)
+        
+    member this.Modified with set value =
+        this.PushAttr(Modified value)
+        
+    member this.PlaceholderText with set value =
+        this.PushAttr(PlaceholderText value)
+        
+    member this.Readonly with set value =
+        this.PushAttr(ReadOnly value)
+        
+    member this.Text with set value =
+        this.PushAttr(Text value)
     
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable lineEdit = LineEdit.Create(this)
@@ -30,6 +151,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable currentMask = enum<LineEdit.SignalMask> 0
     
     let mutable lastValue = ""
+    let mutable lastCursorPos = -1
     
     let signalDispatch (s: Signal) =
         match signalMap s with
@@ -45,22 +167,29 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             lineEdit.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: Attr list) =
+    member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | Value str ->
-                // short-circuit identical current values
-                // dispatching is disabled during tree diffing so it's not the end of the world (no infinite feedback loops),
-                // BUT it can result in certain annoyances and needless calls into the C++ side,
-                // so we should probably always avoid setting identical values since they are probably the result of a previous signal
-                if str <> lastValue then
-                    lastValue <- str
-                    lineEdit.SetText(str)
-            | Enabled value ->
-                lineEdit.SetEnabled(value)
+            attr.ApplyTo(this)
+            
+    interface LineEditAttrTarget with
+        member this.Widget = lineEdit
+        member this.LineEdit = lineEdit
+        member this.SetText newValue =
+            if lastValue <> newValue then
+                lastValue <- newValue
+                true
+            else
+                false
+        member this.SetCursorPos newPos =
+            if lastCursorPos <> newPos then
+                lastCursorPos <- newPos
+                true
+            else
+                false
                 
     interface LineEdit.SignalHandler with
         member this.CursorPositionChanged (oldPos, newPos) =
+            lastCursorPos <- newPos
             signalDispatch (CursorPositionChanged (oldPos, newPos))
         member this.EditingFinished () =
             signalDispatch EditingFinished
@@ -81,14 +210,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             lineEdit.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: LineEdit.SignalMask) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: LineEdit.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: LineEdit.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: LineEdit.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -98,9 +227,10 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type LineEdit<'msg>() =
+    inherit LineEditProps()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
+    member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable signalMask = enum<LineEdit.SignalMask> 0

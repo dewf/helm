@@ -55,8 +55,85 @@ namespace LineEdit
         }
     };
 
-    void Handle_setText(HandleRef _this, std::string str) {
-        THIS->setText(str.c_str());
+    bool Handle_hasAcceptableInput(HandleRef _this) {
+        return THIS->hasAcceptableInput();
+    }
+
+    void Handle_setAlignment(HandleRef _this, uint32_t align) {
+        auto intValue = (int)align;
+        THIS->setAlignment((Qt::Alignment)intValue);
+    }
+
+    void Handle_setClearButtonEnabled(HandleRef _this, bool enabled) {
+        THIS->setClearButtonEnabled(enabled);
+    }
+
+    void Handle_setCursorMoveStyle(HandleRef _this, CursorMoveStyle style) {
+        THIS->setCursorMoveStyle((Qt::CursorMoveStyle)style);
+    }
+
+    void Handle_setCursorPosition(HandleRef _this, int32_t pos) {
+        THIS->setCursorPosition(pos);
+    }
+
+    std::string Handle_displayText(HandleRef _this) {
+        return THIS->displayText().toStdString();
+    }
+
+    void Handle_setDragEnabled(HandleRef _this, bool enabled) {
+        THIS->setDragEnabled(enabled);
+    }
+
+    void Handle_setEchoMode(HandleRef _this, EchoMode mode) {
+        THIS->setEchoMode((QLineEdit::EchoMode)mode);
+    }
+
+    void Handle_setFrame(HandleRef _this, bool enabled) {
+        THIS->setFrame(enabled);
+    }
+
+    bool Handle_hasSelectedText(HandleRef _this) {
+        return THIS->hasSelectedText();
+    }
+
+    void Handle_setInputMask(HandleRef _this, std::string mask) {
+        return THIS->setInputMask(QString::fromStdString(mask));
+    }
+
+    void Handle_setMaxLength(HandleRef _this, int32_t length) {
+        THIS->setMaxLength(length);
+    }
+
+    bool Handle_isModified(HandleRef _this) {
+        return THIS->isModified();
+    }
+
+    void Handle_setModified(HandleRef _this, bool modified) {
+        THIS->setModified(modified);
+    }
+
+    void Handle_setPlaceholderText(HandleRef _this, std::string text) {
+        THIS->setPlaceholderText(QString::fromStdString(text));
+    }
+
+    void Handle_setReadOnly(HandleRef _this, bool value) {
+        THIS->setReadOnly(value);
+    }
+
+    bool Handle_isRedoAvailable(HandleRef _this) {
+        return THIS->isRedoAvailable();
+    }
+
+    std::string Handle_selectedText(HandleRef _this) {
+        return THIS->selectedText().toStdString();
+    }
+
+    void Handle_setText(HandleRef _this, std::string text) {
+        THIS->setText(QString::fromStdString(text));
+    }
+
+    bool Handle_isUndoAvailable(HandleRef _this) {
+        return THIS->isUndoAvailable();
     }
 
     void Handle_setSignalMask(HandleRef _this, uint32_t mask) {

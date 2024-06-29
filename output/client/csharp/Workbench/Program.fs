@@ -179,7 +179,7 @@ let view (state: State) =
         PushButton(Text = "Toggle Headers", OnClicked = ToggleHeaders)
         
     let filterEdit =
-        LineEdit(OnTextEdited = FilterTextEdited)
+        LineEdit(ClearButtonEnabled = true, OnTextEdited = FilterTextEdited)
         
     let vbox =
         VBoxLayout(Items = [
@@ -190,7 +190,7 @@ let view (state: State) =
         ])
         
     MainWindow(
-        Attrs = [ MainWindow.Title "Wooooot"; Size (640, 480) ],
+        Attrs = [ MainWindow.Title "Hmmm wut?"; Size (640, 480) ],
         CentralLayout = vbox,
         MenuBar = menuBar
         // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either

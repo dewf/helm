@@ -1,6 +1,9 @@
 module LineEdit;
 
 import Widget;
+import Enums;
+
+enum EchoMode { Normal, NoEcho, Password, PasswordEchoOnEdit }
 
 flags SignalMask {
     CursorPositionChanged = 1 << 0,
@@ -23,7 +26,29 @@ interface SignalHandler {
 }
 
 opaque Handle extends Widget.Handle {
-    void setText(string str);
+    bool hasAcceptableInput();          // read-only
+    void setAlignment(Alignment align);
+    void setClearButtonEnabled(bool enabled);
+    void setCursorMoveStyle(CursorMoveStyle style);
+    void setCursorPosition(int pos);
+    string displayText();               // read-only
+    void setDragEnabled(bool enabled);
+    void setEchoMode(EchoMode mode);
+    void setFrame(bool enabled);
+    bool hasSelectedText();             // read-only
+    void setInputMask(string mask);
+    void setMaxLength(int length);
+
+    // not sure about these two, might not need the setter?
+    bool isModified();                  
+    void setModified(bool modified);
+
+    void setPlaceholderText(string text);
+    void setReadOnly(bool value);
+    bool isRedoAvailable();             // read-only
+    string selectedText();              // read-only
+    void setText(string text);
+    bool isUndoAvailable();             // read-only
     
     void setSignalMask(SignalMask mask);
 }

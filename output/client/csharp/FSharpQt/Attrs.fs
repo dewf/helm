@@ -74,6 +74,14 @@ type internal PushButtonAttrTarget =
         abstract member PushButton: PushButton.Handle
     end
     
+type internal LineEditAttrTarget =
+    interface
+        inherit WidgetAttrTarget
+        abstract member LineEdit: LineEdit.Handle
+        abstract member SetText: string -> bool     // binding guards
+        abstract member SetCursorPos: int -> bool
+    end
+    
 type internal ActionAttrTarget =
     interface
         inherit IAttrTarget

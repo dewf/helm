@@ -164,6 +164,15 @@ with
         | CustomContextMenu -> Enums.ContextMenuPolicy.CustomContextMenu
         | PreventContextMenu -> Enums.ContextMenuPolicy.PreventContextMenu
         
+type CursorMoveStyle =
+    | LogicalMoveStyle
+    | VisualModeStyle
+with
+    member internal this.QtValue =
+        match this with
+        | LogicalMoveStyle -> Enums.CursorMoveStyle.LogicalMoveStyle
+        | VisualModeStyle -> Enums.CursorMoveStyle.VisualMoveStyle
+        
 // various enums needed before widget proxies below:
 
 type ToolButtonStyle =
