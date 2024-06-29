@@ -101,11 +101,7 @@ with
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
     
 type WidgetProps() =
-    // internal attribute-from-properties storage that will be shared by all subclasses (eg Widget -> AbstractButton -> PushButton)
-    // needs to be reversed before use to maintain the order that was originally assigned
-    member val internal _attrs: IAttr list = [] with get, set
-    member internal this.PushAttr(attr: IAttr) =
-        this._attrs <- attr :: this._attrs
+    inherit PropsRoot()
     
     member this.Size with set value =
         this.PushAttr(Size value)

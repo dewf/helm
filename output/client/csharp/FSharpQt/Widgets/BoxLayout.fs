@@ -1,31 +1,59 @@
 ﻿module FSharpQt.Widgets.BoxLayout
 
 open System
+open FSharpQt.Widgets.Layout
 open Org.Whatever.QtTesting
 open FSharpQt
 open BuilderNode
 open Extensions
 open MiscTypes
 
+open FSharpQt.Attrs
+
 // no signals yet
 type Signal = unit
 
 type DirectionValue =
-    | TopToBottom
     | LeftToRight
+    | RightToLeft
+    | TopToBottom
+    | BottomToTop
+with
+    member this.QtValue =
+        match this with
+        | LeftToRight -> BoxLayout.Direction.LeftToRight
+        | RightToLeft -> BoxLayout.Direction.RightToLeft
+        | TopToBottom -> BoxLayout.Direction.TopToBottom
+        | BottomToTop -> BoxLayout.Direction.BottomToTop
 
 type Attr =
     | Direction of dir: DirectionValue
-    | Spacing of spacing: int
-    | ContentsMargins of left: int * top: int * right: int * bottom: int
-    
-let private keyFunc = function
-    | Direction _ -> 0
-    | Spacing _ -> 1
-    | ContentsMargins _ -> 2
-    
-let private diffAttrs =
-    genericDiffAttrs keyFunc
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as attrOther ->
+                this = attrOther
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Direction dir -> "boxlayout:direction"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? BoxLayoutAttrTarget as boxTarget ->
+                let boxLayout =
+                    boxTarget.BoxLayout
+                match this with
+                | Direction dir ->
+                    boxLayout.SetDirection(dir.QtValue)
+            | _ ->
+                printfn "warning: BoxLayout.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+type BoxLayoutProps() =
+    inherit LayoutProps()
+    member this.Direction with set value =
+        this.PushAttr(Direction value)
     
 [<RequireQualifiedAccess>]
 type internal ItemKey<'msg> =
@@ -122,46 +150,41 @@ let private addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
         ()
 
 type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Direction) =
+    let mutable boxLayout = BoxLayout.Create(initialDirection)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable box = BoxLayout.Create(initialDirection)
 
-    member this.Layout with get() = box
+    member this.Layout with get() = boxLayout
     member this.SignalMap with set value = signalMap <- value
     
     member this.AttachDeps (items: BoxItem<'msg> list) =
         for item in items do
-            addItem box item.Item
+            addItem boxLayout item.Item
     
-    member this.ApplyAttrs(attrs: Attr list) =
+    member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | Direction ov ->
-                let dir =
-                    match ov with
-                    | TopToBottom -> BoxLayout.Direction.TopToBottom
-                    | LeftToRight -> BoxLayout.Direction.LeftToRight
-                box.SetDirection(dir)
-            | Attr.Spacing spacing ->
-                box.SetSpacing(spacing)
-            | ContentsMargins (left, top, right, bottom) ->
-                box.SetContentsMargins (left, top, right, bottom)
+            attr.ApplyTo(this)
+            
+    interface BoxLayoutAttrTarget with
+        member this.Layout = boxLayout
+        member this.BoxLayout = boxLayout
                 
     interface IDisposable with
         member this.Dispose() =
-            box.Dispose()
+            boxLayout.Dispose()
             
     member this.Refill(items: BoxItem<'msg> list) =
-        box.RemoveAll()
+        boxLayout.RemoveAll()
         for item in items do
-            addItem box item.Item
+            addItem boxLayout item.Item
+            
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
     let model = new Model<'msg>(dispatch, initialDirection)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model
@@ -169,12 +192,14 @@ let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
+    
 type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
+    inherit BoxLayoutProps()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     let signalMap = (fun _ -> None)
     
-    member val Attrs: Attr list = [] with get, set
+    member this.Attrs = this._attrs |> List.rev
     member val Items: BoxItem<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
         

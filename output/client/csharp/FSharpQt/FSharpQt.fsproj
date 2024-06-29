@@ -30,8 +30,10 @@
         <Compile Include="Widgets\AbstractButton.fs" />
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
-        
+
+        <Compile Include="Widgets\Layout.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />
+        
         <Compile Include="Widgets\ComboBox.fs" />
         <Compile Include="Widgets\CustomWidget.fs" />
         <Compile Include="Widgets\Dialog.fs" />

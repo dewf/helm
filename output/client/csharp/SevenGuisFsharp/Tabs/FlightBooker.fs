@@ -120,13 +120,13 @@ let view (state: State) =
             DatePicker(
                 Attrs = [ Value value; DatePicker.Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
                 OnValueChanged = changeMsg)
-        HBoxLayout(Attrs = [
-            ContentsMargins (0, 0, 0, 0)
-            Spacing 10
-        ], Items = [
-            BoxItem(label)
-            BoxItem(picker)
-        ])
+        HBoxLayout(
+            ContentsMargins = (0, 0, 0, 0),
+            Spacing = 10,
+            Items = [
+                BoxItem(label)
+                BoxItem(picker)
+            ])
     let depart =
         labeledPicker "Depart" state.DepartDate DepartChanged true
     let return_ =

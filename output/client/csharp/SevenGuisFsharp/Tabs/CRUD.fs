@@ -204,7 +204,7 @@ let view (state: State) =
             // buttons:
             let hbox =
                 HBoxLayout(
-                    Attrs = [ BoxLayout.ContentsMargins (0, 0, 0, 0) ],
+                    ContentsMargins = (0, 0, 0, 0),
                     Items = [
                         BoxItem(createButton, stretch = 1)
                         BoxItem(updateButton, stretch = 1)

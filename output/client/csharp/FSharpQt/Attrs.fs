@@ -55,6 +55,18 @@ let createdOrChanged (changes: AttrDiffResult list) =
 // if you want to support a given type of attribute, you have to implement the target interface
 // reasonable enough!
 
+type internal LayoutAttrTarget =
+    interface
+        inherit IAttrTarget
+        abstract member Layout: Layout.Handle
+    end
+    
+type internal BoxLayoutAttrTarget =
+    interface
+        inherit LayoutAttrTarget
+        abstract member BoxLayout: BoxLayout.Handle
+    end
+
 type internal WidgetAttrTarget =
     interface
         inherit IAttrTarget
@@ -96,3 +108,10 @@ type internal SortFilterProxyModelAttrTarget =
         inherit IAttrTarget
         abstract member ProxyModel: SortFilterProxyModel.Handle
     end
+
+type PropsRoot() =
+    // internal attribute-from-properties storage that will be shared by subclasses (eg [Root] -> Widget -> AbstractButton -> PushButton)
+    // needs to be reversed before use to maintain the order that was originally assigned
+    member val internal _attrs: IAttr list = [] with get, set
+    member internal this.PushAttr(attr: IAttr) =
+        this._attrs <- attr :: this._attrs
