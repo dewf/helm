@@ -6,7 +6,7 @@ import PaintResources; // for color, brush, etc (deferred)
 @nodispose
 opaque Handle {
     bool isValid();
-    string toString();
+    string toString2(); // toString() is a C# thing
     int toInt();
     
     // no toIcon() yet, because ownership is murky (Icon is currently @nodispose)

@@ -19,6 +19,10 @@ namespace ModelIndex
         return THIS->column();
     }
 
+    void Handle_dispose(HandleRef _this) {
+        printf("QModelIndex Handle_dispose - you should never see this, and it needs to be removed (via @nodispose) Handle isn't owned (vs. OwnedHandle)\n");
+    }
+
     void OwnedHandle_dispose(OwnedHandleRef _this) {
         delete THIS;
     }

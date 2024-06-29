@@ -93,7 +93,7 @@ internal static class Program
         {
             if (index.IsValid() && index.Column() == 0 && index.Row() < _items.Count && role == Enums.ItemDataRole.EditRole)
             {
-                _items[index.Row()].Text = value.ToString();
+                _items[index.Row()].Text = value.ToString2();
                 var deferred = new ModelIndex.Deferred.FromHandle(index);
                 _interior.EmitDataChanged(deferred, deferred, []);
                 return true;

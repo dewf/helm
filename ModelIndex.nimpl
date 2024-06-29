@@ -1,6 +1,6 @@
 module ModelIndex;
 
-@nodispose
+// should be @nodispose but that requires some codegen work because OwnedHandle inherits and needs the _disposed field + IDisposable
 opaque Handle {
     bool isValid();
     int row();

@@ -12,7 +12,7 @@ namespace Variant
         return THIS->isValid();
     }
 
-    std::string Handle_toString(HandleRef _this) {
+    std::string Handle_toString2(HandleRef _this) {
         return THIS->toString().toStdString();
     }
 
