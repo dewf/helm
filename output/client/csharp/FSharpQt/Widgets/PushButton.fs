@@ -30,9 +30,9 @@ with
             | Flat _ -> "pushbutton:flat"
         override this.ApplyTo (target: IAttrTarget) =
             match target with
-            | :? PushButtonAttrTarget as buttonTarget ->
+            | :? PushButtonAttrTarget as attrTarget ->
                 let button =
-                    buttonTarget.PushButton
+                    attrTarget.PushButton
                 match this with
                 | AutoDefault state ->
                     button.SetAutoDefault(state)
@@ -43,7 +43,7 @@ with
             | _ ->
                 printfn "warning: PushButton.Attr couldn't ApplyTo() unknown target type [%A]" target
     
-type PushButtonProps<'msg>() =
+type Props<'msg>() =
     inherit AbstractButton.Props<'msg>()
     
     member internal this.SignalMask = enum<PushButton.SignalMask> (int this._signalMask)
@@ -165,7 +165,7 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type PushButton<'msg>() =
-    inherit PushButtonProps<'msg>()
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set

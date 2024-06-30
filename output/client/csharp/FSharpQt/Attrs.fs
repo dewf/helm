@@ -86,6 +86,12 @@ type internal WidgetAttrTarget =
         abstract member Widget: Widget.Handle
     end
     
+type internal FrameAttrTarget =
+    interface
+        inherit WidgetAttrTarget
+        abstract member Frame: Frame.Handle
+    end
+    
 type internal AbstractButtonAttrTarget =
     interface
         inherit WidgetAttrTarget

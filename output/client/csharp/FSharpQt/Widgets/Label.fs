@@ -62,11 +62,11 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                     | Center -> Enums.Alignment.AlignCenter
                 label.SetAlignment(qAlign)
             | FrameShape shape ->
-                label.SetFrameShape(shape.QtShape)
+                label.SetFrameShape(shape.QtValue)
             | FrameShadow shadow ->
-                label.SetFrameShadow(shadow.QtShadow)
+                label.SetFrameShadow(shadow.QtValue)
             | FrameStyle(shape, shadow) ->
-                label.SetFrameStyle(shape.QtShape, shadow.QtShadow)
+                label.SetFrameStyle(shape.QtValue, shadow.QtValue)
             | FrameLineWidth width ->
                 label.SetLineWidth(width)
             | FrameMidLineWidth midWidth ->
