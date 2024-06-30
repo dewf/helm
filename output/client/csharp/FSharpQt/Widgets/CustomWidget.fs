@@ -11,23 +11,8 @@ open Org.Whatever.QtTesting
 
 open EventDelegate
 
-type Signal =
-    | CustomContextMenuRequested of pos: Point
-    | WindowIconChanged of icon: IconProxy
-    | WindowTitleChanged of title: string
-    
-type Attr =
-    | UpdatesEnabled of enabled: bool
-    | MouseTracking of enabled: bool
-    | AcceptDrops of enabled: bool
-    
-let private attrKey = function
-    | UpdatesEnabled _ -> 0
-    | MouseTracking _ -> 1
-    | AcceptDrops _ -> 2
-    
-let private diffAttrs =
-    genericDiffAttrs attrKey
+open FSharpQt.Attrs
+open FSharpQt.Props.Widget
 
 type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as this =
     let widget = Widget.CreateSubclassed(this, methodMask, this)
@@ -74,15 +59,12 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
         // update/overwrite value
         eventDelegate <- newDelegate
     
-    member this.ApplyAttrs(attrs: Attr list) =
+    member this.ApplyAttrs(attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | AcceptDrops enabled ->
-                widget.SetAcceptDrops(enabled)
-            | UpdatesEnabled enabled ->
-                widget.SetUpdatesEnabled(enabled)
-            | MouseTracking enabled ->
-                widget.SetMouseTracking(enabled)
+            attr.ApplyTo(this)
+            
+    interface WidgetAttrTarget with
+        override this.Widget = widget
                 
     interface Widget.SignalHandler with
         member this.CustomContextMenuRequested pos =
@@ -145,7 +127,7 @@ type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDel
             (lifetimeResources :> IDisposable).Dispose()
             widget.Dispose()
 
-let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
+let rec private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch, methodMask, eventDelegate)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
@@ -155,7 +137,7 @@ let rec private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (di
     // model.EventDelegate <- eventDelegate
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.EventDelegate <- eventDelegate
@@ -177,39 +159,11 @@ type EventMaskItem =
     | DropEvents
 
 type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskItems: EventMaskItem list) =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
+    member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
-    let mutable signalMask = enum<Widget.SignalMask> 0
-    
-    let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
-    let mutable onWindowIconChanged: (IconProxy -> 'msg) option = None
-    let mutable onWindowTitleChanged: (string -> 'msg) option = None
-    
-    member this.OnCustomContextMenuRequested with set value =
-        onCustomContextMenuRequested <- Some value
-        signalMask <- signalMask ||| Widget.SignalMask.CustomContextMenuRequested
-        
-    member this.OnWindowIconChanged with set value =
-        onWindowIconChanged <- Some value
-        signalMask <- signalMask ||| Widget.SignalMask.WindowIconChanged
-        
-    member this.OnWindowTitleChanged with set value =
-        onWindowTitleChanged <- Some value
-        signalMask <- signalMask ||| Widget.SignalMask.WindowTitleChanged
-        
-    let signalMap = function
-        | CustomContextMenuRequested pos ->
-            onCustomContextMenuRequested
-            |> Option.map (fun f -> f pos)
-        | WindowIconChanged icon ->
-            onWindowIconChanged
-            |> Option.map (fun f -> f icon)
-        | WindowTitleChanged title ->
-            onWindowTitleChanged
-            |> Option.map (fun f -> f title)
     
     member private this.MethodMask =
         (enum<Widget.MethodMask> 0, eventMaskItems)
@@ -231,7 +185,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
         override this.Dependencies = []
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch this.MethodMask eventDelegate signalMask
+            this.model <- create this.Attrs this.SignalMap dispatch this.MethodMask eventDelegate this.SignalMask
             
         override this.AttachDeps () =
             ()
@@ -241,7 +195,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs signalMap eventDelegate signalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMap eventDelegate this.SignalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

@@ -279,7 +279,7 @@ let view (state: State) =
         CustomWidget(
             // first 2 args required
             EventDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
-            Attrs = [ MouseTracking true ], // tracking needed for move events without mouse down
+            MouseTracking = true, // tracking needed for move events without mouse down
             Attachments = [
                 "context", Attachment(contextMenu)
                 "edit", Attachment(dialog)

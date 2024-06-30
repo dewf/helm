@@ -355,7 +355,7 @@ let view (state: State) =
             MouseReleaseEvent
         ]
         CustomWidget(EventDelegate(state), events,
-                     Attrs = [ MouseTracking true ],
+                     MouseTracking = true,
                      Attachments = [ "timer", Attachment(timer) ])
     custom :> IWidgetNode<Msg>
 
