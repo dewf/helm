@@ -1,8 +1,7 @@
-﻿module FSharpQt.Props.AbstractButton
+﻿module FSharpQt.Widgets.AbstractButton
 
 open FSharpQt.Attrs
 open Org.Whatever.QtTesting
-
 open FSharpQt.MiscTypes
 
 type Signal =
@@ -15,7 +14,7 @@ type Signal =
     | Released
     | Toggled of checked_: bool
 
-type internal Attr =
+type private Attr =
     | AutoExclusive of state: bool
     | AutoRepeat of state: bool
     | AutoRepeatDelay of delay: int
@@ -80,7 +79,7 @@ with
             | _ ->
                 printfn "warning: AbstractButton.Attr couldn't ApplyTo() unknown target type [%A]" target
     
-type AbstractButtonProps<'msg>() =
+type Props<'msg>() =
     inherit Widget.Props<'msg>()
     
     let mutable onClicked: 'msg option = None

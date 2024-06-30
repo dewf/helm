@@ -2,13 +2,60 @@
 
 open System
 open Org.Whatever.QtTesting
-open FSharpQt
-open BuilderNode
-open Extensions
-open MiscTypes
+open FSharpQt.BuilderNode
+open FSharpQt.Extensions
 
+open FSharpQt.MiscTypes
 open FSharpQt.Attrs
-open FSharpQt.Props.BoxLayout
+
+// no signals yet
+type Signal = unit
+
+type Direction =
+    | LeftToRight
+    | RightToLeft
+    | TopToBottom
+    | BottomToTop
+with
+    member this.QtValue =
+        match this with
+        | LeftToRight -> BoxLayout.Direction.LeftToRight
+        | RightToLeft -> BoxLayout.Direction.RightToLeft
+        | TopToBottom -> BoxLayout.Direction.TopToBottom
+        | BottomToTop -> BoxLayout.Direction.BottomToTop
+
+type private Attr =
+    | Direction of dir: Direction
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as attrOther ->
+                this = attrOther
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Direction _ -> "boxlayout:direction"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? BoxLayoutAttrTarget as boxTarget ->
+                let boxLayout =
+                    boxTarget.BoxLayout
+                match this with
+                | Direction dir ->
+                    boxLayout.SetDirection(dir.QtValue)
+            | _ ->
+                printfn "warning: BoxLayout.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+type Props<'msg>() =
+    inherit Layout.Props<'msg>()
+    
+    member this.SignalMap: Signal -> 'msg option = (fun _ -> None)
+    
+    member this.Direction with set value =
+        this.PushAttr(Direction value)
+
 
 [<RequireQualifiedAccess>]
 type internal ItemKey<'msg> =
@@ -152,7 +199,6 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
     inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member this.Attrs = this._attrs |> List.rev
     member val Items: BoxItem<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
         

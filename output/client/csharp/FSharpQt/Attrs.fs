@@ -50,6 +50,19 @@ let createdOrChanged (changes: AttrDiffResult list) =
     |> List.choose (function
         | Created attr | Changed (_, attr) -> Some attr
         | _ -> None)
+    
+type PropsRoot() =
+    // internal attribute-from-properties storage that will be shared by subclasses (eg [Root] -> Widget -> AbstractButton -> PushButton)
+    // needs to be reversed before use to maintain the order that was originally assigned
+    // we do it this way (all subclasses sharing this single list) precisely to preserve the consumer-supplied order
+    let mutable _attrs: IAttr list = []
+    member this.Attrs = _attrs |> List.rev
+    member internal this.PushAttr(attr: IAttr) =
+        _attrs <- attr :: _attrs
+        
+    member val internal _signalMask = 0L with get, set
+    member internal this.AddSignal(flag: int64) =
+        this._signalMask <- this._signalMask ||| flag
 
 // various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
 // if you want to support a given type of attribute, you have to implement the target interface
@@ -117,3 +130,4 @@ type internal SortFilterProxyModelAttrTarget =
         inherit IAttrTarget
         abstract member ProxyModel: SortFilterProxyModel.Handle
     end
+

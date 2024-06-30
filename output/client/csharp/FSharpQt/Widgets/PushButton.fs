@@ -2,12 +2,65 @@
 
 open FSharpQt.BuilderNode
 open System
-open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
+open FSharpQt.MiscTypes
 open FSharpQt.Attrs
-open FSharpQt.Props
-open FSharpQt.Props.PushButton
+
+type Signal =
+    | AbstractButtonSignal of signal: AbstractButton.Signal
+    // no signals of our own :(
+    
+type private Attr =
+    | AutoDefault of state: bool
+    | Default of state: bool
+    | Flat of state: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | AutoDefault _ -> "pushbutton:autodefault"
+            | Default _ -> "pushbutton:default"
+            | Flat _ -> "pushbutton:flat"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? PushButtonAttrTarget as buttonTarget ->
+                let button =
+                    buttonTarget.PushButton
+                match this with
+                | AutoDefault state ->
+                    button.SetAutoDefault(state)
+                | Default state ->
+                    button.SetDefault(state)
+                | Flat state ->
+                    button.SetFlat(state)
+            | _ ->
+                printfn "warning: PushButton.Attr couldn't ApplyTo() unknown target type [%A]" target
+    
+type PushButtonProps<'msg>() =
+    inherit AbstractButton.Props<'msg>()
+    
+    member internal this.SignalMask = enum<PushButton.SignalMask> (int this._signalMask)
+    
+    member internal this.SignalMap = function
+        | AbstractButtonSignal signal ->
+            (this :> AbstractButton.Props<'msg>).SignalMap signal
+    
+    member this.AutoDefault with set value =
+        this.PushAttr(AutoDefault value)
+        
+    member this.Default with set value =
+        this.PushAttr(Default value)
+        
+    member this.Flat with set value =
+        this.PushAttr(Flat value)
+ 
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable button = PushButton.Create(this)
@@ -115,7 +168,6 @@ type PushButton<'msg>() =
     inherit PushButtonProps<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     interface IWidgetNode<'msg> with

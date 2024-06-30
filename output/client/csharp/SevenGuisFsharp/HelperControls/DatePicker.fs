@@ -114,7 +114,7 @@ let view (state: State) =
         let accept =
             PushButton(Text = "Woot!", OnClicked = CalendarOp Accept)
         let layout =
-            BoxLayout(Direction = Props.BoxLayout.TopToBottom, // hmmmm
+            BoxLayout(Direction = TopToBottom,
                       Items = [
                           BoxItem(reject)
                           BoxItem(accept)
@@ -124,7 +124,7 @@ let view (state: State) =
             Layout = layout)
     let hbox =
         BoxLayout(
-            Direction = Props.BoxLayout.LeftToRight,
+            Direction = LeftToRight,
             Spacing = 4,
             ContentsMargins = (0, 0, 0, 0),
             Items = [

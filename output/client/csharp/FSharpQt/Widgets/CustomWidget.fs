@@ -2,17 +2,15 @@
 
 open System
 
-open FSharpQt
 open FSharpQt.BuilderNode
 open FSharpQt.InputEnums
-open FSharpQt.MiscTypes
 open FSharpQt.Painting
 open Org.Whatever.QtTesting
+open FSharpQt.EventDelegate
 
-open EventDelegate
-
+open FSharpQt.MiscTypes
 open FSharpQt.Attrs
-open FSharpQt.Props.Widget
+open Widget
 
 type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as this =
     let widget = Widget.CreateSubclassed(this, methodMask, this)
@@ -162,7 +160,6 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
     inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MethodMask =

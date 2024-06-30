@@ -16,14 +16,6 @@
         <Compile Include="Painting.fs" />
         <Compile Include="EventDelegate.fs" />
         <Compile Include="Attrs.fs" />
-        <Compile Include="Props\PropsRoot.fs" />
-        <Compile Include="Props\Widget.fs" />
-        <Compile Include="Props\AbstractButton.fs" />
-        <Compile Include="Props\PushButton.fs" />
-        <Compile Include="Props\LineEdit.fs" />
-        <Compile Include="Props\Layout.fs" />
-        <Compile Include="Props\BoxLayout.fs" />
-        <Compile Include="Props\ComboBox.fs" />
 
         <Compile Include="Models\SimpleListModel.fs" />
         <Compile Include="Models\TrackedRows.fs" />
@@ -35,12 +27,16 @@
         <Compile Include="Widgets\Menus\MenuBar.fs" />
 
         <Compile Include="Widgets\Widget.fs" />
+
+        <Compile Include="Widgets\CustomWidget.fs" />
+
+        <Compile Include="Widgets\AbstractButton.fs" />
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
+        <Compile Include="Widgets\Layout.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />
         
         <Compile Include="Widgets\ComboBox.fs" />
-        <Compile Include="Widgets\CustomWidget.fs" />
         <Compile Include="Widgets\Dialog.fs" />
         <Compile Include="Widgets\FileDialog.fs" />
         <Compile Include="Widgets\Frame.fs" />

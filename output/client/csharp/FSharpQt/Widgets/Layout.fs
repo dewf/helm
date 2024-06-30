@@ -1,7 +1,6 @@
-﻿module FSharpQt.Props.Layout
+﻿module FSharpQt.Widgets.Layout
 
 open FSharpQt.Attrs
-open FSharpQt.Props.PropsRoot
 open Org.Whatever.QtTesting
 
 type SizeConstraint =
@@ -21,7 +20,7 @@ with
         | SetMaximumSize -> Layout.SizeConstraint.SetMaximumSize
         | SetMinAndMaxSize -> Layout.SizeConstraint.SetMinAndMaxSize
     
-type internal Attr =
+type private Attr =
     | Enabled of enabled: bool
     | Spacing of spacing: int
     | ContentsMargins of left: int * top: int * right: int * bottom: int
