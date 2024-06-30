@@ -4,6 +4,7 @@
 #include <QLineEdit>
 
 #include "util/SignalStuff.h"
+#include "util/convert.h"
 
 #define THIS ((LineEditWithHandler*)_this)
 
@@ -15,6 +16,11 @@ namespace LineEdit
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Widget
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // LineEdit
             { SignalMaskFlags::CursorPositionChanged, SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int,int)) },
             { SignalMaskFlags::EditingFinished, SIGNAL(editingFinished()), SLOT(onEditingFinished()) },
             { SignalMaskFlags::InputRejected, SIGNAL(inputRejected()), SLOT(onInputRejected()) },
@@ -32,6 +38,17 @@ namespace LineEdit
             }
         }
     public slots:
+        // Widget:
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // LineEdit:
         void onCursorPositionChanged(int oldPos, int newPos) {
             handler->cursorPositionChanged(oldPos, newPos);
         };

@@ -2,10 +2,12 @@
 
 open System
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
 open FSharpQt.Props.LineEdit
 open Org.Whatever.QtTesting
 
 open FSharpQt.Attrs
+open FSharpQt.Props
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable lineEdit = LineEdit.Create(this)
@@ -50,6 +52,22 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 false
                 
     interface LineEdit.SignalHandler with
+        // Widget:
+        member this.CustomContextMenuRequested pos =
+            Point.From pos
+            |> Widget.Signal.CustomContextMenuRequested
+            |> WidgetSignal
+            |> signalDispatch
+        member this.WindowIconChanged icon =
+            IconProxy(icon)
+            |> Widget.Signal.WindowIconChanged
+            |> WidgetSignal
+            |> signalDispatch
+        member this.WindowTitleChanged title =
+            Widget.Signal.WindowTitleChanged title
+            |> WidgetSignal
+            |> signalDispatch
+        // LineEdit:
         member this.CursorPositionChanged (oldPos, newPos) =
             lastCursorPos <- newPos
             signalDispatch (CursorPositionChanged (oldPos, newPos))

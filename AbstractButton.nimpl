@@ -18,6 +18,19 @@ flags SignalMask {
     Toggled = 1 << 6
 }
 
+interface SignalHandler {
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // AbstractButton:
+    void clicked(bool checkState);
+    void pressed();
+    void released();
+    void toggled(bool checkState);
+}
+
 @nodispose
 opaque Handle extends Widget.Handle {
     void setAutoExclusive(bool state);

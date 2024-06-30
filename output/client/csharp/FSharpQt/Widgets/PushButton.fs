@@ -2,6 +2,7 @@
 
 open FSharpQt.BuilderNode
 open System
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
 open FSharpQt.Attrs
@@ -47,16 +48,48 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.PushButton = button
                 
     interface PushButton.SignalHandler with
+        // Widget:
+        member this.CustomContextMenuRequested pos =
+            Point.From pos
+            |> Widget.Signal.CustomContextMenuRequested
+            |> AbstractButton.Signal.WidgetSignal
+            |> AbstractButtonSignal
+            |> signalDispatch
+        member this.WindowIconChanged icon =
+            IconProxy(icon)
+            |> Widget.Signal.WindowIconChanged
+            |> AbstractButton.Signal.WidgetSignal
+            |> AbstractButtonSignal
+            |> signalDispatch
+        member this.WindowTitleChanged title =
+            Widget.Signal.WindowTitleChanged title
+            |> AbstractButton.Signal.WidgetSignal
+            |> AbstractButtonSignal
+            |> signalDispatch
+            
+        // AbstractButton:
         member this.Clicked(checkState: bool) =
-            signalDispatch (AbstractButton.Signal.Clicked |> AbstractButtonSignal)
-            signalDispatch (AbstractButton.Signal.ClickedWithChecked checkState |> AbstractButtonSignal)
+            // v1 (simple)
+            AbstractButton.Signal.Clicked
+            |> AbstractButtonSignal
+            |> signalDispatch
+            // v2 (w/ check state)
+            AbstractButton.Signal.ClickedWithChecked checkState
+            |> AbstractButtonSignal
+            |> signalDispatch
         member this.Pressed() =
-            signalDispatch (AbstractButton.Signal.Pressed |> AbstractButtonSignal)
+            AbstractButton.Signal.Pressed
+            |> AbstractButtonSignal
+            |> signalDispatch
         member this.Released() =
-            signalDispatch (AbstractButton.Signal.Released |> AbstractButtonSignal)
+            AbstractButton.Signal.Released
+            |> AbstractButtonSignal
+            |> signalDispatch
         member this.Toggled(checkState: bool) =
             checked_ <- checkState
-            signalDispatch (AbstractButton.Signal.Toggled checkState |> AbstractButtonSignal)
+            AbstractButton.Signal.Toggled checkState
+            |> AbstractButtonSignal
+            |> signalDispatch
             
     interface IDisposable with
         member this.Dispose() =

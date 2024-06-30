@@ -1,6 +1,8 @@
 module LineEdit;
 
 import Widget;
+import Common;
+import Icon;
 import Enums;
 
 enum EchoMode { Normal, NoEcho, Password, PasswordEchoOnEdit }
@@ -22,7 +24,12 @@ flags SignalMask {
 }
 
 interface SignalHandler {
-    // TODO: widget signals or inheritance
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // LineEdit:
     void cursorPositionChanged(int oldPos, int newPos);
     void editingFinished();
     void inputRejected();

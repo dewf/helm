@@ -24,7 +24,12 @@ flags SignalMask {
 }
 
 interface SignalHandler {
-    // TODO: widget signals or inheritance
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+    
+    // ComboBox:
     void activated(int index);
     void currentIndexChanged(int index);
     void currentTextChanged(string text);

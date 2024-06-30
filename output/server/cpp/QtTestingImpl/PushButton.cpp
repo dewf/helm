@@ -2,6 +2,7 @@
 
 #include <QPushButton>
 #include "util/SignalStuff.h"
+#include "util/convert.h"
 
 #define THIS ((PushButtonWithHandler*)_this)
 
@@ -13,10 +14,16 @@ namespace PushButton
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Widget
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // AbstractButton
             { SignalMaskFlags::Clicked, SIGNAL(clicked(bool)), SLOT(onClicked(bool)) },
             { SignalMaskFlags::Pressed, SIGNAL(pressed()), SLOT(onPressed()) },
             { SignalMaskFlags::Released, SIGNAL(released()), SLOT(onReleased()) },
             { SignalMaskFlags::Toggled, SIGNAL(toggled(bool)), SLOT(onToggled(bool)) }
+            // none for PushButton
         };
     public:
         explicit PushButtonWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
@@ -27,6 +34,17 @@ namespace PushButton
             }
         }
     public slots:
+        // Widget:
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // AbstractButton:
         void onClicked(bool checkState) {
             handler->clicked(checkState);
         }

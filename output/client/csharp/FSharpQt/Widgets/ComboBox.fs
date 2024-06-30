@@ -2,9 +2,11 @@
 
 open System
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
 open FSharpQt.Attrs
+open FSharpQt.Props
 open FSharpQt.Props.ComboBox
 
 let someIfPositive (i: int) =
@@ -58,6 +60,22 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 false
                         
     interface ComboBox.SignalHandler with
+        // Widget:
+        member this.CustomContextMenuRequested pos =
+            Point.From pos
+            |> Widget.Signal.CustomContextMenuRequested
+            |> WidgetSignal
+            |> signalDispatch
+        member this.WindowIconChanged icon =
+            IconProxy(icon)
+            |> Widget.Signal.WindowIconChanged
+            |> WidgetSignal
+            |> signalDispatch
+        member this.WindowTitleChanged title =
+            Widget.Signal.WindowTitleChanged title
+            |> WidgetSignal
+            |> signalDispatch
+        // ComboBox:
         override this.Activated index =
             signalDispatch (someIfPositive index |> Activated)
         override this.CurrentIndexChanged index =
