@@ -5,58 +5,9 @@ open System
 open Org.Whatever.QtTesting
 
 open FSharpQt.Attrs
+open FSharpQt.Props
+open FSharpQt.Props.PushButton
 
-type Signal =
-    | Clicked
-    | ClickedWithState of state: bool // this is the full version of the Qt signal, but we offer simpler parameterless Clicked as well
-    | Pressed
-    | Released
-    | Toggled of state: bool
-    
-type Attr =
-    | AutoDefault of state: bool
-    | Default of state: bool
-    | Flat of state: bool
-with
-    interface IAttr with
-        override this.AttrEquals other =
-            match other with
-            | :? Attr as otherAttr ->
-                this = otherAttr
-            | _ ->
-                false
-        override this.Key =
-            match this with
-            | AutoDefault _ -> "pushbutton:autodefault"
-            | Default _ -> "pushbutton:default"
-            | Flat _ -> "pushbutton:flat"
-        override this.ApplyTo (target: IAttrTarget) =
-            match target with
-            | :? PushButtonAttrTarget as buttonTarget ->
-                let button =
-                    buttonTarget.PushButton
-                match this with
-                | AutoDefault state ->
-                    button.SetAutoDefault(state)
-                | Default state ->
-                    button.SetDefault(state)
-                | Flat state ->
-                    button.SetFlat(state)
-            | _ ->
-                printfn "warning: PushButton.Attr couldn't ApplyTo() unknown target type [%A]" target
-    
-type PushButtonProps() =
-    inherit AbstractButton.AbstractButtonProps()
-    
-    member this.AutoDefault with set value =
-        this.PushAttr(AutoDefault value)
-        
-    member this.Default with set value =
-        this.PushAttr(Default value)
-        
-    member this.Flat with set value =
-        this.PushAttr(Flat value)
-    
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable button = PushButton.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -97,15 +48,15 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 
     interface PushButton.SignalHandler with
         member this.Clicked(checkState: bool) =
-            signalDispatch (ClickedWithState checkState)
-            signalDispatch Clicked
+            signalDispatch (AbstractButton.Signal.Clicked |> AbstractButtonSignal)
+            signalDispatch (AbstractButton.Signal.ClickedWithChecked checkState |> AbstractButtonSignal)
         member this.Pressed() =
-            signalDispatch Pressed
+            signalDispatch (AbstractButton.Signal.Pressed |> AbstractButtonSignal)
         member this.Released() =
-            signalDispatch Released
+            signalDispatch (AbstractButton.Signal.Released |> AbstractButtonSignal)
         member this.Toggled(checkState: bool) =
             checked_ <- checkState
-            signalDispatch (Toggled checkState)
+            signalDispatch (AbstractButton.Signal.Toggled checkState |> AbstractButtonSignal)
             
     interface IDisposable with
         member this.Dispose() =
@@ -128,56 +79,17 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type PushButton<'msg>() =
-    inherit PushButtonProps()
+    inherit PushButtonProps<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member this.Attrs = this._attrs |> List.rev
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable signalMask = enum<PushButton.SignalMask> 0
-    
-    let mutable onClicked: 'msg option = None
-    let mutable onClickedWithState: (bool -> 'msg) option = None
-    let mutable onPressed: 'msg option = None
-    let mutable onReleased: 'msg option = None
-    let mutable onToggled: (bool -> 'msg) option = None
-    
-    member this.OnClicked with set value =
-        onClicked <- Some value
-        signalMask <- signalMask ||| PushButton.SignalMask.Clicked  // clicked #1
-        
-    member this.OnClickedWithState with set value =
-        onClickedWithState <- Some value
-        signalMask <- signalMask ||| PushButton.SignalMask.Clicked  // clicked #2
-        
-    member this.OnPressed with set value =
-        onPressed <- Some value
-        signalMask <- signalMask ||| PushButton.SignalMask.Pressed
-        
-    member this.OnReleased with set value =
-        onReleased <- Some value
-        signalMask <- signalMask ||| PushButton.SignalMask.Released
-        
-    member this.OnToggled with set value =
-        onToggled <- Some value
-        signalMask <- signalMask ||| PushButton.SignalMask.Toggled
-        
-    let signalMap = function
-        | Clicked -> onClicked
-        | ClickedWithState checkState ->
-            onClickedWithState
-            |> Option.map (fun f -> f checkState)
-        | Pressed -> onPressed
-        | Released -> onReleased
-        | Toggled state ->
-            onToggled
-            |> Option.map (fun f -> f state)
-                
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch signalMask
+            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
             
         override this.AttachDeps () =
             ()
@@ -185,7 +97,7 @@ type PushButton<'msg>() =
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> PushButton<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs signalMap signalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

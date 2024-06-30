@@ -10,7 +10,6 @@ open FSharpQt.Widgets
 open Label
 open BoxLayout
 open GridLayout
-open AbstractButton
 open PushButton
 open LineEdit
 

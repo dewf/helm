@@ -10,8 +10,6 @@ open FSharpQt.Widgets
 open HelperControls.DatePicker
 open BoxLayout
 open Label
-open Widget
-open AbstractButton
 open PushButton
 open ComboBox
 

@@ -8,16 +8,23 @@ import AbstractItemModel;
 import Icon;
 
 flags SignalMask {
-    Activated = 1 << 0,
-    CurrentIndexChanged = 1 << 1,
-    CurrentTextChanged = 1 << 2,
-    EditTextChanged = 1 << 3,
-    Highlighted = 1 << 4,
-    TextActivated = 1 << 5,
-    TextHighlighted = 1 << 6
+    // Widget:
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
+
+    // ComboBox:
+    Activated = 1 << 3,
+    CurrentIndexChanged = 1 << 4,
+    CurrentTextChanged = 1 << 5,
+    EditTextChanged = 1 << 6,
+    Highlighted = 1 << 7,
+    TextActivated = 1 << 8,
+    TextHighlighted = 1 << 9
 }
 
 interface SignalHandler {
+    // TODO: widget signals or inheritance
     void activated(int index);
     void currentIndexChanged(int index);
     void currentTextChanged(string text);

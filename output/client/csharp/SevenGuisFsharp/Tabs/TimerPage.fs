@@ -6,7 +6,6 @@ open Reactor
 open FSharpQt.Widgets
 open BoxLayout
 open Label
-open AbstractButton
 open PushButton
 open Slider
 open ProgressBar

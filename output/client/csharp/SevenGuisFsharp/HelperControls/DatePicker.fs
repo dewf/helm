@@ -12,7 +12,6 @@ open Dialog
 
 open LineEdit
 open PushButton
-open AbstractButton
 
 type Value =
     | Empty
@@ -115,7 +114,7 @@ let view (state: State) =
         let accept =
             PushButton(Text = "Woot!", OnClicked = CalendarOp Accept)
         let layout =
-            BoxLayout(Direction = TopToBottom,
+            BoxLayout(Direction = Props.BoxLayout.TopToBottom, // hmmmm
                       Items = [
                           BoxItem(reject)
                           BoxItem(accept)
@@ -125,7 +124,7 @@ let view (state: State) =
             Layout = layout)
     let hbox =
         BoxLayout(
-            Direction = LeftToRight,
+            Direction = Props.BoxLayout.LeftToRight,
             Spacing = 4,
             ContentsMargins = (0, 0, 0, 0),
             Items = [

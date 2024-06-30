@@ -1,6 +1,7 @@
-﻿module FSharpQt.Widgets.Layout
+﻿module FSharpQt.Props.Layout
 
 open FSharpQt.Attrs
+open FSharpQt.Props.PropsRoot
 open Org.Whatever.QtTesting
 
 type SizeConstraint =
@@ -56,7 +57,7 @@ with
             | _ ->
                 printfn "warning: Layout.Attr couldn't ApplyTo() unknown target type [%A]" target
 
-type LayoutProps() =
+type Props<'msg>() =
     inherit PropsRoot()
     
     member this.Enabled with set value =

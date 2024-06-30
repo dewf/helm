@@ -5,6 +5,19 @@ import KeySequence;
 import Widget;
 import Icon;
 
+flags SignalMask {
+    // Widget:
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
+
+    // AbstractButton:
+    Clicked = 1 << 3,
+    Pressed = 1 << 4,
+    Released = 1 << 5,
+    Toggled = 1 << 6
+}
+
 @nodispose
 opaque Handle extends Widget.Handle {
     void setAutoExclusive(bool state);

@@ -1,7 +1,6 @@
 ﻿module FSharpQt.Widgets.BoxLayout
 
 open System
-open FSharpQt.Widgets.Layout
 open Org.Whatever.QtTesting
 open FSharpQt
 open BuilderNode
@@ -9,52 +8,8 @@ open Extensions
 open MiscTypes
 
 open FSharpQt.Attrs
+open FSharpQt.Props.BoxLayout
 
-// no signals yet
-type Signal = unit
-
-type DirectionValue =
-    | LeftToRight
-    | RightToLeft
-    | TopToBottom
-    | BottomToTop
-with
-    member this.QtValue =
-        match this with
-        | LeftToRight -> BoxLayout.Direction.LeftToRight
-        | RightToLeft -> BoxLayout.Direction.RightToLeft
-        | TopToBottom -> BoxLayout.Direction.TopToBottom
-        | BottomToTop -> BoxLayout.Direction.BottomToTop
-
-type Attr =
-    | Direction of dir: DirectionValue
-with
-    interface IAttr with
-        override this.AttrEquals other =
-            match other with
-            | :? Attr as attrOther ->
-                this = attrOther
-            | _ ->
-                false
-        override this.Key =
-            match this with
-            | Direction dir -> "boxlayout:direction"
-        override this.ApplyTo (target: IAttrTarget) =
-            match target with
-            | :? BoxLayoutAttrTarget as boxTarget ->
-                let boxLayout =
-                    boxTarget.BoxLayout
-                match this with
-                | Direction dir ->
-                    boxLayout.SetDirection(dir.QtValue)
-            | _ ->
-                printfn "warning: BoxLayout.Attr couldn't ApplyTo() unknown target type [%A]" target
-                
-type BoxLayoutProps() =
-    inherit LayoutProps()
-    member this.Direction with set value =
-        this.PushAttr(Direction value)
-    
 [<RequireQualifiedAccess>]
 type internal ItemKey<'msg> =
     // used for internal comparisons, since we can't compare builder node interfaces against each other, we use the ContentKeys
@@ -194,10 +149,8 @@ let private dispose (model: Model<'msg>) =
     
     
 type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
-    inherit BoxLayoutProps()
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
-    
-    let signalMap = (fun _ -> None)
     
     member this.Attrs = this._attrs |> List.rev
     member val Items: BoxItem<'msg> list = [] with get, set
@@ -229,7 +182,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
                 |> Option.map (fun node -> (IntKey i, node)))
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch initialDirection
+            this.model <- create this.Attrs this.SignalMap dispatch initialDirection
             
         override this.AttachDeps () =
             this.model.AttachDeps this.Items
@@ -239,7 +192,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs signalMap
+            this.model <- migrate left'.model nextAttrs this.SignalMap
             this.MigrateContent(left')
                 
         override this.Dispose() =

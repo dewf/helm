@@ -6,16 +6,23 @@ import Enums;
 enum EchoMode { Normal, NoEcho, Password, PasswordEchoOnEdit }
 
 flags SignalMask {
-    CursorPositionChanged = 1 << 0,
-    EditingFinished = 1 << 1,
-    InputRejected = 1 << 2,
-    ReturnPressed = 1 << 3,
-    SelectionChanged = 1 << 4,
-    TextChanged = 1 << 5,
-    TextEdited = 1 << 6
+    // Widget:
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
+
+    // LineEdit:
+    CursorPositionChanged = 1 << 3,
+    EditingFinished = 1 << 4,
+    InputRejected = 1 << 5,
+    ReturnPressed = 1 << 6,
+    SelectionChanged = 1 << 7,
+    TextChanged = 1 << 8,
+    TextEdited = 1 << 9
 }
 
 interface SignalHandler {
+    // TODO: widget signals or inheritance
     void cursorPositionChanged(int oldPos, int newPos);
     void editingFinished();
     void inputRejected();

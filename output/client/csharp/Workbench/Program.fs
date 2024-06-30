@@ -16,7 +16,6 @@ open InputEnums
 
 open FSharpQt.Widgets
 open MainWindow
-open AbstractButton
 open PushButton
 open TreeView
 

@@ -117,10 +117,3 @@ type internal SortFilterProxyModelAttrTarget =
         inherit IAttrTarget
         abstract member ProxyModel: SortFilterProxyModel.Handle
     end
-
-type PropsRoot() =
-    // internal attribute-from-properties storage that will be shared by subclasses (eg [Root] -> Widget -> AbstractButton -> PushButton)
-    // needs to be reversed before use to maintain the order that was originally assigned
-    member val internal _attrs: IAttr list = [] with get, set
-    member internal this.PushAttr(attr: IAttr) =
-        this._attrs <- attr :: this._attrs
