@@ -119,37 +119,30 @@ type LineEditProps<'msg>() =
     member this.OnCursorPositionChanged with set value =
         onCursorPositionChanged <- Some value
         this.AddSignal(int LineEdit.SignalMask.CursorPositionChanged)
-        // signalMask <- signalMask ||| LineEdit.SignalMask.CursorPositionChanged
         
     member this.OnEditingFinished with set value =
         onEditingFinished <- Some value
         this.AddSignal(int LineEdit.SignalMask.EditingFinished)
-        // signalMask <- signalMask ||| LineEdit.SignalMask.EditingFinished
         
     member this.OnInputRejected with set value =
         onInputRejected <- Some value
         this.AddSignal(int LineEdit.SignalMask.InputRejected)
-        // signalMask <- signalMask ||| LineEdit.SignalMask.InputRejected
         
     member this.OnReturnPressed with set value =
         onReturnPressed <- Some value
         this.AddSignal(int LineEdit.SignalMask.ReturnPressed)
-        // signalMask <- signalMask ||| LineEdit.SignalMask.ReturnPressed
         
     member this.OnSelectionChanged with set value =
         onSelectionChanged <- Some value
         this.AddSignal(int LineEdit.SignalMask.SelectionChanged)
-        // signalMask <- signalMask ||| LineEdit.SignalMask.SelectionChanged
         
     member this.OnTextChanged with set value =
         onTextChanged <- Some value
         this.AddSignal(int LineEdit.SignalMask.TextChanged)
-        // signalMask <- signalMask ||| LineEdit.SignalMask.TextChanged
         
     member this.OnTextEdited with set value =
         onTextEdited <- Some value
         this.AddSignal(int LineEdit.SignalMask.TextEdited)
-        // signalMask <- signalMask ||| LineEdit.SignalMask.TextEdited
 
     member internal this.SignalMap = function
         | WidgetSignal signal ->

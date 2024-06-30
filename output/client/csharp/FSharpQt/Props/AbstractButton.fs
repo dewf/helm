@@ -94,27 +94,22 @@ type AbstractButtonProps<'msg>() =
     member this.OnClicked with set value =
         onClicked <- Some value
         this.AddSignal(int AbstractButton.SignalMask.Clicked)
-        // signalMask <- signalMask ||| AbstractButton.SignalMask.Clicked  // clicked #1 (simple)
         
     member this.OnClickedWithChecked with set value =
         onClickedWithChecked <- Some value
         this.AddSignal(int AbstractButton.SignalMask.Clicked)
-        // signalMask <- signalMask ||| AbstractButton.SignalMask.Clicked  // clicked #2 (with checked param)
         
     member this.OnPressed with set value =
         onPressed <- Some value
         this.AddSignal(int AbstractButton.SignalMask.Pressed)
-        // signalMask <- signalMask ||| AbstractButton.SignalMask.Pressed
         
     member this.OnReleased with set value =
         onReleased <- Some value
         this.AddSignal(int AbstractButton.SignalMask.Released)
-        // signalMask <- signalMask ||| AbstractButton.SignalMask.Released
         
     member this.OnToggled with set value =
         onToggled <- Some value
         this.AddSignal(int AbstractButton.SignalMask.Toggled)
-        // signalMask <- signalMask ||| AbstractButton.SignalMask.Toggled
 
     member internal this.SignalMap = function
         | WidgetSignal signal ->

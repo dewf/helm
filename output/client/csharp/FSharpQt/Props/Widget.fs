@@ -101,10 +101,6 @@ with
 type Props<'msg>() =
     inherit PropsRoot()
     
-    // TODO: switch to using .AddSignal() instead?
-    // and then this.SignalMask fetches that PropsRoot() value?
-    // let mutable signalMask = enum<Widget.SignalMask> 0
-    
     let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
     let mutable onWindowIconChanged: (IconProxy -> 'msg) option = None
     let mutable onWindowTitleChanged: (string -> 'msg) option = None
@@ -114,17 +110,14 @@ type Props<'msg>() =
     member this.OnCustomContextMenuRequested with set value =
         onCustomContextMenuRequested <- Some value
         this.AddSignal(int Widget.SignalMask.CustomContextMenuRequested)
-        // signalMask <- signalMask ||| Widget.SignalMask.CustomContextMenuRequested
         
     member this.OnWindowIconChanged with set value =
         onWindowIconChanged <- Some value
         this.AddSignal(int Widget.SignalMask.WindowIconChanged)
-        // signalMask <- signalMask ||| Widget.SignalMask.WindowIconChanged
         
     member this.OnWindowTitleChanged with set value =
         onWindowTitleChanged <- Some value
         this.AddSignal(int Widget.SignalMask.WindowTitleChanged)
-        // signalMask <- signalMask ||| Widget.SignalMask.WindowTitleChanged
         
     member internal this.SignalMap = function
         | CustomContextMenuRequested pos ->

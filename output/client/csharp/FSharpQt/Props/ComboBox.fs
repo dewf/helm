@@ -143,37 +143,30 @@ type Props<'msg>() =
     member this.OnActivated with set value =
         onActivated <- Some value
         this.AddSignal(int ComboBox.SignalMask.Activated)
-        // signalMask <- signalMask ||| ComboBox.SignalMask.Activated
         
     member this.OnCurrentIndexChanged with set value =
         onCurrentIndexChanged <- Some value
         this.AddSignal(int ComboBox.SignalMask.CurrentIndexChanged)
-        // signalMask <- signalMask ||| ComboBox.SignalMask.CurrentIndexChanged
         
     member this.OnCurrentTextChanged with set value =
         onCurrentTextChanged <- Some value
         this.AddSignal(int ComboBox.SignalMask.CurrentTextChanged)
-        // signalMask <- signalMask ||| ComboBox.SignalMask.CurrentTextChanged
         
     member this.OnEditTextChanged with set value =
         onEditTextChanged <- Some value
         this.AddSignal(int ComboBox.SignalMask.EditTextChanged)
-        // signalMask <- signalMask ||| ComboBox.SignalMask.EditTextChanged
         
     member this.OnHighlighted with set value =
         onHighlighted <- Some value
         this.AddSignal(int ComboBox.SignalMask.Highlighted)
-        // signalMask <- signalMask ||| ComboBox.SignalMask.Highlighted
         
     member this.OnTextActivated with set value =
         onTextActivated <- Some value
         this.AddSignal(int ComboBox.SignalMask.TextActivated)
-        // signalMask <- signalMask ||| ComboBox.SignalMask.TextActivated
         
     member this.OnTextHighlighted with set value =
         onTextHighlighted <- Some value
         this.AddSignal(int ComboBox.SignalMask.TextHighlighted)
-        // signalMask <- signalMask ||| ComboBox.SignalMask.TextHighlighted
         
     member internal this.SignalMap = function
         | WidgetSignal signal ->
