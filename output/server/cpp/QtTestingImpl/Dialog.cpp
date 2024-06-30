@@ -4,6 +4,7 @@
 #include <QDialog>
 
 #include "util/SignalStuff.h"
+#include "util/convert.h"
 
 #define THIS ((DialogWithHandler*)_this)
 
@@ -15,6 +16,11 @@ namespace Dialog
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+                // Widget:
+                { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+                { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+                { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+                // Dialog:
                 { SignalMaskFlags::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
                 { SignalMaskFlags::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
                 { SignalMaskFlags::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
@@ -33,6 +39,17 @@ namespace Dialog
             }
         }
     public slots:
+        // Widget:
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // Dialog:
         void onAccepted() {
             handler->accepted();
         }
@@ -43,6 +60,14 @@ namespace Dialog
             handler->rejected();
         }
     };
+
+    void Handle_setModal(HandleRef _this, bool state) {
+        THIS->setModal(state);
+    }
+
+    void Handle_setSizeGripEnabled(HandleRef _this, bool enabled) {
+        THIS->setSizeGripEnabled(enabled);
+    }
 
     void Handle_setParentDialogFlags(HandleRef _this, Widget::HandleRef parent) {
         THIS->setParent((QWidget*)parent, Qt::Dialog);

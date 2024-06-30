@@ -131,3 +131,14 @@ type internal SortFilterProxyModelAttrTarget =
         abstract member ProxyModel: SortFilterProxyModel.Handle
     end
 
+type internal DialogAttrTarget =
+    interface
+        inherit WidgetAttrTarget
+        abstract member Dialog: Dialog.Handle
+    end
+
+type internal FileDialogAttrTarget =
+    interface
+        inherit DialogAttrTarget
+        abstract member FileDialog: FileDialog.Handle
+    end

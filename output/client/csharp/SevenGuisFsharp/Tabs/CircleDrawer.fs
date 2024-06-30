@@ -267,7 +267,7 @@ let view (state: State) =
                 BoxItem(spacer = 10)
                 BoxItem(hbox)
             ])
-        Dialog(Attrs = [ Dialog.Title "Edit Radius" ], Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ... probably need to settle on a single manner of handling dialog close events
+        Dialog(WindowTitle = "Edit Radius", Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ... probably need to settle on a single manner of handling dialog close events
         
     let canvas =
         let contextMenu =

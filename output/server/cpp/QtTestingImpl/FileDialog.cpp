@@ -3,6 +3,7 @@
 #include <QFileDialog>
 
 #include "util/SignalStuff.h"
+#include "util/convert.h"
 
 #define THIS ((FileDialogWithHandler*)_this)
 
@@ -14,6 +15,10 @@ namespace FileDialog
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Widget:
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
             // from Dialog:
             { SignalMaskFlags::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
             { SignalMaskFlags::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
@@ -39,6 +44,17 @@ namespace FileDialog
             }
         }
     public slots:
+        // Widget:
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // Dialog:
         void onAccepted() {
             handler->accepted();
         };
@@ -48,6 +64,7 @@ namespace FileDialog
         void onRejected() {
             handler->rejected();
         }
+        // FileDialog:
         void onCurrentChanged(const QString &path) {
             handler->currentChanged(path.toStdString());
         }
@@ -89,8 +106,24 @@ namespace FileDialog
         THIS->setAcceptMode((QFileDialog::AcceptMode)mode);
     }
 
+    void Handle_setDefaultSuffix(HandleRef _this, std::string suffix) {
+        THIS->setDefaultSuffix(QString::fromStdString(suffix));
+    }
+
     void Handle_setFileMode(HandleRef _this, FileMode mode) {
         THIS->setFileMode((QFileDialog::FileMode)mode);
+    }
+
+    void Handle_setOptions(HandleRef _this, Options opts) {
+        THIS->setOptions((QFileDialog::Options)opts);
+    }
+
+    void Handle_setSupportedSchemes(HandleRef _this, std::vector<std::string> schemes) {
+        THIS->setSupportedSchemes(toQStringList(schemes));
+    }
+
+    void Handle_setViewMode(HandleRef _this, ViewMode mode) {
+        THIS->setViewMode((QFileDialog::ViewMode)mode);
     }
 
     void Handle_setNameFilter(HandleRef _this, std::string filter) {
@@ -111,14 +144,6 @@ namespace FileDialog
             qFilters.append(QString::fromStdString(filter));
         }
         THIS->setMimeTypeFilters(qFilters);
-    }
-
-    void Handle_setViewMode(HandleRef _this, ViewMode mode) {
-        THIS->setViewMode((QFileDialog::ViewMode)mode);
-    }
-
-    void Handle_setDefaultSuffix(HandleRef _this, std::string suffix) {
-        THIS->setDefaultSuffix(QString::fromStdString(suffix));
     }
 
     void Handle_setDirectory(HandleRef _this, std::string dir) {

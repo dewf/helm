@@ -3,6 +3,7 @@
 #include <Qt>
 #include <QRect>
 #include <QKeySequence>
+#include <QStringList>
 
 #include "../generated/Common.h"
 using namespace Common;
@@ -10,6 +11,14 @@ using namespace Common;
 using namespace Enums;
 
 #define STRUCT_CAST(b,a) *((b*)&a)
+
+inline QStringList toQStringList(const std::vector<std::string>& strings) {
+    QStringList ret;
+    for (auto & str : strings) {
+        ret.push_back(QString::fromStdString(str));
+    }
+    return ret;
+}
 
 inline QSize toQSize(const Size& sz) {
     return {sz.width, sz.height };

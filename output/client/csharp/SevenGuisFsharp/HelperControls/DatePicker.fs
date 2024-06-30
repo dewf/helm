@@ -119,9 +119,7 @@ let view (state: State) =
                           BoxItem(reject)
                           BoxItem(accept)
                       ])
-        Dialog(
-            Attrs = [ Dialog.Size (320, 200); Title state.DialogTitle ],
-            Layout = layout)
+        Dialog(Size = (320, 200), WindowTitle = state.DialogTitle, Layout = layout)
     let hbox =
         BoxLayout(
             Direction = LeftToRight,

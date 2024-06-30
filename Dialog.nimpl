@@ -1,20 +1,37 @@
 module Dialog;
 
+import Common;
+import Icon;
 import Widget;
 
 flags SignalMask {
-    Accepted = 1,
-    Finished = 1 << 1,
-    Rejected = 1 << 2
+    // Widget:
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
+
+    // Dialog:
+    Accepted = 1 << 3,
+    Finished = 1 << 4,
+    Rejected = 1 << 5
 }
 
 interface SignalHandler {
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // Dialog:
     void accepted();
     void finished(int result);
     void rejected();
 }
 
 opaque Handle extends Widget.Handle {
+    void setModal(bool state);
+    void setSizeGripEnabled(bool enabled);
+
     void setParentDialogFlags(Widget.Handle parent); // a version where we're setting WindowFlags (Qt::Dialog) - otherwise it won't work
 
     void accept();

@@ -88,11 +88,7 @@ namespace ComboBox
     }
 
     void Handle_addItems(HandleRef _this, std::vector<std::string> texts) {
-        QStringList items;
-        for (auto & str : texts) {
-            items.push_back(QString::fromStdString(str));
-        }
-        THIS->addItems(items);
+        THIS->addItems(toQStringList(texts));
     }
 
     void Handle_setModel(HandleRef _this, AbstractItemModel::HandleRef model) {

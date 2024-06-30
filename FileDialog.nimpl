@@ -1,23 +1,30 @@
 module FileDialog;
 
+import Common;
+import Icon;
 import Dialog;
 
 flags SignalMask {
+    // Widget:
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
+
     // from Dialog:
-    Accepted = 1 << 0,
-    Finished = 1 << 1,
-    Rejected = 1 << 2,
+    Accepted = 1 << 3,
+    Finished = 1 << 4,
+    Rejected = 1 << 5,
 
     // FileDialog:
-    CurrentChanged = 1 << 3,
-    CurrentUrlChanged = 1 << 4,
-    DirectoryEntered = 1 << 5,
-    DirectoryUrlEntered = 1 << 6,
-    FileSelected = 1 << 7,
-    FilesSelected = 1 << 8,
-    FilterSelected = 1 << 9,
-    UrlSelected = 1 << 10,
-    UrlsSelected = 1 << 11
+    CurrentChanged = 1 << 6,
+    CurrentUrlChanged = 1 << 7,
+    DirectoryEntered = 1 << 8,
+    DirectoryUrlEntered = 1 << 9,
+    FileSelected = 1 << 10,
+    FilesSelected = 1 << 11,
+    FilterSelected = 1 << 12,
+    UrlSelected = 1 << 13,
+    UrlsSelected = 1 << 14
 }
 
 enum FileMode {
@@ -37,23 +44,41 @@ enum AcceptMode {
     Save
 }
 
+flags Options {
+    ShowDirsOnly                = 0x00000001,
+    DontResolveSymlinks         = 0x00000002,
+    DontConfirmOverwrite        = 0x00000004,
+    DontUseNativeDialog         = 0x00000008,
+    ReadOnly                    = 0x00000010,
+    HideNameFilterDetails       = 0x00000020,
+    DontUseCustomDirectoryIcons = 0x00000040
+}
+
 opaque Handle extends Dialog.Handle {
+    // properties
     void setAcceptMode(AcceptMode mode);
+    void setDefaultSuffix(string suffix);
     void setFileMode(FileMode mode);
+    void setOptions(Options opts);
+    void setSupportedSchemes(Array<string> schemes);
+    void setViewMode(ViewMode mode);
+    // others:
     void setNameFilter(string filter);
     void setNameFilters(Array<string> filters);
     void setMimeTypeFilters(Array<string> filters);
-    void setViewMode(ViewMode mode);
-    void setDefaultSuffix(string suffix);
     void setDirectory(string dir);
     void selectFile(string file);
-    
     Array<string> selectedFiles();
     
     void setSignalMask(SignalMask mask);
 }
 
 interface SignalHandler {
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
     // from Dialog:
     void accepted();
     void finished(int result);
