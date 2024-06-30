@@ -113,7 +113,7 @@ let view (state: State) =
         ComboBox(StringItems = items, OnCurrentIndexChanged = indexToMsg)
     let labeledPicker labelText value changeMsg enabled =
         let label =
-            Label(Attrs = [ Label.Text labelText ])
+            Label(Text = labelText)
         let picker =
             DatePicker(
                 Attrs = [ Value value; DatePicker.Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
@@ -130,7 +130,7 @@ let view (state: State) =
     let return_ =
         labeledPicker "Return" state.ReturnDate ReturnChanged (state.Mode = RoundTrip)
     let status =
-        Label(Attrs = [ Label.Text status ])
+        Label(Text = status)
     let bookButton =
         PushButton(Text = "Book Trip", Enabled = canBook)
     VBoxLayout(

@@ -173,6 +173,43 @@ with
         | LogicalMoveStyle -> Enums.CursorMoveStyle.LogicalMoveStyle
         | VisualModeStyle -> Enums.CursorMoveStyle.VisualMoveStyle
         
+
+type TextFormat =
+    | PlainText
+    | RichText
+    | AutoText
+    | MarkdownText
+with
+    member this.QtValue =
+        match this with
+        | PlainText -> Enums.TextFormat.PlainText
+        | RichText -> Enums.TextFormat.RichText
+        | AutoText -> Enums.TextFormat.AutoText
+        | MarkdownText -> Enums.TextFormat.MarkdownText
+        
+type TextInteractionFlag =
+    | TextSelectableByMouse
+    | TextSelectableByKeyboard
+    | LinksAccessibleByMouse
+    | LinksAccessibleByKeyboard
+    | TextEditable
+    | TextEditorInteraction
+    | TextBrowserInteraction
+with
+    static member QtSetFrom (flags: TextInteractionFlag seq) =
+        (enum<Enums.TextInteractionFlags> 0, flags)
+        ||> Seq.fold (fun acc item ->
+            let flag =
+                match item with
+                | TextSelectableByMouse -> Enums.TextInteractionFlags.TextSelectableByMouse
+                | TextSelectableByKeyboard -> Enums.TextInteractionFlags.TextSelectableByMouse
+                | LinksAccessibleByMouse -> Enums.TextInteractionFlags.TextSelectableByMouse
+                | LinksAccessibleByKeyboard -> Enums.TextInteractionFlags.TextSelectableByMouse
+                | TextEditable -> Enums.TextInteractionFlags.TextSelectableByMouse
+                | TextEditorInteraction -> Enums.TextInteractionFlags.TextSelectableByMouse
+                | TextBrowserInteraction -> Enums.TextInteractionFlags.TextSelectableByMouse
+            acc ||| flag)
+        
 // various enums needed before widget proxies below:
 
 type ToolButtonStyle =

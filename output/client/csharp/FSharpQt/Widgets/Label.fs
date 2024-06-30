@@ -1,108 +1,214 @@
 ﻿module FSharpQt.Widgets.Label
 
-open FSharpQt.BuilderNode
 open System
+open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
-type Signal = unit
+open FSharpQt.Attrs
+open FSharpQt.MiscTypes
 
-type Align =
-    | Left
-    | HCenter
-    | Right
-    | Top
-    | VCenter
-    | Bottom
-    | Center
+type internal Signal =
+    // inherited
+    | FrameSignal of signal: Frame.Signal
+    // ours
+    | LinkActivated of link: string
+    | LinkHovered of link: string
 
-type Attr =
-    | FrameShape of shape: FSharpQt.Widgets.Frame.Shape
-    | FrameShadow of shadow: FSharpQt.Widgets.Frame.Shadow
-    | FrameStyle of shape: FSharpQt.Widgets.Frame.Shape * shadow: FSharpQt.Widgets.Frame.Shadow
-    | FrameLineWidth of width: int
-    | FrameMidLineWidth of midWidth: int
+type private Attr =
+    | Alignment of align: Alignment
+    | Indent of indent: int
+    | Margin of margin: int
+    | OpenExternalLinks of state: bool
+//    | Pixmap of pixmap: Pixmap
+    | ScaledContents of state: bool
     | Text of text: string
-    | Alignment of align: Align
+    | TextFormat of format: TextFormat
+    | TextInteractionFlags of flags: TextInteractionFlag seq
+    | WordWrap of state: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Alignment _ -> "label:alignment"
+            | Indent _ -> "label:indent"
+            | Margin _ -> "label:margin"
+            | OpenExternalLinks _ -> "label:openexternallinks"
+            | ScaledContents _ -> "label:scaledcontents"
+            | Text _ -> "label:text"
+            | TextFormat _ -> "label:textformat"
+            | TextInteractionFlags _ -> "label:textinteractionflags"
+            | WordWrap _ -> "label:wordwrap"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? LabelAttrTarget as attrTarget ->
+                let label =
+                    attrTarget.Label
+                match this with
+                | Alignment align ->
+                    label.SetAlignment(align.QtValue)
+                | Indent indent ->
+                    label.SetIndent(indent)
+                | Margin margin ->
+                    label.SetMargin(margin)
+                | OpenExternalLinks state ->
+                    label.SetOpenExternalLinks(state)
+                | ScaledContents state ->
+                    label.SetScaledContents(state)
+                | Text text ->
+                    label.SetText(text)
+                | TextFormat format ->
+                    label.SetTextFormat(format.QtValue)
+                | TextInteractionFlags flags ->
+                    label.SetTextInteractionFlags(flags |> TextInteractionFlag.QtSetFrom)
+                | WordWrap state ->
+                    label.SetWordWrap(state)
+            | _ ->
+                printfn "warning: Label.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+type Props<'msg>() =
+    inherit Frame.Props<'msg>()
     
-let keyFunc = function
-    | FrameShape _ -> 0
-    | FrameShadow _ -> 1
-    | FrameStyle _ -> 2
-    | FrameLineWidth _ -> 3
-    | FrameMidLineWidth _ -> 4
-    | Text _ -> 5
-    | Alignment _ -> 6
+    let mutable maybeOnLinkActivated: (string -> 'msg) option = None
+    let mutable maybeOnLinkHovered: (string -> 'msg) option = None
 
-let private diffAttrs =
-    genericDiffAttrs keyFunc
+    member internal this.SignalMask = enum<Label.SignalMask> (int this._signalMask)
+    
+    member this.OnLinkActivated with set value =
+        maybeOnLinkActivated <- value
+        this.AddSignal(int Label.SignalMask.LinkActivated)
+        
+    member this.OnLinkHovered with set value =
+        maybeOnLinkHovered <- value
+        this.AddSignal(int Label.SignalMask.LinkHovered)
+        
+    member internal this.SignalMap = function
+        | FrameSignal signal ->
+            (this :> Frame.Props<'msg>).SignalMap signal
+        | LinkActivated link ->
+            maybeOnLinkActivated
+            |> Option.map (fun f -> f link)
+        | LinkHovered link ->
+            maybeOnLinkHovered
+            |> Option.map (fun f -> f link)
+        
+    member this.Alignment with set value =
+        this.PushAttr(Alignment value)
+        
+    member this.Indent with set value =
+        this.PushAttr(Indent value)
+        
+    member this.Margin with set value =
+        this.PushAttr(Margin value)
+        
+    member this.OpenExternalLinks with set value =
+        this.PushAttr(OpenExternalLinks value)
+        
+    // member this.Pixmap with set value =
+    //     this.PushAttr(Pixmap value)
 
-type private Model<'msg>(dispatch: 'msg -> unit) =
+    member this.ScaledContents with set value =
+        this.PushAttr(ScaledContents value)
+        
+    member this.Text with set value =
+        this.PushAttr(Text value)
+        
+    member this.TextFormat with set value =
+        this.PushAttr(TextFormat value)
+        
+    member this.TextInteractionFlags with set value =
+        this.PushAttr(TextInteractionFlags value)
+        
+    member this.WordWrap with set value =
+        this.PushAttr(WordWrap value)
+
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    let mutable label = Label.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable label = Label.Create()
+    let mutable currentMask = enum<Label.SignalMask> 0
     
-    // no 'do' block currently since no signals
+    let signalDispatch (s: Signal) =
+        signalMap s
+        |> Option.iter dispatch
     
-    member this.Widget with get() = label
+    member this.Label with get() = label
     member this.SignalMap with set value = signalMap <- value
     
-    member this.ApplyAttrs (attrs: Attr list) =
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            label.SetSignalMask(value)
+            currentMask <- value
+    
+    member this.ApplyAttrs (attrs: IAttr list) =
         for attr in attrs do
-            match attr with
-            | Text text ->
-                label.SetText(text)
-            | Alignment align ->
-                let qAlign =
-                    match align with
-                    | Left -> Enums.Alignment.AlignLeft
-                    | HCenter -> Enums.Alignment.AlignHCenter
-                    | Right -> Enums.Alignment.AlignRight
-                    | Top -> Enums.Alignment.AlignTop
-                    | VCenter -> Enums.Alignment.AlignVCenter
-                    | Bottom -> Enums.Alignment.AlignBottom
-                    | Center -> Enums.Alignment.AlignCenter
-                label.SetAlignment(qAlign)
-            | FrameShape shape ->
-                label.SetFrameShape(shape.QtValue)
-            | FrameShadow shadow ->
-                label.SetFrameShadow(shadow.QtValue)
-            | FrameStyle(shape, shadow) ->
-                label.SetFrameStyle(shape.QtValue, shadow.QtValue)
-            | FrameLineWidth width ->
-                label.SetLineWidth(width)
-            | FrameMidLineWidth midWidth ->
-                label.SetMidLineWidth(midWidth)
+            attr.ApplyTo(this)
+            
+    interface LabelAttrTarget with
+        member this.Widget = label
+        member this.Frame = label
+        member this.Label = label
+        
+    interface Label.SignalHandler with
+        // Widget:
+        member this.CustomContextMenuRequested pos =
+            Point.From pos
+            |> Widget.Signal.CustomContextMenuRequested
+            |> Frame.WidgetSignal
+            |> FrameSignal
+            |> signalDispatch
+        member this.WindowIconChanged icon =
+            IconProxy(icon)
+            |> Widget.Signal.WindowIconChanged
+            |> Frame.WidgetSignal
+            |> FrameSignal
+            |> signalDispatch
+        member this.WindowTitleChanged title =
+            Widget.Signal.WindowTitleChanged title
+            |> Frame.WidgetSignal
+            |> FrameSignal
+            |> signalDispatch
+        // Label:
+        member this.LinkActivated link =
+            signalDispatch (LinkActivated link)
+        member this.LinkHovered link =
+            signalDispatch (LinkHovered link)
                 
     interface IDisposable with
         member this.Dispose() =
             label.Dispose()
             
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Label.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
+    model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: Label.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Label<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
-    let signalMap = (fun _ -> None)
             
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
         
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch
+            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
             
         override this.AttachDeps() =
             ()
@@ -110,16 +216,16 @@ type Label<'msg>() =
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> Label<'msg>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs signalMap
+            this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
 
         override this.Widget =
-            (this.model.Widget :> Widget.Handle)
+            this.model.Label
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.Label
             
         override this.Attachments =
             this.Attachments

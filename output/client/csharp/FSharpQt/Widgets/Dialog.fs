@@ -8,7 +8,7 @@ open Org.Whatever.QtTesting
 open FSharpQt.Attrs
 open FSharpQt.MiscTypes
 
-type Signal =
+type internal Signal =
     // inherited
     | WidgetSignal of signal: Widget.Signal
     // ours
@@ -65,7 +65,7 @@ type Props<'msg>() =
         onRejected <- Some value
         this.AddSignal(int Dialog.SignalMask.Rejected)
 
-    member this.SignalMap = function
+    member internal this.SignalMap = function
         | WidgetSignal signal ->
             (this :> Widget.Props<'msg>).SignalMap signal
         | Accepted ->

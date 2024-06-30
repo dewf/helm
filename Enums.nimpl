@@ -82,6 +82,25 @@ enum CursorMoveStyle {
     VisualMoveStyle
 }
 
+enum TextFormat {
+    PlainText,
+    RichText,
+    AutoText,
+    MarkdownText
+}
+
+flags TextInteractionFlags {
+    NoTextInteraction         = 0,
+    TextSelectableByMouse     = 1,
+    TextSelectableByKeyboard  = 2,
+    LinksAccessibleByMouse    = 4,
+    LinksAccessibleByKeyboard = 8,
+    TextEditable              = 16,
+
+    TextEditorInteraction     = TextSelectableByMouse | TextSelectableByKeyboard | TextEditable,
+    TextBrowserInteraction    = TextSelectableByMouse | LinksAccessibleByMouse | LinksAccessibleByKeyboard
+}
+
 enum ItemDataRole {
     DisplayRole = 0,
     DecorationRole = 1,

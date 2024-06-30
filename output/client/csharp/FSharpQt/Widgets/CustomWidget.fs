@@ -12,7 +12,7 @@ open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 open Widget
 
-type Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as this =
+type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as this =
     let widget = Widget.CreateSubclassed(this, methodMask, this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     

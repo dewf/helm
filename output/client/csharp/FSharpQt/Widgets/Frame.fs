@@ -7,7 +7,7 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-type Signal =
+type internal Signal =
     | WidgetSignal of signal: Widget.Signal
 
 type Shape =
@@ -89,7 +89,7 @@ type Props<'msg>() =
     
     member internal this.SignalMask = enum<Frame.SignalMask> (int this._signalMask)
     
-    member this.SignalMap = function
+    member internal this.SignalMap = function
         | WidgetSignal signal ->
             (this :> Widget.Props<'msg>).SignalMap signal
     
@@ -120,7 +120,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         signalMap s
         |> Option.iter dispatch
     
-    member this.Widget with get() = frame
+    member this.Frame with get() = frame
     member this.SignalMap with set value = signalMap <- value
     
     member this.SignalMask with set value =
@@ -199,10 +199,10 @@ type Frame<'msg>() =
             (this.model :> IDisposable).Dispose()
 
         override this.Widget =
-            (this.model.Widget :> Widget.Handle)
+            this.model.Frame
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.Frame
             
         override this.Attachments =
             this.Attachments

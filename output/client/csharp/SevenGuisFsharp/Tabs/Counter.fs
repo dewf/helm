@@ -2,6 +2,7 @@
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.MiscTypes
 open Reactor
 open FSharpQt.Widgets
 open BoxLayout
@@ -28,10 +29,7 @@ let update (state: State) (msg: Msg) =
         
 let view (state: State) =
     let label =
-        Label(Attrs = [
-            Label.Text $"Count: {state.Count}"
-            Alignment Center
-        ])
+        Label(Text = $"Count: {state.Count}", Alignment = Center)
     let button =
         PushButton(Text = "Increment", OnClicked = Increment)
     HBoxLayout(

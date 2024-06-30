@@ -7,7 +7,7 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-type Signal =
+type internal Signal =
     // inherited
     | DialogSignal of signal: Dialog.Signal
     // ours
@@ -190,7 +190,7 @@ type Props<'msg>() =
         onUrlsSelected <- Some value
         this.AddSignal(int FileDialog.SignalMask.UrlsSelected)
         
-    member this.SignalMap = function
+    member internal this.SignalMap = function
         | DialogSignal signal ->
             (this :> Dialog.Props<'msg>).SignalMap signal
         | CurrentChanged path ->

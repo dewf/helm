@@ -2,12 +2,49 @@ module Label;
 
 import Common;
 import Frame;
+import Icon;
 import Enums;
+import Pixmap;
 
-opaque Handle extends Frame.Handle {
-    void setText(string text);
-    void setAlignment(Alignment align);
+flags SignalMask {
+    // Widget:
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
+
+    // (none for Frame)
+
+    // Label:
+    LinkActivated = 1 << 3,
+    LinkHovered = 1 << 4
 }
 
-Handle create();
+interface SignalHandler {
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
 
+    // Label:
+    void linkActivated(string link);
+    void linkHovered(string link);
+}
+
+opaque Handle extends Frame.Handle {
+    void setAlignment(Alignment align);
+    bool hasSelectedText();
+    void setIndent(int indent);
+    void setMargin(int margin);
+    void setOpenExternalLinks(bool state);
+    void setPixmap(Pixmap.Deferred pixmap);
+    void setScaledContents(bool state);
+    string selectedText();
+    void setText(string text);
+    void setTextFormat(TextFormat format);
+    void setTextInteractionFlags(TextInteractionFlags interactionFlags);
+    void setWordWrap(bool state);
+
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);

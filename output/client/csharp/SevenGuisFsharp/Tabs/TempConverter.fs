@@ -74,11 +74,11 @@ let view (state: State) =
     let celsiusText =
         LineEdit(Text = state.CelsiusText, OnTextChanged = SetCelsius)
     let celsiusLabel =
-        Label(Attrs = [ Text "Celsius = " ])
+        Label(Text = "Celsius = ")
     let fahrenText =
         LineEdit(Text = state.FahrenText, OnTextChanged = SetFahrenheit)
     let fahrenLabel =
-        Label(Attrs = [ Text "Fahrenheit" ])
+        Label(Text = "Fahrenheit")
     HBoxLayout(
         Items = [
             BoxItem(celsiusText)

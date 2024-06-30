@@ -4,7 +4,7 @@ open FSharpQt.Attrs
 open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 
-type Signal =
+type internal Signal =
     // inherited
     | WidgetSignal of signal: Widget.Signal
     // ours

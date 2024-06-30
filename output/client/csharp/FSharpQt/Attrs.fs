@@ -92,6 +92,12 @@ type internal FrameAttrTarget =
         abstract member Frame: Frame.Handle
     end
     
+type internal LabelAttrTarget =
+    interface
+        inherit FrameAttrTarget
+        abstract member Label: Label.Handle
+    end
+    
 type internal AbstractButtonAttrTarget =
     interface
         inherit WidgetAttrTarget

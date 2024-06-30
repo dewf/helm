@@ -30,6 +30,13 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
     member this.Widget = progressBar
     member this.SignalMap with set value = signalMap <- value
     
+    interface Label.SignalHandler with
+        member this.CustomContextMenuRequested _ = ()
+        member this.WindowIconChanged _ = ()
+        member this.WindowTitleChanged _ = ()
+        member this.LinkActivated _ = ()
+        member this.LinkHovered _ = ()
+    
     member this.ApplyAttrs (attrs: Attr list) =
         for attr in attrs do
             match attr with
@@ -45,7 +52,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
                         BoxLayout.Create(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom) // not sure Org.Whatever.QtTesting prefix is required here, IDE seems to think it's not, but won't compile without it
                     // layout.SetDirection(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom)
                     layout.SetContentsMargins(0, 0, 0, 0)
-                    innerLabel <- Label.Create()
+                    innerLabel <- Label.Create(this)
                     innerLabel.SetAlignment(Enums.Alignment.AlignCenter)
                     layout.AddWidget(innerLabel)
                     progressBar.SetLayout(layout)

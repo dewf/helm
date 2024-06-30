@@ -59,7 +59,7 @@ let view (state: State) =
         let label =
             let text =
                 sprintf "%.02fs" (float state.Duration / 1000.0)
-            Label(Attrs = [ Label.Text text ])
+            Label(Text = text)
         let slider =
             Slider(Attrs = [
                 Orientation Horizontal

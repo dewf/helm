@@ -7,7 +7,7 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-type Signal =
+type internal Signal =
     | CustomContextMenuRequested of pos: Point
     | WindowIconChanged of icon: IconProxy
     | WindowTitleChanged of title: string
