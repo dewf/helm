@@ -163,7 +163,7 @@ let view (state: State) =
     let treeView =
         TreeView(Attrs = [ SortingEnabled true ], TreeModel = filterModel, OnClicked = SelectItem)
 
-    let firstLabel = Label(Text =  "First:")
+    let firstLabel = Label(Text = "First:")
     let firstEdit = LineEdit(Text = state.FirstEdit, OnTextChanged = SetFirst)
 
     let lastLabel = Label(Text = "Last:")

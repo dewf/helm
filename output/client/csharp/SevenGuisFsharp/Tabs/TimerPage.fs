@@ -2,6 +2,7 @@
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.MiscTypes
 open Reactor
 open FSharpQt.Widgets
 open BoxLayout
@@ -10,7 +11,6 @@ open PushButton
 open Slider
 open ProgressBar
 open Timer
-open MiscTypes
 
 type Signal = unit
 type Attr = unit
