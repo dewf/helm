@@ -75,6 +75,7 @@ type State = {
     HeadersToggled: bool
     CurrentFilter: string option
     NextIntValue: int
+    Suffix: string
 }
 
 type Msg =
@@ -82,6 +83,7 @@ type Msg =
     | AppExit
     | ToggleHeaders
     | FilterTextEdited of text: string
+    | ReplaceSuffix
 
 let init () =
     let initRows = TrackedRows.Init([
@@ -93,7 +95,8 @@ let init () =
         ListData = initRows
         HeadersToggled = false
         CurrentFilter = None
-        NextIntValue = 4 
+        NextIntValue = 4
+        Suffix = "Initial Suffix"
     }
     nextState, Cmd.None
     
@@ -127,6 +130,8 @@ let update (state: State) (msg: Msg) =
         let nextFilter =
             if text = "" then None else Some text
         { state with CurrentFilter = nextFilter }, Cmd.None
+    | ReplaceSuffix ->
+        { state with Suffix = "REPLACED!!" }, Cmd.None
     
 let view (state: State) =
     let exitAction =
@@ -182,7 +187,10 @@ let view (state: State) =
         LineEdit(ClearButtonEnabled = true, OnTextEdited = FilterTextEdited)
         
     let fakeButton =
-        FakeThing(Attrs2 = [Suffix "whoaaaa!!"])
+        FakeThing(Attrs = [Suffix state.Suffix])
+        
+    let replaceSuffixButton =
+        PushButton(Text = "Replace Suffix", OnClicked = ReplaceSuffix)
         
     let vbox =
         VBoxLayout(Items = [
@@ -191,6 +199,7 @@ let view (state: State) =
             BoxItem(toggleButton)
             BoxItem(filterEdit)
             BoxItem(fakeButton)
+            BoxItem(replaceSuffixButton)
         ])
         
     MainWindow(

@@ -385,3 +385,81 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
             
 let createApplication (init: unit -> 'state * Cmd<'msg,AppSignal>) (update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>) (view: 'state -> IBuilderNode<'msg>) =
     new AppReactor<'msg,'state>(init, update, view)
+
+
+// attribute stuff for components =============================================================
+// generic list-based attr diffing
+// we've since moved to IAttr-based attrs instead,
+// but this exists to make it easy to bootstrap a custom component without writing so much attribute code
+// just use a single EasyAttrs property on your custom node class, eg:
+//
+// member this.Attrs with set value =
+//     this.PushAttr(EasyAttrs(value, "fakethingattrs", attrKey, attrUpdate))
+
+// (this.Attrs overwrites/shadows the internal one from PropsRoot(), but the compiler isn't complaining so it's probably OK)
+
+type private EasyAttrChange<'a> =
+    | Created of 'a
+    | Deleted of 'a
+    | Changed of 'a * 'a
+    
+let inline private easyDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
+    let leftList = a1 |> List.map (fun a -> keyFunc a, a)
+    let rightList = a2 |> List.map (fun a -> keyFunc a, a)
+    let leftMap = leftList |> Map.ofList
+    let rightMap = rightList |> Map.ofList
+
+    let allKeys =
+        (leftList @ rightList)
+        |> List.map fst
+        |> List.distinct
+        |> List.sort
+
+    allKeys
+    |> List.choose (fun key ->
+        let leftVal, rightVal = (Map.tryFind key leftMap, Map.tryFind key rightMap)
+        match leftVal, rightVal with
+        | Some left, Some right ->
+            if left = right then None else Changed (left, right) |> Some
+        | Some left, None ->
+            Deleted left |> Some
+        | None, Some right ->
+            Created right |> Some
+        | _ -> failwith "shouldn't happen")
+
+let private easyCreatedOrChanged (changes: EasyAttrChange<'a> list) =
+    changes
+    |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
+    
+type EasyAttrs<'attr,'state when 'attr:equality>(values: 'attr list, uniqueKey: string, keyFunc: 'attr -> int, attrUpdate: 'state -> 'attr -> 'state) =
+    member val Values = values
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? EasyAttrs<'attr,'state> as otherAttr ->
+                values = otherAttr.Values
+            | _ ->
+                false
+        override this.Key =
+            "easyattrs:" + uniqueKey
+        override this.ApplyTo(target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? ComponentStateTarget<'state> as componentTarget ->
+                let changedAttrs =
+                    match maybePrev with
+                    | Some prevIAttr ->
+                        match prevIAttr with
+                        | :? EasyAttrs<'attr,'state> as prev ->
+                            (easyDiffAttrs keyFunc) prev.Values values
+                            |> easyCreatedOrChanged
+                        | _ ->
+                            failwith "EasyAttrs previous value type match error - did you use a sufficiently unique key?"
+                    | None ->
+                        // no previous values, use them all
+                        values
+                let nextState =
+                    (componentTarget.State, changedAttrs)
+                    ||> List.fold attrUpdate
+                componentTarget.Update(nextState)
+            | _ ->
+                failwith "nope"
