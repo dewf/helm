@@ -155,7 +155,7 @@ type Props<'msg>() =
     member this.Checked with set value =
         this.PushAttr(Checked value)
         
-    member this.IconAttr with set value =
+    member this.Icon with set value =
         this.PushAttr(IconAttr value)
         
     member this.IconText with set value =

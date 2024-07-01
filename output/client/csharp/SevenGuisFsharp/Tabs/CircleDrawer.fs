@@ -12,8 +12,6 @@ open FSharpQt.Widgets
 open CustomWidget
 open BoxLayout
 open Dialog
-
-open FSharpQt.Widgets.Menus
 open MenuAction
 open Menu
 open PushButton

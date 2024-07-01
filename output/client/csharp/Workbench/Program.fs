@@ -135,7 +135,11 @@ let view (state: State) =
     let exitAction =
         let seq =
             KeySequence(Key.Q, [ Control ])
-        MenuAction(Text = "E&xit", Shortcut = seq, OnTriggered = (fun _ -> AppExit))
+        MenuAction(
+            Icon = Icon(ThemeIcon.Computer),
+            Text = "E&xit",
+            Shortcut = seq,
+            OnTriggered = (fun _ -> AppExit))
 
     let menuBar =
         let menu =

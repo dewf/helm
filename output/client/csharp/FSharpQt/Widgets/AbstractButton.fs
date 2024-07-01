@@ -144,7 +144,7 @@ type Props<'msg>() =
     member this.Down with set value =
         this.PushAttr(Down value)
         
-    member this.IconAttr with set value =
+    member this.Icon with set value =
         this.PushAttr(IconAttr value)
         
     member this.IconSize with set value =
