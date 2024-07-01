@@ -63,7 +63,7 @@ with
             | LineWidth _ -> "frame:linewidth"
             | MidLineWidth _ -> "frame:midlinewidth"
             | FrameStyle _ -> "frame:style"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? FrameAttrTarget as attrTarget ->
                 let frame =
@@ -128,9 +128,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             frame.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs (attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface FrameAttrTarget with
         member this.Widget = frame
@@ -159,12 +159,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
 
 let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Frame.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: Frame.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Frame.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask

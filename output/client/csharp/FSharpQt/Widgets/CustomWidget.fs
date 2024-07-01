@@ -57,9 +57,9 @@ type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, 
         // update/overwrite value
         eventDelegate <- newDelegate
     
-    member this.ApplyAttrs(attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface WidgetAttrTarget with
         override this.Widget = widget
@@ -127,7 +127,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, 
 
 let rec private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch, methodMask, eventDelegate)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     // can't assign eventDelegate as simply as signal map, requires different behavior on construction vs. migration
@@ -135,7 +135,7 @@ let rec private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (d
     // model.EventDelegate <- eventDelegate
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.EventDelegate <- eventDelegate

@@ -35,9 +35,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         // well if it gets deleted (as a dependency), won't that delete from the listView automatically?
         ()
     
-    member this.ApplyAttrs(attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface SortFilterProxyModelAttrTarget with
         member this.ProxyModel = proxyModel
@@ -53,12 +53,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
 
 let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: SortFilterProxyModel.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: SortFilterProxyModel.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: SortFilterProxyModel.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -164,7 +164,7 @@ type Attr internal(value: AttrValue) =
             match value with
             | AttrValue.FilterRegex _ -> "sortfilterproxymodel:filterregex"
             | AttrValue.FilterKeyColumn _ -> "sortfilterproxymodel:filterkeycolumn"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? SortFilterProxyModelAttrTarget as proxyModeltarget ->
                 let proxyModel =

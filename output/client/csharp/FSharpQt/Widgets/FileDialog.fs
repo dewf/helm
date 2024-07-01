@@ -108,7 +108,7 @@ with
             | MimeTypeFilters _ -> "filedialog:mimetypefilters"
             | Directory _ -> "filedialog:directory"
             | SelectedFile _ -> "filedialog:selectedfile"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? FileDialogAttrTarget as attrTarget ->
                 let fileDialog =
@@ -242,9 +242,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             fileDialog.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface FileDialogAttrTarget with
         member this.Widget = fileDialog
@@ -303,12 +303,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
 
 let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: FileDialog.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- initialMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: FileDialog.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: FileDialog.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask

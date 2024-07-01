@@ -39,7 +39,7 @@ with
             | Spacing _ -> "layout:spacing"
             | ContentsMargins _ -> "layout:contentsmargins"
             | SizeConstraint _ -> "layout:sizeconstraint"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? LayoutAttrTarget as layoutTarget ->
                 let layout =

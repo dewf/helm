@@ -47,7 +47,7 @@ with
             | IconSize _ -> "abstractbutton:iconsize"
             | Shortcut _ -> "abstractbutton:shortcut"
             | Text _ -> "abstractbutton:text"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? AbstractButtonAttrTarget as buttonTarget ->
                 let abstractButton =

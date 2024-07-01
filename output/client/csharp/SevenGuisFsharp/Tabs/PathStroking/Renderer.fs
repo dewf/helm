@@ -72,7 +72,7 @@ with
             | PenWidth _ -> "pathstroking:renderer:penwidth"
             | LineStyle _ -> "pathstroking:renderer:linestyle"
             | Animating _ -> "pathstroking:renderer:animating"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? ComponentStateTarget<State> as stateTarget ->
                 let state =

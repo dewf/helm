@@ -37,7 +37,7 @@ with
         override this.Key =
             match this with
             | Direction _ -> "boxlayout:direction"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? BoxLayoutAttrTarget as boxTarget ->
                 let boxLayout =
@@ -162,9 +162,9 @@ type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Dir
         for item in items do
             addItem boxLayout item.Item
     
-    member this.ApplyAttrs(attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface BoxLayoutAttrTarget with
         member this.Layout = boxLayout
@@ -182,11 +182,11 @@ type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Dir
 
 let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
     let model = new Model<'msg>(dispatch, initialDirection)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model

@@ -45,10 +45,10 @@ with
                 false
         override this.Key =
             match this with
-            | Value value -> "datepicker:value"
-            | Enabled value -> "datepicker:enabled"
-            | DialogTitle title -> "datepicker:dialogtitle"
-        override this.ApplyTo (target: IAttrTarget) =
+            | Value _ -> "datepicker:value"
+            | Enabled _ -> "datepicker:enabled"
+            | DialogTitle _ -> "datepicker:dialogtitle"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? ComponentStateTarget<State> as stateTarget ->
                 let state =

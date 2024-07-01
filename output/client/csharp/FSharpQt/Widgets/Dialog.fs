@@ -31,7 +31,7 @@ with
             match this with
             | Modal _ -> "dialog:modal"
             | SizeGripEnabled _ -> "dialog:sizegripenabled"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? DialogAttrTarget as attrTarget ->
                 let dialog =
@@ -107,9 +107,9 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle opti
             dialog.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs (attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface DialogAttrTarget with
         member this.Widget = dialog
@@ -147,12 +147,12 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle opti
 
 let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: Widget.Handle option) =
     let model = new Model<'msg>(dispatch, maybeParent)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- initialMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: Dialog.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Dialog.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask

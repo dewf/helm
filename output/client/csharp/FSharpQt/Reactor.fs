@@ -167,12 +167,12 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
     member this.Root =
         root
         
-    member this.ApplyAttrs (attrs: IAttr list) =
+    member this.ApplyAttrs (attrs: (IAttr option * IAttr) list) =
         let prevRoot = root
         let mutator =
             StateMutator(state)
-        for attr in attrs do
-            attr.ApplyTo(mutator)
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(mutator, maybePrev)
         state <- (mutator :> ComponentStateTarget<'state>).State
         root <- view state
         // prevent dispatching while diffing
@@ -278,7 +278,10 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'signal,'root when 'root :> IBuilderN
                 // we need to rebind this, because 'outerMsg and 'msg are different
                 { ContainingWindow = buildContext.ContainingWindow }
             this.reactor <- new Reactor<'state,'msg,'signal,'root>(init, update, view, processSignal, buildContext)
-            this.reactor.ApplyAttrs(this.Attrs)
+            let initAttrs =
+                this.Attrs
+                |> List.map (fun attr -> (None, attr)) // 'None' for no previous values
+            this.reactor.ApplyAttrs(initAttrs)
         override this.AttachDeps () =
             ()
         override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =

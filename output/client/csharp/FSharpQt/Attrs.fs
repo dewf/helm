@@ -10,7 +10,7 @@ type IAttr =
     interface
         abstract member Key: string
         abstract member AttrEquals: IAttr -> bool
-        abstract member ApplyTo: IAttrTarget -> unit
+        abstract member ApplyTo: IAttrTarget * IAttr option -> unit    // 2nd argument: previous value, if any
     end
     
 type AttrDiffResult =
@@ -48,7 +48,10 @@ let diffAttrs (left: IAttr list) (right: IAttr list) =
 let createdOrChanged (changes: AttrDiffResult list) =
     changes
     |> List.choose (function
-        | Created attr | Changed (_, attr) -> Some attr
+        | Created attr ->
+            Some (None, attr)
+        | Changed (prev, attr) ->
+            Some (Some prev, attr)
         | _ -> None)
     
 type PropsRoot() =

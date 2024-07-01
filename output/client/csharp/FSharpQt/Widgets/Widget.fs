@@ -263,7 +263,7 @@ with
             | WindowModified _ -> "widget:WindowModified"
             | WindowOpacity _ -> "widget:WindowOpacity"
             | WindowTitle _ -> "widget:WindowTitle"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? WidgetAttrTarget as widgetTarget ->
                 let widget =
@@ -511,9 +511,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             widget.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface WidgetAttrTarget with
         override this.Widget = widget
@@ -543,12 +543,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         
 let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: Widget.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Widget.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask

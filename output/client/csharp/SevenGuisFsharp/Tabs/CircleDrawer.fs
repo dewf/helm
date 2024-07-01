@@ -271,7 +271,7 @@ let view (state: State) =
     let canvas =
         let contextMenu =
             let action =
-                MenuAction(Attrs = [ MenuAction.Text "Edit Radius" ], OnTriggered = (fun _ -> ShowDialog))
+                MenuAction(Text = "Edit Radius", OnTriggered = (fun _ -> ShowDialog))
             Menu(Items = [
                 MenuItem(action)
             ])

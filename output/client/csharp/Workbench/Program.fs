@@ -7,6 +7,7 @@ open BuilderNode
 open FSharpQt.MiscTypes
 open FSharpQt.Models
 open FSharpQt.Widgets.LineEdit
+open FakeThing
 open ListModelNode
 open SortFilterProxyModel
 
@@ -131,7 +132,7 @@ let view (state: State) =
     let exitAction =
         let seq =
             KeySequence(Key.Q, [ Control ])
-        MenuAction(Attrs = [ Text "E&xit"; Shortcut seq ], OnTriggered = (fun _ -> AppExit))
+        MenuAction(Text = "E&xit", Shortcut = seq, OnTriggered = (fun _ -> AppExit))
 
     let menuBar =
         let menu =
@@ -180,12 +181,16 @@ let view (state: State) =
     let filterEdit =
         LineEdit(ClearButtonEnabled = true, OnTextEdited = FilterTextEdited)
         
+    let fakeButton =
+        FakeThing(Attrs2 = [Suffix "whoaaaa!!"])
+        
     let vbox =
         VBoxLayout(Items = [
             BoxItem(treeView)
             BoxItem(button)
             BoxItem(toggleButton)
             BoxItem(filterEdit)
+            BoxItem(fakeButton)
         ])
         
     MainWindow(

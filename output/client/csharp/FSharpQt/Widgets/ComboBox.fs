@@ -89,7 +89,7 @@ with
             | PlaceholderText _ -> "combobox:placeholdertext"
             | SizeAdjustPolicy _ -> "combobox:sizeadjustpolicy"
             | StringItems _ -> "combobox:stringitems"
-        override this.ApplyTo (target: IAttrTarget) =
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? ComboBoxAttrTarget as comboTarget ->
                 let comboBox =
@@ -265,9 +265,9 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             combo.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: IAttr list) =
-        for attr in attrs do
-            attr.ApplyTo(this)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     interface ComboBoxAttrTarget with
         member this.Widget = combo
@@ -326,12 +326,12 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
 
 let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: ComboBox.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: IAttr list) (signalMap: Signal -> 'msg option) (signalMask: ComboBox.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: ComboBox.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
