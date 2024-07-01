@@ -24,7 +24,6 @@ open Extensions
 open FSharpQt.InputEnums
 
 type Signal = unit
-type Attr = unit
 
 type Circle = {
     Location: Point
@@ -293,4 +292,4 @@ let view (state: State) =
     vbox :> ILayoutNode<Msg>
     
 type CircleDrawer<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)

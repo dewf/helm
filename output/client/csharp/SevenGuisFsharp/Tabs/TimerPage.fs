@@ -13,7 +13,6 @@ open ProgressBar
 open Timer
 
 type Signal = unit
-type Attr = unit
 let TIMER_INTERVAL = 1000 / 20
 
 type State = {
@@ -88,5 +87,5 @@ let view (state: State) =
     hbox :> ILayoutNode<Msg>
 
 type TimerPage<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)
     

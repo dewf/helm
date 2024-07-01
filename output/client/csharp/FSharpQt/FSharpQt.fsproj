@@ -12,10 +12,10 @@
         <Compile Include="MiscTypes.fs" />
         <Compile Include="ModelBindings.fs" />
         <Compile Include="BuilderNode.fs" />
+        <Compile Include="Attrs.fs" />
         <Compile Include="Reactor.fs" />
         <Compile Include="Painting.fs" />
         <Compile Include="EventDelegate.fs" />
-        <Compile Include="Attrs.fs" />
 
         <Compile Include="Models\SimpleListModel.fs" />
         <Compile Include="Models\TrackedRows.fs" />

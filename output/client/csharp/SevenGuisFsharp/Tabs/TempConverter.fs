@@ -8,7 +8,6 @@ open BoxLayout
 open LineEdit
 open Label
 
-type Attr = unit
 type Signal = unit
 
 type State = {
@@ -89,4 +88,4 @@ let view (state: State) =
     :> ILayoutNode<Msg>
 
 type TempConverter<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)

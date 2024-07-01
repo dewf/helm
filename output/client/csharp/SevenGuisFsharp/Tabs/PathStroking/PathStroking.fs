@@ -16,7 +16,6 @@ open Renderer
 open MiscTypes
 
 type Signal = unit
-type Attr = unit
 
 type State = {
     CapStyle: CapStyle
@@ -145,14 +144,12 @@ let view (state: State) =
         
     let renderer =
         PathStrokeRenderer(
-            Attrs = [
-                CapStyle state.CapStyle
-                JoinStyle state.JoinStyle
-                PenStyle state.PenStyle
-                PenWidth state.PenWidth
-                LineStyle state.LineStyle
-                Animating state.Animating
-            ])
+            CapStyle = state.CapStyle,
+            JoinStyle = state.JoinStyle,
+            PenStyle = state.PenStyle,
+            PenWidth = state.PenWidth,
+            LineStyle = state.LineStyle,
+            Animating = state.Animating)
     
     HBoxLayout(Items = [
                   BoxItem(renderer, 1)
@@ -161,4 +158,4 @@ let view (state: State) =
     :> ILayoutNode<Msg>
 
 type PathStroking<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)

@@ -18,7 +18,6 @@ open Models.SortFilterProxyModel
 open TreeView
 open FSharpQt.ModelBindings
 
-type Attr = unit
 type Signal = unit
 
 type Name = {
@@ -215,4 +214,4 @@ let view (state: State) =
     :> ILayoutNode<Msg>
 
 type CRUDPage<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)

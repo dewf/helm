@@ -2,6 +2,7 @@
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.Attrs
 open Reactor
 
 open FSharpQt.Widgets
@@ -23,24 +24,6 @@ type LineStyle =
 
 type Signal = unit
 
-type Attr =
-    | CapStyle of style: CapStyle
-    | JoinStyle of style: JoinStyle
-    | PenStyle of style: PenStyle
-    | PenWidth of width: int
-    | LineStyle of style: LineStyle
-    | Animating of value: bool
-    
-let private diffAttrs =
-    let attrKey = function
-        | CapStyle _ -> 0
-        | JoinStyle _ -> 1
-        | PenStyle _ -> 2
-        | PenWidth _ -> 3
-        | LineStyle _ -> 4
-        | Animating _ -> 5
-    genericDiffAttrs attrKey
-    
 type PathPoint = {
     Position: PointF
     Velocity: PointF
@@ -65,6 +48,46 @@ type State = {
     LineStyle: LineStyle
     Animating: bool
 }
+
+type Attr =
+    | CapStyle of style: CapStyle
+    | JoinStyle of style: JoinStyle
+    | PenStyle of style: PenStyle
+    | PenWidth of width: int
+    | LineStyle of style: LineStyle
+    | Animating of value: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | CapStyle _ -> "pathstroking:renderer:capstyle"
+            | JoinStyle _ -> "pathstroking:renderer:joinstyle"
+            | PenStyle _ -> "pathstroking:renderer:penstyle"
+            | PenWidth _ -> "pathstroking:renderer:penwidth"
+            | LineStyle _ -> "pathstroking:renderer:linestyle"
+            | Animating _ -> "pathstroking:renderer:animating"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? ComponentStateTarget<State> as stateTarget ->
+                let state =
+                    stateTarget.State
+                let nextState =
+                    match this with
+                    | CapStyle style -> { state with CapStyle = style }
+                    | JoinStyle style -> { state with JoinStyle = style }
+                    | PenStyle style -> { state with PenStyle = style }
+                    | PenWidth width -> { state with PenWidth = width }
+                    | LineStyle style -> { state with LineStyle = style }
+                    | Animating value -> { state with Animating = value }
+                stateTarget.Update(nextState)
+            | _ ->
+                failwith "nope"
 
 type Msg =
     | Resized of rect: RectF
@@ -109,15 +132,6 @@ let init() =
     }
     state, Cmd.None
 
-let attrUpdate (state: State) (attr: Attr) =
-    match attr with
-    | CapStyle style -> { state with CapStyle = style }
-    | JoinStyle style -> { state with JoinStyle = style }
-    | PenStyle style -> { state with PenStyle = style }
-    | PenWidth width -> { state with PenWidth = width }
-    | LineStyle style -> { state with LineStyle = style }
-    | Animating value -> { state with Animating = value }
-    
 let stepSinglePoint elapsedMillis left right top bottom { Position = pos; Velocity = vel } =
     let xDeltaAdjusted =
         (vel.X * elapsedMillis) / (double TIMER_INTERVAL)
@@ -360,4 +374,22 @@ let view (state: State) =
     custom :> IWidgetNode<Msg>
 
 type PathStrokeRenderer<'outerMsg>() =
-    inherit WidgetReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, diffAttrs)
+    inherit WidgetReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)
+
+    member this.CapStyle with set value =
+        this.PushAttr(CapStyle value)
+        
+    member this.JoinStyle with set value =
+        this.PushAttr(JoinStyle value)
+
+    member this.PenStyle with set value =
+        this.PushAttr(PenStyle value)
+        
+    member this.PenWidth with set value =
+        this.PushAttr(PenWidth value)
+        
+    member this.LineStyle with set value =
+        this.PushAttr(LineStyle value)
+        
+    member this.Animating with set value =
+        this.PushAttr(Animating value)

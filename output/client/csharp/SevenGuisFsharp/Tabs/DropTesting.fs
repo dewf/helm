@@ -13,7 +13,6 @@ open BoxLayout
 open CustomWidget
 
 type Signal = unit
-type Attr = unit
 
 let DRAG_SOURCE_RECT =
     Rect.From(20, 20, 100, 100)
@@ -174,4 +173,4 @@ let view (state: State) =
     ]) :> ILayoutNode<Msg>
     
 type DropTesting<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)

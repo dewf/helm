@@ -14,7 +14,6 @@ open PushButton
 open ComboBox
 
 type Signal = unit
-type Attr = unit
 
 type Mode =
     | OneWay
@@ -116,7 +115,9 @@ let view (state: State) =
             Label(Text = labelText)
         let picker =
             DatePicker(
-                Attrs = [ Value value; DatePicker.Enabled enabled; DialogTitle $"Select '{labelText}' Date" ],
+                Value = value,
+                Enabled = enabled,
+                DialogTitle = $"Select '{labelText}' Date",
                 OnValueChanged = changeMsg)
         HBoxLayout(
             ContentsMargins = (0, 0, 0, 0),
@@ -144,4 +145,4 @@ let view (state: State) =
     :> ILayoutNode<Msg>
     
 type FlightBooker<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, update, view)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)

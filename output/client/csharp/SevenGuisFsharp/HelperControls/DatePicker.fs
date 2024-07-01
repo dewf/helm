@@ -5,6 +5,7 @@ open System.Globalization
 
 open FSharpQt
 open BuilderNode
+open FSharpQt.Attrs
 open Reactor
 open FSharpQt.Widgets
 open BoxLayout
@@ -23,22 +24,57 @@ type Value =
 type Signal =
     | ValueChanged of value: Value
     
-type Attr =
-    | Value of value: Value
-    | Enabled of value: bool
-    | DialogTitle of title: string
-    
-let keyFunc = function
-    | Value _ -> 0
-    | Enabled _ -> 1
-    | DialogTitle _ -> 2
-    
 type State = {
     Enabled: bool
     Raw: string
     Value: Value
     DialogTitle: string
 }
+
+type Attr =
+    | Value of value: Value
+    | Enabled of value: bool
+    | DialogTitle of title: string
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Value value -> "datepicker:value"
+            | Enabled value -> "datepicker:enabled"
+            | DialogTitle title -> "datepicker:dialogtitle"
+        override this.ApplyTo (target: IAttrTarget) =
+            match target with
+            | :? ComponentStateTarget<State> as stateTarget ->
+                let state =
+                    stateTarget.State
+                let nextState =
+                    match this with
+                    | Value value ->
+                        if value <> state.Value then
+                            match value with
+                            | Empty ->
+                                { state with Value = Empty; Raw = "" }
+                            | Invalid ->
+                                // unlikely to be assigned from outside except as a 2-way echo
+                                // we'd only get here if the parent component explicitly changed the value to invalid
+                                { state with Value = Invalid; Raw = "??invalid??" }
+                            | Valid dt ->
+                                { state with Value = Valid dt; Raw = dt.ToShortDateString() }
+                        else
+                            state
+                    | Enabled value ->
+                        { state with Enabled = value }
+                    | DialogTitle title ->
+                        { state with DialogTitle = title }
+                stateTarget.Update(nextState)
+            | _ ->
+                failwith "nope"
 
 type Msg =
     | EditChanged of str: string
@@ -54,26 +90,6 @@ let init () =
         DialogTitle = "Choose Date"
     }
     state, Cmd.None
-    
-let attrUpdate (state: State) (attr: Attr) =
-    match attr with
-    | Value value ->
-        if value <> state.Value then
-            match value with
-            | Empty ->
-                { state with Value = Empty; Raw = "" }
-            | Invalid ->
-                // unlikely to be assigned from outside except as a 2-way echo
-                // we'd only get here if the parent component explicitly changed the value to invalid
-                { state with Value = Invalid; Raw = "??invalid??" }
-            | Valid dt ->
-                { state with Value = Valid dt; Raw = dt.ToShortDateString() }
-        else
-            state
-    | Enabled value ->
-        { state with Enabled = value }
-    | DialogTitle title ->
-        { state with DialogTitle = title }
         
 let tryParseDate (str: string) =
     match DateTime.TryParseExact(str, "M/d/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None) with
@@ -137,7 +153,7 @@ let view (state: State) =
     hbox :> ILayoutNode<Msg>
     
 type DatePicker<'outerMsg>() =
-    inherit LayoutReactorNode<'outerMsg, State, Msg, Attr, Signal>(init, attrUpdate, update, view, genericDiffAttrs keyFunc)
+    inherit LayoutReactorNode<'outerMsg, State, Msg, Signal>(init, update, view)
     
     let mutable onValueChanged: (Value -> 'outerMsg) option = None
     member this.OnValueChanged with set value = onValueChanged <- Some value
@@ -147,3 +163,12 @@ type DatePicker<'outerMsg>() =
         | ValueChanged value ->
             onValueChanged
             |> Option.map (fun f -> f value)
+            
+    member this.Value with set value =
+        this.PushAttr(Value value)
+        
+    member this.Enabled with set value =
+        this.PushAttr(Enabled value)
+        
+    member this.DialogTitle with set value =
+        this.PushAttr(DialogTitle value)
