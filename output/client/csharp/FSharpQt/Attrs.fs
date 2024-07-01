@@ -133,6 +133,12 @@ type internal LineEditAttrTarget =
         abstract member SetCursorPos: int -> bool
     end
     
+type internal MenuAttrTarget =
+    interface
+        inherit WidgetAttrTarget
+        abstract member Menu: Menu.Handle
+    end
+    
 type internal ActionAttrTarget =
     interface
         inherit IAttrTarget

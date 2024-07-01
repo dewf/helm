@@ -19,8 +19,6 @@ open FSharpQt.Widgets
 open MainWindow
 open PushButton
 open TreeView
-
-open FSharpQt.Widgets.Menus
 open Menu
 open MenuAction
 open MenuBar
@@ -141,7 +139,7 @@ let view (state: State) =
 
     let menuBar =
         let menu =
-            Menu(Attrs = [ Title "&File" ],
+            Menu(Title = "&File",
                  Items = [
                      MenuItem(exitAction)
                  ])

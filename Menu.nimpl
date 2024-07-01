@@ -3,6 +3,7 @@ module Menu;
 import Common;
 import Widget;
 import Action;
+import Icon;
 
 flags SignalMask {
     AboutToHide = 1 << 0,
@@ -19,9 +20,14 @@ interface SignalHandler {
 }
 
 opaque Handle extends Widget.Handle {
+    void setIcon(Icon.Deferred icon);
+    void setSeparatorsCollapsible(bool state);
+    void setTearOffEnabled(bool state);
+    void setTitle(string title);
+    void setToolTipsVisible(bool visible);
+
     void clear();
     Action.Handle addSeparator();
-    void setTitle(string title);
     void popup(Point p);
 
     void setSignalMask(SignalMask mask);

@@ -1,4 +1,4 @@
-﻿module FSharpQt.Widgets.Menus.MenuBar
+﻿module FSharpQt.Widgets.MenuBar
 
 open System
 open FSharpQt.BuilderNode

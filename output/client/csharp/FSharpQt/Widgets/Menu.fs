@@ -1,33 +1,110 @@
-﻿module FSharpQt.Widgets.Menus.Menu
+﻿module FSharpQt.Widgets.Menu
 
 open System
 open FSharpQt
 open FSharpQt.BuilderNode
-open FSharpQt.MiscTypes
 open Microsoft.FSharp.Core
 open Org.Whatever.QtTesting
 open Extensions
+
+open FSharpQt.Attrs
+open FSharpQt.MiscTypes
 
 type Signal =
     | AboutToHide
     | AboutToShow
     | Hovered of action: ActionProxy
     | Triggered of action: ActionProxy
-
+    
 type Attr =
+    | IconAttr of icon: Icon
+    | SeparatorsCollapsible of state: bool
+    | TearOffEnabled of state: bool
     | Title of title: string
+    | ToolTipsVisible of visible: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | IconAttr _ -> "menu:icon"
+            | SeparatorsCollapsible _ -> "menu:separatorscollapsible"
+            | TearOffEnabled _ -> "menu:tearoffenabled"
+            | Title _ -> "menu:title"
+            | ToolTipsVisible _ -> "menu:tooltipsvisible"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? MenuAttrTarget as attrTarget ->
+                let menu =
+                    attrTarget.Menu
+                match this with
+                | IconAttr icon ->
+                    menu.SetIcon(icon.QtValue)
+                | SeparatorsCollapsible state ->
+                    menu.SetSeparatorsCollapsible(state)
+                | TearOffEnabled state ->
+                    menu.SetTearOffEnabled(state)
+                | Title title ->
+                    menu.SetTitle(title)
+                | ToolTipsVisible visible ->
+                    menu.SetToolTipsVisible(visible)
+            | _ ->
+                printfn "warning: Menu.Attr couldn't ApplyTo() unknown object type [%A]" target
+                
+type Props<'msg>() =
+    inherit Widget.Props<'msg>()
     
-let private attrKey = function
-    | Title _ -> 0
+    let mutable onAboutToHide: 'msg option = None
+    let mutable onAboutToShow: 'msg option = None
+    let mutable onHovered: (ActionProxy -> 'msg) option = None
+    let mutable onTriggered: (ActionProxy -> 'msg) option = None
     
-let private diffAttrs =
-    genericDiffAttrs attrKey
-
-// [<RequireQualifiedAccess>]
-// type internal ItemKey =
-//     | ActionItem of key: ContentKey
-//     | Separator
-//     | Nothing
+    member internal this.SignalMask = enum<Menu.SignalMask> (int this._signalMask)
+    
+    member this.OnAboutToHide with set value =
+        onAboutToHide <- Some value
+        this.AddSignal(int Menu.SignalMask.AboutToHide)
+    member this.OnAboutToShow with set value =
+        onAboutToShow <- Some value
+        this.AddSignal(int Menu.SignalMask.AboutToShow)
+    member this.OnHovered with set value =
+        onHovered <- Some value
+        this.AddSignal(int Menu.SignalMask.Hovered)
+    member this.OnTriggered with set value =
+        onTriggered <- Some value
+        this.AddSignal(int Menu.SignalMask.Triggered)
+    
+    member internal this.SignalMap = function
+        | AboutToHide ->
+            onAboutToHide
+        | AboutToShow ->
+            onAboutToShow
+        | Hovered action ->
+            onHovered
+            |> Option.map (fun f -> f action)
+        | Triggered action ->
+            onTriggered
+            |> Option.map (fun f -> f action)
+    
+    member this.Icon with set value =
+        this.PushAttr(IconAttr value)
+        
+    member this.SeparatorsCollapsible with set value =
+        this.PushAttr(SeparatorsCollapsible value)
+        
+    member this.TearOffEnabled with set value =
+        this.PushAttr(TearOffEnabled value)
+        
+    member this.Title with set value =
+        this.PushAttr(Title value)
+        
+    member this.ToolTipsVisible with set value =
+        this.PushAttr(ToolTipsVisible value)
     
 type internal ItemInternal<'msg> =
     | ActionItem of action: IActionNode<'msg>
@@ -85,16 +162,18 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             menu.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
-            match attr with
-            | Title title ->
-                menu.SetTitle(title)
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
                 
     member this.Refill(items: MenuItem<'msg> list) =
         menu.Clear()
         for item in items do
             item.AddTo(menu)
+            
+    interface MenuAttrTarget with
+        member this.Widget = menu
+        member this.Menu = menu
         
     interface Menu.SignalHandler with
         override this.AboutToHide() =
@@ -110,14 +189,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             menu.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Menu.SignalMask) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Menu.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: Menu.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Menu.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -127,44 +206,12 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type Menu<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
 
-    member val Attrs: Attr list = [] with get, set
     member val Items: MenuItem<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable onAboutToHide: 'msg option = None
-    let mutable onAboutToShow: 'msg option = None
-    let mutable onHovered: (ActionProxy -> 'msg) option = None
-    let mutable onTriggered: (ActionProxy -> 'msg) option = None
-    
-    let mutable signalMask = enum<Menu.SignalMask> 0
-    
-    member this.OnAboutToHide with set value =
-        onAboutToHide <- Some value
-        signalMask <- signalMask ||| Menu.SignalMask.AboutToHide
-    member this.OnAboutToShow with set value =
-        onAboutToShow <- Some value
-        signalMask <- signalMask ||| Menu.SignalMask.AboutToShow
-    member this.OnHovered with set value =
-        onHovered <- Some value
-        signalMask <- signalMask ||| Menu.SignalMask.Hovered
-    member this.OnTriggered with set value =
-        onTriggered <- Some value
-        signalMask <- signalMask ||| Menu.SignalMask.Triggered
-    
-    let signalMap = function
-        | AboutToHide ->
-            onAboutToHide
-        | AboutToShow ->
-            onAboutToShow
-        | Hovered action ->
-            onHovered
-            |> Option.map (fun f -> f action)
-        | Triggered action ->
-            onTriggered
-            |> Option.map (fun f -> f action)
-                
     member private this.MigrateContent (leftMenu: Menu<'msg>) =
         let leftItems =
             leftMenu.Items
@@ -187,7 +234,7 @@ type Menu<'msg>() =
                 |> Option.map (fun node -> IntKey i, node :> IBuilderNode<'msg>))
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch signalMask
+            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
             
         override this.AttachDeps () =
             this.model.Refill(this.Items)
@@ -197,7 +244,7 @@ type Menu<'msg>() =
             let nextAttrs =
                 diffAttrs leftNode.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate leftNode.model nextAttrs signalMap signalMask
+            this.model <- migrate leftNode.model nextAttrs this.SignalMap this.SignalMask
             this.MigrateContent(leftNode)
             
         override this.Dispose() =

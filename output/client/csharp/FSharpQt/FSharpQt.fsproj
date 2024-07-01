@@ -21,12 +21,14 @@
         <Compile Include="Models\TrackedRows.fs" />
         <Compile Include="Models\ListModelNode.fs" />
         <Compile Include="Models\SortFilterProxyModel.fs" />
-        
-        <Compile Include="Widgets\Menus\MenuAction.fs" />
-        <Compile Include="Widgets\Menus\Menu.fs" />
-        <Compile Include="Widgets\Menus\MenuBar.fs" />
 
         <Compile Include="Widgets\Widget.fs" />
+
+        <Compile Include="Widgets\Menu.fs" />
+
+        <Compile Include="Widgets\MenuAction.fs" />
+
+        <Compile Include="Widgets\MenuBar.fs" />
 
         <Compile Include="Widgets\CustomWidget.fs" />
 

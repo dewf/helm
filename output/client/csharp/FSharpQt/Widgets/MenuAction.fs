@@ -1,4 +1,4 @@
-﻿module FSharpQt.Widgets.Menus.MenuAction
+﻿module FSharpQt.Widgets.MenuAction
 
 open System
 open FSharpQt.BuilderNode
@@ -49,22 +49,22 @@ with
             | ToolTip _ -> "action:tooltip"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? ActionAttrTarget as actionTarget ->
+            | :? ActionAttrTarget as attrTarget ->
                 let action =
-                    actionTarget.Action
+                    attrTarget.Action
                 match this with
                 | Text text ->
                     action.SetText(text)
                 | Enabled state ->
-                    if actionTarget.SetEnabled(state) then
+                    if attrTarget.SetEnabled(state) then
                         action.SetEnabled(state)
                 | Separator state ->
                     action.SetSeparator(state)
                 | Checkable state ->
-                    if actionTarget.SetCheckable(state) then
+                    if attrTarget.SetCheckable(state) then
                         action.SetCheckable(state)
                 | Checked state ->
-                    if actionTarget.SetChecked(state) then
+                    if attrTarget.SetChecked(state) then
                         action.SetChecked(state)
                 | IconAttr icon ->
                     action.SetIcon(icon.QtValue)

@@ -5,6 +5,7 @@
 
 #include "util/convert.h"
 #include "util/SignalStuff.h"
+#include "IconInternal.h"
 
 #define THIS ((MenuWithHandler*)_this)
 
@@ -44,16 +45,33 @@ namespace Menu
         }
     };
 
+    void Handle_setIcon(HandleRef _this, std::shared_ptr<Icon::Deferred::Base> icon) {
+        THIS->setIcon(Icon::fromDeferred(icon));
+    }
+
+    void Handle_setSeparatorsCollapsible(HandleRef _this, bool state) {
+        THIS->setSeparatorsCollapsible(state);
+    }
+
+    void Handle_setTearOffEnabled(HandleRef _this, bool state) {
+        THIS->setTearOffEnabled(state);
+    }
+
+    void Handle_setTitle(HandleRef _this, std::string title) {
+        THIS->setTitle(QString::fromStdString(title));
+    }
+
+    void Handle_setToolTipsVisible(HandleRef _this, bool visible) {
+        THIS->setToolTipsVisible(visible);
+    }
+
     void Handle_clear(HandleRef _this) {
         THIS->clear();
     }
 
     Action::HandleRef Handle_addSeparator(HandleRef _this) {
+        // should we be concerned about ownership here? I presume the Menu owns it, and we're probably not going to do anything else with it ...
         return (Action::HandleRef) THIS->addSeparator();
-    }
-
-    void Handle_setTitle(HandleRef _this, std::string title) {
-        THIS->setTitle(QString::fromStdString(title));
     }
 
     void Handle_popup(HandleRef _this, Point p) {
