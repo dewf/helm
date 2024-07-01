@@ -15,6 +15,9 @@ interface SignalHandler {
 }
 
 opaque Handle extends Widget.Handle {
+    void setDefaultUp(bool state);
+    void setNativeMenuBar(bool state);
+
     void clear();
     void addMenu(Menu.Handle menu);
 

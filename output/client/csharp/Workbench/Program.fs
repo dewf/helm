@@ -142,12 +142,12 @@ let view (state: State) =
             OnTriggered = (fun _ -> AppExit))
 
     let menuBar =
-        let menu =
+        let fileMenu =
             Menu(Title = "&File",
                  Items = [
                      MenuItem(exitAction)
                  ])
-        MenuBar(Menus = [ menu ])
+        MenuBar(Menus = [ fileMenu ])
         
     let listModel =
         let dataFunc row col role =

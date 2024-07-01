@@ -2,22 +2,73 @@
 
 open System
 open FSharpQt.BuilderNode
-open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
+
+open FSharpQt.Attrs
+open FSharpQt.MiscTypes
 
 type Signal =
     | Hovered of action: ActionProxy
     | Triggered of action: ActionProxy
 
 type Attr =
-    | NoneYet
+    | DefaultUp of state: bool
+    | NativeMenuBar of state: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | DefaultUp _ -> "menubar:defaultup"
+            | NativeMenuBar _ -> "menubar:nativemenubar"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? MenuBarAttrTarget as attrTarget ->
+                let menuBar =
+                    attrTarget.MenuBar
+                match this with
+                | DefaultUp state ->
+                    menuBar.SetDefaultUp(state)
+                | NativeMenuBar state ->
+                    menuBar.SetNativeMenuBar(state)
+            | _ ->
+                printfn "warning: MenuBar.Attr couldn't ApplyTo() unknown object type [%A]" target
+                
+type Props<'msg>() =
+    inherit Widget.Props<'msg>()
     
-let private attrKey = function
-    | NoneYet -> 0
+    let mutable onHovered: (ActionProxy -> 'msg) option = None
+    let mutable onTriggered: (ActionProxy -> 'msg) option = None
     
-let private diffAttrs =
-    genericDiffAttrs attrKey
+    member internal this.SignalMask = enum<MenuBar.SignalMask> (int this._signalMask)
 
+    member this.OnHovered with set value =
+        onHovered <- Some value
+        this.AddSignal(int MenuBar.SignalMask.Hovered)
+        
+    member this.OnTriggered with set value =
+        onTriggered <- Some value
+        this.AddSignal(int MenuBar.SignalMask.Triggered)
+            
+    member internal this.SignalMap = function
+        | Hovered action ->
+            onHovered
+            |> Option.map (fun f -> f action)
+        | Triggered action ->
+            onTriggered
+            |> Option.map (fun f -> f action)
+    
+    member this.DefaultUp with set value =
+        this.PushAttr(DefaultUp value)
+        
+    member this.NativeMenuBar with set value =
+        this.PushAttr(NativeMenuBar value)
+    
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable menuBar = MenuBar.Create(this)
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
@@ -38,16 +89,18 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             menuBar.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
-            match attr with
-            | NoneYet ->
-                ()
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
 
     member this.Refill(menus: Menu.Handle list) =
         menuBar.Clear()
         for menu in menus do
             menuBar.AddMenu(menu)
+            
+    interface MenuBarAttrTarget with
+        member this.Widget = menuBar
+        member this.MenuBar = menuBar
             
     interface MenuBar.SignalHandler with
         override this.Hovered action =
@@ -59,14 +112,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             menuBar.Dispose()
     
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: MenuBar.SignalMask) =
+let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: MenuBar.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: MenuBar.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: MenuBar.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMap <- signalMap
     model.SignalMask <- signalMask
@@ -76,33 +129,12 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
 type MenuBar<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Menus: IMenuNode<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable signalMask = enum<MenuBar.SignalMask> 0
-    
-    let mutable onHovered: (ActionProxy -> 'msg) option = None
-    let mutable onTriggered: (ActionProxy -> 'msg) option = None
-
-    member this.OnHovered with set value =
-        onHovered <- Some value
-        signalMask <- signalMask ||| MenuBar.SignalMask.Hovered
-        
-    member this.OnTriggered with set value =
-        onTriggered <- Some value
-        signalMask <- signalMask ||| MenuBar.SignalMask.Triggered
-            
-    let signalMap = function
-        | Hovered action ->
-            onHovered
-            |> Option.map (fun f -> f action)
-        | Triggered action ->
-            onTriggered
-            |> Option.map (fun f -> f action)
-                
     member private this.MigrateContent (leftMenuBar: MenuBar<'msg>) =
         let leftKeys =
             leftMenuBar.Menus
@@ -125,7 +157,7 @@ type MenuBar<'msg>() =
             |> List.mapi (fun i menu -> (IntKey i, menu :> IBuilderNode<'msg>))
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch signalMask
+            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
             
         override this.AttachDeps() =
             let menuHandles =
@@ -138,7 +170,7 @@ type MenuBar<'msg>() =
             let nextAttrs =
                 diffAttrs leftNode.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate leftNode.model nextAttrs signalMap signalMask
+            this.model <- migrate leftNode.model nextAttrs this.SignalMap this.SignalMask
             this.MigrateContent(leftNode)
             
         override this.Dispose() =

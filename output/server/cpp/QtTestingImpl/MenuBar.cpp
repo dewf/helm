@@ -35,6 +35,14 @@ namespace MenuBar
         }
     };
 
+    void Handle_setDefaultUp(HandleRef _this, bool state) {
+        THIS->setDefaultUp(state);
+    }
+
+    void Handle_setNativeMenuBar(HandleRef _this, bool state) {
+        THIS->setNativeMenuBar(state);
+    }
+
     void Handle_clear(HandleRef _this) {
         THIS->clear();
     }

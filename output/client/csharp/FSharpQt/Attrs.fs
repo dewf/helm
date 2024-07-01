@@ -139,6 +139,12 @@ type internal MenuAttrTarget =
         abstract member Menu: Menu.Handle
     end
     
+type internal MenuBarAttrTarget =
+    interface
+        inherit WidgetAttrTarget
+        abstract member MenuBar: MenuBar.Handle
+    end
+    
 type internal ActionAttrTarget =
     interface
         inherit IAttrTarget
