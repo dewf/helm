@@ -63,6 +63,11 @@ add_library(QtTestingImpl STATIC
     ../generated/Common_wrappers.cpp
     ../Common.cpp
 
+    ../generated/Cursor.h
+    ../generated/Cursor_wrappers.cpp
+    ../CursorInternal.h
+    ../Cursor.cpp
+
     ../generated/Dialog.h
     ../generated/Dialog_wrappers.cpp
     ../Dialog.cpp
@@ -172,6 +177,11 @@ add_library(QtTestingImpl STATIC
     ../generated/RadioButton_wrappers.cpp
     ../RadioButton.cpp
 
+    ../generated/Region.h
+    ../generated/Region_wrappers.cpp
+    ../RegionInternal.h
+    ../Region.cpp
+
     ../generated/RegularExpression.h
     ../generated/RegularExpression_wrappers.cpp
     ../RegularExpressionInternal.h
@@ -180,6 +190,11 @@ add_library(QtTestingImpl STATIC
     ../generated/ScrollArea.h
     ../generated/ScrollArea_wrappers.cpp
     ../ScrollArea.cpp
+
+    ../generated/SizePolicy.h
+    ../generated/SizePolicy_wrappers.cpp
+    ../SizePolicyInternal.h
+    ../SizePolicy.cpp
 
     ../generated/Slider.h
     ../generated/Slider_wrappers.cpp

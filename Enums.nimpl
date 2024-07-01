@@ -1,5 +1,54 @@
 module Enums;
 
+flags WindowFlags : uint32 { // aka WindowType enum
+    Widget = 0x00000000,
+    Window = 0x00000001,
+    Dialog = 0x00000002 | Window,
+    Sheet = 0x00000004 | Window,
+    Drawer = Sheet | Dialog,
+    Popup = 0x00000008 | Window,
+    Tool = Popup | Dialog,
+    ToolTip = Popup | Sheet,
+    SplashScreen = ToolTip | Dialog,
+    Desktop = 0x00000010 | Window,
+    SubWindow = 0x00000012, // Note QTBUG-115729 before using
+    ForeignWindow = 0x00000020 | Window,
+    CoverWindow = 0x00000040 | Window,
+
+    WindowType_Mask = 0x000000ff,
+    MSWindowsFixedSizeDialogHint = 0x00000100,
+    MSWindowsOwnDC = 0x00000200,
+    BypassWindowManagerHint = 0x00000400,
+    X11BypassWindowManagerHint = BypassWindowManagerHint,
+    FramelessWindowHint = 0x00000800,
+    WindowTitleHint = 0x00001000,
+    WindowSystemMenuHint = 0x00002000,
+    WindowMinimizeButtonHint = 0x00004000,
+    WindowMaximizeButtonHint = 0x00008000,
+    WindowMinMaxButtonsHint = WindowMinimizeButtonHint | WindowMaximizeButtonHint,
+    WindowContextHelpButtonHint = 0x00010000,
+    WindowShadeButtonHint = 0x00020000,
+    WindowStaysOnTopHint = 0x00040000,
+    WindowTransparentForInput = 0x00080000,
+    WindowOverridesSystemGestures = 0x00100000,
+    WindowDoesNotAcceptFocus = 0x00200000,
+    MaximizeUsingFullscreenGeometryHint = 0x00400000,
+
+    CustomizeWindowHint = 0x02000000,
+    WindowStaysOnBottomHint = 0x04000000,
+    WindowCloseButtonHint = 0x08000000,
+    MacWindowToolBarButtonHint = 0x10000000,
+    BypassGraphicsProxyWidget = 0x20000000,
+    NoDropShadowWindowHint = 0x40000000,
+    WindowFullscreenButtonHint = 0x80000000
+}
+
+enum LayoutDirection {
+    LeftToRight,
+    RightToLeft,
+    LayoutDirectionAuto
+}
+
 flags Alignment {
     AlignLeft = 0x0001,
     AlignLeading = AlignLeft,
@@ -57,26 +106,6 @@ enum ContextMenuPolicy {
     PreventContextMenu
 }
 
-group SizePolicy {
-    flags Policy {
-        // in Qt these are defined separately as "PolicyFlag"
-        // but our flags handling is still primitive so we just put them here
-        GrowFlag = 1,
-        ExpandFlag = 2,
-        ShrinkFlag = 4,
-        IgnoreFlag = 8,
-
-        // actual Policy flags:
-        Fixed = 0,
-        Minimum = GrowFlag,
-        Maximum = ShrinkFlag,
-        Preferred = GrowFlag | ShrinkFlag,
-        MinimumExpanding = GrowFlag | ExpandFlag,
-        Expanding = GrowFlag | ShrinkFlag | ExpandFlag,
-        Ignored = ShrinkFlag | GrowFlag | IgnoreFlag
-    }
-}
-
 enum CursorMoveStyle {
     LogicalMoveStyle,
     VisualMoveStyle
@@ -99,6 +128,47 @@ flags TextInteractionFlags {
 
     TextEditorInteraction     = TextSelectableByMouse | TextSelectableByKeyboard | TextEditable,
     TextBrowserInteraction    = TextSelectableByMouse | LinksAccessibleByMouse | LinksAccessibleByKeyboard
+}
+
+flags FocusPolicy {
+    NoFocus = 0,
+    TabFocus = 0x1,
+    ClickFocus = 0x2,
+    StrongFocus = TabFocus | ClickFocus | 0x8,
+    WheelFocus = StrongFocus | 0x4
+}
+
+flags InputMethodHints : uint32 {
+    ImhNone = 0x0,
+
+    ImhHiddenText = 0x1,
+    ImhSensitiveData = 0x2,
+    ImhNoAutoUppercase = 0x4,
+    ImhPreferNumbers = 0x8,
+    ImhPreferUppercase = 0x10,
+    ImhPreferLowercase = 0x20,
+    ImhNoPredictiveText = 0x40,
+
+    ImhDate = 0x80,
+    ImhTime = 0x100,
+
+    ImhPreferLatin = 0x200,
+
+    ImhMultiLine = 0x400,
+
+    ImhNoEditMenu = 0x800,
+    ImhNoTextHandles = 0x1000,
+
+    ImhDigitsOnly = 0x10000,
+    ImhFormattedNumbersOnly = 0x20000,
+    ImhUppercaseOnly = 0x40000,
+    ImhLowercaseOnly = 0x80000,
+    ImhDialableCharactersOnly = 0x100000,
+    ImhEmailCharactersOnly = 0x200000,
+    ImhUrlCharactersOnly = 0x400000,
+    ImhLatinOnly = 0x800000,
+
+    ImhExclusiveInputMask = 0xffff0000
 }
 
 enum ItemDataRole {

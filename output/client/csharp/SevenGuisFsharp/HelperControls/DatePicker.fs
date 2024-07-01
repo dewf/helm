@@ -13,6 +13,8 @@ open Dialog
 open LineEdit
 open PushButton
 
+open MiscTypes
+
 type Value =
     | Empty
     | Invalid
@@ -119,7 +121,7 @@ let view (state: State) =
                           BoxItem(reject)
                           BoxItem(accept)
                       ])
-        Dialog(Size = (320, 200), WindowTitle = state.DialogTitle, Layout = layout)
+        Dialog(Size = Size.From(320, 200), WindowTitle = state.DialogTitle, Layout = layout)
     let hbox =
         BoxLayout(
             Direction = LeftToRight,

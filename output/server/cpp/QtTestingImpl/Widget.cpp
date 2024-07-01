@@ -14,6 +14,7 @@
 #include "util/SignalStuff.h"
 #include "util/convert.h"
 #include "IconInternal.h"
+#include "SizePolicyInternal.h"
 
 #define THIS ((WidgetWithHandler*)_this)
 
@@ -51,6 +52,252 @@ namespace Widget
 
     const int32_t WIDGET_SIZE_MAX = QWIDGETSIZE_MAX;
 
+    void Handle_setAcceptDrops(HandleRef _this, bool state) {
+        THIS->setAcceptDrops(state);
+    }
+
+    void Handle_setAccessibleDescription(HandleRef _this, std::string desc) {
+        THIS->setAccessibleDescription(QString::fromStdString(desc));
+    }
+
+    void Handle_setAccessibleName(HandleRef _this, std::string name) {
+        THIS->setAccessibleName(QString::fromStdString(name));
+    }
+
+    void Handle_setAutoFillBackground(HandleRef _this, bool state) {
+        THIS->setAutoFillBackground(state);
+    }
+
+    void Handle_setBaseSize(HandleRef _this, Size size) {
+        THIS->setBaseSize(toQSize(size));
+    }
+
+    Rect Handle_childrenRect(HandleRef _this) {
+        return toRect(THIS->childrenRect());
+    }
+
+    Region::OwnedHandleRef Handle_childrenRegion(HandleRef _this) {
+        auto ret = THIS->childrenRegion();
+        return (Region::OwnedHandleRef)new QRegion(ret);
+    }
+
+    void Handle_setContextMenuPolicy(HandleRef _this, ContextMenuPolicy policy) {
+        THIS->setContextMenuPolicy((Qt::ContextMenuPolicy)policy);
+    }
+
+    Cursor::OwnedHandleRef Handle_getCursor(HandleRef _this) {
+        auto ret = THIS->cursor();
+        return (Cursor::OwnedHandleRef)new QCursor(ret);
+    }
+
+    void Handle_setEnabled(HandleRef _this, bool enabled) {
+        THIS->setEnabled(enabled);
+    }
+
+    bool Handle_hasFocus(HandleRef _this) {
+        return THIS->hasFocus();
+    }
+
+    void Handle_setFocusPolicy(HandleRef _this, FocusPolicy policy) {
+        THIS->setFocusPolicy((Qt::FocusPolicy)policy);
+    }
+
+    Rect Handle_frameGeometry(HandleRef _this) {
+        return toRect(THIS->frameGeometry());
+    }
+
+    Size Handle_frameSize(HandleRef _this) {
+        return toSize(THIS->frameSize());
+    }
+
+    bool Handle_isFullscreen(HandleRef _this) {
+        return THIS->isFullScreen();
+    }
+
+    void Handle_setGeometry(HandleRef _this, Rect rect) {
+        THIS->setGeometry(toQRect(rect));
+    }
+
+    void Handle_setGeometry(HandleRef _this, int32_t x, int32_t y, int32_t width, int32_t height) {
+        THIS->setGeometry(x, y, width, height);
+    }
+
+    int32_t Handle_height(HandleRef _this) {
+        return THIS->height();
+    }
+
+    void Handle_setInputMethodHints(HandleRef _this, InputMethodHints hints) {
+        THIS->setInputMethodHints((Qt::InputMethodHints)hints);
+    }
+
+    bool Handle_isActiveWindow(HandleRef _this) {
+        return THIS->isActiveWindow();
+    }
+
+    void Handle_setLayoutDirection(HandleRef _this, LayoutDirection direction) {
+        THIS->setLayoutDirection((Qt::LayoutDirection)direction);
+    }
+
+    bool Handle_isMaximized(HandleRef _this) {
+        return THIS->isMaximized();
+    }
+
+    void Handle_setMaximumHeight(HandleRef _this, int32_t height) {
+        THIS->setMaximumHeight(height);
+    }
+
+    void Handle_setMaximumWidth(HandleRef _this, int32_t width) {
+        THIS->setMaximumWidth(width);
+    }
+
+    void Handle_setMaximumSize(HandleRef _this, Size size) {
+        THIS->setMaximumSize(toQSize(size));
+    }
+
+    bool Handle_isMinimized(HandleRef _this) {
+        return THIS->isMinimized();
+    }
+
+    void Handle_setMinimumHeight(HandleRef _this, int32_t height) {
+        THIS->setMinimumHeight(height);
+    }
+
+    void Handle_setMinimumSize(HandleRef _this, Size size) {
+        THIS->setMinimumSize(toQSize(size));
+    }
+
+    Size Handle_minimumSizeHint(HandleRef _this) {
+        return toSize(THIS->minimumSizeHint());
+    }
+
+    void Handle_setMinimumWidth(HandleRef _this, int32_t width) {
+        THIS->setMinimumWidth(width);
+    }
+
+    bool Handle_isModal(HandleRef _this) {
+        return THIS->isModal();
+    }
+
+    void Handle_setMouseTracking(HandleRef _this, bool state) {
+        THIS->setMouseTracking(state);
+    }
+
+    Rect Handle_normalGeometry(HandleRef _this) {
+        return toRect(THIS->normalGeometry());
+    }
+
+    void Handle_move(HandleRef _this, Point p) {
+        THIS->move(toQPoint(p));
+    }
+
+    void Handle_move(HandleRef _this, int32_t x, int32_t y) {
+        THIS->move(x, y);
+    }
+
+    Rect Handle_rect(HandleRef _this) {
+        return toRect(THIS->rect());
+    }
+
+    void Handle_resize(HandleRef _this, Size size) {
+        THIS->resize(toQSize(size));
+    }
+
+    void Handle_resize(HandleRef _this, int32_t width, int32_t height) {
+        THIS->resize(width, height);
+    }
+
+    Size Handle_sizeHint(HandleRef _this) {
+        return toSize(THIS->sizeHint());
+    }
+
+    void Handle_setSizeIncrement(HandleRef _this, Common::Size size) {
+        THIS->setSizeIncrement(toQSize(size));
+    }
+
+    void Handle_setSizeIncrement(HandleRef _this, int32_t w, int32_t h) {
+        THIS->setSizeIncrement(w, h);
+    }
+
+    void Handle_setSizePolicy(HandleRef _this, std::shared_ptr<SizePolicy::Deferred::Base> policy) {
+        THIS->setSizePolicy(SizePolicy::fromDeferred(policy));
+    }
+
+    void Handle_setSizePolicy(HandleRef _this, Policy hPolicy, Policy vPolicy) {
+        THIS->setSizePolicy((QSizePolicy::Policy)hPolicy, (QSizePolicy::Policy)vPolicy);
+    }
+
+    void Handle_setStatusTip(HandleRef _this, std::string tip) {
+        THIS->setStatusTip(QString::fromStdString(tip));
+    }
+
+    void Handle_setStyleSheet(HandleRef _this, std::string styles) {
+        THIS->setStyleSheet(QString::fromStdString(styles));
+    }
+
+    void Handle_setTabletTracking(HandleRef _this, bool state) {
+        THIS->setTabletTracking(state);
+    }
+
+    void Handle_setToolTip(HandleRef _this, std::string tip) {
+        THIS->setToolTip(QString::fromStdString(tip));
+    }
+
+    void Handle_setToolTipDuration(HandleRef _this, int32_t duration) {
+        THIS->setToolTipDuration(duration);
+    }
+
+    void Handle_setUpdatesEnabled(HandleRef _this, bool enabled) {
+        THIS->setUpdatesEnabled(enabled);
+    }
+
+    void Handle_setVisible(HandleRef _this, bool visible) {
+        THIS->setVisible(visible);
+    }
+
+    void Handle_setWhatsThis(HandleRef _this, std::string text) {
+        THIS->setWhatsThis(QString::fromStdString(text));
+    }
+
+    int32_t Handle_width(HandleRef _this) {
+        return THIS->width();
+    }
+
+    void Handle_setWindowFilePath(HandleRef _this, std::string path) {
+        THIS->setWindowFilePath(QString::fromStdString(path));
+    }
+
+    void Handle_setWindowFlags(HandleRef _this, WindowFlags flags_) {
+        THIS->setWindowFlags((Qt::WindowFlags)flags_);
+    }
+
+    void Handle_setWindowIcon(HandleRef _this, std::shared_ptr<Icon::Deferred::Base> icon) {
+        THIS->setWindowIcon(Icon::fromDeferred(icon));
+    }
+
+    void Handle_setWindowModality(HandleRef _this, WindowModality modality) {
+        THIS->setWindowModality((Qt::WindowModality)modality);
+    }
+
+    void Handle_setWindowModified(HandleRef _this, bool modified) {
+        THIS->setWindowModified(modified);
+    }
+
+    void Handle_setWindowOpacity(HandleRef _this, double opacity) {
+        THIS->setWindowOpacity(opacity);
+    }
+
+    void Handle_setWindowTitle(HandleRef _this, std::string title) {
+        THIS->setWindowTitle(QString::fromStdString(title));
+    }
+
+    int32_t Handle_x(HandleRef _this) {
+        return THIS->x();
+    }
+
+    int32_t Handle_y(HandleRef _this) {
+        return THIS->y();
+    }
+
     void Handle_addAction(HandleRef _this, Action::HandleRef action) {
         THIS->addAction((QAction*)action);
     }
@@ -63,49 +310,12 @@ namespace Widget
         return (HandleRef)THIS->window();
     }
 
-    void Handle_setEnabled(HandleRef _this, bool state) {
-        THIS->setEnabled(state);
-    }
-
-    void Handle_setMinimumWidth(HandleRef _this, int32_t minWidth) {
-        THIS->setMinimumWidth(minWidth);
-    }
-
-    void Handle_setMinimumHeight(HandleRef _this, int32_t minHeight) {
-        THIS->setMinimumHeight(minHeight);
-    }
-
-    void Handle_setMaximumWidth(HandleRef _this, int32_t maxWidth) {
-        THIS->setMaximumWidth(maxWidth);
-    }
-
-    void Handle_setMaximumHeight(HandleRef _this, int32_t maxHeight) {
-        THIS->setMaximumHeight(maxHeight);
-    }
-
-    void Handle_setSizePolicy(HandleRef _this, Enums::SizePolicy::Policy hPolicy, Enums::SizePolicy::Policy vPolicy) {
-        THIS->setSizePolicy((QSizePolicy::Policy)hPolicy, (QSizePolicy::Policy)vPolicy);
-    }
-
-    Rect Handle_getRect(HandleRef _this) {
-        auto x = THIS->rect();
-        return toRect(x);
-    }
-
-    Size Handle_getSize(HandleRef _this) {
-        return toSize(THIS->size());
-    }
-
     void Handle_updateGeometry(HandleRef _this) {
         THIS->updateGeometry();
     }
 
     void Handle_adjustSize(HandleRef _this) {
         THIS->adjustSize();
-    }
-
-    void Handle_resize(HandleRef _this, int32_t width, int32_t height) {
-        THIS->resize(width, height);
     }
 
     void Handle_setFixedWidth(HandleRef _this, int32_t width) {
@@ -120,24 +330,12 @@ namespace Widget
         THIS->setFixedSize(width, height);
     }
 
-    void Handle_move(HandleRef _this, Point p) {
-        THIS->move(toQPoint(p));
-    }
-
-    void Handle_move(HandleRef _this, int32_t x, int32_t y) {
-        THIS->move(x, y);
-    }
-
     void Handle_show(HandleRef _this) {
         THIS->show();
     }
 
     void Handle_hide(HandleRef _this) {
         THIS->hide();
-    }
-
-    void Handle_setVisible(HandleRef _this, bool state) {
-        THIS->setVisible(state);
     }
 
     void Handle_update(HandleRef _this) {
@@ -152,14 +350,6 @@ namespace Widget
         THIS->update(toQRect(rect));
     }
 
-    void Handle_setWindowTitle(HandleRef _this, std::string title) {
-        THIS->setWindowTitle(QString::fromStdString(title));
-    }
-
-    void Handle_setWindowModality(HandleRef _this, WindowModality modality) {
-        THIS->setWindowModality((Qt::WindowModality)modality);
-    }
-
     void Handle_setLayout(HandleRef _this, Layout::HandleRef layout) {
         THIS->setLayout((QLayout*)layout);
     }
@@ -168,25 +358,9 @@ namespace Widget
         return (Layout::HandleRef)THIS->layout();
     }
 
-    void Handle_setContextMenuPolicy(HandleRef _this, ContextMenuPolicy policy) {
-        THIS->setContextMenuPolicy((Qt::ContextMenuPolicy)policy);
-    }
-
     Point Handle_mapToGlobal(HandleRef _this, Point p) {
         auto p2 = THIS->mapToGlobal(toQPoint(p));
         return toPoint(p2);
-    }
-
-    void Handle_setUpdatesEnabled(HandleRef _this, bool enabled) {
-        THIS->setUpdatesEnabled(enabled);
-    }
-
-    void Handle_setMouseTracking(HandleRef _this, bool enabled) {
-        THIS->setMouseTracking(enabled);
-    }
-
-    void Handle_setAcceptDrops(HandleRef _this, bool enabled) {
-        THIS->setAcceptDrops(enabled);
     }
 
     void Handle_setSignalMask(HandleRef _this, SignalMask mask) {

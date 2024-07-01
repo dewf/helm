@@ -12,24 +12,209 @@ type internal Signal =
     | WindowIconChanged of icon: IconProxy
     | WindowTitleChanged of title: string
 
+type FocusPolicy =
+    | NoFocus
+    | TabFocus
+    | ClickFocus
+    | StrongFocus
+    | WheelFocus
+with
+    member internal this.QtValue =
+        match this with
+        | NoFocus -> Enums.FocusPolicy.NoFocus
+        | TabFocus -> Enums.FocusPolicy.TabFocus
+        | ClickFocus -> Enums.FocusPolicy.ClickFocus
+        | StrongFocus -> Enums.FocusPolicy.StrongFocus
+        | WheelFocus -> Enums.FocusPolicy.WheelFocus
+        
+type InputMethodHint =
+    | HiddenText
+    | SensitiveData
+    | NoAutoUppercase
+    | PreferNumbers
+    | PreferUppercase
+    | PreferLowercase
+    | NoPredictiveText
+    | Date
+    | Time
+    | PreferLatin
+    | MultiLine
+    | NoEditMenu
+    | NoTextHandles
+    | DigitsOnly
+    | FormattedNumbersOnly
+    | UppercaseOnly
+    | LowercaseOnly
+    | DialableCharactersOnly
+    | EmailCharactersOnly
+    | UrlCharactersOnly
+    | LatinOnly
+    | ExclusiveInputMask
+with
+    static member QtSetFrom (hints: InputMethodHint seq) =
+        (LanguagePrimitives.EnumOfValue<uint, Enums.InputMethodHints> 0u, hints)
+        ||> Seq.fold (fun acc hint ->
+            let flag =
+                match hint with
+                | HiddenText -> Enums.InputMethodHints.ImhHiddenText
+                | SensitiveData -> Enums.InputMethodHints.ImhSensitiveData
+                | NoAutoUppercase -> Enums.InputMethodHints.ImhNoAutoUppercase
+                | PreferNumbers -> Enums.InputMethodHints.ImhPreferNumbers
+                | PreferUppercase -> Enums.InputMethodHints.ImhPreferUppercase
+                | PreferLowercase -> Enums.InputMethodHints.ImhPreferLowercase
+                | NoPredictiveText -> Enums.InputMethodHints.ImhNoPredictiveText
+                | Date -> Enums.InputMethodHints.ImhDate
+                | Time -> Enums.InputMethodHints.ImhTime
+                | PreferLatin -> Enums.InputMethodHints.ImhPreferLatin
+                | MultiLine -> Enums.InputMethodHints.ImhMultiLine
+                | NoEditMenu -> Enums.InputMethodHints.ImhNoEditMenu
+                | NoTextHandles -> Enums.InputMethodHints.ImhNoTextHandles
+                | DigitsOnly -> Enums.InputMethodHints.ImhDigitsOnly
+                | FormattedNumbersOnly -> Enums.InputMethodHints.ImhFormattedNumbersOnly
+                | UppercaseOnly -> Enums.InputMethodHints.ImhUppercaseOnly
+                | LowercaseOnly -> Enums.InputMethodHints.ImhLowercaseOnly
+                | DialableCharactersOnly -> Enums.InputMethodHints.ImhDialableCharactersOnly
+                | EmailCharactersOnly -> Enums.InputMethodHints.ImhEmailCharactersOnly
+                | UrlCharactersOnly -> Enums.InputMethodHints.ImhUrlCharactersOnly
+                | LatinOnly -> Enums.InputMethodHints.ImhLatinOnly
+                | ExclusiveInputMask -> Enums.InputMethodHints.ImhExclusiveInputMask
+            acc ||| flag)
+   
+type LayoutDirection =
+    | LeftToRight
+    | RightToLeft
+    | LayoutDirectionAuto
+with
+    member this.QtValue =
+        match this with
+        | LeftToRight -> Enums.LayoutDirection.LeftToRight
+        | RightToLeft -> Enums.LayoutDirection.RightToLeft
+        | LayoutDirectionAuto -> Enums.LayoutDirection.LayoutDirectionAuto
+        
+type WindowFlag =
+    | Widget
+    | Window
+    | Dialog
+    | Sheet
+    | Drawer
+    | Popup
+    | Tool
+    | ToolTip
+    | SplashScreen
+    | Desktop
+    | SubWindow
+    | ForeignWindow
+    | CoverWindow
+    | WindowType_Mask
+    | MSWindowsFixedSizeDialogHint
+    | MSWindowsOwnDC
+    | BypassWindowManagerHint
+    | X11BypassWindowManagerHint
+    | FramelessWindowHint
+    | WindowTitleHint
+    | WindowSystemMenuHint
+    | WindowMinimizeButtonHint
+    | WindowMaximizeButtonHint
+    | WindowMinMaxButtonsHint
+    | WindowContextHelpButtonHint
+    | WindowShadeButtonHint
+    | WindowStaysOnTopHint
+    | WindowTransparentForInput
+    | WindowOverridesSystemGestures
+    | WindowDoesNotAcceptFocus
+    | MaximizeUsingFullscreenGeometryHint
+    | CustomizeWindowHint
+    | WindowStaysOnBottomHint
+    | WindowCloseButtonHint
+    | MacWindowToolBarButtonHint
+    | BypassGraphicsProxyWidget
+    | NoDropShadowWindowHint
+    | WindowFullscreenButtonHint
+with
+    static member QtSetFrom (flags: WindowFlag seq) =
+        (LanguagePrimitives.EnumOfValue<uint, Enums.WindowFlags> 0u, flags)
+        ||> Seq.fold (fun acc wf ->
+            let flag =
+                match wf with
+                | Widget -> Enums.WindowFlags.Widget
+                | Window -> Enums.WindowFlags.Window
+                | Dialog -> Enums.WindowFlags.Dialog
+                | Sheet -> Enums.WindowFlags.Sheet
+                | Drawer -> Enums.WindowFlags.Drawer
+                | Popup -> Enums.WindowFlags.Popup
+                | Tool -> Enums.WindowFlags.Tool
+                | ToolTip -> Enums.WindowFlags.ToolTip
+                | SplashScreen -> Enums.WindowFlags.SplashScreen
+                | Desktop -> Enums.WindowFlags.Desktop
+                | SubWindow -> Enums.WindowFlags.SubWindow
+                | ForeignWindow -> Enums.WindowFlags.ForeignWindow
+                | CoverWindow -> Enums.WindowFlags.CoverWindow
+                | WindowType_Mask -> Enums.WindowFlags.WindowType_Mask
+                | MSWindowsFixedSizeDialogHint -> Enums.WindowFlags.MSWindowsFixedSizeDialogHint
+                | MSWindowsOwnDC -> Enums.WindowFlags.MSWindowsOwnDC
+                | BypassWindowManagerHint -> Enums.WindowFlags.BypassWindowManagerHint
+                | X11BypassWindowManagerHint -> Enums.WindowFlags.X11BypassWindowManagerHint
+                | FramelessWindowHint -> Enums.WindowFlags.FramelessWindowHint
+                | WindowTitleHint -> Enums.WindowFlags.WindowTitleHint
+                | WindowSystemMenuHint -> Enums.WindowFlags.WindowSystemMenuHint
+                | WindowMinimizeButtonHint -> Enums.WindowFlags.WindowMinimizeButtonHint
+                | WindowMaximizeButtonHint -> Enums.WindowFlags.WindowMaximizeButtonHint
+                | WindowMinMaxButtonsHint -> Enums.WindowFlags.WindowMinMaxButtonsHint
+                | WindowContextHelpButtonHint -> Enums.WindowFlags.WindowContextHelpButtonHint
+                | WindowShadeButtonHint -> Enums.WindowFlags.WindowShadeButtonHint
+                | WindowStaysOnTopHint -> Enums.WindowFlags.WindowStaysOnTopHint
+                | WindowTransparentForInput -> Enums.WindowFlags.WindowTransparentForInput
+                | WindowOverridesSystemGestures -> Enums.WindowFlags.WindowOverridesSystemGestures
+                | WindowDoesNotAcceptFocus -> Enums.WindowFlags.WindowDoesNotAcceptFocus
+                | MaximizeUsingFullscreenGeometryHint -> Enums.WindowFlags.MaximizeUsingFullscreenGeometryHint
+                | CustomizeWindowHint -> Enums.WindowFlags.CustomizeWindowHint
+                | WindowStaysOnBottomHint -> Enums.WindowFlags.WindowStaysOnBottomHint
+                | WindowCloseButtonHint -> Enums.WindowFlags.WindowCloseButtonHint
+                | MacWindowToolBarButtonHint -> Enums.WindowFlags.MacWindowToolBarButtonHint
+                | BypassGraphicsProxyWidget -> Enums.WindowFlags.BypassGraphicsProxyWidget
+                | NoDropShadowWindowHint -> Enums.WindowFlags.NoDropShadowWindowHint
+                | WindowFullscreenButtonHint -> Enums.WindowFlags.WindowFullscreenButtonHint
+            acc ||| flag)
+
 type private Attr =
-    | Size of width: int * height: int
-    | Enabled of state: bool
-    | MinimumWidth of width: int
-    | MinimumHeight of height: int
-    | MaximumWidth of width: int
-    | MaximumHeight of height: int
-    | SizePolicy of hPolicy: SizePolicy * vPolicy: SizePolicy
-    | FixedWidth of width: int
-    | FixedHeight of height: int
-    | FixedSize of width: int * height: int
-    | Visible of state: bool
-    | WindowTitle of title: string
-    | WindowModality of modality: WindowModality
+    | AcceptDrops of accept: bool
+    | AccessibleDescription of desc: string
+    | AccessibleName of name: string
+    | AutoFillBackground of state: bool
+    | BaseSize of size: Size
     | ContextMenuPolicy of policy: ContextMenuPolicy
-    | UpdatesEnabled of enabled: bool
+    | Enabled of enabled: bool
+    | FocusPolicy of policy: FocusPolicy
+    | Geometry of rect: Rect
+    | InputMethodHints of hints: InputMethodHint seq
+    | LayoutDirection of direction: LayoutDirection
+    | MaximumHeight of height: int
+    | MaximumWidth of width: int
+    | MaximumSize of size: Size
+    | MinimumHeight of height: int
+    | MinimumSize of size: Size
+    | MinimumWidth of width: int
     | MouseTracking of enabled: bool
-    | AcceptDrops of enabled: bool
+    | Position of pos: Point            // move
+    | Size of size: Size                // resize
+    | SizeIncrement of size: Size
+    | SizePolicy of policy: SizePolicyDeferred
+    | SizePolicy2 of hPolicy: SizePolicy * vPolicy: SizePolicy
+    | StatusTip of tip: string
+    | StyleSheet of styles: string
+    | TabletTracking of enabled: bool
+    | ToolTip of tip: string
+    | ToolTipDuration of msecs: int
+    | UpdatesEnabled of enabled: bool
+    | Visible of visible: bool
+    | WhatsThis of text: string
+    | WindowFilePath of path: string
+    | WindowFlags of flags: WindowFlag seq
+    | WindowIcon of icon: Icon
+    | WindowModality of modality: WindowModality
+    | WindowModified of modified: bool
+    | WindowOpacity of opacity: double
+    | WindowTitle of title: string
 with
     interface IAttr with
         override this.AttrEquals other =
@@ -40,63 +225,126 @@ with
                 false
         override this.Key =
             match this with
-            | Size _ -> "widget:size"
-            | Enabled _ -> "widget:enabled"
-            | MinimumWidth _ -> "widget:minwidth"
-            | MinimumHeight _ -> "widget:minheight"
-            | MaximumWidth _ -> "widget:maxwidth"
-            | MaximumHeight _ -> "widget:maxheight"
-            | SizePolicy _ -> "widget:sizepolicy"
-            | FixedWidth _ -> "widget:fixedwidth"
-            | FixedHeight _ -> "widget:fixedheight"
-            | FixedSize _ -> "widget:fixedsize"
-            | Visible _ -> "widget:visible"
-            | WindowTitle _ -> "widget:windowtitle"
-            | WindowModality _ -> "widget:windowmodality"
-            | ContextMenuPolicy _ -> "widget:contextmenupolicy"
-            | UpdatesEnabled _ -> "widget:updatesenabled"
-            | MouseTracking _ -> "widget:mousetracking"
-            | AcceptDrops _ -> "widget:acceptdrops"
+            | AcceptDrops _ -> "widget:AcceptDrops"
+            | AccessibleDescription _ -> "widget:AccessibleDescription"
+            | AccessibleName _ -> "widget:AccessibleName"
+            | AutoFillBackground _ -> "widget:AutoFillBackground"
+            | BaseSize _ -> "widget:BaseSize"
+            | ContextMenuPolicy _ -> "widget:ContextMenuPolicy"
+            | Enabled _ -> "widget:Enabled"
+            | FocusPolicy _ -> "widget:FocusPolicy"
+            | Geometry _ -> "widget:Geometry"
+            | InputMethodHints _ -> "widget:InputMethodHints"
+            | LayoutDirection _ -> "widget:LayoutDirection"
+            | MaximumHeight _ -> "widget:MaximumHeight"
+            | MaximumWidth _ -> "widget:MaximumWidth"
+            | MaximumSize _ -> "widget:MaximumSize"
+            | MinimumHeight _ -> "widget:MinimumHeight"
+            | MinimumSize _ -> "widget:MinimumSize"
+            | MinimumWidth _ -> "widget:MinimumWidth"
+            | MouseTracking _ -> "widget:MouseTracking"
+            | Position _ -> "widget:Position"
+            | Size _ -> "widget:Size"
+            | SizeIncrement _ -> "widget:SizeIncrement"
+            | SizePolicy _ -> "widget:SizePolicy"
+            | SizePolicy2 _ -> "widget:SizePolicy2"
+            | StatusTip _ -> "widget:StatusTip"
+            | StyleSheet _ -> "widget:StyleSheet"
+            | TabletTracking _ -> "widget:TabletTracking"
+            | ToolTip _ -> "widget:ToolTip"
+            | ToolTipDuration _ -> "widget:ToolTipDuration"
+            | UpdatesEnabled _ -> "widget:UpdatesEnabled"
+            | Visible _ -> "widget:Visible"
+            | WhatsThis _ -> "widget:WhatsThis"
+            | WindowFilePath _ -> "widget:WindowFilePath"
+            | WindowFlags _ -> "widget:WindowFlags"
+            | WindowIcon _ -> "widget:WindowIcon"
+            | WindowModality _ -> "widget:WindowModality"
+            | WindowModified _ -> "widget:WindowModified"
+            | WindowOpacity _ -> "widget:WindowOpacity"
+            | WindowTitle _ -> "widget:WindowTitle"
         override this.ApplyTo (target: IAttrTarget) =
             match target with
             | :? WidgetAttrTarget as widgetTarget ->
                 let widget =
                     widgetTarget.Widget
                 match this with
-                | Size (width, height) ->
-                    widget.Resize(width, height)
-                | Enabled state ->
-                    widget.SetEnabled(state)
-                | MinimumWidth width ->
-                    widget.SetMinimumWidth(width)
-                | MinimumHeight height ->
-                    widget.SetMinimumHeight(height)
-                | MaximumWidth width ->
-                    widget.SetMaximumWidth(width)
-                | MaximumHeight height ->
-                    widget.SetMaximumHeight(height)
-                | SizePolicy(hPolicy, vPolicy) ->
-                    widget.SetSizePolicy(hPolicy.QtValue, vPolicy.QtValue)
-                | FixedWidth width ->
-                    widget.SetFixedWidth(width)
-                | FixedHeight height ->
-                    widget.SetFixedHeight(height)
-                | FixedSize(width, height) ->
-                    widget.SetFixedSize(width, height)
-                | Visible state ->
-                    widget.SetVisible(state)
-                | WindowTitle title ->
-                    widget.SetWindowTitle(title)
-                | WindowModality modality ->
-                    widget.SetWindowModality(modality.QtValue)
+                | AcceptDrops accept ->
+                    widget.SetAcceptDrops(accept)
+                | AccessibleDescription desc ->
+                    widget.SetAccessibleDescription(desc)
+                | AccessibleName name ->
+                    widget.SetAccessibleName(name)
+                | AutoFillBackground state ->
+                    widget.SetAutoFillBackground(state)
+                | BaseSize size ->
+                    widget.SetBaseSize(size.QtValue)
                 | ContextMenuPolicy policy ->
                     widget.SetContextMenuPolicy(policy.QtValue)
-                | UpdatesEnabled enabled ->
-                    widget.SetUpdatesEnabled(enabled)
+                | Enabled enabled ->
+                    widget.SetEnabled(enabled)
+                | FocusPolicy policy ->
+                    widget.SetFocusPolicy(policy.QtValue)
+                | Geometry rect ->
+                    widget.SetGeometry(rect.QtValue)
+                | InputMethodHints hints ->
+                    widget.SetInputMethodHints(hints |> InputMethodHint.QtSetFrom)
+                | LayoutDirection direction ->
+                    widget.SetLayoutDirection(direction.QtValue)
+                | MaximumHeight height ->
+                    widget.SetMaximumHeight(height)
+                | MaximumWidth width ->
+                    widget.SetMaximumWidth(width)
+                | MaximumSize size ->
+                    widget.SetMaximumSize(size.QtValue)
+                | MinimumHeight height ->
+                    widget.SetMaximumHeight(height)
+                | MinimumSize size ->
+                    widget.SetMinimumSize(size.QtValue)
+                | MinimumWidth width ->
+                    widget.SetMinimumWidth(width)
                 | MouseTracking enabled ->
                     widget.SetMouseTracking(enabled)
-                | AcceptDrops enabled ->
-                    widget.SetAcceptDrops(enabled)
+                | Position pos ->
+                    widget.Move(pos.QtValue)
+                | Size size ->
+                    widget.Resize(size.QtValue)
+                | SizeIncrement size ->
+                    widget.SetSizeIncrement(size.QtValue)
+                | SizePolicy policy ->
+                    widget.SetSizePolicy(policy.QtValue)
+                | SizePolicy2(hPolicy, vPolicy) ->
+                    widget.SetSizePolicy(hPolicy.QtValue, vPolicy.QtValue)
+                | StatusTip tip ->
+                    widget.SetStatusTip(tip)
+                | StyleSheet styles ->
+                    widget.SetStyleSheet(styles)
+                | TabletTracking enabled ->
+                    widget.SetTabletTracking(enabled)
+                | ToolTip tip ->
+                    widget.SetToolTip(tip)
+                | ToolTipDuration msecs ->
+                    widget.SetToolTipDuration(msecs)
+                | UpdatesEnabled enabled ->
+                    widget.SetUpdatesEnabled(enabled)
+                | Visible visible ->
+                    widget.SetVisible(visible)
+                | WhatsThis text ->
+                    widget.SetWhatsThis(text)
+                | WindowFilePath path ->
+                    widget.SetWindowFilePath(path)
+                | WindowFlags flags ->
+                    widget.SetWindowFlags(flags |> WindowFlag.QtSetFrom)
+                | WindowIcon icon ->
+                    widget.SetWindowIcon(icon.QtValue)
+                | WindowModality modality ->
+                    widget.SetWindowModality(modality.QtValue)
+                | WindowModified modified ->
+                    widget.SetWindowModified(modified)
+                | WindowOpacity opacity ->
+                    widget.SetWindowOpacity(opacity)
+                | WindowTitle title ->
+                    widget.SetWindowTitle(title)
             | _ ->
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
     
@@ -132,58 +380,119 @@ type Props<'msg>() =
             onWindowTitleChanged
             |> Option.map (fun f -> f title)
     
-    member this.Size with set value =
-        this.PushAttr(Size value)
+    member this.AcceptDrops with set value =
+        this.PushAttr(AcceptDrops value)
         
-    member this.Enabled with set value =
-        this.PushAttr(Enabled value)
+    member this.AccessibleDescription with set value =
+        this.PushAttr(AccessibleDescription value)
         
-    member this.MinimumWidth with set value =
-        this.PushAttr(MinimumWidth value)
+    member this.AccessibleName with set value =
+        this.PushAttr(AccessibleName value)
         
-    member this.MinimumHeight with set value =
-        this.PushAttr(MinimumHeight value)
+    member this.AutoFillBackground with set value =
+        this.PushAttr(AutoFillBackground value)
         
-    member this.MaximumWidth with set value =
-        this.PushAttr(MaximumWidth value)
-        
-    member this.MaximumHeight with set value =
-        this.PushAttr(MaximumHeight value)
-        
-    member this.SizePolicy with set value =
-        this.PushAttr(SizePolicy value)
-        
-    member this.FixedWidth with set value =
-        this.PushAttr(FixedWidth value)
-        
-    member this.FixedHeight with set value =
-        this.PushAttr(FixedHeight value)
-        
-    member this.FixedSize with set value =
-        this.PushAttr(FixedSize value)
-        
-    member this.Visible with set value =
-        this.PushAttr(Visible value)
-        
-    member this.WindowTitle with set value =
-        this.PushAttr(WindowTitle value)
-        
-    member this.WindowModality with set value =
-        this.PushAttr(WindowModality value)
+    member this.BaseSize with set value =
+        this.PushAttr(BaseSize value)
         
     member this.ContextMenuPolicy with set value =
         this.PushAttr(ContextMenuPolicy value)
         
-    member this.UpdatesEnabled with set value =
-        this.PushAttr(UpdatesEnabled value)
+    member this.Enabled with set value =
+        this.PushAttr(Enabled value)
+        
+    member this.FocusPolicy with set value =
+        this.PushAttr(FocusPolicy value)
+        
+    member this.Geometry with set value =
+        this.PushAttr(Geometry value)
+        
+    member this.InputMethodHints with set value =
+        this.PushAttr(InputMethodHints value)
+        
+    member this.LayoutDirection with set value =
+        this.PushAttr(LayoutDirection value)
+        
+    member this.MaximumHeight with set value =
+        this.PushAttr(MaximumHeight value)
+        
+    member this.MaximumWidth with set value =
+        this.PushAttr(MaximumWidth value)
+        
+    member this.MaximumSize with set value =
+        this.PushAttr(MaximumSize value)
+        
+    member this.MinimumHeight with set value =
+        this.PushAttr(MinimumHeight value)
+        
+    member this.MinimumSize with set value =
+        this.PushAttr(MinimumSize value)
+        
+    member this.MinimumWidth with set value =
+        this.PushAttr(MinimumWidth value)
         
     member this.MouseTracking with set value =
         this.PushAttr(MouseTracking value)
         
-    member this.AcceptDrops with set value =
-        this.PushAttr(AcceptDrops value)
+    member this.Position with set value =
+        this.PushAttr(Position value)
         
-
+    member this.Size with set value =
+        this.PushAttr(Size value)
+        
+    member this.SizeIncrement with set value =
+        this.PushAttr(SizeIncrement value)
+        
+    member this.SizePolicy with set value =
+        this.PushAttr(SizePolicy value)
+        
+    member this.SizePolicy2 with set value =
+        this.PushAttr(SizePolicy2 value)
+                      
+    member this.StatusTip with set value =
+        this.PushAttr(StatusTip value)
+        
+    member this.StyleSheet with set value =
+        this.PushAttr(StyleSheet value)
+        
+    member this.TabletTracking with set value =
+        this.PushAttr(TabletTracking value)
+        
+    member this.ToolTip with set value =
+        this.PushAttr(ToolTip value)
+        
+    member this.ToolTipDuration with set value =
+        this.PushAttr(ToolTipDuration value)
+        
+    member this.UpdatesEnabled with set value =
+        this.PushAttr(UpdatesEnabled value)
+        
+    member this.Visible with set value =
+        this.PushAttr(Visible value)
+        
+    member this.WhatsThis with set value =
+        this.PushAttr(WhatsThis value)
+        
+    member this.WindowFilePath with set value =
+        this.PushAttr(WindowFilePath value)
+        
+    member this.WindowFlags with set value =
+        this.PushAttr(WindowFlags value)
+        
+    member this.WindowIcon with set value =
+        this.PushAttr(WindowIcon value)
+        
+    member this.WindowModality with set value =
+        this.PushAttr(WindowModality value)
+        
+    member this.WindowModified with set value =
+        this.PushAttr(WindowModified value)
+        
+    member this.WindowOpacity with set value =
+        this.PushAttr(WindowOpacity value)
+        
+    member this.WindowTitle with set value =
+        this.PushAttr(WindowTitle value)
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     let mutable widget = Widget.Create(this)
@@ -213,8 +522,10 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.CustomContextMenuRequested pos =
             signalDispatch (Point.From pos |> CustomContextMenuRequested)
         member this.WindowIconChanged icon =
+            // TODO: guard
             signalDispatch (IconProxy(icon) |> WindowIconChanged)
         member this.WindowTitleChanged title =
+            // TODO: guard
             signalDispatch (WindowTitleChanged title)
                 
     interface IDisposable with

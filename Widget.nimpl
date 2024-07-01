@@ -7,6 +7,9 @@ import Icon;
 import Enums;
 import Action;
 import Object;
+import Region;
+import Cursor;
+import SizePolicy;
 
 int WIDGET_SIZE_MAX;   // pass-through of QWIDGETSIZE_MAX
 
@@ -23,55 +26,105 @@ interface SignalHandler {
 }
 
 opaque Handle extends Object.Handle {
+    // properties
+    void setAcceptDrops(bool state);
+    void setAccessibleDescription(string desc);
+    void setAccessibleName(string name);
+    void setAutoFillBackground(bool state);
+    void setBaseSize(Size size);
+    Rect childrenRect();
+    Region.OwnedHandle childrenRegion();
+    void setContextMenuPolicy(ContextMenuPolicy policy);
+    Cursor.OwnedHandle getCursor();
+    void setEnabled(bool enabled);
+    bool hasFocus();
+    void setFocusPolicy(FocusPolicy policy);
+
+    // TODO: need to fix the PaintResources font stuff so it doesn't collide, and then they need to be merged in the future
+    // void setFont(Font.Deferred font);
+
+    Rect frameGeometry();
+    Size frameSize();
+    bool isFullscreen();
+    void setGeometry(Rect rect);
+    void setGeometry(int x, int y, int width, int height);
+    int height();
+    void setInputMethodHints(InputMethodHints hints);
+    bool isActiveWindow();
+    void setLayoutDirection(LayoutDirection direction);
+
+    // TODO:
+    // locale : QLocale
+
+    bool isMaximized();
+    void setMaximumHeight(int height);
+    void setMaximumWidth(int width);
+    void setMaximumSize(Size size);
+    bool isMinimized();
+    void setMinimumHeight(int height);
+    void setMinimumSize(Size size);
+    Size minimumSizeHint();
+    void setMinimumWidth(int width);
+    bool isModal();
+    void setMouseTracking(bool state);
+    Rect normalGeometry();
+
+    // TODO:
+    // palette : QPalette
+
+    void move(Point p);
+    void move(int x, int y);
+    Rect rect();
+    void resize(Size size);
+    void resize(int width, int height);
+    Size sizeHint();
+    void setSizeIncrement(Size size);
+    void setSizeIncrement(int w, int h);
+    void setSizePolicy(SizePolicy.Deferred policy);
+    void setSizePolicy(SizePolicy.Policy hPolicy, SizePolicy.Policy vPolicy);
+    void setStatusTip(string tip);
+    void setStyleSheet(string styles);
+    void setTabletTracking(bool state);
+    void setToolTip(string tip);
+    void setToolTipDuration(int duration);
+    void setUpdatesEnabled(bool enabled);
+    void setVisible(bool visible);
+    void setWhatsThis(string text);
+    int width();
+    void setWindowFilePath(string path);
+    void setWindowFlags(WindowFlags flags_);
+    void setWindowIcon(Icon.Deferred icon);
+    void setWindowModality(WindowModality modality);
+    void setWindowModified(bool modified);
+    void setWindowOpacity(double opacity);
+    void setWindowTitle(string title);
+    int x();
+    int y();
+    // end properties
+
     void addAction(Action.Handle action);
     
     void setParent(Handle parent);
     Handle getWindow();
-    
-    void setEnabled(bool state);
-    void setMinimumWidth(int minWidth);
-    void setMinimumHeight(int minHeight);
-    void setMaximumWidth(int maxWidth);
-    void setMaximumHeight(int maxHeight);
-
-    void setSizePolicy(SizePolicy.Policy hPolicy, SizePolicy.Policy vPolicy);
-
-    Rect getRect();
-    Size getSize();
 
     void updateGeometry();
     void adjustSize();
-
-    void resize(int width, int height);
 
     void setFixedWidth(int width);
     void setFixedHeight(int height);
     void setFixedSize(int width, int height);
 
-    void move(Point p);
-    void move(int x, int y);
     void show();
     void hide();
-    void setVisible(bool state);
 
     void update();
     void update(int x, int y, int width, int height);
     void update(Rect rect);
 
-    void setWindowTitle(string title);
-    void setWindowModality(WindowModality modality);
-
     void setLayout(Layout.Handle layout);
     Layout.Handle getLayout();
 
-    void setContextMenuPolicy(ContextMenuPolicy policy);
     Point mapToGlobal(Point p);
-
-    // things that probably only make sense for subclassed (but we haven't yet defined a separate opaque for that purpose)
-    void setUpdatesEnabled(bool enabled);
-    void setMouseTracking(bool enabled);
-    void setAcceptDrops(bool enabled);
-    // end subclass-y stuff
 
     void setSignalMask(SignalMask mask);
 }

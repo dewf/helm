@@ -84,6 +84,8 @@ type internal WidgetAttrTarget =
     interface
         inherit IAttrTarget
         abstract member Widget: Widget.Handle
+        // abstract member SetWindowIcon: Icon -> bool
+        // abstract member SetWindowTitle: string -> bool
     end
     
 type internal FrameAttrTarget =

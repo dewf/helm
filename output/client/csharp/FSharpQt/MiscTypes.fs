@@ -15,13 +15,13 @@ type SizePolicy =
 with
     member this.QtValue =
         match this with
-        | Fixed -> Enums.SizePolicy.Policy.Fixed
-        | Minimum -> Enums.SizePolicy.Policy.Minimum
-        | Maximum -> Enums.SizePolicy.Policy.Maximum
-        | Preferred -> Enums.SizePolicy.Policy.Preferred
-        | MinimumExpanding -> Enums.SizePolicy.Policy.MinimumExpanding
-        | Expanding -> Enums.SizePolicy.Policy.Expanding
-        | Ignored -> Enums.SizePolicy.Policy.Ignored
+        | Fixed -> SizePolicy.Policy.Fixed
+        | Minimum -> SizePolicy.Policy.Minimum
+        | Maximum -> SizePolicy.Policy.Maximum
+        | Preferred -> SizePolicy.Policy.Preferred
+        | MinimumExpanding -> SizePolicy.Policy.MinimumExpanding
+        | Expanding -> SizePolicy.Policy.Expanding
+        | Ignored -> SizePolicy.Policy.Ignored
 
 type Alignment =
     | Left
@@ -488,7 +488,7 @@ type internal NullWidgetHandler() =
 type WidgetProxy internal(handle: Widget.Handle) =
     // member val widget = widget
     member this.Rect =
-        Rect.From(handle.GetRect())
+        Rect.From(handle.Rect())
 
 type ActionProxy internal(action: Action.Handle) =
     // not sure what methods/props will be useful yet
@@ -551,6 +551,12 @@ type ModelIndexDeferred private(deferred: ModelIndex.Deferred) =
         ModelIndexDeferred(ModelIndex.Deferred.FromOwned(owned))
     internal new(handle: ModelIndex.Handle) =
         ModelIndexDeferred(ModelIndex.Deferred.FromHandle(handle))
+        
+
+// see notes on ModelIndex* stuff above, similar will apply here
+// maybe we need a "stack types" module or something?
+type SizePolicyDeferred private(deferred: Org.Whatever.QtTesting.SizePolicy.Deferred) =
+    member val internal QtValue = deferred
     
 // other =========================
 
