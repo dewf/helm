@@ -149,7 +149,7 @@ type Props<'msg>() =
 
     member internal this.SignalMap = function
         | WidgetSignal signal ->
-            (this :> Widget.Props<'msg>).SignalMap signal
+            (this :> Widget.Props<'msg>).SignalMap_REMOVE signal
         | CursorPositionChanged(oldPos, newPos) ->
             onCursorPositionChanged
             |> Option.map (fun f -> f (oldPos, newPos))

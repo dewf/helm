@@ -369,7 +369,8 @@ type Props<'msg>() =
         onWindowTitleChanged <- Some value
         this.AddSignal(int Widget.SignalMask.WindowTitleChanged)
         
-    member internal this.SignalMap = function
+    // TODO: will remove this completely once all the widgets are done
+    member internal this.SignalMap_REMOVE = function
         | CustomContextMenuRequested pos ->
             onCustomContextMenuRequested
             |> Option.map (fun f -> f pos)
@@ -379,7 +380,22 @@ type Props<'msg>() =
         | WindowTitleChanged title ->
             onWindowTitleChanged
             |> Option.map (fun f -> f title)
-    
+        
+    member internal this.SignalMapFuncs =
+        let thisFunc = function
+            | CustomContextMenuRequested pos ->
+                onCustomContextMenuRequested
+                |> Option.map (fun f -> f pos)
+            | WindowIconChanged icon ->
+                onWindowIconChanged
+                |> Option.map (fun f -> f icon)
+            | WindowTitleChanged title ->
+                onWindowTitleChanged
+                |> Option.map (fun f -> f title)
+        // if we weren't at root level (eg a Widget subclass),
+        // we'd do thisFunc :: base.SignalMapFuncs
+        [ thisFunc ]
+        
     member this.AcceptDrops with set value =
         this.PushAttr(AcceptDrops value)
         
@@ -493,31 +509,45 @@ type Props<'msg>() =
         
     member this.WindowTitle with set value =
         this.PushAttr(WindowTitle value)
-
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable widget = Widget.Create(this)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit, widget: Widget.Handle) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Widget.SignalMask> 0
-    
+    // binding guards
+    let mutable lastTitle = ""
+
     let signalDispatch (s: Signal) =
         signalMap s
         |> Option.iter dispatch
-        
-    member this.Widget with get() = widget
-    member this.SignalMap with set value = signalMap <- value
     
+    member internal this.SignalMaps with set (mapFuncList: (Signal -> 'msg option) list) =
+        match mapFuncList with
+        | h :: _ ->
+            signalMap <- h
+            // no base class to assign the rest to
+            // base.SignalMaps <- etc
+        | _ ->
+            failwith "Widget.ModelCore: signal map assignment didn't have a head element"
+    
+    member this.Widget = widget
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             widget.SetSignalMask(value)
             currentMask <- value
     
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
-            
     interface WidgetAttrTarget with
         override this.Widget = widget
-                
+        // TODO: add both binding guards
+        // override this.SetWindowIcon newIcon =
+        //     ...
+        // override this.SetWindowTitle newTitle =
+        //     if newTitle <> lastTitle then
+        //         lastTitle <- newTitle
+        //         true
+        //     else
+        //         false
+        
     interface Widget.SignalHandler with
         member this.CustomContextMenuRequested pos =
             signalDispatch (Point.From pos |> CustomContextMenuRequested)
@@ -525,32 +555,41 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             // TODO: guard
             signalDispatch (IconProxy(icon) |> WindowIconChanged)
         member this.WindowTitleChanged title =
-            // TODO: guard
+            lastTitle <- title
             signalDispatch (WindowTitleChanged title)
-                
+            
     interface IDisposable with
         member this.Dispose() =
             widget.Dispose()
+
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch, Widget.Create(this))
+    
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
             
     member this.RemoveLayout() =
+        // the only way the layout's going to change is if it's deleted as a dependency
+        // ... so is any of this even necessary? won't the layout remove itself in its dtor?
         let existing =
-            widget.GetLayout()
+            this.Widget.GetLayout()
         existing.RemoveAll()
-        widget.SetLayout(null)
+        this.Widget.SetLayout(null)
         
     member this.AddLayout(layout: Layout.Handle) =
-        widget.SetLayout(layout)
+        this.Widget.SetLayout(layout)
         
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Widget.SignalMask) =
+let private create (attrs: IAttr list) (signalMaps: (Signal -> 'msg option) list) (dispatch: 'msg -> unit) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Widget.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: (Signal -> 'msg option) list) (signalMask: Widget.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -591,7 +630,7 @@ type Widget<'msg>() =
             |> Option.toList
   
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
+            this.model <- create this.Attrs this.SignalMapFuncs dispatch this.SignalMask
             
         override this.AttachDeps () =
             maybeLayout
@@ -602,7 +641,7 @@ type Widget<'msg>() =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMapFuncs this.SignalMask
             this.MigrateContent (depsChanges |> Map.ofList)
 
         override this.Dispose() =

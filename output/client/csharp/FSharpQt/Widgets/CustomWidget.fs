@@ -182,7 +182,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
         override this.Dependencies = []
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch this.MethodMask eventDelegate this.SignalMask
+            this.model <- create this.Attrs this.SignalMap_REMOVE dispatch this.MethodMask eventDelegate this.SignalMask
             
         override this.AttachDeps () =
             ()
@@ -192,7 +192,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap eventDelegate this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMap_REMOVE eventDelegate this.SignalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

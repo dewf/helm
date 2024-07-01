@@ -173,7 +173,7 @@ type Props<'msg>() =
         
     member internal this.SignalMap = function
         | WidgetSignal signal ->
-            (this :> Widget.Props<'msg>).SignalMap signal
+            (this :> Widget.Props<'msg>).SignalMap_REMOVE signal
         | Activated index ->
             onActivated
             |> Option.map (fun f -> f index)
