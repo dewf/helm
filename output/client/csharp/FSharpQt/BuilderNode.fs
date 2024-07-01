@@ -8,7 +8,7 @@ type AttrChange<'a> =
     | Deleted of 'a
     | Changed of 'a * 'a
 
-let createdOrChanged (changes: AttrChange<'a> list) =
+let createdOrChanged__old (changes: AttrChange<'a> list) =
     changes
     |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
     

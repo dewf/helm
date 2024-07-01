@@ -283,7 +283,7 @@ type ToolBar<'msg>() =
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ToolBar<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap signalMask
             // instead of complicated .MigrateContent,
             // why don't we just see if depsChanges is all Unchanged?

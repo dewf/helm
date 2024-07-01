@@ -137,7 +137,7 @@ type ScrollArea<'msg>() =
             let left' = (left :?> ScrollArea<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged
+                |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent (depsChanges |> Map.ofList)
 

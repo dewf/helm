@@ -100,7 +100,7 @@ type ProgressBar<'msg>() =
             let left' = (left :?> ProgressBar<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged
+                |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap
                 
         override this.Dispose() =

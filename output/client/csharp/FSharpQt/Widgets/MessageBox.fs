@@ -173,7 +173,7 @@ type MessageBox<'msg>() =
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> MessageBox<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap
             
         override this.Dispose() =

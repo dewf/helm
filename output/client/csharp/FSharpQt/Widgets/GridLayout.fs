@@ -215,7 +215,7 @@ type GridLayout<'msg>() =
             let left' = (left :?> GridLayout<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged
+                |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap
             this.MigrateContent(left')
                 

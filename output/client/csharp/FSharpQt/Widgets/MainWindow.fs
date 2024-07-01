@@ -358,7 +358,7 @@ type MainWindow<'msg>() =
             let left' = (left :?> MainWindow<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged
+                |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap signalMask
             this.MigrateContent left' (depsChanges |> Map.ofList)
 

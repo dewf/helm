@@ -113,7 +113,7 @@ type Timer<'msg>() =
             let left' = (left :?> Timer<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged
+                |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap signalMask
             
         override this.Dispose() =

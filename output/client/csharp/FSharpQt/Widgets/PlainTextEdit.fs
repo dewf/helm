@@ -191,7 +191,7 @@ type PlainTextEdit<'msg>() =
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> PlainTextEdit<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap signalMask
             // maybeMethodProxy
             // |> Option.iter (fun mp -> mp.Handle <- this.model.Widget)

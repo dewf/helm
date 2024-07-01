@@ -265,7 +265,7 @@ type TreeView<'msg>() =
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> TreeView<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap signalMask
             this.MigrateDeps(depsChanges |> Map.ofList)
 

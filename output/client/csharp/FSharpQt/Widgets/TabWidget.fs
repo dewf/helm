@@ -160,7 +160,7 @@ type TabWidget<'msg>() =
             let left' = (left :?> TabWidget<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged
+                |> createdOrChanged__old
             this.model <- migrate left'.model nextAttrs signalMap signalMask
             this.MigrateContent(left')
             
