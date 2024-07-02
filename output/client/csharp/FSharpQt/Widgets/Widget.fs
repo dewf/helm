@@ -614,7 +614,6 @@ let private dispose (model: Model<'msg>) =
 
 type Widget<'msg>() =
     inherit Props<'msg>()
-    
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set

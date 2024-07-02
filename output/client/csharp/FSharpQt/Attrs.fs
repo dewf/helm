@@ -83,6 +83,11 @@ type internal SignalMapFuncBase<'signal,'msg>(func: 'signal -> 'msg option) =
     interface ISignalMapFunc with
         member this.Nothing = 0
 
+// for cases where we have no signals (eg PushButton)
+type internal NullSignalMapFunc() =
+    interface ISignalMapFunc with
+        member this.Nothing = 0
+
 // various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
 // if you want to support a given type of attribute, you have to implement the target interface
 // reasonable enough!
@@ -123,7 +128,8 @@ type internal AbstractButtonAttrTarget =
     interface
         inherit WidgetAttrTarget
         abstract member AbstractButton: AbstractButton.Handle
-        abstract member SetChecked: bool -> bool   // binding guard - for example, toggled signal emits 'checked' value
+        abstract member SetChecked: bool -> bool
+        abstract member SetDown: bool -> bool
     end
     
 type internal PushButtonAttrTarget =

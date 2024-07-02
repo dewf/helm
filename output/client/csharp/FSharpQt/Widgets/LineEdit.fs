@@ -238,7 +238,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             | :? SignalMapFunc<'msg> as smf ->
                 signalMap <- smf.Func
             | _ ->
-                failwith "Widget.ModelCore.SignalMaps: wrong func type"
+                failwith "LineEdit.ModelCore.SignalMaps: wrong func type"
             // assign the remainder to parent class(es)
             base.SignalMaps <- etc
         | _ ->
