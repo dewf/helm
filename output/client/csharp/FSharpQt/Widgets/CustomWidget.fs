@@ -12,30 +12,25 @@ open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 open Widget
 
+// uses the same Signal/Attrs as Widget
+
+// this whole module is a bit exotic, we're sort of quasi-inheriting from Widget,
+// even though we're technically also a C++ QWidget behind the scenes
+// however all the custom event delegate stuff is complicated and noisy,
+// so it's nice to keep it out of the Widget module
+
 type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as this =
-    let widget = Widget.CreateSubclassed(this, methodMask, this)
-    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+    inherit ModelCore<'msg>(dispatch)
+    let widget = Widget.CreateSubclassed(this, methodMask, this) 
+    do
+        this.Widget <- widget
     
-    let mutable currentMask = enum<Widget.SignalMask> 0
-    
-    let signalDispatch (s: Signal) =
-        signalMap s
-        |> Option.iter dispatch
-        
     // this is for anything the widget needs to create just once at the beginning
     // basically a roundabout way of maintaning auxiliary state just for the EventDelegate, which otherwise isn't supposed to have any (separate from the reactor State that's provided to it)
     let lifetimeResources = new PaintStack()
     let mutable eventDelegate = eventDelegate
     do
         eventDelegate.CreateResourcesInternal(lifetimeResources)
-            
-    member this.Widget with get() = widget
-    member this.SignalMap with set value = signalMap <- value
-    
-    member this.SignalMask with set value =
-        if value <> currentMask then
-            widget.SetSignalMask(value)
-            currentMask <- value
             
     member this.EventDelegate with set (newDelegate: EventDelegateInterface<'msg>) =
         // for now just the widget, maybe 'this' (the entire Model) in the future?
@@ -61,17 +56,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, 
         for maybePrev, attr in attrs do
             attr.ApplyTo(this, maybePrev)
             
-    interface WidgetAttrTarget with
-        override this.Widget = widget
-                
-    interface Widget.SignalHandler with
-        member this.CustomContextMenuRequested pos =
-            signalDispatch (Point.From pos |> CustomContextMenuRequested)
-        member this.WindowIconChanged icon =
-            signalDispatch (IconProxy(icon) |> WindowIconChanged)
-        member this.WindowTitleChanged title =
-            signalDispatch (WindowTitleChanged title)
-        
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, updateRect: Common.Rect) =
             use stackResources = new PaintStack() // "stack" (local), vs. the 'lifetimeResources' declared above
@@ -123,23 +107,25 @@ type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, 
     interface IDisposable with
         member this.Dispose() =
             (lifetimeResources :> IDisposable).Dispose()
+            // would be nice to do base.Dispose() but apparently not possible?
+            // anyway, this is all the Widget.ModelCore does:
             widget.Dispose()
 
-let rec private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
+let rec private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (methodMask: Widget.MethodMask) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch, methodMask, eventDelegate)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     // can't assign eventDelegate as simply as signal map, requires different behavior on construction vs. migration
     // hence providing it as Model ctor argument
     // model.EventDelegate <- eventDelegate
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (eventDelegate: EventDelegateInterface<'msg>) (signalMask: Widget.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
-    model.EventDelegate <- eventDelegate
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
+    model.EventDelegate <- eventDelegate
     model
 
 let private dispose (model: Model<'msg>) =
@@ -182,7 +168,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
         override this.Dependencies = []
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap_REMOVE dispatch this.MethodMask eventDelegate this.SignalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.MethodMask eventDelegate this.SignalMask
             
         override this.AttachDeps () =
             ()
@@ -192,7 +178,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap_REMOVE eventDelegate this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMapList eventDelegate this.SignalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
