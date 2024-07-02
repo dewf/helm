@@ -1,7 +1,10 @@
 ﻿module FSharpQt.Widgets.Layout
 
+open System
 open FSharpQt.Attrs
 open Org.Whatever.QtTesting
+
+// no signals
 
 type SizeConstraint =
     | SetDefaultConstraint
@@ -70,3 +73,37 @@ type Props<'msg>() =
         
     member this.SizeConstraint with set value =
         this.PushAttr(SizeConstraint value)
+
+    member internal this.SignalMapList =
+        [ NullSignalMapFunc() :> ISignalMapFunc ]
+
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    let mutable layout: Layout.Handle = null
+
+    member this.Layout
+        with get() =
+            layout
+        and set value =
+            layout <- value
+
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: _ ->
+            match h with
+            | :? NullSignalMapFunc ->
+                // nothing to do
+                ()
+            | _ ->
+                failwith "Layout.ModelCore.SignalMaps: wrong func type"
+            // no base class to assign the rest to
+            // base.SignalMaps <- etc
+            // maybe someday we'll inherit everything from an Object type, but it doesn't really have any properties/signals we care about
+        | _ ->
+            failwith "Layout.ModelCore: signal map assignment didn't have a head element"
+            
+    interface LayoutAttrTarget with
+        override this.Layout = layout
+
+    interface IDisposable with
+        member this.Dispose() =
+            layout.Dispose()
