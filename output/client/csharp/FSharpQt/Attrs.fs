@@ -66,6 +66,22 @@ type PropsRoot() =
     member val internal _signalMask = 0L with get, set
     member internal this.AddSignal(flag: int64) =
         this._signalMask <- this._signalMask ||| flag
+        
+
+// not sure where this belongs yet, maybe we need to rename Attr.fs? ====================
+       
+// this interface doesn't really do anything, just tags our objects as relevant to this purpose
+// nicer than just 'Object'
+type internal ISignalMapFunc =
+    interface
+        abstract member Nothing: int
+    end
+    
+[<AbstractClass>]
+type internal SignalMapFuncBase<'signal,'msg>(func: 'signal -> 'msg option) =
+    member val Func = func
+    interface ISignalMapFunc with
+        member this.Nothing = 0
 
 // various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
 // if you want to support a given type of attribute, you have to implement the target interface

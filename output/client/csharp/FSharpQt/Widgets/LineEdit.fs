@@ -8,9 +8,6 @@ open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
 type internal Signal =
-    // inherited
-    | WidgetSignal of signal: Widget.Signal
-    // ours
     | CursorPositionChanged of oldPos: int * newPos: int
     | EditingFinished
     | InputRejected
@@ -106,6 +103,9 @@ with
             | _ ->
                 printfn "warning: LineEdit.Attr couldn't ApplyTo() unknown target type [%A]" target
                 
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
+                
 type Props<'msg>() =
     inherit Widget.Props<'msg>()
     
@@ -147,26 +147,27 @@ type Props<'msg>() =
         onTextEdited <- Some value
         this.AddSignal(int LineEdit.SignalMask.TextEdited)
 
-    member internal this.SignalMap = function
-        | WidgetSignal signal ->
-            (this :> Widget.Props<'msg>).SignalMap_REMOVE signal
-        | CursorPositionChanged(oldPos, newPos) ->
-            onCursorPositionChanged
-            |> Option.map (fun f -> f (oldPos, newPos))
-        | EditingFinished ->
-            onEditingFinished
-        | InputRejected ->
-            onInputRejected
-        | ReturnPressed ->
-            onReturnPressed
-        | SelectionChanged ->
-            onSelectionChanged
-        | TextChanged text ->
-            onTextChanged
-            |> Option.map (fun f -> f text)
-        | TextEdited text ->
-            onTextEdited
-            |> Option.map (fun f -> f text)
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | CursorPositionChanged(oldPos, newPos) ->
+                onCursorPositionChanged
+                |> Option.map (fun f -> f (oldPos, newPos))
+            | EditingFinished ->
+                onEditingFinished
+            | InputRejected ->
+                onInputRejected
+            | ReturnPressed ->
+                onReturnPressed
+            | SelectionChanged ->
+                onSelectionChanged
+            | TextChanged text ->
+                onTextChanged
+                |> Option.map (fun f -> f text)
+            | TextEdited text ->
+                onTextEdited
+                |> Option.map (fun f -> f text)
+        // prepend to parent signal map funcs
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
     
     member this.Alignment with set value =
         this.PushAttr(Alignment value)
@@ -206,32 +207,48 @@ type Props<'msg>() =
         
     member this.Text with set value =
         this.PushAttr(Text value)
-
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable lineEdit = LineEdit.Create(this)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Widget.ModelCore<'msg>(dispatch)
+    let mutable lineEdit: LineEdit.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<LineEdit.SignalMask> 0
-    
+    // binding guards
     let mutable lastValue = ""
     let mutable lastCursorPos = -1
     
     let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
+        signalMap s
+        |> Option.iter dispatch
         
-    member this.Widget with get() = lineEdit
-    member this.SignalMap with set value = signalMap <- value
+    member this.LineEdit
+        with get() =
+            lineEdit
+        and set value =
+            // must assign base version(s) as well!!
+            // could be obviated if we could just use a LineEdit.Create() as ctor params, but since
+            // it refers to 'this' (for the signal handler), it crashes
+            this.Widget <- value
+            lineEdit <- value
+    
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "Widget.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "LineEdit.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             lineEdit.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
             
     interface LineEditAttrTarget with
         member this.Widget = lineEdit
@@ -251,20 +268,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 
     interface LineEdit.SignalHandler with
         // Widget:
+        // once we have interface inheritance in NI, we can dispense with these :)
+        // they are already implemented by Widget.ModelCore
         member this.CustomContextMenuRequested pos =
-            Point.From pos
-            |> Widget.Signal.CustomContextMenuRequested
-            |> WidgetSignal
-            |> signalDispatch
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =
-            IconProxy(icon)
-            |> Widget.Signal.WindowIconChanged
-            |> WidgetSignal
-            |> signalDispatch
+            (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
-            Widget.Signal.WindowTitleChanged title
-            |> WidgetSignal
-            |> signalDispatch
+            (this :> Widget.SignalHandler).WindowTitleChanged title
         // LineEdit:
         member this.CursorPositionChanged (oldPos, newPos) =
             lastCursorPos <- newPos
@@ -288,16 +299,25 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             lineEdit.Dispose()
 
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: LineEdit.SignalMask) =
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    do
+        this.LineEdit <- LineEdit.Create(this)
+        
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
+
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: LineEdit.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: LineEdit.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: LineEdit.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -314,7 +334,7 @@ type LineEdit<'msg>() =
         override this.Dependencies = []
         
         override this.Create dispatch buildContextr =
-            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             ()
@@ -325,17 +345,16 @@ type LineEdit<'msg>() =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
             this.model <-
-                migrate left'.model nextAttrs this.SignalMap this.SignalMask
+                migrate left'.model nextAttrs this.SignalMapList this.SignalMask
                 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
             
         override this.Widget =
-            (this.model.Widget :> Widget.Handle)
+            this.model.LineEdit
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.LineEdit
             
         override this.Attachments =
             this.Attachments
-     

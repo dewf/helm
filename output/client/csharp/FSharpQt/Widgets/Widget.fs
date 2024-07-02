@@ -347,7 +347,10 @@ with
                     widget.SetWindowTitle(title)
             | _ ->
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
-    
+
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
+
 type Props<'msg>() =
     inherit PropsRoot()
     
@@ -381,7 +384,7 @@ type Props<'msg>() =
             onWindowTitleChanged
             |> Option.map (fun f -> f title)
         
-    member internal this.SignalMapFuncs =
+    member internal this.SignalMapList =
         let thisFunc = function
             | CustomContextMenuRequested pos ->
                 onCustomContextMenuRequested
@@ -394,7 +397,7 @@ type Props<'msg>() =
                 |> Option.map (fun f -> f title)
         // if we weren't at root level (eg a Widget subclass),
         // we'd do thisFunc :: base.SignalMapFuncs
-        [ thisFunc ]
+        [ SignalMapFunc(thisFunc) :> ISignalMapFunc ]
         
     member this.AcceptDrops with set value =
         this.PushAttr(AcceptDrops value)
@@ -510,7 +513,8 @@ type Props<'msg>() =
     member this.WindowTitle with set value =
         this.PushAttr(WindowTitle value)
         
-type ModelCore<'msg>(dispatch: 'msg -> unit, widget: Widget.Handle) =
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    let mutable widget: Widget.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Widget.SignalMask> 0
     // binding guards
@@ -519,17 +523,26 @@ type ModelCore<'msg>(dispatch: 'msg -> unit, widget: Widget.Handle) =
     let signalDispatch (s: Signal) =
         signalMap s
         |> Option.iter dispatch
+        
+    member this.Widget
+        with get() =
+            widget
+        and set value =
+            widget <- value
     
-    member internal this.SignalMaps with set (mapFuncList: (Signal -> 'msg option) list) =
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
         match mapFuncList with
         | h :: _ ->
-            signalMap <- h
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "Widget.ModelCore.SignalMaps: wrong func type"
             // no base class to assign the rest to
             // base.SignalMaps <- etc
         | _ ->
             failwith "Widget.ModelCore: signal map assignment didn't have a head element"
     
-    member this.Widget = widget
     member this.SignalMask with set value =
         if value <> currentMask then
             // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
@@ -563,7 +576,10 @@ type ModelCore<'msg>(dispatch: 'msg -> unit, widget: Widget.Handle) =
             widget.Dispose()
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    inherit ModelCore<'msg>(dispatch, Widget.Create(this))
+    inherit ModelCore<'msg>(dispatch)
+    do
+        // tried supplying this as a ctor parameter but caused issues :(
+        this.Widget <- Widget.Create(this)
     
     member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
         for maybePrev, attr in attrs do
@@ -580,14 +596,14 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     member this.AddLayout(layout: Layout.Handle) =
         this.Widget.SetLayout(layout)
         
-let private create (attrs: IAttr list) (signalMaps: (Signal -> 'msg option) list) (dispatch: 'msg -> unit) (signalMask: Widget.SignalMask) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: (Signal -> 'msg option) list) (signalMask: Widget.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: Widget.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
@@ -630,7 +646,7 @@ type Widget<'msg>() =
             |> Option.toList
   
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMapFuncs dispatch this.SignalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             maybeLayout
@@ -641,7 +657,7 @@ type Widget<'msg>() =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMapFuncs this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateContent (depsChanges |> Map.ofList)
 
         override this.Dispose() =
