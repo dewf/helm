@@ -4,88 +4,103 @@ open FSharpQt.BuilderNode
 open System
 open Org.Whatever.QtTesting
 
-type Signal =
-    | Clicked
-    | ClickedWithState of state: bool
-    | Pressed
-    | Released
-    | Toggled of state: bool
+open FSharpQt.Attrs
 
-type Attr =
-    | Text of text: string
-    | Checked of state: bool
-    | Enabled of enabled: bool
+type internal Signal = unit
 
-let private keyFunc = function
-    | Text _ -> 0
-    | Checked _ -> 1
-    | Enabled _ -> 2
+// no attrs
 
-let private diffAttrs =
-    genericDiffAttrs keyFunc
-
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable radioButton = RadioButton.Create(this)
+type Props<'msg>() =
+    inherit AbstractButton.Props<'msg>()
     
-    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable currentMask = enum<RadioButton.SignalMask> 0
+    member internal this.SignalMask = enum<RadioButton.SignalMask> (int this._signalMask)
     
-    // 2-way binding guard
-    let mutable lastState = false
-    
-    let dispatcher (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
+    member internal this.SignalMapList =
+        // prepend to parent signal map funcs
+        NullSignalMapFunc() :> ISignalMapFunc :: base.SignalMapList
         
-    member this.Widget with get() = radioButton
-    member this.SignalMap with set value = signalMap <- value
-    
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit AbstractButton.ModelCore<'msg>(dispatch)
+    let mutable radioButton: RadioButton.Handle = null
+    let mutable currentMask = enum<RadioButton.SignalMask> 0
+    // no signals, no guards
+
+    member this.RadioButton
+        with get() =
+            radioButton
+        and set value =
+            this.Widget <- value
+            this.AbstractButton <- value
+            radioButton <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? NullSignalMapFunc ->
+                // no signals in RadioButton
+                ()
+            | _ ->
+                failwithf "RadioButton.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "RadioButton.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             radioButton.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
-            match attr with
-            | Text text ->
-                radioButton.SetText(text)
-            | Checked state ->
-                // 2-way binding guard
-                if state <> lastState then
-                    radioButton.SetChecked(state)
-                    lastState <- state
-            | Enabled state ->
-                radioButton.SetEnabled(state)
-                
+            
+    interface RadioButtonAttrTarget with
+        member this.Widget = radioButton
+        member this.AbstractButton = radioButton
+        member this.RadioButton = radioButton
+        // no guards
+        
     interface RadioButton.SignalHandler with
-        member this.Clicked(checkState: bool) =
-            dispatcher (ClickedWithState checkState)
-            dispatcher Clicked
+        // Widget: (remove once we have interface inheritance)
+        member this.CustomContextMenuRequested pos =
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // AbstractButton:
+        member this.Clicked checkState =
+            (this :> AbstractButton.SignalHandler).Clicked checkState
         member this.Pressed() =
-            dispatcher Pressed
+            (this :> AbstractButton.SignalHandler).Pressed()
         member this.Released() =
-            dispatcher Released
-        member this.Toggled(checkState: bool) =
-            dispatcher (Toggled checkState)
-                
+            (this :> AbstractButton.SignalHandler).Released()
+        member this.Toggled checkState =
+            (this :> AbstractButton.SignalHandler).Toggled checkState
+        // none of our own
+    
     interface IDisposable with
         member this.Dispose() =
             radioButton.Dispose()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: RadioButton.SignalMask) =
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    do
+        this.RadioButton <- RadioButton.Create(this)
+    
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
+
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (initialMask: RadioButton.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    model.SignalMaps <- signalMaps
     model.SignalMask <- initialMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: RadioButton.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: RadioButton.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -93,72 +108,33 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type RadioButton<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
-    let mutable signalMask = enum<RadioButton.SignalMask> 0
-    
-    let mutable onClicked: 'msg option = None
-    let mutable onClickedWithState: (bool -> 'msg) option = None
-    let mutable onPressed: 'msg option = None
-    let mutable onReleased: 'msg option = None
-    let mutable onToggled: (bool -> 'msg) option = None
-    
-    member this.OnClicked with set value =
-        onClicked <- Some value
-        signalMask <- signalMask ||| RadioButton.SignalMask.Clicked  // clicked #1
-        
-    member this.OnClickedWithState with set value =
-        onClickedWithState <- Some value
-        signalMask <- signalMask ||| RadioButton.SignalMask.Clicked  // clicked #2
-        
-    member this.OnPressed with set value =
-        onPressed <- Some value
-        signalMask <- signalMask ||| RadioButton.SignalMask.Pressed
-        
-    member this.OnReleased with set value =
-        onReleased <- Some value
-        signalMask <- signalMask ||| RadioButton.SignalMask.Released
-        
-    member this.OnToggled with set value =
-        onToggled <- Some value
-        signalMask <- signalMask ||| RadioButton.SignalMask.Toggled
-        
-    let signalMap = function
-        | Clicked -> onClicked
-        | ClickedWithState checkState ->
-            onClickedWithState
-            |> Option.map (fun f -> f checkState)
-        | Pressed -> onPressed
-        | Released -> onReleased
-        | Toggled state ->
-            onToggled
-            |> Option.map (fun f -> f state)
             
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch signalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             ()
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> RadioButton<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
-            this.model <- migrate left'.model nextAttrs signalMap signalMask
+            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
 
         override this.Widget =
-            (this.model.Widget :> Widget.Handle)
+            this.model.RadioButton
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.RadioButton
             
         override this.Attachments =
             this.Attachments

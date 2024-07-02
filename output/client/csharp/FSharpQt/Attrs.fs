@@ -67,7 +67,6 @@ type PropsRoot() =
     member internal this.AddSignal(flag: int64) =
         this._signalMask <- this._signalMask ||| flag
         
-
 // not sure where this belongs yet, maybe we need to rename Attr.fs? ====================
        
 // this interface doesn't really do anything, just tags our objects as relevant to this purpose
@@ -136,6 +135,12 @@ type internal PushButtonAttrTarget =
     interface
         inherit AbstractButtonAttrTarget
         abstract member PushButton: PushButton.Handle
+    end
+    
+type internal RadioButtonAttrTarget =
+    interface
+        inherit AbstractButtonAttrTarget
+        abstract member RadioButton: RadioButton.Handle
     end
     
 type internal ComboBoxAttrTarget =

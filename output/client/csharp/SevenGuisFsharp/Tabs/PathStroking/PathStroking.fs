@@ -66,9 +66,10 @@ let radioGroup (title: string) (items: (string * 'a) list) (setterMsgFunc: 'a ->
     let buttons =
         items
         |> List.map (fun (label, value) ->
-            let attrs =
-                [ Text label; if value = selected then Checked true ]
-            RadioButton(Attrs = attrs, OnClicked = setterMsgFunc value))
+            RadioButton(
+                Text = label,
+                Checked = (value = selected),
+                OnClicked = setterMsgFunc value))
     let vbox =
         let items =
             buttons

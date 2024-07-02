@@ -1,26 +1,39 @@
 module RadioButton;
 
+import Common;
+import Icon;
 import AbstractButton;
 
 flags SignalMask {
-    // from AbstractButton:
-    Clicked = 1,
-    Pressed = 1 << 1,
-    Released = 1 << 2,
-    Toggled = 1 << 3,
+    // Widget:
+    CustomContextMenuRequested = 1,
+    WindowIconChanged = 1 << 1,
+    WindowTitleChanged = 1 << 2,
 
-    // from RadioButton:
+    // AbstractButton:
+    Clicked = 1 << 3,
+    Pressed = 1 << 4,
+    Released = 1 << 5,
+    Toggled = 1 << 6
+
+    // RadioButton:
+    // (none)
 }
 
 interface SignalHandler {
-    // nativeimpl doesn't support interface inheritance yet, otherwise we'd inherit this from an AbstractButton SignalHandler
-    // but we'd have to declare the full signal mask above anyway, so maybe it's not a huge deal
-    // and for that matter, maybe we only want to support a subset of inherited signals, anyway?
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
 
+    // AbstractButton:
     void clicked(bool checkState);
     void pressed();
     void released();
     void toggled(bool checkState);
+
+    // RadioButton:
+    // (none)
 }
 
 opaque Handle extends AbstractButton.Handle {
