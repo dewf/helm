@@ -138,24 +138,6 @@ Handle create(SignalHandler handler);
 
 // SUBCLASSING ===========================================================
 
-enum DropAction {
-    Ignore = 0,
-    Copy = 0x1,
-    Move = 0x2,
-    Link = 0x4,
-    ActionMask = 0xff,
-    TargetMoveAction = 0x8002 // windows only stuff
-}
-
-flags DropActionSet {
-    Ignore = 0,
-    Copy = 0x1,
-    Move = 0x2,
-    Link = 0x4,
-    ActionMask = 0xff,
-    TargetMoveAction = 0x8002 // windows only stuff
-}
-
 @nodispose
 opaque Event {
     void accept();

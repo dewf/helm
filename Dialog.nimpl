@@ -20,7 +20,7 @@ interface SignalHandler {
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);
 
-    // ours:
+    // Dialog:
     void accepted();
     void finished(int result);
     void rejected();

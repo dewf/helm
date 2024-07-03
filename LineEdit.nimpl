@@ -5,25 +5,21 @@ import Common;
 import Icon;
 import Enums;
 
-enum EchoMode { Normal, NoEcho, Password, PasswordEchoOnEdit }
-
-flags SignalMask {
-    // Widget:
-    CustomContextMenuRequested = 1,
-    WindowIconChanged = 1 << 1,
-    WindowTitleChanged = 1 << 2,
-
-    // LineEdit:
-    CursorPositionChanged = 1 << 3,
-    EditingFinished = 1 << 4,
-    InputRejected = 1 << 5,
-    ReturnPressed = 1 << 6,
-    SelectionChanged = 1 << 7,
-    TextChanged = 1 << 8,
-    TextEdited = 1 << 9
+namedbits SignalMask extends Widget.SignalMask {
+    CursorPositionChanged,
+    EditingFinished,
+    InputRejected,
+    ReturnPressed,
+    SelectionChanged,
+    TextChanged,
+    TextEdited
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
     // Widget:
     void customContextMenuRequested(Point pos);
     void windowIconChanged(Icon.Handle icon);
@@ -38,6 +34,8 @@ interface SignalHandler {
     void textChanged(string text);
     void textEdited(string text);
 }
+
+enum EchoMode { Normal, NoEcho, Password, PasswordEchoOnEdit }
 
 opaque Handle extends Widget.Handle {
     bool hasAcceptableInput();          // read-only

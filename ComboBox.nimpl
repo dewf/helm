@@ -27,7 +27,7 @@ interface SignalHandler {
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);
 
-    // ours:
+    // ComboBox:
     void activated(int index);
     void currentIndexChanged(int index);
     void currentTextChanged(string text);

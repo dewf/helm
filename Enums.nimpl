@@ -145,6 +145,31 @@ enum ShortcutContext {
     WidgetWithChildrenShortcut
 }
 
+enum DropAction {
+    Ignore = 0,
+    Copy = 0x1,
+    Move = 0x2,
+    Link = 0x4,
+    ActionMask = 0xff,
+    TargetMoveAction = 0x8002 // windows only stuff
+}
+
+flags DropActionSet {
+    Ignore = 0,
+    Copy = 0x1,
+    Move = 0x2,
+    Link = 0x4,
+    ActionMask = 0xff,
+    TargetMoveAction = 0x8002 // windows only stuff
+}
+
+enum TextElideMode {
+    ElideLeft,
+    ElideRight,
+    ElideMiddle,
+    ElideNone
+}
+
 flags InputMethodHints : uint32 {
     ImhNone = 0x0,
 

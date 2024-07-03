@@ -35,7 +35,7 @@ interface SignalHandler {
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);
 
-    // ours:
+    // AbstractSlider:
     void actionTriggered(SliderAction action);
     void rangeChanged(int min, int max);
     void sliderMoved(int value);

@@ -6,24 +6,23 @@ import Icon;
 import Enums;
 import Pixmap;
 
-flags SignalMask {
-    // Widget:
-    CustomContextMenuRequested = 1,
-    WindowIconChanged = 1 << 1,
-    WindowTitleChanged = 1 << 2,
-
-    // (none for Frame)
-
-    // Label:
-    LinkActivated = 1 << 3,
-    LinkHovered = 1 << 4
+namedbits SignalMask extends Frame.SignalMask {
+    LinkActivated,
+    LinkHovered
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
     // Widget:
     void customContextMenuRequested(Point pos);
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);
+
+    // Frame:
+    // (none)
 
     // Label:
     void linkActivated(string link);

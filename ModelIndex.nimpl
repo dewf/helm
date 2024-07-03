@@ -7,7 +7,7 @@ opaque Handle {
     int column();
 }
 
-// Owned handle, for rare instances when we need to manually invoke methods
+// Owned handle, for rare instances when we need to manually invoke methods returning ModelIndex
 // you might ask, why not just use a disposable one everywhere (vs. the @nodispose above)?
 // the short version is that the Model/View APIs make HEAVY use of this type,
 // and we want to avoid allocating thousands of these constantly for list/tree widgets, particularly in the data() callback

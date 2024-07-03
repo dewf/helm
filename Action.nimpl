@@ -20,7 +20,7 @@ interface SignalHandler {
     void destroyed(Handle obj);
     void objectNameChanged(string objectName);
 
-    // ours:
+    // Action:
     void changed();
     void checkableChanged(bool checkable);
     void enabledChanged(bool enabled);

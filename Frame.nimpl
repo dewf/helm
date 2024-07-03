@@ -9,7 +9,7 @@ namedbits SignalMask extends Widget.SignalMask {
 }
 
 interface SignalHandler {
-    // from Object:
+    // Object:
     void destroyed(Handle obj);
     void objectNameChanged(string objectName);
 
@@ -18,7 +18,7 @@ interface SignalHandler {
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);
 
-    // ours:
+    // Frame:
     // (none)
 }
 
