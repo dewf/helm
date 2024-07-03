@@ -1,18 +1,28 @@
 module Timer;
 
 import Object;
+import Enums;
 
-flags SignalMask {
-    Timeout = 1 << 0
+namedbits SignalMask extends Object.SignalMask {
+    Timeout
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Object.Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Timer:
     void timeout();
 }
 
 opaque Handle extends Object.Handle {
-    void setInterval(int msec);
+    void setActive(bool active);
+    void setInterval(int interval);
+    int remainingTime();                // readonly
     void setSingleShot(bool state);
+    void setTimerType(TimerType type_);
+
     void start(int msec);
     void start();
     void stop();

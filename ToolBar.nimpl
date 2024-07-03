@@ -1,22 +1,34 @@
 module ToolBar;
 
+import Object;
 import Common;
+import Icon;
+import Enums;
 import Widget;
 import Action;
-import Enums;
 
-flags SignalMask {
-    ActionTriggered = 1,
-    AllowedAreasChanged = 1 << 1,
-    IconSizeChanged = 1 << 2,
-    MoveableChanged = 1 << 3,
-    OrientationChanged = 1 << 4,
-    ToolButtonStyleChanged = 1 << 5,
-    TopLevelChanged = 1 << 6,
-    VisibilityChanged = 1 << 7
+namedbits SignalMask extends Widget.SignalMask {
+    ActionTriggered,
+    AllowedAreasChanged,
+    IconSizeChanged,
+    MovableChanged,
+    OrientationChanged,
+    ToolButtonStyleChanged,
+    TopLevelChanged,
+    VisibilityChanged
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Object.Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // ToolBar:
     void actionTriggered(Action.Handle action);
     void allowedAreasChanged(ToolBarAreas allowed);
     void iconSizeChanged(Size size);
@@ -28,16 +40,17 @@ interface SignalHandler {
 }
 
 opaque Handle extends Widget.Handle {
-    Action.Handle addSeparator();
-    void addWidget(Widget.Handle widget);
-    void clear();
-
     void setAllowedAreas(ToolBarAreas allowed);
     void setFloatable(bool floatable);
+    bool floating();                                // readonly
     void setIconSize(Size size);
     void setMovable(bool value);
     void setOrientation(Orientation value);
     void setToolButtonStyle(ToolButtonStyle style);
+
+    Action.Handle addSeparator();
+    void addWidget(Widget.Handle widget);
+    void clear();
 
     void setSignalMask(SignalMask mask);
 }

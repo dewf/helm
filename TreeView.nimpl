@@ -1,8 +1,46 @@
 module TreeView;
 
+import Object;
 import Common;
+import Icon;
+import Enums;
 import AbstractItemView;
 import ModelIndex;
+
+namedbits SignalMask extends AbstractItemView.SignalMask {
+    Collapsed,
+    Expanded
+}
+
+interface SignalHandler {
+    // from Object:
+    void destroyed(Object.Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // Frame:
+    // (none)
+
+    // AbstractScrollArea:
+    // (none)
+
+    // AbstractItemView:
+    void activated(ModelIndex.Handle index);
+    void clicked(ModelIndex.Handle index);
+    void doubleClicked(ModelIndex.Handle index);
+    void entered(ModelIndex.Handle index);
+    void iconSizeChanged(Size size);
+    void pressed(ModelIndex.Handle index);
+    void viewportEntered();
+
+    // TreeView:
+    void collapsed(ModelIndex.Handle index);
+    void expanded(ModelIndex.Handle index);
+}
 
 opaque Handle extends AbstractItemView.Handle {
     void setAllColumnsShowFocus(bool value);
@@ -18,42 +56,6 @@ opaque Handle extends AbstractItemView.Handle {
     void setWordWrap(bool value);
 
     void setSignalMask(SignalMask mask);
-}
-
-flags SignalMask {
-    // widget
-    CustomContextMenuRequested = 1,
-
-    // abstract item view
-    Activated = 1 << 1,
-    Clicked = 1 << 2,
-    DoubleClicked = 1 << 3,
-    Entered = 1 << 4,
-    IconSizeChanged = 1 << 5,
-    Pressed = 1 << 6,
-    ViewportEntered = 1 << 7,
-
-    // treeview
-    Collapsed = 1 << 8,
-    Expanded = 1 << 9
-}
-
-interface SignalHandler {
-    // widget
-    void customContextMenuRequested(Point pos);
-
-    // abstract item view
-    void activated(ModelIndex.Handle index);
-    void clicked(ModelIndex.Handle index);
-    void doubleClicked(ModelIndex.Handle index);
-    void entered(ModelIndex.Handle index);
-    void iconSizeChanged(Size size);
-    void pressed(ModelIndex.Handle index);
-    void viewportEntered();
-
-    // treeview
-    void collapsed(ModelIndex.Handle index);
-    void expanded(ModelIndex.Handle index);
 }
 
 Handle create(SignalHandler handler);

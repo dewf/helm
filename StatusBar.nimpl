@@ -1,16 +1,31 @@
 module StatusBar;
 
+import Object;
+import Common;
+import Icon;
 import Widget;
 
-flags SignalMask {
-    MessageChanged = 1
+namedbits SignalMask extends Widget.SignalMask {
+    MessageChanged
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Object.Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // StatusBar:
     void messageChanged(string message);
 }
 
 opaque Handle extends Widget.Handle {
+    void setSizeGripEnabled(bool enabled);
+    
     void clearMessage();
     void showMessage(string message, int timeout);
 

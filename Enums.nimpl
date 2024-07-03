@@ -237,6 +237,12 @@ enum ItemDataRole {
     UserRole = 0x0100
 }
 
+enum TimerType {    // defined in Qt namespace, so we put it here instead of Timer module
+    PreciseTimer,
+    CoarseTimer,
+    VeryCoarseTimer
+}
+
 enum MouseButton {
     NoButton         = 0x00000000,
     LeftButton       = 0x00000001,
