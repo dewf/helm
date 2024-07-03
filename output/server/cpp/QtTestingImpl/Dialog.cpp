@@ -16,6 +16,9 @@ namespace Dialog
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+                // Object:
+                { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+                { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
                 // Widget:
                 { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
                 { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
@@ -39,7 +42,14 @@ namespace Dialog
             }
         }
     public slots:
-        // Widget:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget =================
         void onCustomContextMenuRequested(const QPoint& pos) {
             handler->customContextMenuRequested(toPoint(pos));
         }
@@ -49,7 +59,7 @@ namespace Dialog
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());
         }
-        // Dialog:
+        // Dialog =================
         void onAccepted() {
             handler->accepted();
         }

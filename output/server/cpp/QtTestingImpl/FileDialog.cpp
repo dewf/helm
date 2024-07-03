@@ -15,11 +15,14 @@ namespace FileDialog
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
             // Widget:
             { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
             { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
             { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
-            // from Dialog:
+            // Dialog:
             { SignalMaskFlags::Accepted, SIGNAL(accepted()), SLOT(onAccepted()) },
             { SignalMaskFlags::Finished, SIGNAL(finished(int)), SLOT(onFinished(int)) },
             { SignalMaskFlags::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
@@ -44,7 +47,14 @@ namespace FileDialog
             }
         }
     public slots:
-        // Widget:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget =================
         void onCustomContextMenuRequested(const QPoint& pos) {
             handler->customContextMenuRequested(toPoint(pos));
         }
@@ -54,10 +64,10 @@ namespace FileDialog
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());
         }
-        // Dialog:
+        // Dialog =================
         void onAccepted() {
             handler->accepted();
-        };
+        }
         void onFinished(int result) {
             handler->finished(result);
         }

@@ -1,6 +1,7 @@
 #include "generated/Cursor.h"
 
 #include <QCursor>
+#include "CursorInternal.h"
 
 #define THIS ((QCursor*)_this)
 
