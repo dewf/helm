@@ -54,6 +54,8 @@ let createdOrChanged (changes: AttrDiffResult list) =
             Some (Some prev, attr)
         | _ -> None)
     
+// ======= move these to another module? ===========================================
+
 type PropsRoot() =
     // internal attribute-from-properties storage that will be shared by subclasses (eg [Root] -> Widget -> AbstractButton -> PushButton)
     // needs to be reversed before use to maintain the order that was originally assigned
@@ -67,8 +69,13 @@ type PropsRoot() =
     member internal this.AddSignal(flag: int64) =
         this._signalMask <- this._signalMask ||| flag
         
-// not sure where this belongs yet, maybe we need to rename Attr.fs? ====================
-       
+[<AbstractClass>]
+type ModelCoreRoot() =
+    interface IAttrTarget
+    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
+        for maybePrev, attr in attrs do
+            attr.ApplyTo(this, maybePrev)
+        
 // this interface doesn't really do anything, just tags our objects as relevant to this purpose
 // nicer than just 'Object'
 type internal ISignalMapFunc =
@@ -87,6 +94,7 @@ type internal NullSignalMapFunc() =
     interface ISignalMapFunc with
         member this.Nothing = 0
 
+// ====================================================================
 // various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
 // if you want to support a given type of attribute, you have to implement the target interface
 // reasonable enough!

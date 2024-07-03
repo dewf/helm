@@ -514,6 +514,8 @@ type Props<'msg>() =
         this.PushAttr(WindowTitle value)
         
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit ModelCoreRoot()
+    
     let mutable widget: Widget.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Widget.SignalMask> 0
@@ -581,10 +583,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         // tried supplying this as a ctor parameter but caused issues :(
         this.Widget <- Widget.Create(this)
     
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
-            
     member this.RemoveLayout() =
         // the only way the layout's going to change is if it's deleted as a dependency
         // ... so is any of this even necessary? won't the layout remove itself in its dtor?

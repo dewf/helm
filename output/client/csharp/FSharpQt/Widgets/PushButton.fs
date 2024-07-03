@@ -134,10 +134,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     inherit ModelCore<'msg>(dispatch)
     do
         this.PushButton <- PushButton.Create(this)
-        
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
 
 let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: PushButton.SignalMask) =
     let model = new Model<'msg>(dispatch)

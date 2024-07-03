@@ -78,6 +78,7 @@ type Props<'msg>() =
         [ NullSignalMapFunc() :> ISignalMapFunc ]
 
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit ModelCoreRoot()
     let mutable layout: Layout.Handle = null
 
     member this.Layout

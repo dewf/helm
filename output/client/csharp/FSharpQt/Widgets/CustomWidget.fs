@@ -52,10 +52,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, 
         // update/overwrite value
         eventDelegate <- newDelegate
     
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
-            
     interface Widget.MethodDelegate with
         override this.PaintEvent(painter: Painter.Handle, updateRect: Common.Rect) =
             use stackResources = new PaintStack() // "stack" (local), vs. the 'lifetimeResources' declared above

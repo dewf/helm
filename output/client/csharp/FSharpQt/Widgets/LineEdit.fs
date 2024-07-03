@@ -303,10 +303,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     inherit ModelCore<'msg>(dispatch)
     do
         this.LineEdit <- LineEdit.Create(this)
-        
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
 
 let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: LineEdit.SignalMask) =
     let model = new Model<'msg>(dispatch)

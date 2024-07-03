@@ -194,10 +194,6 @@ type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Dir
     do
         this.BoxLayout <- boxLayout
         
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
-
     member this.AttachDeps (items: BoxItem<'msg> list) =
         for item in items do
             addItem boxLayout item.Item
