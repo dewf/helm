@@ -4,27 +4,43 @@ import Common;
 import Icon;
 import Dialog;
 
-flags SignalMask {
-    // Widget:
-    CustomContextMenuRequested = 1,
-    WindowIconChanged = 1 << 1,
-    WindowTitleChanged = 1 << 2,
+namedbits SignalMask extends Dialog.SignalMask {
+    CurrentChanged,
+    CurrentUrlChanged,
+    DirectoryEntered,
+    DirectoryUrlEntered,
+    FileSelected,
+    FilesSelected,
+    FilterSelected,
+    UrlSelected,
+    UrlsSelected
+}
 
-    // from Dialog:
-    Accepted = 1 << 3,
-    Finished = 1 << 4,
-    Rejected = 1 << 5,
+interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // Dialog:
+    void accepted();
+    void finished(int result);
+    void rejected();
 
     // FileDialog:
-    CurrentChanged = 1 << 6,
-    CurrentUrlChanged = 1 << 7,
-    DirectoryEntered = 1 << 8,
-    DirectoryUrlEntered = 1 << 9,
-    FileSelected = 1 << 10,
-    FilesSelected = 1 << 11,
-    FilterSelected = 1 << 12,
-    UrlSelected = 1 << 13,
-    UrlsSelected = 1 << 14
+    void currentChanged(string path);
+    void currentUrlChanged(string url);
+    void directoryEntered(string dir);
+    void directoryUrlEntered(string url);
+    void fileSelected(string file);
+    void filesSelected(Array<string> selected);
+    void filterSelected(string filter);
+    void urlSelected(string url);
+    void urlsSelected(Array<string> urls);
 }
 
 enum FileMode {
@@ -62,6 +78,7 @@ opaque Handle extends Dialog.Handle {
     void setOptions(Options opts);
     void setSupportedSchemes(Array<string> schemes);
     void setViewMode(ViewMode mode);
+    
     // others:
     void setNameFilter(string filter);
     void setNameFilters(Array<string> filters);
@@ -71,29 +88,6 @@ opaque Handle extends Dialog.Handle {
     Array<string> selectedFiles();
     
     void setSignalMask(SignalMask mask);
-}
-
-interface SignalHandler {
-    // Widget:
-    void customContextMenuRequested(Point pos);
-    void windowIconChanged(Icon.Handle icon);
-    void windowTitleChanged(string title);
-
-    // from Dialog:
-    void accepted();
-    void finished(int result);
-    void rejected();
-
-    // FileDialog:
-    void currentChanged(string path);
-    void currentUrlChanged(string url);
-    void directoryEntered(string dir);
-    void directoryUrlEntered(string url);
-    void fileSelected(string file);
-    void filesSelected(Array<string> selected);
-    void filterSelected(string filter);
-    void urlSelected(string url);
-    void urlsSelected(Array<string> urls);
 }
 
 Handle create(SignalHandler handler);

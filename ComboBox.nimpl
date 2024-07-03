@@ -7,29 +7,27 @@ import Variant;
 import AbstractItemModel;
 import Icon;
 
-flags SignalMask {
-    // Widget:
-    CustomContextMenuRequested = 1,
-    WindowIconChanged = 1 << 1,
-    WindowTitleChanged = 1 << 2,
-
-    // ComboBox:
-    Activated = 1 << 3,
-    CurrentIndexChanged = 1 << 4,
-    CurrentTextChanged = 1 << 5,
-    EditTextChanged = 1 << 6,
-    Highlighted = 1 << 7,
-    TextActivated = 1 << 8,
-    TextHighlighted = 1 << 9
+namedbits SignalMask extends Widget.SignalMask {
+    Activated,
+    CurrentIndexChanged,
+    CurrentTextChanged,
+    EditTextChanged,
+    Highlighted,
+    TextActivated,
+    TextHighlighted
 }
 
 interface SignalHandler {
+    // from Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
     // Widget:
     void customContextMenuRequested(Point pos);
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);
-    
-    // ComboBox:
+
+    // ours:
     void activated(int index);
     void currentIndexChanged(int index);
     void currentTextChanged(string text);

@@ -6,6 +6,9 @@ import Layout;
 import Enums;
 
 opaque Handle extends Layout.Handle {
+    void setHorizontalSpacing(int value);
+    void setVerticalSpacing(int value);
+
     void addWidget(Widget.Handle widget, int row, int col);
     void addWidget(Widget.Handle widget, int row, int col, Alignment align);
     void addWidget(Widget.Handle widget, int row, int col, int rowSpan, int colSpan);

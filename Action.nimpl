@@ -3,18 +3,24 @@ module Action;
 import KeySequence;
 import Icon;
 import Object;
+import Enums;
 
-flags SignalMask {
-    Changed = 1 << 0,
-    CheckableChanged = 1 << 1,
-    EnabledChanged = 1 << 2,
-    Hovered = 1 << 3,
-    Toggled = 1 << 4,
-    Triggered = 1 << 5,
-    VisibleChanged = 1 << 6
+namedbits SignalMask extends Object.SignalMask {
+    Changed,
+    CheckableChanged,
+    EnabledChanged,
+    Hovered,
+    Toggled,
+    Triggered,
+    VisibleChanged
 }
 
 interface SignalHandler {
+    // from Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
+    // ours:
     void changed();
     void checkableChanged(bool checkable);
     void enabledChanged(bool enabled);
@@ -24,19 +30,44 @@ interface SignalHandler {
     void visibleChanged();
 }
 
-opaque Handle extends Object.Handle {
-    void setEnabled(bool state);
-    void setText(string text);
-    void setSeparator(bool state);
+enum MenuRole { 
+    NoRole = 0, 
+    TextHeuristicRole, 
+    ApplicationSpecificRole, 
+    AboutQtRole, 
+    AboutRole, 
+    PreferencesRole, 
+    QuitRole
+}
 
-    void setCheckable(bool state);
-    void setChecked(bool state);
-    
+enum Priority { 
+    LowPriority = 0, 
+    NormalPriority = 128, 
+    HighPriority = 256
+}
+
+opaque Handle extends Object.Handle {
+    void setAutoRepeat(bool state);
+    void setCheckable(bool checkable);
+    void setChecked(bool checked_);
+    void setEnabled(bool enabled);
+    // void setFont(Font.Deferred font); // TODO
     void setIcon(Icon.Deferred icon);
     void setIconText(string text);
-    void setShortcut(KeySequence.Deferred seq);
+    void setIconVisibleInMenu(bool visible);
+    void setMenuRole(MenuRole role);
+    void setPriority(Priority priority);
+    void setShortcut(KeySequence.Deferred shortcut);
+    void setShortcutContext(Enums.ShortcutContext context);
+    void setShortcutVisibleInContextMenu(bool visible);
     void setStatusTip(string tip);
+    void setText(string text);
     void setToolTip(string tip);
+    void setVisible(bool visible);
+    void setWhatsThis(string text);
+    // end properties
+
+    void setSeparator(bool state);
 
     void setSignalMask(SignalMask mask);
 }

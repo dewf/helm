@@ -4,18 +4,22 @@ import Common;
 import Icon;
 import Widget;
 
-flags SignalMask {
-    // Widget:
-    CustomContextMenuRequested = 1,
-    WindowIconChanged = 1 << 1,
-    WindowTitleChanged = 1 << 2
+namedbits SignalMask extends Widget.SignalMask {
+    // none of our own
 }
 
 interface SignalHandler {
+    // from Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
     // Widget:
     void customContextMenuRequested(Point pos);
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);
+
+    // ours:
+    // (none)
 }
 
 enum Shape {
