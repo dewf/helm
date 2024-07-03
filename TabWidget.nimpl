@@ -16,6 +16,8 @@ interface SignalHandler {
     void tabCloseRequested(int index);
 }
 
+enum TabShape { Rounded, Triangular }
+
 opaque Handle extends Widget.Handle {
     void addTab(Widget.Handle page, string label);
     void insertTab(int index, Widget.Handle page, string label);

@@ -14,4 +14,7 @@ opaque Handle {
     void setObjectName(string name);
 
     void dumpObjectTree();
+    // no setSignalMask because abstract
 }
+
+// no create() because abstract

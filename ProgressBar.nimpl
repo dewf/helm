@@ -1,11 +1,45 @@
 module ProgressBar;
 
+import Common;
+import Enums;
+import Icon;
 import Widget;
 
-opaque Handle extends Widget.Handle {
-    void setRange(int min, int max);
-    void setValue(int value);
-    void setTextVisible(bool visible);
+namedbits SignalMask extends Widget.SignalMask {
+    ValueChanged
 }
 
-Handle create();
+interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // ProgressBar:
+    void valueChanged(int value);
+}
+
+enum Direction { TopToBottom, BottomToTop }
+
+opaque Handle extends Widget.Handle {
+    void setAlignment(Alignment align);
+    void setFormat(string format);
+    void setInvertedAppearance(bool appearance);
+    void setMaximum(int value);
+    void setMinimum(int value);
+    void setOrientation(Orientation orient);
+    void setText(string text);
+    void setDirection(Direction direction);
+    void setTextVisible(bool visible);
+    void setValue(int value);
+
+    void setRange(int min, int max);
+
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);

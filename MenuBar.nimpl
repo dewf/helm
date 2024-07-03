@@ -1,15 +1,27 @@
 module MenuBar;
 
+import Common;
+import Icon;
 import Widget;
 import Menu;
 import Action;
 
-flags SignalMask {
-    Hovered = 1 << 0,
-    Triggered = 1 << 1
+namedbits SignalMask extends Widget.SignalMask {
+    Hovered,
+    Triggered
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // MenuBar:
     void hovered(Action.Handle action);
     void triggered(Action.Handle action);
 }

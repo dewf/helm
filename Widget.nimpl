@@ -24,7 +24,7 @@ interface SignalHandler {
     void destroyed(Handle obj);
     void objectNameChanged(string objectName);
 
-    // ours:
+    // Widget:
     void customContextMenuRequested(Point pos);
     void windowIconChanged(Icon.Handle icon);
     void windowTitleChanged(string title);

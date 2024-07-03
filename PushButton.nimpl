@@ -4,23 +4,15 @@ import Common;
 import Icon;
 import AbstractButton;
 
-flags SignalMask {
-    // Widget:
-    CustomContextMenuRequested = 1,
-    WindowIconChanged = 1 << 1,
-    WindowTitleChanged = 1 << 2,
-
-    // AbstractButton:
-    Clicked = 1 << 3,
-    Pressed = 1 << 4,
-    Released = 1 << 5,
-    Toggled = 1 << 6
-
-    // from PushButton:
-    // (none)
+namedbits SignalMask extends AbstractButton.SignalMask {
+    // none extra
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
     // Widget:
     void customContextMenuRequested(Point pos);
     void windowIconChanged(Icon.Handle icon);

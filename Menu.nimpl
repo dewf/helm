@@ -5,14 +5,24 @@ import Widget;
 import Action;
 import Icon;
 
-flags SignalMask {
-    AboutToHide = 1 << 0,
-    AboutToShow = 1 << 1,
-    Hovered = 1 << 2,
-    Triggered = 1 << 3
+namedbits SignalMask extends Widget.SignalMask {
+    AboutToHide,
+    AboutToShow,
+    Hovered,
+    Triggered
 }
 
 interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // Menu:
     void aboutToHide();
     void aboutToShow();
     void hovered(Action.Handle action);

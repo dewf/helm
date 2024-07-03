@@ -1,6 +1,33 @@
 module MessageBox;
 
+import Common;
+import Icon;
+import Enums;
 import Dialog;
+import AbstractButton;
+
+namedbits SignalMask extends Dialog.SignalMask {
+    ButtonClicked
+}
+
+interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Widget:
+    void customContextMenuRequested(Point pos);
+    void windowIconChanged(Icon.Handle icon);
+    void windowTitleChanged(string title);
+
+    // Dialog:
+    void accepted();
+    void finished(int result);
+    void rejected();
+
+    // MessageBox:
+    void buttonClicked(AbstractButton.Handle button);
+}
 
 enum StandardButton {
     NoButton           = 0x00000000,
@@ -54,14 +81,25 @@ enum Icon {
     Question = 4
 }
 
-opaque Handle extends Dialog.Handle {
-    void setText(string text);
-    void setInformativeText(string text);
-    void setStandardButtons(StandardButtonSet buttons);
-    void setDefaultButton(StandardButton button);
-    void setIcon(Icon icon);
-
-    // exec() defined by Dialog.Handle
+flags Options {
+    DontUseNativeDialog = 0x00000001
 }
 
-Handle create(); // no signals yet
+opaque Handle extends Dialog.Handle {
+    void setDetailedText(string text);
+    void setIcon(Icon.Deferred icon);
+    // void setIconPixmap(QPixmap)
+    void setInformativeText(string text);
+    void setOptions(Options opts);
+    void setStandardButtons(StandardButtonSet buttons);
+    void setText(string text);
+    void setTextFormat(TextFormat format);
+    void setTextInteractionFlags(TextInteractionFlags tiFlags);
+
+    void setDefaultButton(StandardButton button);
+
+    // exec() defined by Dialog.Handle
+    void setSignalMask(SignalMask mask);
+}
+
+Handle create(SignalHandler handler);
