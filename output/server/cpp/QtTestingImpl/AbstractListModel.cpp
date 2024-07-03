@@ -93,7 +93,7 @@ namespace AbstractListModel
     }
 
     void Handle_dispose(HandleRef _this) {
-        delete THIS;
+        printf("AbstractListModel::Handle_dispose called - shouldn't happen\n");
     }
 
     void Interior_emitDataChanged(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> topLeft, std::shared_ptr<ModelIndex::Deferred::Base> bottomRight, std::vector<ItemDataRole> roles) {
@@ -130,10 +130,6 @@ namespace AbstractListModel
 
     void Interior_endResetModel(InteriorRef _this) {
         THIS->endResetModel();
-    }
-
-    void Interior_dispose(InteriorRef _this) {
-        delete THIS;
     }
 
     HandleRef createSubclassed(std::shared_ptr<MethodDelegate> methodDelegate, MethodMask mask) {

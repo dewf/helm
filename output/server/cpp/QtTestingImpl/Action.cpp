@@ -18,6 +18,10 @@ namespace Action
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Action:
             { SignalMaskFlags::Changed, SIGNAL(changed()), SLOT(onChanged) },
             { SignalMaskFlags::CheckableChanged, SIGNAL(checkableChanged(bool)), SLOT(onCheckableChanged(bool)) },
             { SignalMaskFlags::EnabledChanged, SIGNAL(enabledChanged(bool)), SLOT(onEnabledChanged(bool) )},
@@ -35,6 +39,14 @@ namespace Action
             }
         }
     public slots:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Action =================
         void onChanged() {
             handler->changed();
         }
@@ -58,16 +70,8 @@ namespace Action
         }
     };
 
-    void Handle_setEnabled(HandleRef _this, bool state) {
-        THIS->setEnabled(state);
-    }
-
-    void Handle_setText(HandleRef _this, std::string text) {
-        THIS->setText(QString::fromStdString(text));
-    }
-
-    void Handle_setSeparator(HandleRef _this, bool state) {
-        THIS->setSeparator(state);
+    void Handle_setAutoRepeat(HandleRef _this, bool state) {
+        THIS->setAutoRepeat(state);
     }
 
     void Handle_setCheckable(HandleRef _this, bool state) {
@@ -78,6 +82,10 @@ namespace Action
         THIS->setChecked(state);
     }
 
+    void Handle_setEnabled(HandleRef _this, bool state) {
+        THIS->setEnabled(state);
+    }
+
     void Handle_setIcon(HandleRef _this, std::shared_ptr<Icon::Deferred::Base> icon) {
         THIS->setIcon(Icon::fromDeferred(icon));
     }
@@ -86,16 +94,52 @@ namespace Action
         THIS->setIconText(QString::fromStdString(text));
     }
 
+    void Handle_setIconVisibleInMenu(HandleRef _this, bool visible) {
+        THIS->setIconVisibleInMenu(visible);
+    }
+
+    void Handle_setMenuRole(HandleRef _this, MenuRole role) {
+        THIS->setMenuRole((QAction::MenuRole)role);
+    }
+
+    void Handle_setPriority(HandleRef _this, Priority priority) {
+        THIS->setPriority((QAction::Priority)priority);
+    }
+
     void Handle_setShortcut(HandleRef _this, std::shared_ptr<KeySequence::Deferred::Base> seq) {
         THIS->setShortcut(KeySequence::fromDeferred(seq));
+    }
+
+    void Handle_setShortcutContext(HandleRef _this, ShortcutContext context) {
+        THIS->setShortcutContext((Qt::ShortcutContext)context);
+    }
+
+    void Handle_setShortcutVisibleInContextMenu(HandleRef _this, bool visible) {
+        THIS->setShortcutVisibleInContextMenu(visible);
     }
 
     void Handle_setStatusTip(HandleRef _this, std::string tip) {
         THIS->setStatusTip(QString::fromStdString(tip));
     }
 
+    void Handle_setText(HandleRef _this, std::string text) {
+        THIS->setText(QString::fromStdString(text));
+    }
+
     void Handle_setToolTip(HandleRef _this, std::string tip) {
         THIS->setToolTip(QString::fromStdString(tip));
+    }
+
+    void Handle_setVisible(HandleRef _this, bool visible) {
+        THIS->setVisible(visible);
+    }
+
+    void Handle_setWhatsThis(HandleRef _this, std::string text) {
+        THIS->setWhatsThis(QString::fromStdString(text));
+    }
+
+    void Handle_setSeparator(HandleRef _this, bool state) {
+        THIS->setSeparator(state);
     }
 
     void Handle_setSignalMask(HandleRef _this, SignalMask mask) {

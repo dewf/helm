@@ -95,7 +95,7 @@ opaque Handle extends AbstractScrollArea.Handle {
     void setIconSize(Size size);
     void setSelectionBehavior(SelectionBehavior behavior);
     void setSelectionMode(SelectionMode mode);
-    void setShowDropIndicator(bool state);
+    void setDropIndicatorShown(bool state);
     void setTabKeyNavigation(bool state);
     void setTextElideMode(TextElideMode mode);
     void setVerticalScrollMode(ScrollMode mode);

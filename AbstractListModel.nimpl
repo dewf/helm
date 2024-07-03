@@ -40,10 +40,12 @@ interface SignalMask {
     // (none)
 }
 
+// technically should be nodispose, but NI can't handle that yet
 opaque Handle extends AbstractItemModel.Handle {
     Interior getInteriorHandle();
 }
 
+@nodispose
 opaque Interior extends Handle { // this opaque allows the method delegate to call internal methods as if it's a direct subclass
     // signal emission
     void emitDataChanged(ModelIndex.Deferred topLeft, ModelIndex.Deferred bottomRight, Array<ItemDataRole> roles);
