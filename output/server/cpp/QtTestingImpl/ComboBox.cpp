@@ -19,6 +19,9 @@ namespace ComboBox
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
             // Widget:
             { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
             { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
@@ -41,7 +44,14 @@ namespace ComboBox
             }
         }
     public slots:
-        // Widget:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget ==================
         void onCustomContextMenuRequested(const QPoint& pos) {
             handler->customContextMenuRequested(toPoint(pos));
         }
@@ -51,7 +61,7 @@ namespace ComboBox
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());
         }
-        // ComboBox:
+        // ComboBox ================
         void onActivated(int index) {
             handler->activated(index);
         }
@@ -74,26 +84,6 @@ namespace ComboBox
             handler->textHighlighted(text.toStdString());
         }
     };
-
-    void Handle_clear(HandleRef _this) {
-        THIS->clear();
-    }
-
-    void Handle_addItem(HandleRef _this, std::string text, std::shared_ptr<Variant::Deferred::Base> userData) {
-        THIS->addItem(QString::fromStdString(text), Variant::fromDeferred(userData));
-    }
-
-    void Handle_addItem(HandleRef _this, std::shared_ptr<Icon::Deferred::Base> icon, std::string text, std::shared_ptr<Variant::Deferred::Base> userData) {
-        THIS->addItem(Icon::fromDeferred(icon), QString::fromStdString(text), Variant::fromDeferred(userData));
-    }
-
-    void Handle_addItems(HandleRef _this, std::vector<std::string> texts) {
-        THIS->addItems(toQStringList(texts));
-    }
-
-    void Handle_setModel(HandleRef _this, AbstractItemModel::HandleRef model) {
-        THIS->setModel((QAbstractItemModel*)model);
-    }
 
     int32_t Handle_count(HandleRef _this) {
         return THIS->count();
@@ -159,6 +149,26 @@ namespace ComboBox
 
     void Handle_setSizeAdjustPolicy(HandleRef _this, SizeAdjustPolicy policy) {
         THIS->setSizeAdjustPolicy((QComboBox::SizeAdjustPolicy)policy);
+    }
+
+    void Handle_clear(HandleRef _this) {
+        THIS->clear();
+    }
+
+    void Handle_addItem(HandleRef _this, std::string text, std::shared_ptr<Variant::Deferred::Base> userData) {
+        THIS->addItem(QString::fromStdString(text), Variant::fromDeferred(userData));
+    }
+
+    void Handle_addItem(HandleRef _this, std::shared_ptr<Icon::Deferred::Base> icon, std::string text, std::shared_ptr<Variant::Deferred::Base> userData) {
+        THIS->addItem(Icon::fromDeferred(icon), QString::fromStdString(text), Variant::fromDeferred(userData));
+    }
+
+    void Handle_addItems(HandleRef _this, std::vector<std::string> texts) {
+        THIS->addItems(toQStringList(texts));
+    }
+
+    void Handle_setModel(HandleRef _this, AbstractItemModel::HandleRef model) {
+        THIS->setModel((QAbstractItemModel*)model);
     }
 
     void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
