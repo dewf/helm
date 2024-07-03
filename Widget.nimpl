@@ -1,12 +1,12 @@
 module Widget;
 
+import Object;
 import Common;
 import Layout;
 import Painter;
 import Icon;
 import Enums;
 import Action;
-import Object;
 import Region;
 import Cursor;
 import SizePolicy;
@@ -21,7 +21,7 @@ namedbits SignalMask extends Object.SignalMask {
 
 interface SignalHandler {
     // Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:

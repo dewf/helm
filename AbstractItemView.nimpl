@@ -1,5 +1,6 @@
 module AbstractItemView;
 
+import Object;
 import Common;
 import Enums;
 import Icon;
@@ -19,7 +20,7 @@ namedbits SignalMask extends AbstractScrollArea.SignalMask {
 
 interface SignalHandler {
     // from Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:

@@ -1,5 +1,6 @@
 module AbstractButton;
 
+import Object;
 import Common;
 import KeySequence;
 import Widget;
@@ -14,7 +15,7 @@ namedbits SignalMask extends Widget.SignalMask{
 
 interface SignalHandler {
     // Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:

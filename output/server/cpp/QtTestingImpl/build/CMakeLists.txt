@@ -156,6 +156,10 @@ add_library(QtTestingImpl STATIC
     ../PaintResourcesInternal.h                      # needed for internal struct definitions
     ../PaintResources.cpp
 
+    ../generated/PersistentModelIndex.h
+    ../generated/PersistentModelIndex_wrappers.cpp
+    ../PersistentModelIndex.cpp
+
     ../generated/Pixmap.h
     ../generated/Pixmap_wrappers.cpp
     ../PixmapInternal.h

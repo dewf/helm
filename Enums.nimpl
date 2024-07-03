@@ -170,6 +170,11 @@ enum TextElideMode {
     ElideNone
 }
 
+enum CaseSensitivity {
+    CaseInsensitive,
+    CaseSensitive
+}
+
 flags InputMethodHints : uint32 {
     ImhNone = 0x0,
 

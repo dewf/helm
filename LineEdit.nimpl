@@ -1,5 +1,6 @@
 module LineEdit;
 
+import Object;
 import Widget;
 import Common;
 import Icon;
@@ -17,7 +18,7 @@ namedbits SignalMask extends Widget.SignalMask {
 
 interface SignalHandler {
     // Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:

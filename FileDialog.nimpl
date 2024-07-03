@@ -1,5 +1,6 @@
 module FileDialog;
 
+import Object;
 import Common;
 import Icon;
 import Dialog;
@@ -18,7 +19,7 @@ namedbits SignalMask extends Dialog.SignalMask {
 
 interface SignalHandler {
     // Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:

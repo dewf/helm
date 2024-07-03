@@ -1,5 +1,6 @@
 module AbstractSlider;
 
+import Object;
 import Widget;
 import Common;
 import Icon;
@@ -27,7 +28,7 @@ enum SliderAction {
 
 interface SignalHandler {
     // from Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:

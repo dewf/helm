@@ -1,5 +1,6 @@
 module Label;
 
+import Object;
 import Common;
 import Frame;
 import Icon;
@@ -13,7 +14,7 @@ namedbits SignalMask extends Frame.SignalMask {
 
 interface SignalHandler {
     // Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:

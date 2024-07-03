@@ -1,8 +1,8 @@
 module Action;
 
+import Object;
 import KeySequence;
 import Icon;
-import Object;
 import Enums;
 
 namedbits SignalMask extends Object.SignalMask {
@@ -17,7 +17,7 @@ namedbits SignalMask extends Object.SignalMask {
 
 interface SignalHandler {
     // from Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Action:

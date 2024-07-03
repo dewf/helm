@@ -1,5 +1,6 @@
 module GroupBox;
 
+import Object;
 import Common;
 import Icon;
 import Enums;
@@ -12,7 +13,7 @@ namedbits SignalMask extends Widget.SignalMask {
 
 interface SignalHandler {
     // Object:
-    void destroyed(Handle obj);
+    void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);
 
     // Widget:
