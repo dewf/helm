@@ -18,6 +18,10 @@ namespace Icon
     public:
         explicit FromDeferred(QIcon &icon) : icon(icon) {}
 
+        void onEmpty(const Deferred::Empty *empty) override {
+            icon = QIcon();
+        }
+
         void onFromThemeIcon(const Deferred::FromThemeIcon *fromThemeIcon) override {
             icon = QIcon::fromTheme((QIcon::ThemeIcon)fromThemeIcon->themeIcon);
         }

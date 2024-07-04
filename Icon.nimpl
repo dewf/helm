@@ -164,6 +164,7 @@ enum ThemeIcon {
 opaque Handle;
 
 sumtype Deferred {
+    Empty,
     FromThemeIcon(ThemeIcon themeIcon),
     FromFilename(string filename)
 }

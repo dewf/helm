@@ -21,6 +21,7 @@
         <Compile Include="Models\TrackedRows.fs" />
         <Compile Include="Models\ListModelNode.fs" />
         <Compile Include="Models\SortFilterProxyModel.fs" />
+        <Compile Include="Widgets\QObject.fs" />
 
         <Compile Include="Widgets\Widget.fs" />
 

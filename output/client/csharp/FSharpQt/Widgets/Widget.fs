@@ -265,9 +265,9 @@ with
             | WindowTitle _ -> "widget:WindowTitle"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? WidgetAttrTarget as widgetTarget ->
+            | :? WidgetAttrTarget as attrTarget ->
                 let widget =
-                    widgetTarget.Widget
+                    attrTarget.Widget
                 match this with
                 | AcceptDrops accept ->
                     widget.SetAcceptDrops(accept)
@@ -336,7 +336,8 @@ with
                 | WindowFlags flags ->
                     widget.SetWindowFlags(flags |> WindowFlag.QtSetFrom)
                 | WindowIcon icon ->
-                    widget.SetWindowIcon(icon.QtValue)
+                    if attrTarget.SetWindowIcon(icon) then
+                        widget.SetWindowIcon(icon.QtValue)
                 | WindowModality modality ->
                     widget.SetWindowModality(modality.QtValue)
                 | WindowModified modified ->
@@ -344,7 +345,8 @@ with
                 | WindowOpacity opacity ->
                     widget.SetWindowOpacity(opacity)
                 | WindowTitle title ->
-                    widget.SetWindowTitle(title)
+                    if attrTarget.SetWindowTitle(title) then
+                        widget.SetWindowTitle(title)
             | _ ->
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
 
@@ -352,7 +354,7 @@ type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
 
 type Props<'msg>() =
-    inherit PropsRoot()
+    inherit QObject.Props<'msg>()
     
     let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
     let mutable onWindowIconChanged: (IconProxy -> 'msg) option = None
@@ -372,17 +374,17 @@ type Props<'msg>() =
         onWindowTitleChanged <- Some value
         this.AddSignal(int Widget.SignalMask.WindowTitleChanged)
         
-    // TODO: will remove this completely once all the widgets are done
-    member internal this.SignalMap_REMOVE = function
-        | CustomContextMenuRequested pos ->
-            onCustomContextMenuRequested
-            |> Option.map (fun f -> f pos)
-        | WindowIconChanged icon ->
-            onWindowIconChanged
-            |> Option.map (fun f -> f icon)
-        | WindowTitleChanged title ->
-            onWindowTitleChanged
-            |> Option.map (fun f -> f title)
+    // // TODO: will remove this completely once all the widgets are done
+    // member internal this.SignalMap_REMOVE = function
+    //     | CustomContextMenuRequested pos ->
+    //         onCustomContextMenuRequested
+    //         |> Option.map (fun f -> f pos)
+    //     | WindowIconChanged icon ->
+    //         onWindowIconChanged
+    //         |> Option.map (fun f -> f icon)
+    //     | WindowTitleChanged title ->
+    //         onWindowTitleChanged
+    //         |> Option.map (fun f -> f title)
         
     member internal this.SignalMapList =
         let thisFunc = function
@@ -514,13 +516,14 @@ type Props<'msg>() =
         this.PushAttr(WindowTitle value)
         
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
-    inherit ModelCoreRoot()
+    inherit QObject.ModelCore<'msg>(dispatch)
     
     let mutable widget: Widget.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Widget.SignalMask> 0
     // binding guards
-    let mutable lastTitle = ""
+    let mutable lastWindowTitle = ""
+    let mutable lastWindowIcon = Icon()
 
     let signalDispatch (s: Signal) =
         signalMap s
@@ -530,8 +533,9 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         with get() =
             widget
         and set value =
+            this.Object <- value
             widget <- value
-    
+            
     member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
         match mapFuncList with
         | h :: _ ->
@@ -553,24 +557,37 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     
     interface WidgetAttrTarget with
         override this.Widget = widget
-        // TODO: add both binding guards
-        // override this.SetWindowIcon newIcon =
-        //     ...
-        // override this.SetWindowTitle newTitle =
-        //     if newTitle <> lastTitle then
-        //         lastTitle <- newTitle
-        //         true
-        //     else
-        //         false
+        override this.SetWindowIcon newIcon =
+            if newIcon <> lastWindowIcon then
+                lastWindowIcon <- newIcon
+                true
+            else
+                false
+        override this.SetWindowTitle newTitle =
+            if newTitle <> lastWindowTitle then
+                lastWindowTitle <- newTitle
+                true
+            else
+                false
         
     interface Widget.SignalHandler with
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // widget =========================
         member this.CustomContextMenuRequested pos =
             signalDispatch (Point.From pos |> CustomContextMenuRequested)
         member this.WindowIconChanged icon =
-            // TODO: guard
+            // lastWindowIcon <- 
+            // hmm, how are we going to do this? incoming handle (unowned pointer),
+            // but stored value is a deferred icon
+            // but the pointer values are temporary and the icon itself is on a soon-to-be-destroyed stack
+            // of the top of my head I'd say "never 2-way bind this value" ...
             signalDispatch (IconProxy(icon) |> WindowIconChanged)
         member this.WindowTitleChanged title =
-            lastTitle <- title
+            lastWindowTitle <- title
             signalDispatch (WindowTitleChanged title)
             
     interface IDisposable with

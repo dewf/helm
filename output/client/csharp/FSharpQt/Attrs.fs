@@ -99,9 +99,16 @@ type internal NullSignalMapFunc() =
 // if you want to support a given type of attribute, you have to implement the target interface
 // reasonable enough!
 
-type internal LayoutAttrTarget =
+type internal QObjectAttrTarget =
     interface
         inherit IAttrTarget
+        abstract member QObject: Object.Handle
+        abstract member SetObjectName: string -> bool
+    end
+
+type internal LayoutAttrTarget =
+    interface
+        inherit QObjectAttrTarget
         abstract member Layout: Layout.Handle
     end
     
@@ -110,13 +117,13 @@ type internal BoxLayoutAttrTarget =
         inherit LayoutAttrTarget
         abstract member BoxLayout: BoxLayout.Handle
     end
-
+    
 type internal WidgetAttrTarget =
     interface
-        inherit IAttrTarget
+        inherit QObjectAttrTarget
         abstract member Widget: Widget.Handle
-        // abstract member SetWindowIcon: Icon -> bool
-        // abstract member SetWindowTitle: string -> bool
+        abstract member SetWindowIcon: MiscTypes.Icon -> bool
+        abstract member SetWindowTitle: string -> bool
     end
     
 type internal FrameAttrTarget =
@@ -182,7 +189,7 @@ type internal MenuBarAttrTarget =
     
 type internal ActionAttrTarget =
     interface
-        inherit IAttrTarget
+        inherit QObjectAttrTarget
         abstract member Action: Action.Handle
         abstract member SetEnabled: bool -> bool   // return value: internal value did change
         abstract member SetCheckable: bool -> bool

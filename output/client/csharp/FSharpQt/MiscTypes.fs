@@ -489,6 +489,9 @@ type internal NullWidgetHandler() =
 // because we don't want users to be responsible for lifetimes (disposal) on these things
 // anything the user would have created on the stack, ideally shouldn't use a proxy
 
+type QObjectProxy internal(handle: Object.Handle) =
+    let x = 10
+
 type WidgetProxy internal(handle: Widget.Handle) =
     // member val widget = widget
     member this.Rect =
@@ -566,6 +569,10 @@ type SizePolicyDeferred private(deferred: Org.Whatever.QtTesting.SizePolicy.Defe
 
 type Icon private(deferred: Org.Whatever.QtTesting.Icon.Deferred) =
     member val internal QtValue = deferred
+    new() =
+        let deferred =
+            Icon.Deferred.Empty()
+        Icon(deferred)
     new (filename: string) =
         let deferred =
             Icon.Deferred.FromFilename(filename)
