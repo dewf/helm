@@ -216,6 +216,10 @@ add_library(QtTestingImpl STATIC
     ../generated/TabWidget_wrappers.cpp
     ../TabWidget.cpp
 
+    ../generated/TextOption.h
+    ../generated/TextOption_wrappers.cpp
+    ../TextOption.cpp
+
     ../generated/Timer.h
     ../generated/Timer_wrappers.cpp
     ../Timer.cpp

@@ -11,7 +11,7 @@ import ModelIndex;
 namedbits SignalMask extends AbstractScrollArea.SignalMask {
     Activated,
     Clicked,
-    DoubleClicked,
+    DoubleClickedBit, // to distinguish from a Qt-defined enum/flag
     Entered,
     IconSizeChanged,
     Pressed,

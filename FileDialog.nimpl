@@ -4,6 +4,7 @@ import Object;
 import Common;
 import Icon;
 import Dialog;
+import Widget;
 
 namedbits SignalMask extends Dialog.SignalMask {
     CurrentChanged,
@@ -91,4 +92,4 @@ opaque Handle extends Dialog.Handle {
     void setSignalMask(SignalMask mask);
 }
 
-Handle create(SignalHandler handler);
+Handle create(Widget.Handle parent, SignalHandler handler);

@@ -11,7 +11,7 @@ namedbits SignalMask extends AbstractItemModel.SignalMask {
     // none extra
 }
 
-interface SignalMask {
+interface SignalHandler {
     // Object:
     void destroyed(Object.Handle obj);
     void objectNameChanged(string objectName);

@@ -19,25 +19,25 @@ type DropAction =
     | Move
     | Link
 with
-    static member internal From (qtDropAction: Widget.DropAction) =
+    static member internal From (qtDropAction: Enums.DropAction) =
         match qtDropAction with
-        | Widget.DropAction.Ignore -> Ignore
-        | Widget.DropAction.Copy -> Copy
-        | Widget.DropAction.Move -> Move
-        | Widget.DropAction.Link -> Link
+        | Enums.DropAction.Ignore -> Ignore
+        | Enums.DropAction.Copy -> Copy
+        | Enums.DropAction.Move -> Move
+        | Enums.DropAction.Link -> Link
         | _ -> failwith "DropAction.From - unhandled DropAction case (only move/copy/link supported)"
     member internal this.QtValue =
         match this with
-        | Ignore -> Widget.DropAction.Ignore
-        | Copy -> Widget.DropAction.Copy
-        | Move -> Widget.DropAction.Move
-        | Link -> Widget.DropAction.Link
-    static member internal SetFrom (qtDropActionSet: Widget.DropActionSet) =
+        | Ignore -> Enums.DropAction.Ignore
+        | Copy -> Enums.DropAction.Copy
+        | Move -> Enums.DropAction.Move
+        | Link -> Enums.DropAction.Link
+    static member internal SetFrom (qtDropActionSet: Enums.DropActionSet) =
         let pairs = [
-            // Widget.DropActionSet.Ignore, Ignore // 0 value
-            Widget.DropActionSet.Copy, Copy
-            Widget.DropActionSet.Move, Move
-            Widget.DropActionSet.Link, Link
+            // Enums.DropActionSet.Ignore, Ignore // 0 value
+            Enums.DropActionSet.Copy, Copy
+            Enums.DropActionSet.Move, Move
+            Enums.DropActionSet.Link, Link
         ]
         (Set.empty<DropAction>, pairs)
         ||> List.fold (fun acc (flag, action) ->
@@ -46,14 +46,14 @@ with
             else
                 acc)
     static member internal QtSetFrom (actions: DropAction seq) =
-        (enum<Widget.DropActionSet> 0, actions)
+        (enum<Enums.DropActionSet> 0, actions)
         ||> Seq.fold (fun acc action ->
             let flag =
                 match action with
-                | Ignore -> Widget.DropActionSet.Ignore // 0 value, meaningless in a set
-                | Copy -> Widget.DropActionSet.Copy
-                | Move -> Widget.DropActionSet.Move
-                | Link -> Widget.DropActionSet.Link
+                | Ignore -> Enums.DropActionSet.Ignore // 0 value, meaningless in a set
+                | Copy -> Enums.DropActionSet.Copy
+                | Move -> Enums.DropActionSet.Move
+                | Link -> Enums.DropActionSet.Link
             acc ||| flag)
     
 [<AbstractClass>]

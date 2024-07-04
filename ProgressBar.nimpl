@@ -29,12 +29,12 @@ enum Direction { TopToBottom, BottomToTop }
 opaque Handle extends Widget.Handle {
     void setAlignment(Alignment align);
     void setFormat(string format);
-    void setInvertedAppearance(bool appearance);
+    void setInvertedAppearance(bool invert);
     void setMaximum(int value);
     void setMinimum(int value);
     void setOrientation(Orientation orient);
-    void setText(string text);
-    void setDirection(Direction direction);
+    string text();
+    void setTextDirection(Direction direction);
     void setTextVisible(bool visible);
     void setValue(int value);
 

@@ -17,7 +17,7 @@ interface SignalHandler {
 }
 
 opaque Handle extends Object.Handle {
-    void setActive(bool active);
+    bool isActive();
     void setInterval(int interval);
     int remainingTime();                // readonly
     void setSingleShot(bool state);

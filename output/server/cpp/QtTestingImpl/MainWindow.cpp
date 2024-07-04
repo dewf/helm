@@ -18,13 +18,19 @@ namespace MainWindow
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Widget:
             { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
             { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
             { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // MainWindow:
             { SignalMaskFlags::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
             { SignalMaskFlags::TabifiedDockWidgetActivated, SIGNAL(tabifiedDockWidgetActivated(QDockWidget)), SLOT(onTabifiedDockWidgetActivated(QDockWidget)) },
             { SignalMaskFlags::ToolButtonStyleChanged, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), SLOT(onToolButtonStyleChanged(Qt::ToolButtonStyle)) },
-            { SignalMaskFlags::Closed, SIGNAL(windowClosed()), SLOT(onWindowClosed()) },
+            // MainWindow custom:
+            { SignalMaskFlags::WindowClosed, SIGNAL(windowClosed()), SLOT(onWindowClosed()) }
         };
     public:
         explicit MainWindowWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
@@ -43,17 +49,24 @@ namespace MainWindow
             emit windowClosed();
         }
     public slots:
-        // QWidget:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget ==================
         void onCustomContextMenuRequested(const QPoint& pos) {
             handler->customContextMenuRequested(toPoint(pos));
-        };
+        }
         void onWindowIconChanged(const QIcon& icon) {
             handler->windowIconChanged((Icon::HandleRef)&icon);
         }
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());
         }
-        // QMainWindow:
+        // MainWindow ===============
         void onIconSizeChanged(const QSize& size) {
             handler->iconSizeChanged(toSize(size));
         }
@@ -63,11 +76,43 @@ namespace MainWindow
         void onToolButtonStyleChanged(Qt::ToolButtonStyle style) {
             handler->toolButtonStyleChanged((Enums::ToolButtonStyle)style);
         }
-        // custom:
+        // MainWindow (custom) ======
         void onWindowClosed() {
-            handler->closed();
+            handler->windowClosed();
         }
     };
+
+    void Handle_setAnimated(HandleRef _this, bool state) {
+        THIS->setAnimated(state);
+    }
+
+    void Handle_setDockNestingEnabled(HandleRef _this, bool state) {
+        THIS->setDockNestingEnabled(state);
+    }
+
+    void Handle_setDockOptions(HandleRef _this, DockOptions dockOptions) {
+        THIS->setDockOptions((QMainWindow::DockOptions)dockOptions);
+    }
+
+    void Handle_setDocumentMode(HandleRef _this, bool state) {
+        THIS->setDocumentMode(state);
+    }
+
+    void Handle_setIconSize(HandleRef _this, Size size) {
+        THIS->setIconSize(toQSize(size));
+    }
+
+    void Handle_setTabShape(HandleRef _this, TabShape tabShape) {
+        THIS->setTabShape((QTabWidget::TabShape)tabShape);
+    }
+
+    void Handle_setToolButtonStyle(HandleRef _this, ToolButtonStyle style) {
+        THIS->setToolButtonStyle((Qt::ToolButtonStyle)style);
+    }
+
+    void Handle_setUnifiedTitleAndToolBarOnMac(HandleRef _this, bool state) {
+        THIS->setUnifiedTitleAndToolBarOnMac(state);
+    }
 
     void Handle_setCentralWidget(HandleRef _this, Widget::HandleRef widget) {
         THIS->setCentralWidget((QWidget*)widget);

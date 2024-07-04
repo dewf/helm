@@ -38,8 +38,7 @@ namespace FileDialog
             { SignalMaskFlags::UrlsSelected, SIGNAL(urlsSelected(QList<QUrl>)), SLOT(onUrlsSelected(QList<QUrl>)) },
         };
     public:
-        explicit FileDialogWithHandler(const std::shared_ptr<SignalHandler> &handler)
-            : handler(handler) {}
+        explicit FileDialogWithHandler(QWidget *parent, const std::shared_ptr<SignalHandler> &handler) : handler(handler), QFileDialog(parent) {}
         void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);
@@ -180,8 +179,8 @@ namespace FileDialog
         delete THIS;
     }
 
-    HandleRef create(std::shared_ptr<SignalHandler> handler) {
-        return (HandleRef) new FileDialogWithHandler(handler);
+    HandleRef create(Widget::HandleRef parent, std::shared_ptr<SignalHandler> handler) {
+        return (HandleRef) new FileDialogWithHandler((QWidget*)parent, handler);
     }
 }
 

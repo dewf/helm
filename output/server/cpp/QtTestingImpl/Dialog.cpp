@@ -29,12 +29,7 @@ namespace Dialog
                 { SignalMaskFlags::Rejected, SIGNAL(rejected()), SLOT(onRejected()) },
         };
     public:
-        DialogWithHandler(QWidget *parent, const std::shared_ptr<SignalHandler> &handler)
-            : handler(handler), QDialog(parent)
-        {
-            // nothing yet
-        }
-
+        DialogWithHandler(QWidget *parent, const std::shared_ptr<SignalHandler> &handler) : handler(handler), QDialog(parent) {}
         void setSignalMask(SignalMask newMask) {
             if (newMask != lastMask) {
                 processChanges(lastMask, newMask, signalMap, this);

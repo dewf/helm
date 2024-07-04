@@ -42,7 +42,7 @@ interface SignalHandler {
 opaque Handle extends Widget.Handle {
     void setAllowedAreas(ToolBarAreas allowed);
     void setFloatable(bool floatable);
-    bool floating();                                // readonly
+    bool isFloating();                                // readonly
     void setIconSize(Size size);
     void setMovable(bool value);
     void setOrientation(Orientation value);

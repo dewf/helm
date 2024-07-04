@@ -15,14 +15,26 @@ namespace ListView
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Widget:
             { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // Frame:
+            // ..... (none)
+            // AbstractScrollArea:
+            // ..... (none)
+            // AbstractItemView:
             { SignalMaskFlags::Activated, SIGNAL(activated(QModelIndex)), SLOT(onActivated(QModelIndex)) },
             { SignalMaskFlags::Clicked, SIGNAL(clicked(QModelIndex)), SLOT(onClicked(QModelIndex)) },
-            { SignalMaskFlags::DoubleClicked, SIGNAL(doubleClicked(QModelIndex)), SLOT(onDoubleClicked(QModelIndex)) },
+            { SignalMaskFlags::DoubleClickedBit, SIGNAL(doubleClicked(QModelIndex)), SLOT(onDoubleClicked(QModelIndex)) },
             { SignalMaskFlags::Entered, SIGNAL(entered(QModelIndex)), SLOT(onEntered(QModelIndex)) },
             { SignalMaskFlags::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
             { SignalMaskFlags::Pressed, SIGNAL(pressed(QModelIndex)), SLOT(onPressed(QModelIndex)) },
             { SignalMaskFlags::ViewportEntered, SIGNAL(viewportEntered()), SLOT(onViewportEntered) },
+            // ListView:
             { SignalMaskFlags::IndexesMoved, SIGNAL(indexesMoved(QModelIndexList)), SLOT(onIndexesMoved(QModelIndexList)) },
         };
     public:
@@ -34,9 +46,30 @@ namespace ListView
             }
         }
     public slots:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget ==================
         void onCustomContextMenuRequested(const QPoint& pos) {
             handler->customContextMenuRequested(toPoint(pos));
-        };
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // Frame ====================
+        // .... (none)
+
+        // AbstractScrollArea =======
+        // .... (none)
+
+        // AbstractItemView =========
         void onActivated(const QModelIndex& index) {
             handler->activated((ModelIndex::HandleRef)&index);
         }
@@ -58,6 +91,7 @@ namespace ListView
         void onViewportEntered() {
             handler->viewportEntered();
         }
+        // ListView ========================
         void onIndexesMoved(const QModelIndexList &indexes) {
             std::vector<ModelIndex::HandleRef> indexes2;
             for (auto &index : indexes) {
@@ -68,24 +102,60 @@ namespace ListView
         }
     };
 
-    void Handle_setMovement(HandleRef _this, Movement movement) {
-        THIS->setMovement((QListView::Movement)movement);
+    void Handle_setBatchSize(HandleRef _this, int32_t size) {
+        THIS->setBatchSize(size);
     }
 
     void Handle_setFlow(HandleRef _this, Flow flow) {
         THIS->setFlow((QListView::Flow)flow);
     }
 
-    void Handle_setResizeMode(HandleRef _this, ResizeMode mode) {
-        THIS->setResizeMode((QListView::ResizeMode)mode);
+    void Handle_setGridSize(HandleRef _this, Size size) {
+        THIS->setGridSize(toQSize(size));
+    }
+
+    void Handle_setWrapping(HandleRef _this, bool wrapping) {
+        THIS->setWrapping(wrapping);
+    }
+
+    void Handle_setItemAlignment(HandleRef _this, Alignment align) {
+        THIS->setItemAlignment((Qt::Alignment)align);
     }
 
     void Handle_setLayoutMode(HandleRef _this, LayoutMode mode) {
         THIS->setLayoutMode((QListView::LayoutMode)mode);
     }
 
+    void Handle_setModelColumn(HandleRef _this, int32_t column) {
+        THIS->setModelColumn(column);
+    }
+
+    void Handle_setMovement(HandleRef _this, Movement movement) {
+        THIS->setMovement((QListView::Movement)movement);
+    }
+
+    void Handle_setResizeMode(HandleRef _this, ResizeMode mode) {
+        THIS->setResizeMode((QListView::ResizeMode)mode);
+    }
+
+    void Handle_setSelectionRectVisible(HandleRef _this, bool visible) {
+        THIS->setSelectionRectVisible(visible);
+    }
+
+    void Handle_setSpacing(HandleRef _this, int32_t spacing) {
+        THIS->setSpacing(spacing);
+    }
+
+    void Handle_setUniformItemSizes(HandleRef _this, bool state) {
+        THIS->setUniformItemSizes(state);
+    }
+
     void Handle_setViewMode(HandleRef _this, ViewMode mode) {
         THIS->setViewMode((QListView::ViewMode)mode);
+    }
+
+    void Handle_setWordWrap(HandleRef _this, bool state) {
+        THIS->setWordWrap(state);
     }
 
     void Handle_setSignalMask(HandleRef _this, SignalMask mask) {

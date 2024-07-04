@@ -6,6 +6,7 @@ import Icon;
 import Enums;
 import Dialog;
 import AbstractButton;
+import Widget;
 
 namedbits SignalMask extends Dialog.SignalMask {
     ButtonClicked
@@ -74,7 +75,7 @@ flags StandardButtonSet {
     RestoreDefaults    = 0x08000000
 }
 
-enum Icon {
+enum MessageBoxIcon {
     NoIcon = 0,
     Information = 1,
     Warning = 2,
@@ -88,7 +89,7 @@ flags Options {
 
 opaque Handle extends Dialog.Handle {
     void setDetailedText(string text);
-    void setIcon(Icon.Deferred icon);
+    void setIcon(MessageBoxIcon icon);
     // void setIconPixmap(QPixmap)
     void setInformativeText(string text);
     void setOptions(Options opts);
@@ -103,4 +104,4 @@ opaque Handle extends Dialog.Handle {
     void setSignalMask(SignalMask mask);
 }
 
-Handle create(SignalHandler handler);
+Handle create(Widget.Handle parent, SignalHandler handler);

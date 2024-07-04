@@ -2,12 +2,11 @@
 
 #include <QObject>
 #include <QTabWidget>
-#include <utility>
 
 #include "util/SignalStuff.h"
+#include "util/convert.h"
 
 #define THIS ((TabWidgetWithHandler*)_this)
-#define WIDGET(w) ((QWidget*)w)
 
 namespace TabWidget
 {
@@ -17,10 +16,18 @@ namespace TabWidget
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
-                { SignalMaskFlags::CurrentChanged, SIGNAL(currentChanged(int)), SLOT(onCurrentChanged(int)) },
-                { SignalMaskFlags::TabBarClicked, SIGNAL(tabBarClicked(int)), SLOT(onTabBarClicked(int)) },
-                { SignalMaskFlags::TabBarDoubleClicked, SIGNAL(tabBarDoubleClicked(int)), SLOT(onTabBarDoubleClicked(int)) },
-                { SignalMaskFlags::TabCloseRequested, SIGNAL(tabCloseRequested(int)), SLOT(onTabCloseRequested(int)) }
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Widget:
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // TabWidget:
+            { SignalMaskFlags::CurrentChanged, SIGNAL(currentChanged(int)), SLOT(onCurrentChanged(int)) },
+            { SignalMaskFlags::TabBarClicked, SIGNAL(tabBarClicked(int)), SLOT(onTabBarClicked(int)) },
+            { SignalMaskFlags::TabBarDoubleClicked, SIGNAL(tabBarDoubleClicked(int)), SLOT(onTabBarDoubleClicked(int)) },
+            { SignalMaskFlags::TabCloseRequested, SIGNAL(tabCloseRequested(int)), SLOT(onTabCloseRequested(int)) }
         };
     public:
         explicit TabWidgetWithHandler(std::shared_ptr<SignalHandler> handler) : handler(std::move(handler)) {}
@@ -31,6 +38,24 @@ namespace TabWidget
             }
         }
     public slots:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget ==================
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // TabWidget ===============
         void onCurrentChanged(int index) {
             handler->currentChanged(index);
         }
@@ -45,12 +70,56 @@ namespace TabWidget
         }
     };
 
+    int32_t Handle_count(HandleRef _this) {
+        return THIS->count();
+    }
+
+    void Handle_setCurrentIndex(HandleRef _this, int32_t index) {
+        THIS->setCurrentIndex(index);
+    }
+
+    void Handle_setDocumentMode(HandleRef _this, bool state) {
+        THIS->setDocumentMode(state);
+    }
+
+    void Handle_setElideMode(HandleRef _this, TextElideMode mode) {
+        THIS->setElideMode((Qt::TextElideMode)mode);
+    }
+
+    void Handle_setIconSize(HandleRef _this, Size size) {
+        THIS->setIconSize(toQSize(size));
+    }
+
+    void Handle_setMovable(HandleRef _this, bool state) {
+        THIS->setMovable(state);
+    }
+
+    void Handle_setTabBarAutoHide(HandleRef _this, bool state) {
+        THIS->setTabBarAutoHide(state);
+    }
+
+    void Handle_setTabPosition(HandleRef _this, TabPosition position) {
+        THIS->setTabPosition((QTabWidget::TabPosition)position);
+    }
+
+    void Handle_setTabShape(HandleRef _this, TabShape shape) {
+        THIS->setTabShape((QTabWidget::TabShape)shape);
+    }
+
+    void Handle_setTabsClosable(HandleRef _this, bool state) {
+        THIS->setTabsClosable(state);
+    }
+
+    void Handle_setUsesScrollButtons(HandleRef _this, bool state) {
+        THIS->setUsesScrollButtons(state);
+    }
+
     void Handle_addTab(HandleRef _this, Widget::HandleRef page, std::string label) {
-        THIS->addTab(WIDGET(page), QString::fromStdString(label));
+        THIS->addTab((QWidget*)page, QString::fromStdString(label));
     }
 
     void Handle_insertTab(HandleRef _this, int32_t index, Widget::HandleRef page, std::string label) {
-        THIS->insertTab(index, WIDGET(page), QString::fromStdString(label));
+        THIS->insertTab(index, (QWidget*)page, QString::fromStdString(label));
     }
 
     Widget::HandleRef Handle_widgetAt(HandleRef _this, int32_t index) {

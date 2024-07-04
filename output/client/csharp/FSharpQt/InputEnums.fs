@@ -72,7 +72,7 @@ with
         | Keypad -> Enums.Modifiers.KeypadModifier
         | GroupSwitch -> Enums.Modifiers.GroupSwitchModifier
     static member internal QtSetFrom (modifiers: Modifier seq) =
-        (enum<Enums.Modifiers> 0, modifiers)
+        (LanguagePrimitives.EnumOfValue<uint, Enums.Modifiers> 0u, modifiers)
         ||> Seq.fold (fun acc m -> acc ||| m.QtFlag)
 
 type StandardKey =

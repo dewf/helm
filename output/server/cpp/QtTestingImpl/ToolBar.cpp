@@ -15,10 +15,18 @@ namespace ToolBar
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Widget:
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // ToolBar:
             { SignalMaskFlags::ActionTriggered, SIGNAL(actionTriggered(QAction)), SLOT(onActionTriggered(QAction)) },
             { SignalMaskFlags::AllowedAreasChanged, SIGNAL(allowedAreasChanged(Qt::ToolBarAreas)), SLOT(onAllowedAreasChanged(Qt::ToolBarAreas)) },
             { SignalMaskFlags::IconSizeChanged, SIGNAL(iconSizeChanged(QSize)), SLOT(onIconSizeChanged(QSize)) },
-            { SignalMaskFlags::MoveableChanged, SIGNAL(movableChanged(bool)), SLOT(onMovableChanged(bool)) },
+            { SignalMaskFlags::MovableChanged, SIGNAL(movableChanged(bool)), SLOT(onMovableChanged(bool)) },
             { SignalMaskFlags::OrientationChanged, SIGNAL(orientationChanged(Qt::Orientation)), SLOT(onOrientationChanged(Qt::Orientation)) },
             { SignalMaskFlags::ToolButtonStyleChanged, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), SLOT(onToolButtonStyleChanged(Qt::ToolButtonStyle)) },
             { SignalMaskFlags::TopLevelChanged, SIGNAL(topLevelChanged(bool)), SLOT(onTopLevelChanged(bool)) },
@@ -33,6 +41,24 @@ namespace ToolBar
             }
         }
     public slots:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget ==================
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // ToolBar =================
         void onActionTriggered(QAction *action) {
             handler->actionTriggered((Action::HandleRef)action);
         };
@@ -59,24 +85,16 @@ namespace ToolBar
         }
     };
 
-    Action::HandleRef Handle_addSeparator(HandleRef _this) {
-        return (Action::HandleRef)THIS->addSeparator();
-    }
-
-    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget) {
-        THIS->addWidget((QWidget*)widget);
-    }
-
-    void Handle_clear(HandleRef _this) {
-        THIS->clear();
-    }
-
     void Handle_setAllowedAreas(HandleRef _this, Enums::ToolBarAreas allowed) {
         THIS->setAllowedAreas((Qt::ToolBarAreas)allowed);
     }
 
     void Handle_setFloatable(HandleRef _this, bool floatable) {
         THIS->setFloatable(floatable);
+    }
+
+    bool Handle_isFloating(HandleRef _this) {
+        return THIS->isFloating();
     }
 
     void Handle_setIconSize(HandleRef _this, Size size) {
@@ -93,6 +111,18 @@ namespace ToolBar
 
     void Handle_setToolButtonStyle(HandleRef _this, ToolButtonStyle style) {
         THIS->setToolButtonStyle((Qt::ToolButtonStyle)style);
+    }
+
+    Action::HandleRef Handle_addSeparator(HandleRef _this) {
+        return (Action::HandleRef)THIS->addSeparator();
+    }
+
+    void Handle_addWidget(HandleRef _this, Widget::HandleRef widget) {
+        THIS->addWidget((QWidget*)widget);
+    }
+
+    void Handle_clear(HandleRef _this) {
+        THIS->clear();
     }
 
     void Handle_setSignalMask(HandleRef _this, SignalMask mask) {

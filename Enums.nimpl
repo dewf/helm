@@ -69,9 +69,8 @@ flags Alignment {
 }
 
 enum Orientation {
-    // aren't these supposed to be flags?
-    Horizontal = 1,
-    Vertical = 2
+    Horizontal = 0x1,
+    Vertical = 0x2
 }
 
 flags ToolBarAreas {

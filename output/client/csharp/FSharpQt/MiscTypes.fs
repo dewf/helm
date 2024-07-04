@@ -221,18 +221,18 @@ type ToolButtonStyle =
 with
     member internal this.QtValue =
         match this with
-        | IconOnly -> Enums.ToolButtonStyle.IconOnly
-        | TextOnly -> Enums.ToolButtonStyle.TextOnly
-        | TextBesideIcon -> Enums.ToolButtonStyle.TextBesideIcon
-        | TextUnderIcon -> Enums.ToolButtonStyle.TextUnderIcon
-        | FollowStyle -> Enums.ToolButtonStyle.FollowStyle
+        | IconOnly -> Enums.ToolButtonStyle.ToolButtonIconOnly
+        | TextOnly -> Enums.ToolButtonStyle.ToolButtonTextOnly
+        | TextBesideIcon -> Enums.ToolButtonStyle.ToolButtonTextBesideIcon
+        | TextUnderIcon -> Enums.ToolButtonStyle.ToolButtonTextUnderIcon
+        | FollowStyle -> Enums.ToolButtonStyle.ToolButtonFollowStyle
     static member internal From (style: Enums.ToolButtonStyle) =
         match style with
-        | Enums.ToolButtonStyle.IconOnly -> IconOnly
-        | Enums.ToolButtonStyle.TextOnly -> TextOnly
-        | Enums.ToolButtonStyle.TextBesideIcon -> TextBesideIcon
-        | Enums.ToolButtonStyle.TextUnderIcon -> TextUnderIcon
-        | Enums.ToolButtonStyle.FollowStyle -> FollowStyle
+        | Enums.ToolButtonStyle.ToolButtonIconOnly -> IconOnly
+        | Enums.ToolButtonStyle.ToolButtonTextOnly -> TextOnly
+        | Enums.ToolButtonStyle.ToolButtonTextBesideIcon -> TextBesideIcon
+        | Enums.ToolButtonStyle.ToolButtonTextUnderIcon -> TextUnderIcon
+        | Enums.ToolButtonStyle.ToolButtonFollowStyle -> FollowStyle
         | _ -> failwith "ToolButtonStyle.From - unknown input value"
     
 type ThemeIcon =
@@ -469,6 +469,10 @@ with
 
 type internal NullWidgetHandler() =
     interface Widget.SignalHandler with
+        member this.Destroyed obj =
+            ()
+        member this.ObjectNameChanged name =
+            ()
         member this.CustomContextMenuRequested pos =
             ()
         member this.WindowIconChanged icon =

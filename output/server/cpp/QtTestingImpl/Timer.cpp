@@ -2,7 +2,6 @@
 
 #include <QTimer>
 #include <QObject>
-#include <chrono>
 #include <utility>
 
 #include "util/SignalStuff.h"
@@ -17,6 +16,10 @@ namespace Timer
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Timer:
             { SignalMaskFlags::Timeout, SIGNAL(timeout()), SLOT(onTimeout()) },
         };
     public:
@@ -28,17 +31,37 @@ namespace Timer
             }
         }
     public slots:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Timer ==================
         void onTimeout() {
             handler->timeout();
         };
     };
 
+    bool Handle_isActive(HandleRef _this) {
+        return THIS->isActive();
+    }
+
     void Handle_setInterval(HandleRef _this, int32_t msec) {
         THIS->setInterval(msec);
     }
 
+    int32_t Handle_remainingTime(HandleRef _this) {
+        return THIS->remainingTime();
+    }
+
     void Handle_setSingleShot(HandleRef _this, bool state) {
         THIS->setSingleShot(state);
+    }
+
+    void Handle_setTimerType(HandleRef _this, TimerType type_) {
+        THIS->setTimerType((Qt::TimerType)type_);
     }
 
     void Handle_start(HandleRef _this, int32_t msec) {

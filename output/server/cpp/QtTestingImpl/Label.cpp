@@ -17,10 +17,15 @@ namespace Label
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
             // Widget:
             { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
             { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
             { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // Frame:
+            // ..... (none)
             // Label:
             { SignalMaskFlags::LinkActivated, SIGNAL(linkActivated(QString)), SLOT(onLinkActivated(QString)) },
             { SignalMaskFlags::LinkHovered, SIGNAL(linkHovered(QString)), SLOT(onLinkHovered(QString)) },
@@ -34,7 +39,14 @@ namespace Label
             }
         }
     public slots:
-        // Widget:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget ==================
         void onCustomContextMenuRequested(const QPoint& pos) {
             handler->customContextMenuRequested(toPoint(pos));
         }
@@ -44,7 +56,9 @@ namespace Label
         void onWindowTitleChanged(const QString& title) {
             handler->windowTitleChanged(title.toStdString());
         }
-        // Label:
+        // Frame ====================
+        // ...... (none)
+        // Label ====================
         void onLinkActivated(const QString& link) {
             handler->linkActivated(link.toStdString());
         }

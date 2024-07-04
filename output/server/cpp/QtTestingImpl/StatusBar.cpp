@@ -2,7 +2,9 @@
 
 #include <QStatusBar>
 #include <utility>
+
 #include "util/SignalStuff.h"
+#include "util/convert.h"
 
 #define THIS ((StatusBarWithHandler*)_this)
 
@@ -14,6 +16,14 @@ namespace StatusBar
         std::shared_ptr<SignalHandler> handler;
         SignalMask lastMask = 0;
         std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Widget:
+            { SignalMaskFlags::CustomContextMenuRequested, SIGNAL(customContextMenuRequested(QPoint)), SLOT(onCustomContextMenuRequested(QPoint)) },
+            { SignalMaskFlags::WindowIconChanged, SIGNAL(windowIconChanged(QIcon)), SLOT(onWindowIconChanged(QIcon)) },
+            { SignalMaskFlags::WindowTitleChanged, SIGNAL(windowTitleChanged(QString)), SLOT(onWindowTitleChanged(QString)) },
+            // StatusBar:
             { SignalMaskFlags::MessageChanged, SIGNAL(messageChanged(QString)), SLOT(onMessageChanged(QString)) },
         };
     public:
@@ -25,10 +35,32 @@ namespace StatusBar
             }
         }
     public slots:
+        // Object ==================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Widget ==================
+        void onCustomContextMenuRequested(const QPoint& pos) {
+            handler->customContextMenuRequested(toPoint(pos));
+        }
+        void onWindowIconChanged(const QIcon& icon) {
+            handler->windowIconChanged((Icon::HandleRef)&icon);
+        }
+        void onWindowTitleChanged(const QString& title) {
+            handler->windowTitleChanged(title.toStdString());
+        }
+        // StatusBar ===============
         void onMessageChanged(const QString& message) {
             handler->messageChanged(message.toStdString());
         };
     };
+
+    void Handle_setSizeGripEnabled(HandleRef _this, bool enabled) {
+        THIS->setSizeGripEnabled(enabled);
+    }
 
     void Handle_clearMessage(HandleRef _this) {
         THIS->clearMessage();

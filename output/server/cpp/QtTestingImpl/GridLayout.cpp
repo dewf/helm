@@ -7,6 +7,14 @@
 
 namespace GridLayout
 {
+    void Handle_setHorizontalSpacing(HandleRef _this, int32_t value) {
+        THIS->setHorizontalSpacing(value);
+    }
+
+    void Handle_setVerticalSpacing(HandleRef _this, int32_t value) {
+        THIS->setVerticalSpacing(value);
+    }
+
     void Handle_addWidget(HandleRef _this, Widget::HandleRef widget, int32_t row, int32_t col) {
         THIS->addWidget((QWidget*)widget, row, col);
     }
