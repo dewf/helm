@@ -75,7 +75,9 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     
     let mutable object: Object.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable currentMask = enum<Object.SignalMask> 0
+    // abstract (on the F# side anyway), so no need for a signal mask
+    // let mutable currentMask = enum<Object.SignalMask> 0
+    
     // binding guards
     let mutable lastObjectName = ""
     
@@ -103,7 +105,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         | _ ->
             failwith "QObject.ModelCore: signal map assignment didn't have a head element"
             
-    // no this.SignalMask, QObject is abstract (for us)
+    // no SignalMask property, see note on currentMask at top
             
     interface QObjectAttrTarget with
         member this.QObject = object

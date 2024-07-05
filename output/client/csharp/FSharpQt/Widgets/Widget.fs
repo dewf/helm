@@ -374,18 +374,6 @@ type Props<'msg>() =
         onWindowTitleChanged <- Some value
         this.AddSignal(int Widget.SignalMask.WindowTitleChanged)
         
-    // // TODO: will remove this completely once all the widgets are done
-    // member internal this.SignalMap_REMOVE = function
-    //     | CustomContextMenuRequested pos ->
-    //         onCustomContextMenuRequested
-    //         |> Option.map (fun f -> f pos)
-    //     | WindowIconChanged icon ->
-    //         onWindowIconChanged
-    //         |> Option.map (fun f -> f icon)
-    //     | WindowTitleChanged title ->
-    //         onWindowTitleChanged
-    //         |> Option.map (fun f -> f title)
-        
     member internal this.SignalMapList =
         let thisFunc = function
             | CustomContextMenuRequested pos ->
@@ -397,9 +385,8 @@ type Props<'msg>() =
             | WindowTitleChanged title ->
                 onWindowTitleChanged
                 |> Option.map (fun f -> f title)
-        // if we weren't at root level (eg a Widget subclass),
-        // we'd do thisFunc :: base.SignalMapFuncs
-        [ SignalMapFunc(thisFunc) :> ISignalMapFunc ]
+        // we inherit from something (QObject), so must prepend to its signals
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
         
     member this.AcceptDrops with set value =
         this.PushAttr(AcceptDrops value)
@@ -538,14 +525,14 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             
     member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
         match mapFuncList with
-        | h :: _ ->
+        | h :: etc ->
             match h with
             | :? SignalMapFunc<'msg> as smf ->
                 signalMap <- smf.Func
             | _ ->
                 failwith "Widget.ModelCore.SignalMaps: wrong func type"
-            // no base class to assign the rest to
-            // base.SignalMaps <- etc
+            // assign the remainder up the hierarchy
+            base.SignalMaps <- etc
         | _ ->
             failwith "Widget.ModelCore: signal map assignment didn't have a head element"
     
