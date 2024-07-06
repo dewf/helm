@@ -136,16 +136,6 @@ type ModelCoreRoot() =
 //         inherit AbstractButtonAttrTarget
 //         abstract member RadioButton: RadioButton.Handle
 //     end
-//     
-// type internal ComboBoxAttrTarget =
-//     interface
-//         inherit WidgetAttrTarget
-//         abstract member ComboBox: ComboBox.Handle
-//         abstract member Clear: unit -> unit // same as next 2 individually, I guess
-//         abstract member SetCurrentIndex: int option -> bool
-//         abstract member SetCurrentText: string option -> bool
-//     end
-//     
 // type internal LineEditAttrTarget =
 //     interface
 //         inherit WidgetAttrTarget

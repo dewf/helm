@@ -37,7 +37,7 @@
 <!--        <Compile Include="Widgets\Layout.fs" />-->
 <!--        <Compile Include="Widgets\BoxLayout.fs" />-->
 <!--        -->
-<!--        <Compile Include="Widgets\ComboBox.fs" />-->
+        <Compile Include="Widgets\ComboBox.fs" />
 <!--        <Compile Include="Widgets\Dialog.fs" />-->
 <!--        <Compile Include="Widgets\FileDialog.fs" />-->
 <!--        <Compile Include="Widgets\Frame.fs" />-->

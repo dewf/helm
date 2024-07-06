@@ -7,13 +7,10 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-type internal Signal =
-    // inherited
-    | WidgetSignal of signal: Widget.Signal
-    // ours
+type private Signal =
     | Activated of index: int option
     | CurrentIndexChanged of index: int option
-    | CurrentTextChanged of text: string
+    | CurrentTextChanged of text: string option
     | EditTextChanged of text: string
     | Highlighted of index: int option
     | TextActivated of text: string
@@ -49,7 +46,7 @@ with
         | AdjustToContentsOnFirstShow -> ComboBox.SizeAdjustPolicy.AdjustToContentsOnFirstShow
         | AdjustToMinimumContentsLengthWithIcon -> ComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
     
-type private Attr =
+type internal Attr =
     | CurrentIndex of maybeIndex: int option
     | CurrentText of maybeText: string option
     | DuplicatesEnabled of enabled: bool
@@ -64,7 +61,7 @@ type private Attr =
     | PlaceholderText of text: string
     | SizeAdjustPolicy of policy: SizeAdjustPolicy
     // ours:
-    | StringItems of items: string list
+    | StringItems of items: string list // C++ .addItems()
 with
     interface IAttr with
         override this.AttrEquals other =
@@ -91,51 +88,26 @@ with
             | StringItems _ -> "combobox:stringitems"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? ComboBoxAttrTarget as comboTarget ->
-                let comboBox =
-                    comboTarget.ComboBox
-                match this with
-                | CurrentIndex maybeIndex ->
-                    if comboTarget.SetCurrentIndex maybeIndex then
-                        comboBox.SetCurrentIndex(maybeIndex |> Option.defaultValue -1)
-                | CurrentText maybeText ->
-                    if comboTarget.SetCurrentText maybeText then
-                        comboBox.SetCurrentText(maybeText |> Option.defaultValue "")
-                | DuplicatesEnabled enabled ->
-                    comboBox.SetDuplicatesEnabled(enabled)
-                | Editable editable ->
-                    comboBox.SetEditable(editable)
-                | Frame hasFrame ->
-                    comboBox.SetFrame(hasFrame)
-                | IconSize size ->
-                    comboBox.SetIconSize(size.QtValue)
-                | InsertPolicy policy ->
-                    comboBox.SetInsertPolicy(policy.QtValue)
-                | MaxCount count ->
-                    comboBox.SetMaxCount(count)
-                | MaxVisibleItems count ->
-                    comboBox.SetMaxVisibleItems(count)
-                | MinimumContentsLength length ->
-                    comboBox.SetMinimumContentsLength(length)
-                | ModelColumn column ->
-                    comboBox.SetModelColumn(column)
-                | PlaceholderText text ->
-                    comboBox.SetPlaceholderText(text)
-                | SizeAdjustPolicy policy ->
-                    comboBox.SetSizeAdjustPolicy(policy.QtValue)
-                | StringItems items ->
-                    comboTarget.Clear()
-                    comboBox.Clear()
-                    comboBox.AddItems(items |> Array.ofList)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyComboBoxAttr(this)
             | _ ->
                 printfn "warning: ComboBox.Attr couldn't ApplyTo() unknown target type [%A]" target
+
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyComboBoxAttr: Attr -> unit
+    end
+    
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
                 
 type Props<'msg>() =
     inherit Widget.Props<'msg>()
 
     let mutable onActivated: (int option -> 'msg) option = None
     let mutable onCurrentIndexChanged: (int option -> 'msg) option = None
-    let mutable onCurrentTextChanged: (string -> 'msg) option = None
+    let mutable onCurrentTextChanged: (string option -> 'msg) option = None
     let mutable onEditTextChanged: (string -> 'msg) option = None
     let mutable onHighlighted: (int option -> 'msg) option = None
     let mutable onTextActivated: (string -> 'msg) option = None
@@ -171,30 +143,31 @@ type Props<'msg>() =
         onTextHighlighted <- Some value
         this.AddSignal(int ComboBox.SignalMask.TextHighlighted)
         
-    member internal this.SignalMap = function
-        | WidgetSignal signal ->
-            (this :> Widget.Props<'msg>).SignalMap_REMOVE signal
-        | Activated index ->
-            onActivated
-            |> Option.map (fun f -> f index)
-        | CurrentIndexChanged index ->
-            onCurrentIndexChanged
-            |> Option.map (fun f -> f index)
-        | CurrentTextChanged text ->
-            onCurrentTextChanged
-            |> Option.map (fun f -> f text)
-        | EditTextChanged text ->
-            onEditTextChanged
-            |> Option.map (fun f -> f text)
-        | Highlighted index ->
-            onHighlighted
-            |> Option.map (fun f -> f index)
-        | TextActivated text ->
-            onTextActivated
-            |> Option.map (fun f -> f text)
-        | TextHighlighted text ->
-            onTextHighlighted
-            |> Option.map (fun f -> f text)
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | Activated index ->
+                onActivated
+                |> Option.map (fun f -> f index)
+            | CurrentIndexChanged index ->
+                onCurrentIndexChanged
+                |> Option.map (fun f -> f index)
+            | CurrentTextChanged text ->
+                onCurrentTextChanged
+                |> Option.map (fun f -> f text)
+            | EditTextChanged text ->
+                onEditTextChanged
+                |> Option.map (fun f -> f text)
+            | Highlighted index ->
+                onHighlighted
+                |> Option.map (fun f -> f index)
+            | TextActivated text ->
+                onTextActivated
+                |> Option.map (fun f -> f text)
+            | TextHighlighted text ->
+                onTextHighlighted
+                |> Option.map (fun f -> f text)
+        // prepend to parent's
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
     
     member this.CurrentIndex with set value =
         this.PushAttr(CurrentIndex value)
@@ -237,80 +210,114 @@ type Props<'msg>() =
         
     member this.StringItems with set value =
         this.PushAttr(StringItems value)
-
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable combo = ComboBox.Create(this)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Widget.ModelCore<'msg>(dispatch)
+    let mutable comboBox: ComboBox.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<ComboBox.SignalMask> 0
     
     // binding guards:
-    let mutable currentIndex: int option = None
-    let mutable currentText: string option = None
+    let mutable lastCurrentIndex: int option = None
+    let mutable lastCurrentText: string option = None
     
     let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
-            
+        signalMap s
+        |> Option.iter dispatch
+        
     let someIfPositive (i: int) =
         if i >= 0 then Some i else None
         
-    member this.Widget with get() = combo
-    member this.SignalMap with set value = signalMap <- value
-    
+    member this.ComboBox
+        with get() = comboBox
+        and set value =
+            this.Object <- value
+            this.Widget <- value
+            comboBox <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "ComboBox.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "ComboBox.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
-            combo.SetSignalMask(value)
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
+            comboBox.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
             
-    interface ComboBoxAttrTarget with
-        member this.Widget = combo
-        member this.ComboBox = combo
-        member this.Clear() =
-            currentIndex <- None
-            currentText <- None
-        member this.SetCurrentIndex newIndex =
-            if newIndex <> currentIndex then
-                currentIndex <- newIndex
-                true
-            else
-                false
-        member this.SetCurrentText newText =
-            if newText <> currentText then
-                currentText <- newText
-                true
-            else
-                false
+    interface AttrTarget with
+        member this.ApplyComboBoxAttr attr =
+            match attr with
+            | CurrentIndex maybeIndex ->
+                if maybeIndex <> lastCurrentIndex then
+                    lastCurrentIndex <- maybeIndex
+                    comboBox.SetCurrentIndex(maybeIndex |> Option.defaultValue -1)
+            | CurrentText maybeText ->
+                if maybeText <> lastCurrentText then
+                    lastCurrentText <- maybeText
+                    comboBox.SetCurrentText(maybeText |> Option.defaultValue "")
+            | DuplicatesEnabled enabled ->
+                comboBox.SetDuplicatesEnabled(enabled)
+            | Editable editable ->
+                comboBox.SetEditable(editable)
+            | Frame hasFrame ->
+                comboBox.SetFrame(hasFrame)
+            | IconSize size ->
+                comboBox.SetIconSize(size.QtValue)
+            | InsertPolicy policy ->
+                comboBox.SetInsertPolicy(policy.QtValue)
+            | MaxCount count ->
+                comboBox.SetMaxCount(count)
+            | MaxVisibleItems count ->
+                comboBox.SetMaxVisibleItems(count)
+            | MinimumContentsLength length ->
+                comboBox.SetMinimumContentsLength(length)
+            | ModelColumn column ->
+                comboBox.SetModelColumn(column)
+            | PlaceholderText text ->
+                comboBox.SetPlaceholderText(text)
+            | SizeAdjustPolicy policy ->
+                comboBox.SetSizeAdjustPolicy(policy.QtValue)
+            | StringItems items ->
+                comboBox.Clear()
+                comboBox.AddItems(items |> Array.ofList)
+                // necessary/OK?
+                lastCurrentIndex <- None
+                lastCurrentText <- None
                 
     interface ComboBox.SignalHandler with
-        // Widget:
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
         member this.CustomContextMenuRequested pos =
-            Point.From pos
-            |> Widget.Signal.CustomContextMenuRequested
-            |> WidgetSignal
-            |> signalDispatch
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =
-            IconProxy(icon)
-            |> Widget.Signal.WindowIconChanged
-            |> WidgetSignal
-            |> signalDispatch
+            (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
-            Widget.Signal.WindowTitleChanged title
-            |> WidgetSignal
-            |> signalDispatch
-        // ComboBox:
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // ComboBox =======================
         override this.Activated index =
             signalDispatch (someIfPositive index |> Activated)
-        override this.CurrentIndexChanged index =
-            signalDispatch (someIfPositive index |> CurrentIndexChanged)
+        override this.CurrentIndexChanged qIndex =
+            let maybeIndex = someIfPositive qIndex
+            lastCurrentIndex <- maybeIndex
+            signalDispatch (maybeIndex |> CurrentIndexChanged)
         override this.CurrentTextChanged text =
-            signalDispatch (CurrentTextChanged text)
+            let maybeText = if text = "" then None else Some text
+            lastCurrentText <- maybeText
+            signalDispatch (maybeText |> CurrentTextChanged)
         override this.EditTextChanged text =
             signalDispatch (EditTextChanged text)
         override this.Highlighted index =
@@ -319,27 +326,31 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             signalDispatch (TextActivated text)
         override this.TextHighlighted text =
             signalDispatch (TextHighlighted text)
-                        
+            
     interface IDisposable with
         member this.Dispose() =
-            combo.Dispose()
+            comboBox.Dispose()
 
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: ComboBox.SignalMask) =
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    do
+        this.ComboBox <- ComboBox.Create(this)
+
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: ComboBox.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: ComboBox.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: ComboBox.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
-    
 
 type ComboBox<'msg>() =
     inherit Props<'msg>()
@@ -351,7 +362,7 @@ type ComboBox<'msg>() =
         override this.Dependencies = []
         
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             ()
@@ -361,16 +372,16 @@ type ComboBox<'msg>() =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
                 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
             
         override this.Widget =
-            (this.model.Widget :> Widget.Handle)
+            this.model.ComboBox
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.ComboBox
             
         override this.Attachments =
             this.Attachments

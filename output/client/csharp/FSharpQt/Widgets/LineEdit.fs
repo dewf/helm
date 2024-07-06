@@ -199,8 +199,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         |> Option.iter dispatch
         
     member this.LineEdit
-        with get() =
-            lineEdit
+        with get() = lineEdit
         and set value =
             // assign up the hierarchy
             this.Object <- value
