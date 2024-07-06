@@ -130,21 +130,7 @@ type ModelCoreRoot() =
 //         inherit FrameAttrTarget
 //         abstract member Label: Label.Handle
 //     end
-//     
-// type internal AbstractButtonAttrTarget =
-//     interface
-//         inherit WidgetAttrTarget
-//         abstract member AbstractButton: AbstractButton.Handle
-//         abstract member SetChecked: bool -> bool
-//         abstract member SetDown: bool -> bool
-//     end
-//     
-// type internal PushButtonAttrTarget =
-//     interface
-//         inherit AbstractButtonAttrTarget
-//         abstract member PushButton: PushButton.Handle
-//     end
-//     
+
 // type internal RadioButtonAttrTarget =
 //     interface
 //         inherit AbstractButtonAttrTarget

@@ -8,7 +8,7 @@ open FSharpQt.Attrs
 
 type internal Signal = unit
     
-type private Attr =
+type internal Attr =
     | AutoDefault of state: bool
     | Default of state: bool
     | Flat of state: bool
@@ -27,22 +27,17 @@ with
             | Flat _ -> "pushbutton:flat"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? PushButtonAttrTarget as attrTarget ->
-                let button =
-                    attrTarget.PushButton
-                match this with
-                | AutoDefault state ->
-                    button.SetAutoDefault(state)
-                | Default state ->
-                    button.SetDefault(state)
-                | Flat state ->
-                    button.SetFlat(state)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyPushButtonAttr this
             | _ ->
                 printfn "warning: PushButton.Attr couldn't ApplyTo() unknown target type [%A]" target
-                
-// type private SignalMapFunc<'msg>(func) =
-//     inherit SignalMapFuncBase<Signal,'msg>(func)
     
+and internal AttrTarget =
+    interface
+        inherit AbstractButton.AttrTarget
+        abstract member ApplyPushButtonAttr: Attr -> unit
+    end
+                
 type Props<'msg>() =
     inherit AbstractButton.Props<'msg>()
     
@@ -77,6 +72,8 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         with get() =
             pushButton
         and set value =
+            // assign up the hierarchy
+            this.Object <- value
             this.Widget <- value
             this.AbstractButton <- value
             pushButton <- value
@@ -101,14 +98,23 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             pushButton.SetSignalMask(value)
             currentMask <- value
 
-    interface PushButtonAttrTarget with
-        member this.Widget = pushButton
-        member this.AbstractButton = pushButton
-        member this.PushButton = pushButton
-        // no guards
+    interface AttrTarget with
+        member this.ApplyPushButtonAttr attr =
+            match attr with
+            | AutoDefault state ->
+                pushButton.SetAutoDefault(state)
+            | Default state ->
+                pushButton.SetDefault(state)
+            | Flat state ->
+                pushButton.SetFlat(state)
         
     interface PushButton.SignalHandler with
-        // Widget: (remove once we have interface inheritance)
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // widget =========================
         member this.CustomContextMenuRequested pos =
             (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =

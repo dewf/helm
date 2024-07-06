@@ -25,12 +25,12 @@ with
             | ObjectName name -> "qobject:objectname"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? QObjectAttrTarget as attrTarget ->
+            | :? AttrTarget as attrTarget ->
                 attrTarget.ApplyObjectAttr this
             | _ ->
                 printfn "warning: QObject.Attr couldn't ApplyTo() unknown target type [%A]" target
 
-and internal QObjectAttrTarget =
+and internal AttrTarget =
     interface
         inherit IAttrTarget
         abstract member ApplyObjectAttr: Attr -> unit
@@ -107,7 +107,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             
     // no SignalMask property, see note on currentMask at top
             
-    interface QObjectAttrTarget with
+    interface AttrTarget with
         member this.ApplyObjectAttr attr =
             match attr with
             | ObjectName name ->

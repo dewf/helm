@@ -12,7 +12,7 @@ type internal Signal =
     | Released
     | Toggled of checked_: bool
 
-type private Attr =
+type internal Attr =
     | AutoExclusive of state: bool
     | AutoRepeat of state: bool
     | AutoRepeatDelay of delay: int
@@ -47,35 +47,16 @@ with
             | Text _ -> "abstractbutton:text"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? AbstractButtonAttrTarget as buttonTarget ->
-                let abstractButton =
-                    buttonTarget.AbstractButton
-                match this with
-                | AutoExclusive state ->
-                    abstractButton.SetAutoExclusive(state)
-                | AutoRepeat state ->
-                    abstractButton.SetAutoRepeat(state)
-                | AutoRepeatDelay delay ->
-                    abstractButton.SetAutoRepeatDelay(delay)
-                | AutoRepeatInterval interval ->
-                    abstractButton.SetAutoRepeatInterval(interval)
-                | Checkable state ->
-                    abstractButton.SetCheckable(state)
-                | Checked state ->
-                    if buttonTarget.SetChecked(state) then
-                        abstractButton.SetChecked(state)
-                | Down state ->
-                    abstractButton.SetDown(state)
-                | IconAttr icon ->
-                    abstractButton.SetIcon(icon.QtValue)
-                | IconSize size ->
-                    abstractButton.SetIconSize(size.QtValue)
-                | Shortcut seq ->
-                    abstractButton.SetShortcut(seq.QtValue)
-                | Text text ->
-                    abstractButton.SetText(text)
+            | :? AttrTarget as buttonTarget ->
+                buttonTarget.ApplyAbstractButtonAttr(this)
             | _ ->
                 printfn "warning: AbstractButton.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyAbstractButtonAttr: Attr -> unit
+    end
                 
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
@@ -173,10 +154,10 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         |> Option.iter dispatch
     
     member this.AbstractButton
-        with get() =
-            abstractButton
+        with get() = abstractButton
         and set value =
-            // see note in this same area of LineEdit for explanation why we do this
+            // assign up the hierarchy
+            this.Object <- value
             this.Widget <- value
             abstractButton <- value
             
@@ -196,31 +177,50 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     // no SignalMask property needed, because AbstractButtons can't be instantiated
     // (therefore don't use their SignalMask/Handler directly)
 
-    interface AbstractButtonAttrTarget with
-        member this.Widget = abstractButton
-        member this.AbstractButton = abstractButton
-        member this.SetChecked value =
-            if value <> checked_ then
-                checked_ <- value
-                true
-            else
-                false
-        member this.SetDown value =
-            if value <> pressed then
-                pressed <- value
-                true
-            else
-                false
+    interface AttrTarget with
+        member this.ApplyAbstractButtonAttr attr =
+            match attr with
+            | AutoExclusive state ->
+                abstractButton.SetAutoExclusive(state)
+            | AutoRepeat state ->
+                abstractButton.SetAutoRepeat(state)
+            | AutoRepeatDelay delay ->
+                abstractButton.SetAutoRepeatDelay(delay)
+            | AutoRepeatInterval interval ->
+                abstractButton.SetAutoRepeatInterval(interval)
+            | Checkable state ->
+                abstractButton.SetCheckable(state)
+            | Checked state ->
+                if state <> checked_ then
+                    checked_ <- state
+                    abstractButton.SetChecked(state)
+            | Down state ->
+                if state <> pressed then
+                    pressed <- state
+                    abstractButton.SetDown(state)
+            | IconAttr icon ->
+                abstractButton.SetIcon(icon.QtValue)
+            | IconSize size ->
+                abstractButton.SetIconSize(size.QtValue)
+            | Shortcut seq ->
+                abstractButton.SetShortcut(seq.QtValue)
+            | Text text ->
+                abstractButton.SetText(text)
 
     interface AbstractButton.SignalHandler with
-        // Widget: (remove once we have interface inheritance)
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
         member this.CustomContextMenuRequested pos =
             (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =
             (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
             (this :> Widget.SignalHandler).WindowTitleChanged title
-        // AbstractButton:
+        // AbstractButton =================
         member this.Clicked checkState =
             checked_ <- checkState
             signalDispatch Clicked

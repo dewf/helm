@@ -266,14 +266,14 @@ with
             | WindowTitle _ -> "widget:WindowTitle"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? WidgetAttrTarget as attrTarget ->
+            | :? AttrTarget as attrTarget ->
                 attrTarget.ApplyWidgetAttr this
             | _ ->
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
                 
-and internal WidgetAttrTarget =
+and internal AttrTarget =
     interface
-        inherit QObject.QObjectAttrTarget
+        inherit QObject.AttrTarget
         abstract member ApplyWidgetAttr: Attr -> unit
     end
 
@@ -469,7 +469,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             widget.SetSignalMask(value)
             currentMask <- value
     
-    interface WidgetAttrTarget with
+    interface AttrTarget with
         member this.ApplyWidgetAttr attr =
             match attr with
             | AcceptDrops accept ->

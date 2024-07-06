@@ -30,9 +30,9 @@
 <!--        <Compile Include="Widgets\MenuBar.fs" />-->
 
 <!--        <Compile Include="Widgets\CustomWidget.fs" />-->
-
-<!--        <Compile Include="Widgets\AbstractButton.fs" />-->
-<!--        <Compile Include="Widgets\PushButton.fs" />-->
+        
+        <Compile Include="Widgets\AbstractButton.fs" />
+        <Compile Include="Widgets\PushButton.fs" />
 <!--        <Compile Include="Widgets\LineEdit.fs" />-->
 <!--        <Compile Include="Widgets\Layout.fs" />-->
 <!--        <Compile Include="Widgets\BoxLayout.fs" />-->
