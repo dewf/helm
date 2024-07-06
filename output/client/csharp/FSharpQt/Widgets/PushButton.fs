@@ -6,7 +6,7 @@ open Org.Whatever.QtTesting
 
 open FSharpQt.Attrs
 
-type internal Signal = unit
+type private Signal = unit
     
 type internal Attr =
     | AutoDefault of state: bool

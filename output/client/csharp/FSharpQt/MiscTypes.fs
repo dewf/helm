@@ -99,6 +99,8 @@ type Size = {
     static member Invalid =
         // useful in some places
         { Width = -1; Height = -1 }
+    static member Zero =
+        { Width = 0; Height = 0 }
     static member From (w, h) =
         { Width = w; Height = h }
     static member internal From (sz: Common.Size) =

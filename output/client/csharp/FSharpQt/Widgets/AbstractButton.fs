@@ -5,7 +5,7 @@ open FSharpQt.Attrs
 open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 
-type internal Signal =
+type private Signal =
     | Clicked
     | ClickedWithChecked of checked_: bool
     | Pressed

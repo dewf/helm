@@ -7,6 +7,10 @@
 
 namespace Application
 {
+    void Handle_setQuitOnLastWindowClosed(HandleRef _this, bool state) {
+        THIS->setQuitOnLastWindowClosed(state);
+    }
+
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }

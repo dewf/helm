@@ -1,6 +1,9 @@
 module Application;
 
-opaque Handle;
+opaque Handle {
+    // from QGuiApplication:
+    void setQuitOnLastWindowClosed(bool state);
+}
 
 // so far all the "methods" are static ...
 void setStyle(string name);

@@ -1,69 +1,246 @@
 ﻿module FSharpQt.Widgets.MainWindow
 
 open System
+open FSharpQt.Attrs
 open FSharpQt.BuilderNode
+open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
-open FSharpQt
-open MiscTypes
-
-type Signal =
-    | CustomContextMenuRequested of pos: Point
-    | WindowIconChanged of icon: IconProxy
-    | WindowTitleChanged of title: string
+type private Signal =
     | IconSizeChanged of size: Size
-    | TabifiedDockWidgetActivated of widget: DockWidgetProxy
+    | TabifiedDockWidgetActivated of dockWidget: DockWidgetProxy
     | ToolButtonStyleChanged of style: ToolButtonStyle
-    | Closed
+    | WindowClosed
     
-type Attr =
-    | Title of title: string
-    | Size of width: int * height: int
-    | Visible of state: bool
+type DockOptions =
+    | AnimatedDocks
+    | AllowNestedDocks
+    | AllowTabbedDocks
+    | ForceTabbedDocks
+    | VerticalTabs
+    | GroupedDragging
+with
+    static member QtSetFrom (opts: DockOptions seq) =
+        (enum<MainWindow.DockOptions> 0, opts)
+        ||> Seq.fold (fun acc opt ->
+            let flag =
+                match opt with
+                | AnimatedDocks -> MainWindow.DockOptions.AnimatedDocks
+                | AllowNestedDocks -> MainWindow.DockOptions.AllowNestedDocks
+                | AllowTabbedDocks -> MainWindow.DockOptions.AllowTabbedDocks
+                | ForceTabbedDocks -> MainWindow.DockOptions.ForceTabbedDocks
+                | VerticalTabs -> MainWindow.DockOptions.VerticalTabs
+                | GroupedDragging -> MainWindow.DockOptions.GroupedDragging
+            acc ||| flag)
     
-let private keyFunc = function
-    | Title _ -> 0
-    | Size _ -> 1
-    | Visible _ -> 2
+type internal Attr =
+    | Animated of state: bool
+    | DockNestingEnabled of state: bool
+    | DockOptions of options: DockOptions list  // can't be seq I don't think, need to compare them without consuming
+    | DocumentMode of state: bool
+    | IconSize of size: Size
+    // | TabShape of shape: TabShape // TODO: import TabWidget
+    | ToolButtonStyle of style: ToolButtonStyle
+    | UnifiedTitleAndToolBarOnMac of state: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as attrOther ->
+                this = attrOther
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Animated state -> "mainwindow:animated"
+            | DockNestingEnabled state -> "mainwindow:docknestingenabled"
+            | DockOptions options -> "mainwindow:dockoptions"
+            | DocumentMode state -> "mainwindow:documentmode"
+            | IconSize size -> "mainwindow:iconsize"
+            | ToolButtonStyle style -> "mainwindow:toolbuttonstyle"
+            | UnifiedTitleAndToolBarOnMac state -> "mainwindow:unifiedtitleandtoolbaronmac"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyMainWindowAttr this
+            | _ ->
+                printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
+            
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyMainWindowAttr: Attr -> unit
+    end
+
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
     
-let private diffAttrs =
-    genericDiffAttrs keyFunc
+type Props<'msg>() =
+    inherit Widget.Props<'msg>()
     
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable mainWindow = MainWindow.Create(this)
+    let mutable onIconSizeChanged: (Size -> 'msg) option = None
+    let mutable onTabifiedDockWidgetActivated: (DockWidgetProxy -> 'msg) option = None
+    let mutable onToolButtonStyleChanged: (ToolButtonStyle -> 'msg) option = None
+    let mutable onWindowClosed: 'msg option = None
+    
+    member internal this.SignalMask = enum<MainWindow.SignalMask> (int this._signalMask)
+    
+    member this.OnIconSizeChanged with set value =
+        onIconSizeChanged <- Some value
+        this.AddSignal(int MainWindow.SignalMask.IconSizeChanged)
+        
+    member this.OnTabifiedDockWidgetActivated with set value =
+        onTabifiedDockWidgetActivated <- Some value
+        this.AddSignal(int MainWindow.SignalMask.TabifiedDockWidgetActivated)
+        
+    member this.OnToolButtonStylechanged with set value =
+        onToolButtonStyleChanged <- Some value
+        this.AddSignal(int MainWindow.SignalMask.ToolButtonStyleChanged)
+        
+    member this.OnWindowClosed with set value =
+        onWindowClosed <- Some value
+        this.AddSignal(int MainWindow.SignalMask.WindowClosed)
+        
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | IconSizeChanged size ->
+                onIconSizeChanged
+                |> Option.map (fun f -> f size)
+            | TabifiedDockWidgetActivated widget ->
+                onTabifiedDockWidgetActivated
+                |> Option.map (fun f -> f widget)
+            | ToolButtonStyleChanged style ->
+                onToolButtonStyleChanged
+                |> Option.map (fun f -> f style)
+            | WindowClosed ->
+                onWindowClosed
+        // prepend to parent signalmap
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
+        
+    member this.Animated with set value =
+        this.PushAttr(Animated value)
+        
+    member this.DockNestingEnabled with set value =
+        this.PushAttr(DockNestingEnabled value)
+        
+    member this.DockOptions with set value =
+        this.PushAttr(value |> Seq.toList |> DockOptions)
+        
+    member this.DocumentMode with set value =
+        this.PushAttr(DocumentMode value)
+        
+    member this.IconSize with set value =
+        this.PushAttr(IconSize value)
+        
+    // // | TabShape of shape: TabShape // TODO: import TabWidget
+    
+    member this.ToolButtonStyle with set value =
+        this.PushAttr(ToolButtonStyle value)
+        
+    member this.UnifiedTitleAndToolBarOnMac with set value =
+        this.PushAttr(UnifiedTitleAndToolBarOnMac value)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Widget.ModelCore<'msg>(dispatch)
+    let mutable mainWindow: MainWindow.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<MainWindow.SignalMask> 0
-    
-    let mutable syntheticLayoutWidget: Widget.Handle option = None
-    let mutable visible = true
+    // binding guards:
+    let mutable lastIconSize = Size.Invalid
+    let mutable lastToolButtonStyle = ToolButtonStyle.FollowStyle
     
     let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
+        signalMap s
+        |> Option.iter dispatch
+
+    member this.MainWindow
+        with get() = mainWindow
+        and set value =
+            this.Object <- value
+            this.Widget <- value
+            mainWindow <- value
             
-    member this.Widget with get() = mainWindow
-    member this.SignalMap with set value = signalMap <- value
-    
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "Widget.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder up the hierarchy
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "Widget.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             mainWindow.SetSignalMask(value)
             currentMask <- value
+            
+    interface AttrTarget with
+        member this.ApplyMainWindowAttr attr =
+            match attr with
+            | Animated state ->
+                mainWindow.SetAnimated(state)
+            | DockNestingEnabled state ->
+                mainWindow.SetDockNestingEnabled(state)
+            | DockOptions options ->
+                mainWindow.SetDockOptions(DockOptions.QtSetFrom options)
+            | DocumentMode state ->
+                mainWindow.SetDocumentMode(state)
+            | IconSize size ->
+                if size <> lastIconSize then
+                    lastIconSize <- size
+                    mainWindow.SetIconSize(size.QtValue)
+            | ToolButtonStyle style ->
+                if style <> lastToolButtonStyle then
+                    lastToolButtonStyle <- style
+                    mainWindow.SetToolButtonStyle(style.QtValue)
+            | UnifiedTitleAndToolBarOnMac state ->
+                mainWindow.SetUnifiedTitleAndToolBarOnMac(state)
+                
+    interface MainWindow.SignalHandler with
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // widget =========================
+        member this.CustomContextMenuRequested pos =
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // mainwindow =====================
+        member this.IconSizeChanged qtSize =
+            let size = Size.From qtSize
+            lastIconSize <- size
+            signalDispatch (IconSizeChanged size)
+        member this.TabifiedDockWidgetActivated dockWidget =
+            signalDispatch (DockWidgetProxy(dockWidget) |> TabifiedDockWidgetActivated)
+        member this.ToolButtonStyleChanged qtStyle =
+            let style = ToolButtonStyle.From qtStyle
+            lastToolButtonStyle <- style
+            signalDispatch (ToolButtonStyleChanged style)
+        member this.WindowClosed() =
+            signalDispatch WindowClosed
+            
+    interface IDisposable with
+        member this.Dispose() =
+            mainWindow.Dispose()
     
-    member this.ApplyAttrs (attrs: Attr list) (isCreate: bool) =
-        attrs |> List.iter (function
-            | Title text ->
-                mainWindow.SetWindowTitle(text)
-            | Size (width, height) ->
-                mainWindow.Resize(width, height)
-            | Visible state ->
-                visible <- state
-                if not isCreate then
-                    // on creation we just set the flag
-                    mainWindow.SetVisible(state))
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let mainWindow = MainWindow.Create(this)
+    do
+        this.MainWindow <- mainWindow
         
+    let mutable syntheticLayoutWidget: Widget.Handle option = None
+    let mutable visible = true
+            
     member this.AddMenuBar(menuBar: MenuBar.Handle) =
         mainWindow.SetMenuBar(menuBar)
 
@@ -123,37 +300,16 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         if visible then
             mainWindow.Show()
             
-    interface MainWindow.SignalHandler with
-        member this.CustomContextMenuRequested pos =
-            signalDispatch (Point.From pos |> CustomContextMenuRequested)
-        member this.WindowIconChanged icon =
-            signalDispatch (IconProxy(icon) |> WindowIconChanged)
-        member this.WindowTitleChanged title =
-            signalDispatch (WindowTitleChanged title)
-        member this.IconSizeChanged size =
-            signalDispatch (Size.From size |> IconSizeChanged)
-        member this.TabifiedDockWidgetActivated widget =
-            signalDispatch (DockWidgetProxy(widget) |> TabifiedDockWidgetActivated)
-        member this.ToolButtonStyleChanged style =
-            signalDispatch (ToolButtonStyle.From style |> ToolButtonStyleChanged)
-        member this.Closed () =
-            signalDispatch Closed
-    
-    interface IDisposable with
-        member this.Dispose() =
-            // synthetic layout widget out to be automatically disposed (on the C++ side) right?
-            mainWindow.Dispose()
-
-let private create2 (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: MainWindow.SignalMask) =
+let private create2 (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: MainWindow.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs true
-    model.SignalMap <- signalMap
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
     
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: MainWindow.SignalMask) =
-    model.ApplyAttrs attrs false
-    model.SignalMap <- signalMap
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: MainWindow.SignalMask) =
+    model.ApplyAttrs attrs
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -161,9 +317,9 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type MainWindow<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Actions: IActionNode<'msg> list = [] with get, set
     member val ToolBars: (string * IToolBarNode<'msg>) list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
@@ -177,66 +333,6 @@ type MainWindow<'msg>() =
     
     let mutable maybeStatusBar: IStatusBarNode<'msg> option = None
     member this.StatusBar with set value = maybeStatusBar <- Some value
-    
-    let mutable signalMask = enum<MainWindow.SignalMask> 0
-    
-    let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
-    let mutable onWindowIconChanged: (IconProxy -> 'msg) option = None
-    let mutable onWindowTitleChanged: (string -> 'msg) option = None
-    let mutable onIconSizeChanged: (Size -> 'msg) option = None
-    let mutable onTabifiedDockWidgetActivated: (DockWidgetProxy -> 'msg) option = None
-    let mutable onToolButtonStyleChanged: (ToolButtonStyle -> 'msg) option = None
-    let mutable onClosed: 'msg option = None
-
-    member this.OnCustomContextMenuRequested with set value =
-        onCustomContextMenuRequested <- Some value
-        signalMask <- signalMask ||| MainWindow.SignalMask.CustomContextMenuRequested
-        
-    member this.OnWindowIconChanged with set value =
-        onWindowIconChanged <- Some value
-        signalMask <- signalMask ||| MainWindow.SignalMask.WindowIconChanged
-        
-    member this.OnWindowTitleChanged with set value =
-        onWindowTitleChanged <- Some value
-        signalMask <- signalMask ||| MainWindow.SignalMask.WindowTitleChanged
-        
-    member this.OnIconSizeChanged with set value =
-        onIconSizeChanged <- Some value
-        signalMask <- signalMask ||| MainWindow.SignalMask.IconSizeChanged
-        
-    member this.OnTabifiedDockWidgetActivated with set value =
-        onTabifiedDockWidgetActivated <- Some value
-        signalMask <- signalMask ||| MainWindow.SignalMask.TabifiedDockWidgetActivated
-        
-    member this.OnToolButtonStylechanged with set value =
-        onToolButtonStyleChanged <- Some value
-        signalMask <- signalMask ||| MainWindow.SignalMask.ToolButtonStyleChanged
-        
-    member this.OnClosed with set value =
-        onClosed <- Some value
-        signalMask <- signalMask ||| MainWindow.SignalMask.Closed
-        
-    let signalMap = function
-        | CustomContextMenuRequested pos ->
-            onCustomContextMenuRequested
-            |> Option.map (fun f -> f pos)
-        | WindowIconChanged icon ->
-            onWindowIconChanged
-            |> Option.map (fun f -> f icon)
-        | WindowTitleChanged title ->
-            onWindowTitleChanged
-            |> Option.map (fun f -> f title)
-        | IconSizeChanged size ->
-            onIconSizeChanged
-            |> Option.map (fun f -> f size)
-        | TabifiedDockWidgetActivated widget ->
-            onTabifiedDockWidgetActivated
-            |> Option.map (fun f -> f widget)
-        | ToolButtonStyleChanged style ->
-            onToolButtonStyleChanged
-            |> Option.map (fun f -> f style)
-        | Closed ->
-            onClosed
     
     member private this.MigrateContent (left: MainWindow<'msg>) (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "menubar") with
@@ -341,7 +437,7 @@ type MainWindow<'msg>() =
             menuBarList @ toolBarList @ contentList @ statusBarList @ actionList
             
         override this.Create dispatch buildContext =
-            this.model <- create2 this.Attrs signalMap dispatch signalMask
+            this.model <- create2 this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             maybeMenuBar
@@ -358,8 +454,8 @@ type MainWindow<'msg>() =
             let left' = (left :?> MainWindow<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged__old
-            this.model <- migrate left'.model nextAttrs signalMap signalMask
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateContent left' (depsChanges |> Map.ofList)
 
         override this.Dispose() =

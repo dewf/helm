@@ -7,7 +7,7 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-type internal Signal =
+type private Signal =
     | CustomContextMenuRequested of pos: Point
     | WindowIconChanged of icon: IconProxy
     | WindowTitleChanged of title: string
@@ -431,7 +431,6 @@ type Props<'msg>() =
         
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
     inherit QObject.ModelCore<'msg>(dispatch)
-    
     let mutable widget: Widget.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Widget.SignalMask> 0
@@ -580,20 +579,23 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
 
 type private Model<'msg>(dispatch: 'msg -> unit) as this =
     inherit ModelCore<'msg>(dispatch)
+    // tried supplying this as a ModelCore ctor parameter but caused issues :(
+    // (.NET won't allow us to pass 'this' if it's uninitialized,
+    //  but it's necessary for Widget.Create(this))
+    let widget = Widget.Create(this)
     do
-        // tried supplying this as a ctor parameter but caused issues :(
-        this.Widget <- Widget.Create(this)
+        this.Widget <- widget
     
     member this.RemoveLayout() =
         // the only way the layout's going to change is if it's deleted as a dependency
         // ... so is any of this even necessary? won't the layout remove itself in its dtor?
         let existing =
-            this.Widget.GetLayout()
+            widget.GetLayout()
         existing.RemoveAll()
-        this.Widget.SetLayout(null)
+        widget.SetLayout(null)
         
     member this.AddLayout(layout: Layout.Handle) =
-        this.Widget.SetLayout(layout)
+        widget.SetLayout(layout)
         
 let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: Widget.SignalMask) =
     let model = new Model<'msg>(dispatch)

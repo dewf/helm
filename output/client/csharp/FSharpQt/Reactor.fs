@@ -344,8 +344,12 @@ type AppStyle =
     
 type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update: 'state -> 'msg -> 'state * Cmd<'msg,AppSignal>, view: 'state -> IBuilderNode<'msg>) =
     let mutable appStyle: AppStyle option = None
+    let mutable quitOnLastWindowClosed: bool option = None
     do
         Library.Init()
+        
+    member this.SetQuitOnLastWindowClosed (state: bool) =
+        quitOnLastWindowClosed <- Some state
         
     member this.SetStyle (style: AppStyle) =
         appStyle <- Some style
@@ -353,6 +357,12 @@ type AppReactor<'msg,'state>(init: unit -> 'state * Cmd<'msg,AppSignal>, update:
     member this.Run(argv: string array) =
         use app =
             Application.Create(argv)
+
+        match quitOnLastWindowClosed with
+        | Some value ->
+            app.SetQuitOnLastWindowClosed(value)
+        | None ->
+            ()
             
         match appStyle with
         | Some value ->
