@@ -47,8 +47,8 @@ with
             | Text _ -> "abstractbutton:text"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? AttrTarget as buttonTarget ->
-                buttonTarget.ApplyAbstractButtonAttr(this)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyAbstractButtonAttr(this)
             | _ ->
                 printfn "warning: AbstractButton.Attr couldn't ApplyTo() unknown target type [%A]" target
                 

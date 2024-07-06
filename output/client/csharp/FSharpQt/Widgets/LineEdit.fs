@@ -7,7 +7,7 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-type internal Signal =
+type private Signal =
     | CursorPositionChanged of oldPos: int * newPos: int
     | EditingFinished
     | InputRejected
@@ -28,8 +28,8 @@ with
         | NoEcho -> LineEdit.EchoMode.NoEcho
         | Password -> LineEdit.EchoMode.Password
         | PasswordEchoOnEdit -> LineEdit.EchoMode.PasswordEchoOnEdit
-    
-type private Attr =
+        
+type internal Attr =
     | Alignment of align: Alignment
     | ClearButtonEnabled of enabled: bool
     | CursorMoveStyle of style: CursorMoveStyle
@@ -68,40 +68,16 @@ with
             | Text _ -> "lineedit:text"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? LineEditAttrTarget as editTarget ->
-                let lineEdit =
-                    editTarget.LineEdit
-                match this with
-                | Alignment align ->
-                    lineEdit.SetAlignment(align.QtValue)
-                | ClearButtonEnabled enabled ->
-                    lineEdit.SetClearButtonEnabled(enabled)
-                | CursorMoveStyle style ->
-                    lineEdit.SetCursorMoveStyle(style.QtValue)
-                | CursorPosition pos ->
-                    if editTarget.SetCursorPos(pos) then
-                        lineEdit.SetCursorPosition(pos)
-                | DragEnabled enabled ->
-                    lineEdit.SetDragEnabled(enabled)
-                | EchoMode mode ->
-                    lineEdit.SetEchoMode(mode.QtValue)
-                | Frame enabled ->
-                    lineEdit.SetFrame(enabled)
-                | InputMask mask ->
-                    lineEdit.SetInputMask(mask)
-                | MaxLength length ->
-                    lineEdit.SetMaxLength(length)
-                | Modified state ->
-                    lineEdit.SetModified(state)
-                | PlaceholderText text ->
-                    lineEdit.SetPlaceholderText(text)
-                | ReadOnly value ->
-                    lineEdit.SetReadOnly(value)
-                | Text text ->
-                    if editTarget.SetText(text) then
-                        lineEdit.SetText(text)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyLineEditAttr(this)
             | _ ->
                 printfn "warning: LineEdit.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyLineEditAttr: Attr -> unit
+    end
                 
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
@@ -213,9 +189,10 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     let mutable lineEdit: LineEdit.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<LineEdit.SignalMask> 0
+    
     // binding guards
-    let mutable lastValue = ""
     let mutable lastCursorPos = -1
+    let mutable lastText = ""
     
     let signalDispatch (s: Signal) =
         signalMap s
@@ -225,9 +202,8 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         with get() =
             lineEdit
         and set value =
-            // must assign base version(s) as well!!
-            // could be obviated if we could just use a LineEdit.Create() as ctor params, but since
-            // it refers to 'this' (for the signal handler), it crashes
+            // assign up the hierarchy
+            this.Object <- value
             this.Widget <- value
             lineEdit <- value
     
@@ -250,33 +226,54 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             lineEdit.SetSignalMask(value)
             currentMask <- value
             
-    interface LineEditAttrTarget with
-        member this.Widget = lineEdit
-        member this.LineEdit = lineEdit
-        member this.SetText newValue =
-            if lastValue <> newValue then
-                lastValue <- newValue
-                true
-            else
-                false
-        member this.SetCursorPos newPos =
-            if lastCursorPos <> newPos then
-                lastCursorPos <- newPos
-                true
-            else
-                false
+    interface AttrTarget with
+        member this.ApplyLineEditAttr attr =
+            match attr with
+            | Alignment align ->
+                lineEdit.SetAlignment(align.QtValue)
+            | ClearButtonEnabled enabled ->
+                lineEdit.SetClearButtonEnabled(enabled)
+            | CursorMoveStyle style ->
+                lineEdit.SetCursorMoveStyle(style.QtValue)
+            | CursorPosition pos ->
+                if pos <> lastCursorPos then
+                    lastCursorPos <- pos
+                    lineEdit.SetCursorPosition(pos)
+            | DragEnabled enabled ->
+                lineEdit.SetDragEnabled(enabled)
+            | EchoMode mode ->
+                lineEdit.SetEchoMode(mode.QtValue)
+            | Frame enabled ->
+                lineEdit.SetFrame(enabled)
+            | InputMask mask ->
+                lineEdit.SetInputMask(mask)
+            | MaxLength length ->
+                lineEdit.SetMaxLength(length)
+            | Modified state ->
+                lineEdit.SetModified(state)
+            | PlaceholderText text ->
+                lineEdit.SetPlaceholderText(text)
+            | ReadOnly value ->
+                lineEdit.SetReadOnly(value)
+            | Text text ->
+                if text <> lastText then
+                    lastText <- text
+                    lineEdit.SetText(text)
                 
     interface LineEdit.SignalHandler with
-        // Widget:
-        // once we have interface inheritance in NI, we can dispense with these :)
-        // they are already implemented by Widget.ModelCore
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
         member this.CustomContextMenuRequested pos =
             (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =
             (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
             (this :> Widget.SignalHandler).WindowTitleChanged title
-        // LineEdit:
+        // LineEdit =======================
         member this.CursorPositionChanged (oldPos, newPos) =
             lastCursorPos <- newPos
             signalDispatch (CursorPositionChanged (oldPos, newPos))
@@ -289,10 +286,10 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         member this.SelectionChanged () =
             signalDispatch SelectionChanged
         member this.TextChanged text =
-            lastValue <- text
+            lastText <- text
             signalDispatch (TextChanged text)
         member this.TextEdited text =
-            lastValue <- text
+            lastText <- text
             signalDispatch (TextEdited text)
                 
     interface IDisposable with
