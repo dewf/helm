@@ -79,8 +79,11 @@ with
             | _ ->
                 printfn "warning: MenuAction.Attr couldn't ApplyTo() unknown object type [%A]" target
                 
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
+                
 type Props<'msg>() =
-    inherit PropsRoot()
+    inherit QObject.Props<'msg>()
     
     let mutable onChanged: 'msg option = None
     let mutable onCheckableChanged: (bool -> 'msg) option = None
@@ -120,25 +123,28 @@ type Props<'msg>() =
         onVisibleChanged <- Some value
         this.AddSignal(int Action.SignalMask.VisibleChanged)
     
-    member internal this.SignalMap = function
-        | Changed ->
-            onChanged
-        | CheckableChanged value ->
-            onCheckableChanged
-            |> Option.map (fun f -> f value)
-        | EnabledChanged value ->
-            onEnabledChanged
-            |> Option.map (fun f -> f value)
-        | Hovered ->
-            onHovered
-        | Toggled value ->
-            onToggled
-            |> Option.map (fun f -> f value)
-        | Triggered value ->
-            onTriggered
-            |> Option.map (fun f -> f value)
-        | VisibleChanged ->
-            onVisibleChanged
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | Changed ->
+                onChanged
+            | CheckableChanged value ->
+                onCheckableChanged
+                |> Option.map (fun f -> f value)
+            | EnabledChanged value ->
+                onEnabledChanged
+                |> Option.map (fun f -> f value)
+            | Hovered ->
+                onHovered
+            | Toggled value ->
+                onToggled
+                |> Option.map (fun f -> f value)
+            | Triggered value ->
+                onTriggered
+                |> Option.map (fun f -> f value)
+            | VisibleChanged ->
+                onVisibleChanged
+        // we inherit from Object, so prepend to its signals
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
     
     member this.Text with set value =
         this.PushAttr(Text value)
@@ -169,47 +175,46 @@ type Props<'msg>() =
         
     member this.ToolTip with set value =
         this.PushAttr(ToolTip value)
-    
-    
-type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.Handle option) as this =
-    let owner =
-        match maybeContainingWindow with
-        | Some handle ->
-            // printfn "MenuAction being created with owner [%A]" handle
-            handle
-        | None ->
-            printfn "MenuAction created with no owner"
-            null
-    let mutable action = Action.Create(owner, this)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit QObject.ModelCore<'msg>(dispatch)
+    let mutable action: Action.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Action.SignalMask> 0
-    
-    // 2-way binding guards for anything with a signal
-    // see the note in LineEdit's ApplyAttrs
+    // 2-way binding guards:
     let mutable enabled = true
     let mutable checkable = false
     let mutable checked_ = false
     
     let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
+        signalMap s
+        |> Option.iter dispatch
         
-    member this.Action with get() = action
-    member this.SignalMap with set value = signalMap <- value
+    member this.Action
+        with get() = action
+        and set value =
+            this.Object <- value
+            action <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "MenuAction.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder up the hierarchy
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "MenuAction.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             action.SetSignalMask(value)
             currentMask <- value
             
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
-            
-    // I guess we would have to implement any interface up the whole hierarchy? hmmm
-    // but if we could inherit Models (as we'd like for signals), it would ease some of that trouble
     interface ActionAttrTarget with
         override this.Action = action
         override this.SetEnabled state =
@@ -230,8 +235,14 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
                 true
             else
                 false
-    
+                
     interface Action.SignalHandler with
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // action =========================
         override this.Changed () =
             signalDispatch Changed
         override this.CheckableChanged newState =
@@ -249,21 +260,35 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.H
             signalDispatch (Triggered checked_)
         override this.VisibleChanged () =
             signalDispatch VisibleChanged
-                
+            
     interface IDisposable with
         member this.Dispose() =
             action.Dispose()
+    
+type private Model<'msg>(dispatch: 'msg -> unit, maybeContainingWindow: Widget.Handle option) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let owner =
+        match maybeContainingWindow with
+        | Some handle ->
+            // printfn "MenuAction being created with owner [%A]" handle
+            handle
+        | None ->
+            printfn "MenuAction created with no owner"
+            null
+    let mutable action = Action.Create(owner, this)
+    do
+        this.Action <- action
 
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) (maybeContainingWindow: Widget.Handle option) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: Action.SignalMask) (maybeContainingWindow: Widget.Handle option) =
     let model = new Model<'msg>(dispatch, maybeContainingWindow)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Action.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: Action.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -292,7 +317,7 @@ type MenuAction<'msg>() =
             // we need to protect against rebuilding the model each time
             match buildState with
             | Init ->
-                this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask buildContext.ContainingWindow
+                this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask buildContext.ContainingWindow
                 buildState <- Created
             | _ ->
                 // ignore
@@ -317,7 +342,7 @@ type MenuAction<'msg>() =
                 let nextAttrs =
                     diffAttrs left'.Attrs this.Attrs
                     |> createdOrChanged
-                this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
+                this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
                 buildState <- Migrated
             | _ ->
                 // ignore
@@ -329,7 +354,7 @@ type MenuAction<'msg>() =
                 // already disposed, do nothing
                 ()
             | _ ->
-                (this.model :> IDisposable).Dispose()
+                dispose this.model
                 buildState <- Disposed
             
         override this.Action =

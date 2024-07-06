@@ -1,7 +1,6 @@
 ﻿module FSharpQt.Widgets.QObject
 
 open System
-open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
 open FSharpQt.MiscTypes

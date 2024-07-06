@@ -56,6 +56,9 @@ with
             | _ ->
                 printfn "warning: Menu.Attr couldn't ApplyTo() unknown object type [%A]" target
                 
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
+                
 type Props<'msg>() =
     inherit Widget.Props<'msg>()
     
@@ -79,17 +82,20 @@ type Props<'msg>() =
         onTriggered <- Some value
         this.AddSignal(int Menu.SignalMask.Triggered)
     
-    member internal this.SignalMap = function
-        | AboutToHide ->
-            onAboutToHide
-        | AboutToShow ->
-            onAboutToShow
-        | Hovered action ->
-            onHovered
-            |> Option.map (fun f -> f action)
-        | Triggered action ->
-            onTriggered
-            |> Option.map (fun f -> f action)
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | AboutToHide ->
+                onAboutToHide
+            | AboutToShow ->
+                onAboutToShow
+            | Hovered action ->
+                onHovered
+                |> Option.map (fun f -> f action)
+            | Triggered action ->
+                onTriggered
+                |> Option.map (fun f -> f action)
+        // we inherit from Widget, so prepend to its signals
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
     
     member this.Icon with set value =
         this.PushAttr(IconAttr value)
@@ -142,63 +148,94 @@ type MenuItem<'msg> internal(item: ItemInternal<'msg>) =
 type Separator<'msg>() =
     inherit MenuItem<'msg>(ItemInternal.Separator)
     
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable menu = Menu.Create(this)
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Widget.ModelCore<'msg>(dispatch)
+    let mutable menu: Menu.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Menu.SignalMask> 0
+    // no binding guards
     
     let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
+        signalMap s
+        |> Option.iter dispatch
+        
+    member this.Menu
+        with get() = menu
+        and set value =
+            this.Object <- value
+            this.Widget <- value
+            menu <- value
             
-    member this.Menu = menu
-    member this.SignalMap with set value = signalMap <- value
-
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "Menu.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder up the hierarchy
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "Menu.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             menu.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
-                
-    member this.Refill(items: MenuItem<'msg> list) =
-        menu.Clear()
-        for item in items do
-            item.AddTo(menu)
             
     interface MenuAttrTarget with
-        member this.Widget = menu
-        member this.Menu = menu
+        override this.Menu = menu
         
     interface Menu.SignalHandler with
-        override this.AboutToHide() =
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // widget =========================
+        member this.CustomContextMenuRequested pos =
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // menu ===========================
+        member this.AboutToHide() =
             signalDispatch AboutToHide
-        override this.AboutToShow() =
+        member this.AboutToShow() =
             signalDispatch AboutToShow
-        override this.Hovered action =
-            signalDispatch (ActionProxy action |> Hovered)
-        override this.Triggered action =
-            signalDispatch (ActionProxy action |> Triggered)
+        member this.Hovered action =
+            signalDispatch (ActionProxy(action) |> Hovered)
+        member this.Triggered action =
+            signalDispatch (ActionProxy(action) |> Triggered)
             
     interface IDisposable with
         member this.Dispose() =
             menu.Dispose()
+    
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let menu = Menu.Create(this)
+    do
+        this.Menu <- menu
+        
+    member this.Refill(items: MenuItem<'msg> list) =
+        menu.Clear()
+        for item in items do
+            item.AddTo(menu)
 
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Menu.SignalMask) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: Menu.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Menu.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: Menu.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps<- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -234,7 +271,7 @@ type Menu<'msg>() =
                 |> Option.map (fun node -> IntKey i, node :> IBuilderNode<'msg>))
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             this.model.Refill(this.Items)
@@ -244,10 +281,11 @@ type Menu<'msg>() =
             let nextAttrs =
                 diffAttrs leftNode.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate leftNode.model nextAttrs this.SignalMap this.SignalMask
+            this.model <- migrate leftNode.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateContent(leftNode)
             
         override this.Dispose() =
+            dispose this.model
             (this.model :> IDisposable).Dispose()
             
         override this.Menu =

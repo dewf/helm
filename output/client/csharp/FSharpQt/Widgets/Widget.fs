@@ -517,9 +517,9 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         |> Option.iter dispatch
         
     member this.Widget
-        with get() =
-            widget
+        with get() = widget
         and set value =
+            // assign up the hierarchy
             this.Object <- value
             widget <- value
             
