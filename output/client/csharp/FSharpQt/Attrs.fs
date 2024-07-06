@@ -104,118 +104,105 @@ type ModelCoreRoot() =
 // various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
 // if you want to support a given type of attribute, you have to implement the target interface
 // reasonable enough!
+// TODO: move all these to their associated modules
+// they're really just proxies for the <thing>.ModelCore (and anything inheriting them)
 
-type internal QObjectAttrTarget =
-    interface
-        inherit IAttrTarget
-        abstract member QObject: Object.Handle
-        abstract member SetObjectName: string -> bool
-    end
-
-type internal LayoutAttrTarget =
-    interface
-        inherit QObjectAttrTarget
-        abstract member Layout: Layout.Handle
-    end
-    
-type internal BoxLayoutAttrTarget =
-    interface
-        inherit LayoutAttrTarget
-        abstract member BoxLayout: BoxLayout.Handle
-    end
-    
-type internal WidgetAttrTarget =
-    interface
-        inherit QObjectAttrTarget
-        abstract member Widget: Widget.Handle
-        abstract member SetWindowIcon: MiscTypes.Icon -> bool
-        abstract member SetWindowTitle: string -> bool
-    end
-    
-type internal FrameAttrTarget =
-    interface
-        inherit WidgetAttrTarget
-        abstract member Frame: Frame.Handle
-    end
-    
-type internal LabelAttrTarget =
-    interface
-        inherit FrameAttrTarget
-        abstract member Label: Label.Handle
-    end
-    
-type internal AbstractButtonAttrTarget =
-    interface
-        inherit WidgetAttrTarget
-        abstract member AbstractButton: AbstractButton.Handle
-        abstract member SetChecked: bool -> bool
-        abstract member SetDown: bool -> bool
-    end
-    
-type internal PushButtonAttrTarget =
-    interface
-        inherit AbstractButtonAttrTarget
-        abstract member PushButton: PushButton.Handle
-    end
-    
-type internal RadioButtonAttrTarget =
-    interface
-        inherit AbstractButtonAttrTarget
-        abstract member RadioButton: RadioButton.Handle
-    end
-    
-type internal ComboBoxAttrTarget =
-    interface
-        inherit WidgetAttrTarget
-        abstract member ComboBox: ComboBox.Handle
-        abstract member Clear: unit -> unit // same as next 2 individually, I guess
-        abstract member SetCurrentIndex: int option -> bool
-        abstract member SetCurrentText: string option -> bool
-    end
-    
-type internal LineEditAttrTarget =
-    interface
-        inherit WidgetAttrTarget
-        abstract member LineEdit: LineEdit.Handle
-        abstract member SetText: string -> bool     // binding guards
-        abstract member SetCursorPos: int -> bool
-    end
-    
-type internal MenuAttrTarget =
-    interface
-        inherit WidgetAttrTarget
-        abstract member Menu: Menu.Handle
-    end
-    
-type internal MenuBarAttrTarget =
-    interface
-        inherit WidgetAttrTarget
-        abstract member MenuBar: MenuBar.Handle
-    end
-    
-type internal ActionAttrTarget =
-    interface
-        inherit QObjectAttrTarget
-        abstract member Action: Action.Handle
-        abstract member SetEnabled: bool -> bool   // return value: internal value did change
-        abstract member SetCheckable: bool -> bool
-        abstract member SetChecked: bool -> bool
-    end
-  
-type internal SortFilterProxyModelAttrTarget =
-    interface
-        inherit IAttrTarget
-        abstract member ProxyModel: SortFilterProxyModel.Handle
-    end
-
-type internal DialogAttrTarget =
-    interface
-        inherit WidgetAttrTarget
-        abstract member Dialog: Dialog.Handle
-    end
-
-type internal FileDialogAttrTarget =
-    interface
-        inherit DialogAttrTarget
-        abstract member FileDialog: FileDialog.Handle
-    end
+// type internal LayoutAttrTarget =
+//     interface
+//         inherit QObjectAttrTarget
+//         abstract member Layout: Layout.Handle
+//     end
+//     
+// type internal BoxLayoutAttrTarget =
+//     interface
+//         inherit LayoutAttrTarget
+//         abstract member BoxLayout: BoxLayout.Handle
+//     end
+//     
+// type internal FrameAttrTarget =
+//     interface
+//         inherit WidgetAttrTarget
+//         abstract member Frame: Frame.Handle
+//     end
+//     
+// type internal LabelAttrTarget =
+//     interface
+//         inherit FrameAttrTarget
+//         abstract member Label: Label.Handle
+//     end
+//     
+// type internal AbstractButtonAttrTarget =
+//     interface
+//         inherit WidgetAttrTarget
+//         abstract member AbstractButton: AbstractButton.Handle
+//         abstract member SetChecked: bool -> bool
+//         abstract member SetDown: bool -> bool
+//     end
+//     
+// type internal PushButtonAttrTarget =
+//     interface
+//         inherit AbstractButtonAttrTarget
+//         abstract member PushButton: PushButton.Handle
+//     end
+//     
+// type internal RadioButtonAttrTarget =
+//     interface
+//         inherit AbstractButtonAttrTarget
+//         abstract member RadioButton: RadioButton.Handle
+//     end
+//     
+// type internal ComboBoxAttrTarget =
+//     interface
+//         inherit WidgetAttrTarget
+//         abstract member ComboBox: ComboBox.Handle
+//         abstract member Clear: unit -> unit // same as next 2 individually, I guess
+//         abstract member SetCurrentIndex: int option -> bool
+//         abstract member SetCurrentText: string option -> bool
+//     end
+//     
+// type internal LineEditAttrTarget =
+//     interface
+//         inherit WidgetAttrTarget
+//         abstract member LineEdit: LineEdit.Handle
+//         abstract member SetText: string -> bool     // binding guards
+//         abstract member SetCursorPos: int -> bool
+//     end
+//     
+// type internal MenuAttrTarget =
+//     interface
+//         inherit WidgetAttrTarget
+//         abstract member Menu: Menu.Handle
+//     end
+//     
+// type internal MenuBarAttrTarget =
+//     interface
+//         inherit WidgetAttrTarget
+//         abstract member MenuBar: MenuBar.Handle
+//     end
+//     
+// type internal ActionAttrTarget =
+//     interface
+//         inherit QObjectAttrTarget
+//         abstract member Action: Action.Handle
+//         abstract member SetEnabled: bool -> bool   // return value: internal value did change
+//         abstract member SetCheckable: bool -> bool
+//         abstract member SetChecked: bool -> bool
+//     end
+//   
+// type internal SortFilterProxyModelAttrTarget =
+//     interface
+//         inherit IAttrTarget
+//         abstract member ProxyModel: SortFilterProxyModel.Handle
+//     end
+//
+// type internal DialogAttrTarget =
+//     interface
+//         inherit WidgetAttrTarget
+//         abstract member Dialog: Dialog.Handle
+//     end
+//
+// type internal FileDialogAttrTarget =
+//     interface
+//         inherit DialogAttrTarget
+//         abstract member FileDialog: FileDialog.Handle
+//     end

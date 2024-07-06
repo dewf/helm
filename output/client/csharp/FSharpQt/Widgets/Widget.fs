@@ -176,7 +176,8 @@ with
                 | WindowFullscreenButtonHint -> Enums.WindowFlags.WindowFullscreenButtonHint
             acc ||| flag)
 
-type private Attr =
+    
+type internal Attr =
     | AcceptDrops of accept: bool
     | AccessibleDescription of desc: string
     | AccessibleName of name: string
@@ -266,89 +267,15 @@ with
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? WidgetAttrTarget as attrTarget ->
-                let widget =
-                    attrTarget.Widget
-                match this with
-                | AcceptDrops accept ->
-                    widget.SetAcceptDrops(accept)
-                | AccessibleDescription desc ->
-                    widget.SetAccessibleDescription(desc)
-                | AccessibleName name ->
-                    widget.SetAccessibleName(name)
-                | AutoFillBackground state ->
-                    widget.SetAutoFillBackground(state)
-                | BaseSize size ->
-                    widget.SetBaseSize(size.QtValue)
-                | ContextMenuPolicy policy ->
-                    widget.SetContextMenuPolicy(policy.QtValue)
-                | Enabled enabled ->
-                    widget.SetEnabled(enabled)
-                | FocusPolicy policy ->
-                    widget.SetFocusPolicy(policy.QtValue)
-                | Geometry rect ->
-                    widget.SetGeometry(rect.QtValue)
-                | InputMethodHints hints ->
-                    widget.SetInputMethodHints(hints |> InputMethodHint.QtSetFrom)
-                | LayoutDirection direction ->
-                    widget.SetLayoutDirection(direction.QtValue)
-                | MaximumHeight height ->
-                    widget.SetMaximumHeight(height)
-                | MaximumWidth width ->
-                    widget.SetMaximumWidth(width)
-                | MaximumSize size ->
-                    widget.SetMaximumSize(size.QtValue)
-                | MinimumHeight height ->
-                    widget.SetMaximumHeight(height)
-                | MinimumSize size ->
-                    widget.SetMinimumSize(size.QtValue)
-                | MinimumWidth width ->
-                    widget.SetMinimumWidth(width)
-                | MouseTracking enabled ->
-                    widget.SetMouseTracking(enabled)
-                | Position pos ->
-                    widget.Move(pos.QtValue)
-                | Size size ->
-                    widget.Resize(size.QtValue)
-                | SizeIncrement size ->
-                    widget.SetSizeIncrement(size.QtValue)
-                | SizePolicy policy ->
-                    widget.SetSizePolicy(policy.QtValue)
-                | SizePolicy2(hPolicy, vPolicy) ->
-                    widget.SetSizePolicy(hPolicy.QtValue, vPolicy.QtValue)
-                | StatusTip tip ->
-                    widget.SetStatusTip(tip)
-                | StyleSheet styles ->
-                    widget.SetStyleSheet(styles)
-                | TabletTracking enabled ->
-                    widget.SetTabletTracking(enabled)
-                | ToolTip tip ->
-                    widget.SetToolTip(tip)
-                | ToolTipDuration msecs ->
-                    widget.SetToolTipDuration(msecs)
-                | UpdatesEnabled enabled ->
-                    widget.SetUpdatesEnabled(enabled)
-                | Visible visible ->
-                    widget.SetVisible(visible)
-                | WhatsThis text ->
-                    widget.SetWhatsThis(text)
-                | WindowFilePath path ->
-                    widget.SetWindowFilePath(path)
-                | WindowFlags flags ->
-                    widget.SetWindowFlags(flags |> WindowFlag.QtSetFrom)
-                | WindowIcon icon ->
-                    if attrTarget.SetWindowIcon(icon) then
-                        widget.SetWindowIcon(icon.QtValue)
-                | WindowModality modality ->
-                    widget.SetWindowModality(modality.QtValue)
-                | WindowModified modified ->
-                    widget.SetWindowModified(modified)
-                | WindowOpacity opacity ->
-                    widget.SetWindowOpacity(opacity)
-                | WindowTitle title ->
-                    if attrTarget.SetWindowTitle(title) then
-                        widget.SetWindowTitle(title)
+                attrTarget.ApplyWidgetAttr this
             | _ ->
                 printfn "warning: Widget.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal WidgetAttrTarget =
+    interface
+        inherit QObject.QObjectAttrTarget
+        abstract member ApplyWidgetAttr: Attr -> unit
+    end
 
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
@@ -543,19 +470,88 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             currentMask <- value
     
     interface WidgetAttrTarget with
-        override this.Widget = widget
-        override this.SetWindowIcon newIcon =
-            if newIcon <> lastWindowIcon then
-                lastWindowIcon <- newIcon
-                true
-            else
-                false
-        override this.SetWindowTitle newTitle =
-            if newTitle <> lastWindowTitle then
-                lastWindowTitle <- newTitle
-                true
-            else
-                false
+        member this.ApplyWidgetAttr attr =
+            match attr with
+            | AcceptDrops accept ->
+                widget.SetAcceptDrops(accept)
+            | AccessibleDescription desc ->
+                widget.SetAccessibleDescription(desc)
+            | AccessibleName name ->
+                widget.SetAccessibleName(name)
+            | AutoFillBackground state ->
+                widget.SetAutoFillBackground(state)
+            | BaseSize size ->
+                widget.SetBaseSize(size.QtValue)
+            | ContextMenuPolicy policy ->
+                widget.SetContextMenuPolicy(policy.QtValue)
+            | Enabled enabled ->
+                widget.SetEnabled(enabled)
+            | FocusPolicy policy ->
+                widget.SetFocusPolicy(policy.QtValue)
+            | Geometry rect ->
+                widget.SetGeometry(rect.QtValue)
+            | InputMethodHints hints ->
+                widget.SetInputMethodHints(hints |> InputMethodHint.QtSetFrom)
+            | LayoutDirection direction ->
+                widget.SetLayoutDirection(direction.QtValue)
+            | MaximumHeight height ->
+                widget.SetMaximumHeight(height)
+            | MaximumWidth width ->
+                widget.SetMaximumWidth(width)
+            | MaximumSize size ->
+                widget.SetMaximumSize(size.QtValue)
+            | MinimumHeight height ->
+                widget.SetMaximumHeight(height)
+            | MinimumSize size ->
+                widget.SetMinimumSize(size.QtValue)
+            | MinimumWidth width ->
+                widget.SetMinimumWidth(width)
+            | MouseTracking enabled ->
+                widget.SetMouseTracking(enabled)
+            | Position pos ->
+                widget.Move(pos.QtValue)
+            | Size size ->
+                widget.Resize(size.QtValue)
+            | SizeIncrement size ->
+                widget.SetSizeIncrement(size.QtValue)
+            | SizePolicy policy ->
+                widget.SetSizePolicy(policy.QtValue)
+            | SizePolicy2(hPolicy, vPolicy) ->
+                widget.SetSizePolicy(hPolicy.QtValue, vPolicy.QtValue)
+            | StatusTip tip ->
+                widget.SetStatusTip(tip)
+            | StyleSheet styles ->
+                widget.SetStyleSheet(styles)
+            | TabletTracking enabled ->
+                widget.SetTabletTracking(enabled)
+            | ToolTip tip ->
+                widget.SetToolTip(tip)
+            | ToolTipDuration msecs ->
+                widget.SetToolTipDuration(msecs)
+            | UpdatesEnabled enabled ->
+                widget.SetUpdatesEnabled(enabled)
+            | Visible visible ->
+                widget.SetVisible(visible)
+            | WhatsThis text ->
+                widget.SetWhatsThis(text)
+            | WindowFilePath path ->
+                widget.SetWindowFilePath(path)
+            | WindowFlags flags ->
+                widget.SetWindowFlags(flags |> WindowFlag.QtSetFrom)
+            | WindowIcon icon ->
+                if icon <> lastWindowIcon then
+                    lastWindowIcon <- icon
+                    widget.SetWindowIcon(icon.QtValue)
+            | WindowModality modality ->
+                widget.SetWindowModality(modality.QtValue)
+            | WindowModified modified ->
+                widget.SetWindowModified(modified)
+            | WindowOpacity opacity ->
+                widget.SetWindowOpacity(opacity)
+            | WindowTitle title ->
+                if title <> lastWindowTitle then
+                    lastWindowTitle <- title
+                    widget.SetWindowTitle(title)
         
     interface Widget.SignalHandler with
         // object =========================
@@ -567,11 +563,12 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         member this.CustomContextMenuRequested pos =
             signalDispatch (Point.From pos |> CustomContextMenuRequested)
         member this.WindowIconChanged icon =
-            // lastWindowIcon <- 
+            // TODO: lastWindowIcon <- ???
             // hmm, how are we going to do this? incoming handle (unowned pointer),
             // but stored value is a deferred icon
             // but the pointer values are temporary and the icon itself is on a soon-to-be-destroyed stack
             // of the top of my head I'd say "never 2-way bind this value" ...
+            // for that matter, do we really need a signal for it? won't it always be developer-initiated?
             signalDispatch (IconProxy(icon) |> WindowIconChanged)
         member this.WindowTitleChanged title =
             lastWindowTitle <- title

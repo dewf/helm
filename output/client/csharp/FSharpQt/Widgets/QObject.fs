@@ -10,7 +10,7 @@ type private Signal =
     | Destroyed of object: QObjectProxy
     | ObjectNameChanged of name: string
 
-type private Attr =
+type internal Attr =
     | ObjectName of name: string
 with
     interface IAttr with
@@ -26,14 +26,15 @@ with
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? QObjectAttrTarget as attrTarget ->
-                let qObject =
-                    attrTarget.QObject
-                match this with
-                | ObjectName name ->
-                    if attrTarget.SetObjectName(name) then
-                        qObject.SetObjectName(name)
+                attrTarget.ApplyObjectAttr this
             | _ ->
                 printfn "warning: QObject.Attr couldn't ApplyTo() unknown target type [%A]" target
+
+and internal QObjectAttrTarget =
+    interface
+        inherit IAttrTarget
+        abstract member ApplyObjectAttr: Attr -> unit
+    end
 
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
@@ -107,13 +108,12 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     // no SignalMask property, see note on currentMask at top
             
     interface QObjectAttrTarget with
-        member this.QObject = object
-        member this.SetObjectName name =
-            if name <> lastObjectName then
-                lastObjectName <- name
-                true
-            else
-                false
+        member this.ApplyObjectAttr attr =
+            match attr with
+            | ObjectName name ->
+                if name <> lastObjectName then
+                    lastObjectName <- name
+                    object.SetObjectName(name)
 
     interface Object.SignalHandler with
         member this.Destroyed(obj: Object.Handle) =
@@ -124,5 +124,5 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     interface IDisposable with
         member this.Dispose() =
             object.Dispose()
-     
+   
             
