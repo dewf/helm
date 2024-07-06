@@ -62,9 +62,9 @@ type Props<'msg>() =
             | ObjectNameChanged name ->
                 onObjectNameChanged
                 |> Option.map (fun f -> f name)
-        // if we weren't at root level (eg a Widget subclass),
-        // we'd do thisFunc :: base.SignalMapFuncs
-        [ SignalMapFunc(thisFunc) :> ISignalMapFunc ]
+        // technically base.SignalMapList should return [] in this instance,
+        // but this is just for when we copy code so we don't have to think about it
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
 
     member this.ObjectName with set value =
         this.PushAttr(ObjectName value)
@@ -93,14 +93,14 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             
     member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
         match mapFuncList with
-        | h :: _ ->
+        | h :: etc ->
             match h with
             | :? SignalMapFunc<'msg> as smf ->
                 signalMap <- smf.Func
             | _ ->
                 failwith "QObject.ModelCore.SignalMaps: wrong func type"
-            // no base class to assign the rest to
-            // base.SignalMaps <- etc
+            // assign remainder up heirarchy
+            base.SignalMaps <- etc
         | _ ->
             failwith "QObject.ModelCore: signal map assignment didn't have a head element"
             

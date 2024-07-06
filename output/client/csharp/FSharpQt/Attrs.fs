@@ -56,6 +56,21 @@ let createdOrChanged (changes: AttrDiffResult list) =
     
 // ======= move these to another module? ===========================================
 
+// this interface doesn't really do anything, just tags our objects as relevant to this purpose
+// nicer than just 'Object'
+type internal ISignalMapFunc =
+    interface
+    end
+    
+[<AbstractClass>]
+type internal SignalMapFuncBase<'signal,'msg>(func: 'signal -> 'msg option) =
+    member val Func = func
+    interface ISignalMapFunc // empty
+
+// for cases where we have no signals (eg PushButton)
+type internal NullSignalMapFunc() =
+    interface ISignalMapFunc // empty
+        
 type PropsRoot() =
     // internal attribute-from-properties storage that will be shared by subclasses (eg [Root] -> Widget -> AbstractButton -> PushButton)
     // needs to be reversed before use to maintain the order that was originally assigned
@@ -69,31 +84,22 @@ type PropsRoot() =
     member internal this.AddSignal(flag: int64) =
         this._signalMask <- this._signalMask ||| flag
         
+    member internal this.SignalMapList: ISignalMapFunc list =
+        // not really necessary, but keeps this "regular" in case any root classes (eg QObject)
+        //   still call base.SignalMapList
+        []
+        
 [<AbstractClass>]
 type ModelCoreRoot() =
     interface IAttrTarget
     member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
         for maybePrev, attr in attrs do
             attr.ApplyTo(this, maybePrev)
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        // nothing to do, just maintaining regularity
+        // see note on .SignalMapList above
+        ()
         
-// this interface doesn't really do anything, just tags our objects as relevant to this purpose
-// nicer than just 'Object'
-type internal ISignalMapFunc =
-    interface
-        abstract member Nothing: int
-    end
-    
-[<AbstractClass>]
-type internal SignalMapFuncBase<'signal,'msg>(func: 'signal -> 'msg option) =
-    member val Func = func
-    interface ISignalMapFunc with
-        member this.Nothing = 0
-
-// for cases where we have no signals (eg PushButton)
-type internal NullSignalMapFunc() =
-    interface ISignalMapFunc with
-        member this.Nothing = 0
-
 // ====================================================================
 // various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
 // if you want to support a given type of attribute, you have to implement the target interface

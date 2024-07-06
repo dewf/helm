@@ -292,7 +292,7 @@ type Menu<'msg>() =
             this.model.Menu
             
         override this.ContentKey =
-            (this :> IMenuNode<'msg>).Menu
+            this.model.Menu
             
         override this.Popup point =
             this.model.Menu.Popup point
