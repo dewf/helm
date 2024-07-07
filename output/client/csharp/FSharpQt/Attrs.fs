@@ -118,18 +118,6 @@ type ModelCoreRoot() =
 //         inherit LayoutAttrTarget
 //         abstract member BoxLayout: BoxLayout.Handle
 //     end
-//     
-// type internal FrameAttrTarget =
-//     interface
-//         inherit WidgetAttrTarget
-//         abstract member Frame: Frame.Handle
-//     end
-//     
-// type internal LabelAttrTarget =
-//     interface
-//         inherit FrameAttrTarget
-//         abstract member Label: Label.Handle
-//     end
 
 // type internal RadioButtonAttrTarget =
 //     interface

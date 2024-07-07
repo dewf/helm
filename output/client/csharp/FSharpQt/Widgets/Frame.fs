@@ -7,8 +7,7 @@ open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-type internal Signal =
-    | WidgetSignal of signal: Widget.Signal
+type private Signal = unit
 
 type Shape =
     | NoFrame
@@ -40,7 +39,7 @@ with
         | Raised -> Frame.Shadow.Raised
         | Sunken -> Frame.Shadow.Sunken
         
-type private Attr =
+type internal Attr =
     | FrameRect of rect: Rect
     | FrameShadow of shadow: Shadow
     | FrameShape of shape: Shape
@@ -65,33 +64,24 @@ with
             | FrameStyle _ -> "frame:style"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? FrameAttrTarget as attrTarget ->
-                let frame =
-                    attrTarget.Frame
-                match this with
-                | FrameRect rect ->
-                    frame.SetFrameRect(rect.QtValue)
-                | FrameShadow shadow ->
-                    frame.SetFrameShadow(shadow.QtValue)
-                | FrameShape shape ->
-                    frame.SetFrameShape(shape.QtValue)
-                | LineWidth width ->
-                    frame.SetLineWidth(width)
-                | MidLineWidth width ->
-                    frame.SetMidLineWidth(width)
-                | FrameStyle(shape, shadow) ->
-                    frame.SetFrameStyle(shape.QtValue, shadow.QtValue)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyFrameAttr(this)
             | _ ->
                 printfn "warning: Frame.Attr couldn't ApplyTo() unknown target type [%A]" target
-
+    
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyFrameAttr: Attr -> unit
+    end
+    
 type Props<'msg>() =
     inherit Widget.Props<'msg>()
     
     member internal this.SignalMask = enum<Frame.SignalMask> (int this._signalMask)
     
-    member internal this.SignalMap = function
-        | WidgetSignal signal ->
-            (this :> Widget.Props<'msg>).SignalMap_REMOVE signal
+    member internal this.SignalMapList =
+        NullSignalMapFunc() :> ISignalMapFunc :: base.SignalMapList
     
     member this.FrameRect with set value =
         this.PushAttr(FrameRect value)
@@ -110,63 +100,89 @@ type Props<'msg>() =
         
     member this.FrameStyle with set value =
         this.PushAttr(FrameStyle value)
-    
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable frame = Frame.Create(this)
-    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Widget.ModelCore<'msg>(dispatch)
+    let mutable frame: Frame.Handle = null
     let mutable currentMask = enum<Frame.SignalMask> 0
     
-    let signalDispatch (s: Signal) =
-        signalMap s
-        |> Option.iter dispatch
-    
-    member this.Frame with get() = frame
-    member this.SignalMap with set value = signalMap <- value
-    
+    member this.Frame
+        with get() = frame
+        and set value =
+            this.Object <- value
+            this.Widget <- value
+            frame <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? NullSignalMapFunc ->
+                // nothing to assign
+                ()
+            | _ ->
+                failwith "Frame.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "Frame.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             frame.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
             
-    interface FrameAttrTarget with
-        member this.Widget = frame
-        member this.Frame = frame
-        
-    interface Frame.SignalHandler with
-        // Widget:
-        member this.CustomContextMenuRequested pos =
-            Point.From pos
-            |> Widget.Signal.CustomContextMenuRequested
-            |> WidgetSignal
-            |> signalDispatch
-        member this.WindowIconChanged icon =
-            IconProxy(icon)
-            |> Widget.Signal.WindowIconChanged
-            |> WidgetSignal
-            |> signalDispatch
-        member this.WindowTitleChanged title =
-            Widget.Signal.WindowTitleChanged title
-            |> WidgetSignal
-            |> signalDispatch
+    interface AttrTarget with
+        member this.ApplyFrameAttr attr =
+            match attr with
+            | FrameRect rect ->
+                frame.SetFrameRect(rect.QtValue)
+            | FrameShadow shadow ->
+                frame.SetFrameShadow(shadow.QtValue)
+            | FrameShape shape ->
+                frame.SetFrameShape(shape.QtValue)
+            | LineWidth width ->
+                frame.SetLineWidth(width)
+            | MidLineWidth width ->
+                frame.SetMidLineWidth(width)
+            | FrameStyle(shape, shadow) ->
+                frame.SetFrameStyle(shape.QtValue, shadow.QtValue)
                 
+    interface Frame.SignalHandler with
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
+        member this.CustomContextMenuRequested pos =
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // (none of our own)
+        
     interface IDisposable with
         member this.Dispose() =
             frame.Dispose()
+    
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    do
+        this.Frame <- Frame.Create(this)
 
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: Frame.SignalMask) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: Frame.SignalMask) =
     let model = new Model<'msg>(dispatch)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Frame.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: Frame.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -183,7 +199,7 @@ type Frame<'msg>() =
         override this.Dependencies = []
         
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             ()
@@ -193,7 +209,7 @@ type Frame<'msg>() =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()

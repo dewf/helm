@@ -40,8 +40,8 @@
         <Compile Include="Widgets\ComboBox.fs" />
 <!--        <Compile Include="Widgets\Dialog.fs" />-->
 <!--        <Compile Include="Widgets\FileDialog.fs" />-->
-<!--        <Compile Include="Widgets\Frame.fs" />-->
-<!--        <Compile Include="Widgets\Label.fs" />-->
+        <Compile Include="Widgets\Frame.fs" />
+        <Compile Include="Widgets\Label.fs" />
 <!--        <Compile Include="Widgets\GridLayout.fs" />-->
 <!--        <Compile Include="Widgets\GroupBox.fs" />-->
 <!--        <Compile Include="Widgets\ListView.fs" />-->

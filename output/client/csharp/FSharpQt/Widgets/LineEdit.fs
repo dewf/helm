@@ -78,10 +78,10 @@ and internal AttrTarget =
         inherit Widget.AttrTarget
         abstract member ApplyLineEditAttr: Attr -> unit
     end
-                
+
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
-                
+
 type Props<'msg>() =
     inherit Widget.Props<'msg>()
     

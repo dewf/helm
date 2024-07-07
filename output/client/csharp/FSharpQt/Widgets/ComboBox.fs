@@ -228,6 +228,9 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     let someIfPositive (i: int) =
         if i >= 0 then Some i else None
         
+    let someIfNotEmpty (str: string) =
+        if str <> "" then Some str else None
+        
     member this.ComboBox
         with get() = comboBox
         and set value =
@@ -315,7 +318,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             lastCurrentIndex <- maybeIndex
             signalDispatch (maybeIndex |> CurrentIndexChanged)
         override this.CurrentTextChanged text =
-            let maybeText = if text = "" then None else Some text
+            let maybeText = someIfNotEmpty text
             lastCurrentText <- maybeText
             signalDispatch (maybeText |> CurrentTextChanged)
         override this.EditTextChanged text =
