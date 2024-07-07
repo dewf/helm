@@ -224,6 +224,19 @@ with
         | ElideRight -> Enums.TextElideMode.ElideRight
         | ElideMiddle -> Enums.TextElideMode.ElideMiddle
         | ElideNone -> Enums.TextElideMode.ElideNone
+
+type ShortcutContext =
+    | WidgetShortcut
+    | WindowShortcut
+    | ApplicationShortcut
+    | WidgetWithChildrenShortcut
+with
+    member internal this.QtValue =
+        match this with
+        | WidgetShortcut -> Enums.ShortcutContext.WidgetShortcut
+        | WindowShortcut -> Enums.ShortcutContext.WindowShortcut
+        | ApplicationShortcut -> Enums.ShortcutContext.ApplicationShortcut
+        | WidgetWithChildrenShortcut -> Enums.ShortcutContext.WidgetWithChildrenShortcut
         
 // various enums needed before widget proxies below:
 

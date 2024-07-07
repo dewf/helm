@@ -17,16 +17,17 @@
         <Compile Include="Painting.fs" />
         <Compile Include="EventDelegate.fs" />
 
+        <Compile Include="Widgets\QObject.fs" />
+        
 <!--        <Compile Include="Models\SimpleListModel.fs" />-->
 <!--        <Compile Include="Models\TrackedRows.fs" />-->
 <!--        <Compile Include="Models\ListModelNode.fs" />-->
 <!--        <Compile Include="Models\SortFilterProxyModel.fs" />-->
 
-        <Compile Include="Widgets\QObject.fs" />
         <Compile Include="Widgets\Widget.fs" />
-
+        
+        <Compile Include="Widgets\MenuAction.fs" />
 <!--        <Compile Include="Widgets\Menu.fs" />-->
-<!--        <Compile Include="Widgets\MenuAction.fs" />-->
 <!--        <Compile Include="Widgets\MenuBar.fs" />-->
 
 <!--        <Compile Include="Widgets\CustomWidget.fs" />-->
@@ -34,6 +35,10 @@
         <Compile Include="Widgets\AbstractButton.fs" />
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
+        <!--        <Compile Include="Widgets\PlainTextEdit.fs" />-->
+        <!--        <Compile Include="Widgets\RadioButton.fs" />-->
+        <!--        <Compile Include="Widgets\Slider.fs" />-->
+        <!--        <Compile Include="Widgets\ProgressBar.fs" />-->
         
         <Compile Include="Widgets\ComboBox.fs" />
         <Compile Include="Widgets\Frame.fs" />
@@ -51,11 +56,7 @@
         <Compile Include="Widgets\TabWidget.fs" />
         <Compile Include="Widgets\MainWindow.fs" />
 <!--        <Compile Include="Widgets\MessageBox.fs" />-->
-<!--        <Compile Include="Widgets\ProgressBar.fs" />-->
-<!--        <Compile Include="Widgets\PlainTextEdit.fs" />-->
-<!--        <Compile Include="Widgets\RadioButton.fs" />-->
 <!--        <Compile Include="Widgets\ScrollArea.fs" />-->
-<!--        <Compile Include="Widgets\Slider.fs" />-->
 <!--        <Compile Include="Widgets\StatusBar.fs" />-->
 <!--        <Compile Include="Widgets\Timer.fs" />-->
 <!--        <Compile Include="Widgets\TreeView.fs" />-->

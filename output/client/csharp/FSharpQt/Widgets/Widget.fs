@@ -567,7 +567,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             // but stored value is a deferred icon
             // but the pointer values are temporary and the icon itself is on a soon-to-be-destroyed stack
             // of the top of my head I'd say "never 2-way bind this value" ...
-            // for that matter, do we really need a signal for it? won't it always be developer-initiated?
+            // for that matter, do we really need a signal for it? won't it always be property-driven?
             signalDispatch (IconProxy(icon) |> WindowIconChanged)
         member this.WindowTitleChanged title =
             lastWindowTitle <- title

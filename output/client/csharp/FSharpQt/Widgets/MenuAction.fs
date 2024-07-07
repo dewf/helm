@@ -7,26 +7,65 @@ open FSharpQt.MiscTypes
 
 open FSharpQt.Attrs
 
-type Signal =
+type private Signal =
     | Changed
     | CheckableChanged of checkable: bool
     | EnabledChanged of enabled: bool
     | Hovered
     | Toggled of checked_: bool
-    | Triggered of checked_: bool
+    | Triggered
+    | TriggeredWithChecked of checked_: bool
     | VisibleChanged
 
-type Attr =
-    | Text of text: string
-    | Enabled of state: bool    // why does QAction redeclare this? ohhh it's a QObject, not a widget
-    | Separator of state: bool
+type MenuRole =
+    | NoRole
+    | TextHeuristicRole
+    | ApplicationSpecificRole
+    | AboutQtRole
+    | AboutRole
+    | PreferencesRole
+    | QuitRole
+with
+    member internal this.QtValue =
+        match this with
+        | NoRole -> Action.MenuRole.NoRole
+        | TextHeuristicRole -> Action.MenuRole.TextHeuristicRole
+        | ApplicationSpecificRole -> Action.MenuRole.ApplicationSpecificRole
+        | AboutQtRole -> Action.MenuRole.AboutQtRole
+        | AboutRole -> Action.MenuRole.AboutRole
+        | PreferencesRole -> Action.MenuRole.PreferencesRole
+        | QuitRole -> Action.MenuRole.QuitRole
+        
+type Priority =
+    | LowPriority
+    | NormalPriority
+    | HighPriority
+with
+    member internal this.QtValue =
+        match this with
+        | LowPriority -> Action.Priority.LowPriority
+        | NormalPriority -> Action.Priority.NormalPriority
+        | HighPriority -> Action.Priority.HighPriority
+    
+type internal Attr =
+    | AutoRepeat of state: bool
     | Checkable of state: bool
     | Checked of state: bool
-    | IconAttr of icon: Icon    // + "Attr" to prevent annoying collisions
+    | Enabled of state: bool
+    // | Font of font: ?
+    | IconAttr of icon: Icon
     | IconText of text: string
-    | Shortcut of seq: KeySequence
+    | IconVisibleInMenu of visible: bool
+    | MenuRole of role: MenuRole
+    | Priority of priority: Priority
+    | Shortcut of shortcut: KeySequence
+    | ShortcutContext of context: ShortcutContext
+    | ShortcutVisibleInContextMenu of visible: bool
     | StatusTip of tip: string
+    | Text of text: string
     | ToolTip of tip: string
+    | Visible of state: bool
+    | WhatsThis of text: string
 with
     interface IAttr with
         override this.AttrEquals other =
@@ -37,47 +76,35 @@ with
                 false
         override this.Key =
             match this with
-            | Text _ -> "action:text"
-            | Enabled _ -> "action:enabled"
-            | Separator _ -> "action:separator"
-            | Checkable _ -> "action:checkable"
-            | Checked _ -> "action:checked"
-            | IconAttr _ -> "action:iconattr"
-            | IconText _ -> "action:icontext"
-            | Shortcut _ -> "action:shortcut"
-            | StatusTip _ -> "action:statustip"
-            | ToolTip _ -> "action:tooltip"
+            | AutoRepeat _ -> "menuaction:autorepeat"
+            | Checkable _ -> "menuaction:checkable"
+            | Checked _ -> "menuaction:checked"
+            | Enabled _ -> "menuaction:enabled"
+            | IconAttr _ -> "menuaction:iconattr"
+            | IconText _ -> "menuaction:icontext"
+            | IconVisibleInMenu _ -> "menuaction:iconvisibleinmenu"
+            | MenuRole _ -> "menuaction:menurole"
+            | Priority _ -> "menuaction:priority"
+            | Shortcut _ -> "menuaction:shortcut"
+            | ShortcutContext _ -> "menuaction:shortcutcontext"
+            | ShortcutVisibleInContextMenu _ -> "menuaction:shortcutVisibleInContextMenu"
+            | StatusTip _ -> "menuaction:statustip"
+            | Text _ -> "menuaction:text"
+            | ToolTip _ -> "menuaction:tooltip"
+            | Visible _ -> "menuaction:visible"
+            | WhatsThis _ -> "menuaction:whatsthis"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? ActionAttrTarget as attrTarget ->
-                let action =
-                    attrTarget.Action
-                match this with
-                | Text text ->
-                    action.SetText(text)
-                | Enabled state ->
-                    if attrTarget.SetEnabled(state) then
-                        action.SetEnabled(state)
-                | Separator state ->
-                    action.SetSeparator(state)
-                | Checkable state ->
-                    if attrTarget.SetCheckable(state) then
-                        action.SetCheckable(state)
-                | Checked state ->
-                    if attrTarget.SetChecked(state) then
-                        action.SetChecked(state)
-                | IconAttr icon ->
-                    action.SetIcon(icon.QtValue)
-                | IconText text ->
-                    action.SetIconText(text)
-                | Shortcut seq ->
-                    action.SetShortcut(seq.QtValue)
-                | StatusTip tip ->
-                    action.SetStatusTip(tip)
-                | ToolTip tip ->
-                    action.SetToolTip(tip)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyMenuActionAttr(this)
             | _ ->
                 printfn "warning: MenuAction.Attr couldn't ApplyTo() unknown object type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit QObject.AttrTarget
+        abstract member ApplyMenuActionAttr: Attr -> unit
+    end
                 
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
@@ -90,7 +117,8 @@ type Props<'msg>() =
     let mutable onEnabledChanged: (bool -> 'msg) option = None
     let mutable onHovered: 'msg option = None
     let mutable onToggled: (bool -> 'msg) option = None
-    let mutable onTriggered: (bool -> 'msg) option = None
+    let mutable onTriggered: 'msg option = None
+    let mutable onTriggeredWithChecked: (bool -> 'msg) option = None
     let mutable onVisibleChanged: 'msg option = None
     
     member internal this.SignalMask = enum<Action.SignalMask> (int this._signalMask)
@@ -115,8 +143,12 @@ type Props<'msg>() =
         onToggled <- Some value
         this.AddSignal(int Action.SignalMask.Toggled)
         
-    member this.OnTriggered with set value =
+    member this.OnTriggered with set value = // triggered #1, no 'checked' param
         onTriggered <- Some value
+        this.AddSignal(int Action.SignalMask.Triggered) 
+        
+    member this.OnTriggeredWithChecked with set value = // triggered #2, with 'checked' param
+        onTriggeredWithChecked <- Some value
         this.AddSignal(int Action.SignalMask.Triggered)
         
     member this.OnVisibleChanged with set value =
@@ -138,43 +170,69 @@ type Props<'msg>() =
             | Toggled value ->
                 onToggled
                 |> Option.map (fun f -> f value)
-            | Triggered value ->
+            | Triggered ->
                 onTriggered
+            | TriggeredWithChecked value ->
+                onTriggeredWithChecked
                 |> Option.map (fun f -> f value)
             | VisibleChanged ->
                 onVisibleChanged
         // we inherit from Object, so prepend to its signals
         SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
-    
-    member this.Text with set value =
-        this.PushAttr(Text value)
         
-    member this.Enabled with set value =
-        this.PushAttr(Enabled value)
-        
-    member this.Separator with set value =
-        this.PushAttr(Separator value)
-        
+    member this.AutoRepeat with set value =
+        this.PushAttr(AutoRepeat value)
+
     member this.Checkable with set value =
         this.PushAttr(Checkable value)
-        
+
     member this.Checked with set value =
         this.PushAttr(Checked value)
-        
-    member this.Icon with set value =
+
+    member this.Enabled with set value =
+        this.PushAttr(Enabled value)
+
+    // member this.Font with set value =
+    //     this.PushAttr(Font value)
+
+    member this.IconAttr with set value =
         this.PushAttr(IconAttr value)
-        
+
     member this.IconText with set value =
         this.PushAttr(IconText value)
-        
+
+    member this.IconVisibleInMenu with set value =
+        this.PushAttr(IconVisibleInMenu value)
+
+    member this.MenuRole with set value =
+        this.PushAttr(MenuRole value)
+
+    member this.Priority with set value =
+        this.PushAttr(Priority value)
+
     member this.Shortcut with set value =
         this.PushAttr(Shortcut value)
-        
+
+    member this.ShortcutContext with set value =
+        this.PushAttr(ShortcutContext value)
+
+    member this.ShortcutVisibleInContextMenu with set value =
+        this.PushAttr(ShortcutVisibleInContextMenu value)
+
     member this.StatusTip with set value =
         this.PushAttr(StatusTip value)
-        
+
+    member this.Text with set value =
+        this.PushAttr(Text value)
+
     member this.ToolTip with set value =
         this.PushAttr(ToolTip value)
+
+    member this.Visible with set value =
+        this.PushAttr(Visible value)
+
+    member this.WhatsThis with set value =
+        this.PushAttr(WhatsThis value)
         
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
     inherit QObject.ModelCore<'msg>(dispatch)
@@ -182,9 +240,9 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Action.SignalMask> 0
     // 2-way binding guards:
-    let mutable enabled = true
-    let mutable checkable = false
-    let mutable checked_ = false
+    let mutable lastEnabled = true
+    let mutable lastCheckable = false
+    let mutable lastChecked = false
     
     let signalDispatch (s: Signal) =
         signalMap s
@@ -215,26 +273,49 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             action.SetSignalMask(value)
             currentMask <- value
             
-    interface ActionAttrTarget with
-        override this.Action = action
-        override this.SetEnabled state =
-            if state <> enabled then
-                enabled <- state
-                true
-            else
-                false
-        override this.SetCheckable state =
-            if checkable <> state then
-                checkable <- state
-                true
-            else
-                false
-        override this.SetChecked state =
-            if checked_ <> state then
-                checked_ <- state
-                true
-            else
-                false
+    interface AttrTarget with
+        member this.ApplyMenuActionAttr attr =
+            match attr with
+            | AutoRepeat state ->
+                action.SetAutoRepeat(state)
+            | Checkable state ->
+                if state <> lastCheckable then
+                    lastCheckable <- state
+                    action.SetCheckable(state)
+            | Checked state ->
+                if state <> lastChecked then
+                    lastChecked <- state
+                    action.SetChecked(state)
+            | Enabled state ->
+                if state <> lastEnabled then
+                    lastEnabled <- state
+                    action.SetEnabled(state)
+            | IconAttr icon ->
+                action.SetIcon(icon.QtValue)
+            | IconText text ->
+                action.SetIconText(text)
+            | IconVisibleInMenu visible ->
+                action.SetIconVisibleInMenu(visible)
+            | MenuRole role ->
+                action.SetMenuRole(role.QtValue)
+            | Priority priority ->
+                action.SetPriority(priority.QtValue)
+            | Shortcut shortcut ->
+                action.SetShortcut(shortcut.QtValue)
+            | ShortcutContext context ->
+                action.SetShortcutContext(context.QtValue)
+            | ShortcutVisibleInContextMenu visible ->
+                action.SetShortcutVisibleInContextMenu(visible)
+            | StatusTip tip ->
+                action.SetStatusTip(tip)
+            | Text text ->
+                action.SetText(text)
+            | ToolTip tip ->
+                action.SetToolTip(tip)
+            | Visible state ->
+                action.SetVisible(state)
+            | WhatsThis text ->
+                action.SetWhatsThis(text)
                 
     interface Action.SignalHandler with
         // object =========================
@@ -246,18 +327,20 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         override this.Changed () =
             signalDispatch Changed
         override this.CheckableChanged newState =
-            checkable <- newState
+            lastCheckable <- newState
             signalDispatch (CheckableChanged newState)
         override this.EnabledChanged newState =
-            enabled <- newState
+            lastEnabled <- newState
             signalDispatch (EnabledChanged newState)
         override this.Hovered () =
             signalDispatch Hovered
         override this.Toggled newState =
-            checked_ <- newState
+            lastChecked <- newState
             signalDispatch (Toggled newState)
         override this.Triggered checked_ =
-            signalDispatch (Triggered checked_)
+            lastChecked <- checked_
+            signalDispatch Triggered
+            signalDispatch (TriggeredWithChecked checked_)
         override this.VisibleChanged () =
             signalDispatch VisibleChanged
             
@@ -361,7 +444,7 @@ type MenuAction<'msg>() =
             this.model.Action
             
         override this.ContentKey =
-            (this :> IActionNode<'msg>).Action
+            this.model.Action
             
         override this.Attachments =
             this.Attachments
