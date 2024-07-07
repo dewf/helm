@@ -1,32 +1,55 @@
 ﻿module FSharpQt.Widgets.GridLayout
 
 open System
+open FSharpQt.Attrs
 open Org.Whatever.QtTesting
 open FSharpQt
 open BuilderNode
 open MiscTypes
 
-type Signal = unit
+type private Signal = unit
 
-type Attr =
-    | Spacing of spacing: int
-    | ContentsMargins of left: int * top: int * right: int * bottom: int
-    | RowMinimumHeight of row: int * minHeight: int
-    | ColumnMinimumWidth of col: int * minWidth: int
-    | RowStretch of row: int * stretch: int
-    | ColumnStretch of col: int * stretch: int
+type internal Attr =
+    | HorizontalSpacing of spacing: int
+    | VerticalSpacing of spacing: int
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as attrOther ->
+                this = attrOther
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | HorizontalSpacing spacing -> "gridlayout:horizontalspacing"
+            | VerticalSpacing spacing -> "gridlayout:verticalspacing"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyGridLayoutAttr(this)
+            | _ ->
+                printfn "warning: GridLayout.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Layout.AttrTarget
+        abstract member ApplyGridLayoutAttr: Attr -> unit
+    end
     
-let private keyFunc = function
-    | Spacing _ -> 0
-    | ContentsMargins _ -> 1
-    // a little more complicated, to allow for a single Attrs with multiple row/columns:
-    | RowMinimumHeight (row, _) -> (row * 4) + 2      // 2, 6, 10 ...
-    | ColumnMinimumWidth (col, _) -> (col * 4) + 3    // 3, 7, 11 ...
-    | RowStretch (row, _) -> (row * 4) + 4            // 4, 8, 12 ...
-    | ColumnStretch (col, _) -> (col * 4) + 5         // 5, 9, 13 ...
-
-let private diffAttrs =
-    genericDiffAttrs keyFunc
+type Props<'msg>() =
+    inherit Layout.Props<'msg>()
+    
+    member internal this.SignalMask = enum<GridLayout.SignalMask> (int this._signalMask)
+    
+    member internal this.SignalMapList =
+        NullSignalMapFunc() :> ISignalMapFunc :: base.SignalMapList
+        
+    member this.HorizontalSpacing with set value =
+        this.PushAttr(HorizontalSpacing value)
+        
+    member this.VerticalSpacing with set value =
+        this.PushAttr(VerticalSpacing value)
     
 type Location = {
     Row: int
@@ -125,63 +148,95 @@ let private addItem (grid: GridLayout.Handle) = function
             grid.AddLayout(l.Layout, loc.Row, loc.Col, rowSpan, colSpan)
         | WithSpansAlignment(rowSpan, colSpan, align) ->
             grid.AddLayout(l.Layout, loc.Row, loc.Col, rowSpan, colSpan, align.QtValue)
+            
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Layout.ModelCore<'msg>(dispatch: 'msg -> unit)
+    let mutable gridLayout: GridLayout.Handle = null
+    let mutable currentMask = enum<GridLayout.SignalMask> 0
     
-type private Model<'msg>(dispatch: 'msg -> unit) =
-    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+    // no dispatch because no signals of our own
     
-    let mutable grid = GridLayout.Create()
-    
-    member this.Layout with get() = grid
-    
-    member this.SignalMap with set value = signalMap <- value
-    
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
+    member this.GridLayout
+        with get() =
+            gridLayout
+        and set value =
+            this.Layout <- value
+            gridLayout <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? NullSignalMapFunc ->
+                // nothing to do
+                ()
+            | _ ->
+                failwith "GridLayout.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "GridLayout.ModelCore: signal map assignment didn't have a head element"
+            
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
+            gridLayout.SetSignalMask(value)
+            currentMask <- value
+            
+    interface AttrTarget with
+        member this.ApplyGridLayoutAttr attr =
             match attr with
-            | Spacing spacing ->
-                grid.SetSpacing(spacing)
-            | ContentsMargins (left, top, right, bottom) ->
-                grid.SetContentsMargins (left, top, right, bottom)
-            | RowMinimumHeight (row, minHeight) ->
-                grid.SetRowMinimumHeight(row, minHeight)
-            | ColumnMinimumWidth (col, minWidth) ->
-                grid.SetColumnMinimumWidth(col, minWidth)
-            | RowStretch (row, stretch) ->
-                grid.SetRowStretch(row, stretch)
-            | ColumnStretch (col, stretch) ->
-                grid.SetColumnStretch(col, stretch)
+            | HorizontalSpacing spacing ->
+                gridLayout.SetHorizontalSpacing(spacing)
+            | VerticalSpacing spacing ->
+                gridLayout.SetVerticalSpacing(spacing)
                 
+    interface GridLayout.SignalHandler with
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // layout (none) ==================
+        // gridlayout (none) ===============
+        
     interface IDisposable with
         member this.Dispose() =
-            grid.Dispose()
-            
+            gridLayout.Dispose()
+    
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let gridLayout = GridLayout.Create(this)
+    do
+        this.GridLayout <- gridLayout
+        
     member this.Refill(items: GridItem<'msg> list) =
-        grid.RemoveAll()
+        gridLayout.RemoveAll()
         for item in items do
-            addItem grid item.Item
+            addItem gridLayout item.Item
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: GridLayout.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    model.SignalMaps <- signalMaps
+    model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: GridLayout.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type GridLayout<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Items: GridItem<'msg> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
-    let signalMap = (fun _ -> None)
     
     member private this.MigrateContent(leftBox: GridLayout<'msg>) =
         let leftContents =
@@ -206,7 +261,7 @@ type GridLayout<'msg>() =
             |> List.mapi (fun i item -> IntKey i, item.Node)
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             this.model.Refill(this.Items)
@@ -215,18 +270,18 @@ type GridLayout<'msg>() =
             let left' = (left :?> GridLayout<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged__old
-            this.model <- migrate left'.model nextAttrs signalMap
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateContent(left')
                 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
 
         override this.Layout =
-            (this.model.Layout :> Layout.Handle)
+            this.model.GridLayout
             
         override this.ContentKey =
-            (this :> ILayoutNode<'msg>).Layout
+            this.model.GridLayout
             
         override this.Attachments =
             this.Attachments

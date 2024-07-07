@@ -1,7 +1,6 @@
 #include "generated/BoxLayout.h"
 
 #include <QBoxLayout>
-#include <utility>
 
 #include "util/SignalStuff.h"
 #include "util/convert.h"
@@ -39,7 +38,7 @@ namespace BoxLayout
             handler->objectNameChanged(name.toStdString());
         }
         // Layout (none)
-        // BBoxLayout (none)
+        // BoxLayout (none)
     };
 
     void Handle_setDirection(HandleRef _this, Direction dir) {

@@ -4,6 +4,23 @@ import Common;
 import Widget;
 import Layout;
 import Enums;
+import Object;
+
+namedbits SignalMask extends Layout.SignalMask {
+    // none extra
+}
+
+interface SignalHandler {
+    // Object:
+    void destroyed(Object.Handle obj);
+    void objectNameChanged(string objectName);
+
+    // Layout:
+    // (none)
+
+    // none of our own
+}
+
 
 opaque Handle extends Layout.Handle {
     void setHorizontalSpacing(int value);
@@ -22,6 +39,8 @@ opaque Handle extends Layout.Handle {
     void setRowStretch(int row, int stretch);
     void setColumnMinimumWidth(int column, int minWidth);
     void setColumnStretch(int column, int stretch);
+
+    void setSignalMask(SignalMask mask);
 }
 
-Handle create();
+Handle create(SignalHandler handler);

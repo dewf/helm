@@ -157,7 +157,6 @@ let private addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
     inherit Layout.ModelCore<'msg>(dispatch: 'msg -> unit)
     let mutable boxLayout: BoxLayout.Handle = null
-    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<BoxLayout.SignalMask> 0
     
     // no dispatch because no signals of our own
@@ -294,7 +293,8 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
         override this.ContentKey =
             this.model.Layout
             
-        override this.Attachments = this.Attachments
+        override this.Attachments =
+            this.Attachments
 
 type BoxLayout<'msg>() =
     inherit BoxLayoutBase<'msg>(BoxLayout.Direction.TopToBottom)
