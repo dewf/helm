@@ -9,9 +9,33 @@ open MiscTypes
 
 type private Signal = unit
 
+type internal RowColConfigInternal = {
+    Index: int
+    MinExt: int option
+    Stretch: int option
+} with
+    member this.ApplyToRow(gridLayout: GridLayout.Handle) =
+        this.MinExt
+        |> Option.iter (fun height -> gridLayout.SetRowMinimumHeight(this.Index, height))
+        this.Stretch
+        |> Option.iter (fun stretch -> gridLayout.SetRowStretch(this.Index, stretch))
+    member this.ApplyToCol(gridLayout: GridLayout.Handle) =
+        this.MinExt
+        |> Option.iter (fun width -> gridLayout.SetColumnMinimumWidth(this.Index, width))
+        this.Stretch
+        |> Option.iter (fun stretch -> gridLayout.SetColumnStretch(this.Index, stretch))
+        
+type RowConfig(row: int, ?minHeight: int, ?stretch: int) =
+    member val internal Config = { Index = row; MinExt = minHeight; Stretch = stretch }
+    
+type ColConfig(col: int, ?minWidth: int, ?stretch: int) =
+    member val internal Config = { Index = col; MinExt = minWidth; Stretch = stretch }
+
 type internal Attr =
     | HorizontalSpacing of spacing: int
     | VerticalSpacing of spacing: int
+    | RowConfigs of RowColConfigInternal list
+    | ColConfigs of RowColConfigInternal list
 with
     interface IAttr with
         override this.AttrEquals other =
@@ -22,8 +46,10 @@ with
                 false
         override this.Key =
             match this with
-            | HorizontalSpacing spacing -> "gridlayout:horizontalspacing"
-            | VerticalSpacing spacing -> "gridlayout:verticalspacing"
+            | HorizontalSpacing _ -> "gridlayout:horizontalspacing"
+            | VerticalSpacing _ -> "gridlayout:verticalspacing"
+            | RowConfigs _ -> "gridlayout:rowconfigs"
+            | ColConfigs _ -> "gridlayout:colconfigs"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? AttrTarget as attrTarget ->
@@ -50,6 +76,22 @@ type Props<'msg>() =
         
     member this.VerticalSpacing with set value =
         this.PushAttr(VerticalSpacing value)
+        
+    member this.RowConfigs with set (value: RowConfig seq) =
+        let configs =
+            value
+            |> Seq.map (_.Config)
+            |> Seq.toList
+            |> RowConfigs
+        this.PushAttr(configs)
+        
+    member this.ColConfigs with set (value: ColConfig seq) =
+        let configs =
+            value
+            |> Seq.map (_.Config)
+            |> Seq.toList
+            |> ColConfigs
+        this.PushAttr(configs)
     
 type Location = {
     Row: int
@@ -190,6 +232,12 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
                 gridLayout.SetHorizontalSpacing(spacing)
             | VerticalSpacing spacing ->
                 gridLayout.SetVerticalSpacing(spacing)
+            | RowConfigs configs ->
+                for config in configs do
+                    config.ApplyToRow(gridLayout)
+            | ColConfigs configs ->
+                for config in configs do
+                    config.ApplyToCol(gridLayout)
                 
     interface GridLayout.SignalHandler with
         // object =========================
