@@ -238,6 +238,24 @@ with
         | ApplicationShortcut -> Enums.ShortcutContext.ApplicationShortcut
         | WidgetWithChildrenShortcut -> Enums.ShortcutContext.WidgetWithChildrenShortcut
         
+// in C++ Qt this is a class,
+// will decide over time what it needs to be here ...
+module TextOption =
+    type WrapMode =
+        | NoWrap
+        | WordWrap
+        | ManualWrap
+        | WrapAnywhere
+        | WrapAtWordBoundaryOrAnywhere
+    with
+        member internal this.QtValue =
+            match this with
+            | NoWrap -> TextOption.WrapMode.NoWrap
+            | WordWrap -> TextOption.WrapMode.WordWrap
+            | ManualWrap -> TextOption.WrapMode.ManualWrap
+            | WrapAnywhere -> TextOption.WrapMode.WrapAnywhere
+            | WrapAtWordBoundaryOrAnywhere -> TextOption.WrapMode.WrapAtWordBoundaryOrAnywhere
+        
 // various enums needed before widget proxies below:
 
 type ToolButtonStyle =

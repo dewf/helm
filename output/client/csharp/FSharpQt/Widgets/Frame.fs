@@ -162,7 +162,8 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
             (this :> Widget.SignalHandler).WindowTitleChanged title
-        // (none of our own)
+        // Frame ==========================
+        // (none)
         
     interface IDisposable with
         member this.Dispose() =
