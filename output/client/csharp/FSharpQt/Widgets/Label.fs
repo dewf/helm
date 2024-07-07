@@ -129,9 +129,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.Label
         with get() = label
         and set value =
-            // assign up the hierarchy
-            this.Object <- value
-            this.Widget <- value
+            // assign to base
             this.Frame <- value
             label <- value
             

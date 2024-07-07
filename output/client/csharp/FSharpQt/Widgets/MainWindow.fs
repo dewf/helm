@@ -156,7 +156,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.MainWindow
         with get() = mainWindow
         and set value =
-            this.Object <- value
+            // assign to base
             this.Widget <- value
             mainWindow <- value
             

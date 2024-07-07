@@ -445,7 +445,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.Widget
         with get() = widget
         and set value =
-            // assign up the hierarchy
+            // must assign to base as well
             this.Object <- value
             widget <- value
             

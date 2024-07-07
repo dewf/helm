@@ -234,7 +234,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.ComboBox
         with get() = comboBox
         and set value =
-            this.Object <- value
+            // assign to base
             this.Widget <- value
             comboBox <- value
             

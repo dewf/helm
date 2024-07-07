@@ -156,8 +156,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.AbstractButton
         with get() = abstractButton
         and set value =
-            // assign up the hierarchy
-            this.Object <- value
+            // must assign to base
             this.Widget <- value
             abstractButton <- value
             

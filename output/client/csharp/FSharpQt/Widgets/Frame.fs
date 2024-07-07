@@ -109,7 +109,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.Frame
         with get() = frame
         and set value =
-            this.Object <- value
+            // assign to base
             this.Widget <- value
             frame <- value
             

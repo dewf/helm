@@ -72,9 +72,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         with get() =
             pushButton
         and set value =
-            // assign up the hierarchy
-            this.Object <- value
-            this.Widget <- value
+            // must assign to base
             this.AbstractButton <- value
             pushButton <- value
     

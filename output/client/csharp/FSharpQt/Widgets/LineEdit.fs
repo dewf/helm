@@ -201,8 +201,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.LineEdit
         with get() = lineEdit
         and set value =
-            // assign up the hierarchy
-            this.Object <- value
+            // assign to base
             this.Widget <- value
             lineEdit <- value
     
