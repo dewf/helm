@@ -2,6 +2,19 @@ module Layout;
 
 import Object;
 
+namedbits SignalMask extends Object.SignalMask {
+    // none extra
+}
+
+interface SignalHandler {
+    // Object:
+    void destroyed(Handle obj);
+    void objectNameChanged(string objectName);
+
+    // none of our own
+}
+
+
 enum SizeConstraint {
     SetDefaultConstraint,
     SetNoConstraint,
@@ -24,4 +37,8 @@ opaque Handle extends Object.Handle {
     // not really sure what these do yet ...
     void activate();
     void update();
+
+    // no setsignalmask because abstract
 }
+
+// no create because abstract

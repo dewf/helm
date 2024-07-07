@@ -8,7 +8,7 @@ open FSharpQt.Extensions
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
-// no signals
+type private Signal = unit
 
 type Direction =
     | LeftToRight
@@ -23,7 +23,7 @@ with
         | TopToBottom -> BoxLayout.Direction.TopToBottom
         | BottomToTop -> BoxLayout.Direction.BottomToTop
 
-type private Attr =
+type internal Attr =
     | Direction of dir: Direction
 with
     interface IAttr with
@@ -38,20 +38,23 @@ with
             | Direction _ -> "boxlayout:direction"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? BoxLayoutAttrTarget as boxTarget ->
-                let boxLayout =
-                    boxTarget.BoxLayout
-                match this with
-                | Direction dir ->
-                    boxLayout.SetDirection(dir.QtValue)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyBoxLayoutAttr(this)
             | _ ->
                 printfn "warning: BoxLayout.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Layout.AttrTarget
+        abstract member ApplyBoxLayoutAttr: Attr -> unit
+    end
                 
 type Props<'msg>() =
     inherit Layout.Props<'msg>()
     
+    member internal this.SignalMask = enum<BoxLayout.SignalMask> (int this._signalMask)
+    
     member internal this.SignalMapList =
-        // prepend to parent signal map funcs
         NullSignalMapFunc() :> ISignalMapFunc :: base.SignalMapList
     
     member this.Direction with set value =
@@ -154,13 +157,15 @@ let private addItem (box: BoxLayout.Handle) (item: InternalItem<'msg>) =
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
     inherit Layout.ModelCore<'msg>(dispatch: 'msg -> unit)
     let mutable boxLayout: BoxLayout.Handle = null
-    // no signalmap or mask needed
+    let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
+    let mutable currentMask = enum<BoxLayout.SignalMask> 0
+    
+    // no dispatch because no signals of our own
     
     member this.BoxLayout
         with get() =
             boxLayout
         and set value =
-            // must assign base version(s) as well!!
             this.Layout <- value
             boxLayout <- value
             
@@ -178,11 +183,26 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         | _ ->
             failwith "BoxLayout.ModelCore: signal map assignment didn't have a head element"
             
-    interface BoxLayoutAttrTarget with
-        // since these attr targets inherit, we shouldn't actually have to implement the parent getters
-        // (because one of the first things we do, is set the parent's widget value to ours)
-        override this.Layout = boxLayout
-        override this.BoxLayout = boxLayout
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
+            boxLayout.SetSignalMask(value)
+            currentMask <- value
+            
+    interface AttrTarget with
+        member this.ApplyBoxLayoutAttr attr =
+            match attr with
+            | Direction dir ->
+                boxLayout.SetDirection(dir.QtValue)
+                
+    interface BoxLayout.SignalHandler with
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // layout (none) ==================
+        // boxlayout (none) ===============
         
     interface IDisposable with
         member this.Dispose() =
@@ -190,7 +210,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
 
 type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Direction) as this =
     inherit ModelCore<'msg>(dispatch)
-    let boxLayout = BoxLayout.Create(initialDirection)
+    let boxLayout = BoxLayout.Create(initialDirection, this)
     do
         this.BoxLayout <- boxLayout
         
@@ -203,19 +223,17 @@ type private Model<'msg>(dispatch: 'msg -> unit, initialDirection: BoxLayout.Dir
         for item in items do
             addItem boxLayout item.Item
 
-let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (initialDirection: BoxLayout.Direction) (signalMask: BoxLayout.SignalMask) =
     let model = new Model<'msg>(dispatch, initialDirection)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
     model.SignalMaps <- signalMaps
-    // no signals, so no mask
-    // (unless we inherit from QObject in the future)
+    model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: BoxLayout.SignalMask) =
     model.ApplyAttrs attrs
     model.SignalMaps <- signalMaps
-    // no signals, so no mask
-    // (unless we inherit from QObject in the future)
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
@@ -254,7 +272,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
                 |> Option.map (fun node -> (IntKey i, node)))
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMapList dispatch initialDirection
+            this.model <- create this.Attrs this.SignalMapList dispatch initialDirection this.SignalMask
             
         override this.AttachDeps () =
             this.model.AttachDeps this.Items
@@ -264,7 +282,7 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMapList
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateContent(left')
                 
         override this.Dispose() =

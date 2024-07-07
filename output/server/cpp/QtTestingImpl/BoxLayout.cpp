@@ -1,13 +1,47 @@
 #include "generated/BoxLayout.h"
 
 #include <QBoxLayout>
+#include <utility>
 
+#include "util/SignalStuff.h"
 #include "util/convert.h"
 
-#define THIS ((QBoxLayout*)_this)
+#define THIS ((BoxLayoutWithHandler*)_this)
 
 namespace BoxLayout
 {
+    class BoxLayoutWithHandler : public QBoxLayout {
+        Q_OBJECT
+    private:
+        std::shared_ptr<SignalHandler> handler;
+        SignalMask lastMask = 0;
+        std::vector<SignalMapItem<SignalMaskFlags>> signalMap = {
+            // Object:
+            { SignalMaskFlags::Destroyed, SIGNAL(destroyed(QObject)), SLOT(onDestroyed(QObject)) },
+            { SignalMaskFlags::ObjectNameChanged, SIGNAL(objectNameChanged(QString)), SLOT(onObjectNameChanged(QString)) },
+            // Layout: (none)
+            // BoxLayout: (none)
+        };
+    public:
+        explicit BoxLayoutWithHandler(QBoxLayout::Direction direction, std::shared_ptr<SignalHandler> handler) : QBoxLayout(direction), handler(std::move(handler)) {}
+        void setSignalMask(SignalMask newMask) {
+            if (newMask != lastMask) {
+                processChanges(lastMask, newMask, signalMap, this);
+                lastMask = newMask;
+            }
+        }
+    public slots:
+        // Object =================
+        void onDestroyed(QObject *obj) {
+            handler->destroyed((Object::HandleRef)obj);
+        }
+        void onObjectNameChanged(const QString& name) {
+            handler->objectNameChanged(name.toStdString());
+        }
+        // Layout (none)
+        // BBoxLayout (none)
+    };
+
     void Handle_setDirection(HandleRef _this, Direction dir) {
         auto qDir = (QBoxLayout::Direction)dir;
         THIS->setDirection(qDir);
@@ -41,12 +75,18 @@ namespace BoxLayout
         THIS->addLayout((QLayout*)layout, stretch);
     }
 
+    void Handle_setSignalMask(HandleRef _this, SignalMask mask) {
+        THIS->setSignalMask(mask);
+    }
+
     void Handle_dispose(HandleRef _this) {
         delete THIS;
     }
 
-    HandleRef create(Direction dir) {
+    HandleRef create(Direction dir, std::shared_ptr<SignalHandler> handler) {
         auto qDir = (QBoxLayout::Direction)dir;
-        return (HandleRef) new QBoxLayout(qDir);
+        return (HandleRef) new BoxLayoutWithHandler(qDir, std::move(handler));
     }
 }
+
+#include "BoxLayout.moc"

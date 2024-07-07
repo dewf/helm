@@ -107,18 +107,6 @@ type ModelCoreRoot() =
 // TODO: move all these to their associated modules
 // they're really just proxies for the <thing>.ModelCore (and anything inheriting them)
 
-// type internal LayoutAttrTarget =
-//     interface
-//         inherit QObjectAttrTarget
-//         abstract member Layout: Layout.Handle
-//     end
-//     
-// type internal BoxLayoutAttrTarget =
-//     interface
-//         inherit LayoutAttrTarget
-//         abstract member BoxLayout: BoxLayout.Handle
-//     end
-
 // type internal RadioButtonAttrTarget =
 //     interface
 //         inherit AbstractButtonAttrTarget
