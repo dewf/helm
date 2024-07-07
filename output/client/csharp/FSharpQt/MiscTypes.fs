@@ -182,7 +182,7 @@ type TextFormat =
     | AutoText
     | MarkdownText
 with
-    member this.QtValue =
+    member internal this.QtValue =
         match this with
         | PlainText -> Enums.TextFormat.PlainText
         | RichText -> Enums.TextFormat.RichText
@@ -198,7 +198,7 @@ type TextInteractionFlag =
     | TextEditorInteraction
     | TextBrowserInteraction
 with
-    static member QtSetFrom (flags: TextInteractionFlag seq) =
+    static member internal QtSetFrom (flags: TextInteractionFlag seq) =
         (enum<Enums.TextInteractionFlags> 0, flags)
         ||> Seq.fold (fun acc item ->
             let flag =
@@ -211,6 +211,19 @@ with
                 | TextEditorInteraction -> Enums.TextInteractionFlags.TextSelectableByMouse
                 | TextBrowserInteraction -> Enums.TextInteractionFlags.TextSelectableByMouse
             acc ||| flag)
+        
+type TextElideMode =
+    | ElideLeft
+    | ElideRight
+    | ElideMiddle
+    | ElideNone
+with
+    member internal this.QtValue =
+        match this with
+        | ElideLeft -> Enums.TextElideMode.ElideLeft
+        | ElideRight -> Enums.TextElideMode.ElideRight
+        | ElideMiddle -> Enums.TextElideMode.ElideMiddle
+        | ElideNone -> Enums.TextElideMode.ElideNone
         
 // various enums needed before widget proxies below:
 

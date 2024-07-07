@@ -35,17 +35,20 @@
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
         
+        <Compile Include="Widgets\ComboBox.fs" />
+        <Compile Include="Widgets\Frame.fs" />
+        <Compile Include="Widgets\Label.fs" />
+        
         <Compile Include="Widgets\Layout.fs" />
         <Compile Include="Widgets\BoxLayout.fs" />
         <Compile Include="Widgets\GridLayout.fs" />
+
+        <!--        <Compile Include="Widgets\Dialog.fs" />-->
+        <!--        <Compile Include="Widgets\FileDialog.fs" />-->
         
-        <Compile Include="Widgets\ComboBox.fs" />
-<!--        <Compile Include="Widgets\Dialog.fs" />-->
-<!--        <Compile Include="Widgets\FileDialog.fs" />-->
-        <Compile Include="Widgets\Frame.fs" />
-        <Compile Include="Widgets\Label.fs" />
 <!--        <Compile Include="Widgets\GroupBox.fs" />-->
 <!--        <Compile Include="Widgets\ListView.fs" />-->
+        <Compile Include="Widgets\TabWidget.fs" />
         <Compile Include="Widgets\MainWindow.fs" />
 <!--        <Compile Include="Widgets\MessageBox.fs" />-->
 <!--        <Compile Include="Widgets\ProgressBar.fs" />-->
@@ -54,7 +57,6 @@
 <!--        <Compile Include="Widgets\ScrollArea.fs" />-->
 <!--        <Compile Include="Widgets\Slider.fs" />-->
 <!--        <Compile Include="Widgets\StatusBar.fs" />-->
-<!--        <Compile Include="Widgets\TabWidget.fs" />-->
 <!--        <Compile Include="Widgets\Timer.fs" />-->
 <!--        <Compile Include="Widgets\TreeView.fs" />-->
 <!--        <Compile Include="Widgets\ToolBar.fs" />-->

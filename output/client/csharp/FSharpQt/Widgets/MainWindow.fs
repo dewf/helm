@@ -39,7 +39,7 @@ type internal Attr =
     | DockOptions of options: DockOptions list  // can't be seq I don't think, need to compare them without consuming
     | DocumentMode of state: bool
     | IconSize of size: Size
-    // | TabShape of shape: TabShape // TODO: import TabWidget
+    | TabShape of shape: FSharpQt.Widgets.TabWidget.TabShape
     | ToolButtonStyle of style: ToolButtonStyle
     | UnifiedTitleAndToolBarOnMac of state: bool
 with
@@ -52,13 +52,14 @@ with
                 false
         override this.Key =
             match this with
-            | Animated state -> "mainwindow:animated"
-            | DockNestingEnabled state -> "mainwindow:docknestingenabled"
-            | DockOptions options -> "mainwindow:dockoptions"
-            | DocumentMode state -> "mainwindow:documentmode"
-            | IconSize size -> "mainwindow:iconsize"
-            | ToolButtonStyle style -> "mainwindow:toolbuttonstyle"
-            | UnifiedTitleAndToolBarOnMac state -> "mainwindow:unifiedtitleandtoolbaronmac"
+            | Animated _ -> "mainwindow:animated"
+            | DockNestingEnabled _ -> "mainwindow:docknestingenabled"
+            | DockOptions _ -> "mainwindow:dockoptions"
+            | DocumentMode _ -> "mainwindow:documentmode"
+            | IconSize _ -> "mainwindow:iconsize"
+            | TabShape _ -> "mainwindow:tabshape"
+            | ToolButtonStyle _ -> "mainwindow:toolbuttonstyle"
+            | UnifiedTitleAndToolBarOnMac _ -> "mainwindow:unifiedtitleandtoolbaronmac"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? AttrTarget as attrTarget ->
@@ -132,7 +133,8 @@ type Props<'msg>() =
     member this.IconSize with set value =
         this.PushAttr(IconSize value)
         
-    // // | TabShape of shape: TabShape // TODO: import TabWidget
+    member this.TabShape with set value =
+        this.PushAttr(TabShape value)
     
     member this.ToolButtonStyle with set value =
         this.PushAttr(ToolButtonStyle value)
@@ -194,6 +196,8 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
                 if size <> lastIconSize then
                     lastIconSize <- size
                     mainWindow.SetIconSize(size.QtValue)
+            | TabShape shape ->
+                mainWindow.SetTabShape(shape.QtValue)
             | ToolButtonStyle style ->
                 if style <> lastToolButtonStyle then
                     lastToolButtonStyle <- style
