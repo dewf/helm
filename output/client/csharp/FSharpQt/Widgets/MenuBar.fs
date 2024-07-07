@@ -7,11 +7,11 @@ open Org.Whatever.QtTesting
 open FSharpQt.Attrs
 open FSharpQt.MiscTypes
 
-type Signal =
+type private Signal =
     | Hovered of action: ActionProxy
     | Triggered of action: ActionProxy
 
-type Attr =
+type internal Attr =
     | DefaultUp of state: bool
     | NativeMenuBar of state: bool
 with
@@ -28,16 +28,16 @@ with
             | NativeMenuBar _ -> "menubar:nativemenubar"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? MenuBarAttrTarget as attrTarget ->
-                let menuBar =
-                    attrTarget.MenuBar
-                match this with
-                | DefaultUp state ->
-                    menuBar.SetDefaultUp(state)
-                | NativeMenuBar state ->
-                    menuBar.SetNativeMenuBar(state)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyMenuBarAttr(this)
             | _ ->
                 printfn "warning: MenuBar.Attr couldn't ApplyTo() unknown object type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyMenuBarAttr: Attr -> unit
+    end
                 
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
@@ -88,7 +88,6 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.MenuBar
         with get() = menuBar
         and set value =
-            this.Object <- value
             this.Widget <- value
             menuBar <- value
             
@@ -111,8 +110,13 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             menuBar.SetSignalMask(value)
             currentMask <- value
             
-    interface MenuBarAttrTarget with
-        member this.MenuBar = menuBar
+    interface AttrTarget with
+        member this.ApplyMenuBarAttr attr =
+            match attr with
+            | DefaultUp state ->
+                menuBar.SetDefaultUp(state)
+            | NativeMenuBar state ->
+                menuBar.SetNativeMenuBar(state)
         
     interface MenuBar.SignalHandler with
         // object =========================

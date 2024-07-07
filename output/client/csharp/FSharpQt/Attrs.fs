@@ -112,26 +112,7 @@ type ModelCoreRoot() =
 //         inherit AbstractButtonAttrTarget
 //         abstract member RadioButton: RadioButton.Handle
 //     end
-// type internal LineEditAttrTarget =
-//     interface
-//         inherit WidgetAttrTarget
-//         abstract member LineEdit: LineEdit.Handle
-//         abstract member SetText: string -> bool     // binding guards
-//         abstract member SetCursorPos: int -> bool
-//     end
-//     
-// type internal MenuAttrTarget =
-//     interface
-//         inherit WidgetAttrTarget
-//         abstract member Menu: Menu.Handle
-//     end
-//     
-// type internal MenuBarAttrTarget =
-//     interface
-//         inherit WidgetAttrTarget
-//         abstract member MenuBar: MenuBar.Handle
-//     end
-//     
+
 // type internal ActionAttrTarget =
 //     interface
 //         inherit QObjectAttrTarget

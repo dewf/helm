@@ -27,8 +27,8 @@
         <Compile Include="Widgets\Widget.fs" />
         
         <Compile Include="Widgets\MenuAction.fs" />
-<!--        <Compile Include="Widgets\Menu.fs" />-->
-<!--        <Compile Include="Widgets\MenuBar.fs" />-->
+        <Compile Include="Widgets\Menu.fs" />
+        <Compile Include="Widgets\MenuBar.fs" />
 
 <!--        <Compile Include="Widgets\CustomWidget.fs" />-->
         

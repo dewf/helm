@@ -10,13 +10,13 @@ open Extensions
 open FSharpQt.Attrs
 open FSharpQt.MiscTypes
 
-type Signal =
+type private Signal =
     | AboutToHide
     | AboutToShow
     | Hovered of action: ActionProxy
     | Triggered of action: ActionProxy
     
-type Attr =
+type internal Attr =
     | IconAttr of icon: Icon
     | SeparatorsCollapsible of state: bool
     | TearOffEnabled of state: bool
@@ -39,22 +39,16 @@ with
             | ToolTipsVisible _ -> "menu:tooltipsvisible"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? MenuAttrTarget as attrTarget ->
-                let menu =
-                    attrTarget.Menu
-                match this with
-                | IconAttr icon ->
-                    menu.SetIcon(icon.QtValue)
-                | SeparatorsCollapsible state ->
-                    menu.SetSeparatorsCollapsible(state)
-                | TearOffEnabled state ->
-                    menu.SetTearOffEnabled(state)
-                | Title title ->
-                    menu.SetTitle(title)
-                | ToolTipsVisible visible ->
-                    menu.SetToolTipsVisible(visible)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyMenuAttr(this)
             | _ ->
                 printfn "warning: Menu.Attr couldn't ApplyTo() unknown object type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyMenuAttr: Attr -> unit
+    end
                 
 type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
@@ -162,7 +156,6 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     member this.Menu
         with get() = menu
         and set value =
-            this.Object <- value
             this.Widget <- value
             menu <- value
             
@@ -185,8 +178,19 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             menu.SetSignalMask(value)
             currentMask <- value
             
-    interface MenuAttrTarget with
-        override this.Menu = menu
+    interface AttrTarget with
+        member this.ApplyMenuAttr attr =
+            match attr with
+            | IconAttr icon ->
+                menu.SetIcon(icon.QtValue)
+            | SeparatorsCollapsible state ->
+                menu.SetSeparatorsCollapsible(state)
+            | TearOffEnabled state ->
+                menu.SetTearOffEnabled(state)
+            | Title title ->
+                menu.SetTitle(title)
+            | ToolTipsVisible visible ->
+                menu.SetToolTipsVisible(visible)
         
     interface Menu.SignalHandler with
         // object =========================
@@ -285,7 +289,6 @@ type Menu<'msg>() =
             this.MigrateContent(leftNode)
             
         override this.Dispose() =
-            dispose this.model
             (this.model :> IDisposable).Dispose()
             
         override this.Menu =
