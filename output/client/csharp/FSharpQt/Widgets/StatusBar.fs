@@ -4,6 +4,7 @@ open FSharpQt.Attrs
 open FSharpQt.BuilderNode
 open System
 open FSharpQt.ModelBindings
+open FSharpQt.Reactor
 open Org.Whatever.QtTesting
 
 type private Signal =
@@ -177,16 +178,15 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
-type StatusBarProxy internal(handle: StatusBar.Handle) =
+type StatusBarBinding<'msg>() =
+    inherit ModelBindingBase<StatusBar.Handle>()
     member this.ShowMessage(message: string, ?timeout: int) =
-        handle.ShowMessage(message, timeout |> Option.defaultValue 0)
-    member this.SizeGripEnabled =
-        handle.IsSizeGripEnabled()
-
-type StatusBarBinding() =
-    inherit ModelBindingBase<StatusBar.Handle, StatusBarProxy>()
-    override this.MakeProxy (handle: StatusBar.Handle) =
-        StatusBarProxy(handle)
+        this.Handle.ShowMessage(message, timeout |> Option.defaultValue 0)
+    member this.FetchSizeGripEnabled (msgFunc: bool -> 'msg) =
+        let thunk() =
+            this.Handle.IsSizeGripEnabled()
+            |> msgFunc
+        Cmd.DelayedMsg thunk
     
 type StatusBar<'msg>() =
     inherit Props<'msg>()
@@ -194,7 +194,7 @@ type StatusBar<'msg>() =
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable maybeModelBinding: StatusBarBinding option = None
+    let mutable maybeModelBinding: StatusBarBinding<'msg> option = None
     member this.ModelBinding with set value = maybeModelBinding <- Some value
     
     interface IStatusBarNode<'msg> with

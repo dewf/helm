@@ -4,6 +4,7 @@ open System
 open FSharpQt.Attrs
 open FSharpQt.MiscTypes
 open FSharpQt.ModelBindings
+open FSharpQt.Reactor
 open Org.Whatever.QtTesting
 
 open FSharpQt
@@ -351,14 +352,18 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
-type PlainTextEditProxy internal(handle: PlainTextEdit.Handle) =
-    member this.ToPlainText() =
-        handle.ToPlainText()
-    
-type PlainTextEditBinding() =
-    inherit ModelBindingBase<PlainTextEdit.Handle, PlainTextEditProxy>()
-    override this.MakeProxy (handle: PlainTextEdit.Handle) =
-        PlainTextEditProxy(handle)
+type PlainTextEditBinding<'msg>() =
+    inherit ModelBindingBase<PlainTextEdit.Handle>()
+    member this.FetchPlainText (msgFunc: string -> 'msg) =
+        let msgThunk() =
+            this.Handle.ToPlainText()
+            |> msgFunc
+        Cmd.DelayedMsg msgThunk
+    member this.FetchBlockCount (msgFunc: int -> 'msg) =
+        let msgThunk() =
+            this.Handle.BlockCount()
+            |> msgFunc
+        Cmd.DelayedMsg msgThunk
 
 type PlainTextEdit<'msg>() =
     inherit Props<'msg>()
@@ -366,7 +371,7 @@ type PlainTextEdit<'msg>() =
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable maybeModelBinding: PlainTextEditBinding option = None
+    let mutable maybeModelBinding: PlainTextEditBinding<'msg> option = None
     member this.ModelBinding with set value = maybeModelBinding <- Some value
     
     interface IWidgetNode<'msg> with
