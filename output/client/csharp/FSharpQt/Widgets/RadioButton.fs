@@ -29,7 +29,6 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         with get() =
             radioButton
         and set value =
-            this.Widget <- value
             this.AbstractButton <- value
             radioButton <- value
             
@@ -53,21 +52,20 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             radioButton.SetSignalMask(value)
             currentMask <- value
             
-    interface RadioButtonAttrTarget with
-        member this.Widget = radioButton
-        member this.AbstractButton = radioButton
-        member this.RadioButton = radioButton
-        // no guards
-        
     interface RadioButton.SignalHandler with
-        // Widget: (remove once we have interface inheritance)
+        // object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // widget =========================
         member this.CustomContextMenuRequested pos =
             (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =
             (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
             (this :> Widget.SignalHandler).WindowTitleChanged title
-        // AbstractButton:
+        // abstractbutton =================
         member this.Clicked checkState =
             (this :> AbstractButton.SignalHandler).Clicked checkState
         member this.Pressed() =
@@ -86,10 +84,6 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     inherit ModelCore<'msg>(dispatch)
     do
         this.RadioButton <- RadioButton.Create(this)
-    
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
 
 let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (initialMask: RadioButton.SignalMask) =
     let model = new Model<'msg>(dispatch)

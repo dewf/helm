@@ -34,13 +34,13 @@
         
         <Compile Include="Widgets\AbstractButton.fs" />
         <Compile Include="Widgets\PushButton.fs" />
+        <Compile Include="Widgets\RadioButton.fs" />
         <Compile Include="Widgets\LineEdit.fs" />
         <Compile Include="Widgets\Frame.fs" />
         <Compile Include="Widgets\AbstractScrollArea.fs" />
-        
         <Compile Include="Widgets\PlainTextEdit.fs" />
-<!--        <Compile Include="Widgets\RadioButton.fs" />-->
-<!--        <Compile Include="Widgets\Slider.fs" />-->
+        <Compile Include="Widgets\AbstractSlider.fs" />
+        <Compile Include="Widgets\Slider.fs" />
 <!--        <Compile Include="Widgets\ProgressBar.fs" />-->
         
         <Compile Include="Widgets\ComboBox.fs" />
