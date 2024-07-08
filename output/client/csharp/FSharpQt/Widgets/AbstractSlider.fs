@@ -254,7 +254,6 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
                     lastValue <- value
                     abstractSlider.SetValue(value)
             | Range (min, max) ->
-                printfn "AbstractSlider setting Range attr"
                 if min <> lastMinimum || max <> lastMaximum then
                     lastMinimum <- min
                     lastMaximum <- max

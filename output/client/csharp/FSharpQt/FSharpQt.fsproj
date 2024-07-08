@@ -18,6 +18,14 @@
         <Compile Include="EventDelegate.fs" />
 
         <Compile Include="Widgets\QObject.fs" />
+
+        <!-- inherit from QObject -->
+        <Compile Include="Widgets\MenuAction.fs" />
+        <Compile Include="Widgets\Layout.fs" />
+        
+        <!-- inherit from Layout -->
+        <Compile Include="Widgets\BoxLayout.fs" />
+        <Compile Include="Widgets\GridLayout.fs" />
         
 <!--        <Compile Include="Models\SimpleListModel.fs" />-->
 <!--        <Compile Include="Models\TrackedRows.fs" />-->
@@ -26,12 +34,10 @@
 
         <Compile Include="Widgets\Widget.fs" />
         
-        <Compile Include="Widgets\MenuAction.fs" />
+        <!-- inherit from Widget -->
+        <!--        <Compile Include="Widgets\CustomWidget.fs" />-->
         <Compile Include="Widgets\Menu.fs" />
         <Compile Include="Widgets\MenuBar.fs" />
-
-<!--        <Compile Include="Widgets\CustomWidget.fs" />-->
-        
         <Compile Include="Widgets\AbstractButton.fs" />
         <Compile Include="Widgets\PushButton.fs" />
         <Compile Include="Widgets\RadioButton.fs" />
@@ -41,14 +47,9 @@
         <Compile Include="Widgets\PlainTextEdit.fs" />
         <Compile Include="Widgets\AbstractSlider.fs" />
         <Compile Include="Widgets\Slider.fs" />
-<!--        <Compile Include="Widgets\ProgressBar.fs" />-->
-        
+        <Compile Include="Widgets\ProgressBar.fs" />
         <Compile Include="Widgets\ComboBox.fs" />
         <Compile Include="Widgets\Label.fs" />
-        
-        <Compile Include="Widgets\Layout.fs" />
-        <Compile Include="Widgets\BoxLayout.fs" />
-        <Compile Include="Widgets\GridLayout.fs" />
 
         <!--        <Compile Include="Widgets\Dialog.fs" />-->
         <!--        <Compile Include="Widgets\FileDialog.fs" />-->
