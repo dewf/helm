@@ -183,10 +183,11 @@ type StatusBarBinding<'msg>() =
     member this.ShowMessage(message: string, ?timeout: int) =
         this.Handle.ShowMessage(message, timeout |> Option.defaultValue 0)
     member this.FetchSizeGripEnabled (msgFunc: bool -> 'msg) =
-        let thunk() =
+        let msgThunk() =
             this.Handle.IsSizeGripEnabled()
             |> msgFunc
-        Cmd.DelayedMsg thunk
+            |> Some
+        Cmd.Deferred msgThunk
     
 type StatusBar<'msg>() =
     inherit Props<'msg>()

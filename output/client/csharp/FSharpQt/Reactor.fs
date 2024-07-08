@@ -27,7 +27,7 @@ type Cmd<'msg,'signal> =
     | ShowMenu of name: string * loc: Point
     | Async of block: Async<'msg>
     | Sub of subFunc: (('msg -> unit) -> unit)
-    | DelayedMsg of msgThunk: (unit -> 'msg)       // when we want to execute something only after the view() func has executed (currently used for 'model bindings' aka method proxies)
+    | Deferred of thunk: (unit -> 'msg option)      // when we want to execute something only after the view() func has executed (currently used for 'model bindings' aka method proxies)
     
 let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
     async {
@@ -160,8 +160,9 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                             printfn "Cmd.Sub - attempted to dispatch [%A] on a disposed reactor" msg
                     Application.ExecuteOnMainThread(inner)
                 subFunc safeDispatch
-            | Cmd.DelayedMsg msgThunk ->
-                dispatch (msgThunk())
+            | Cmd.Deferred thunk ->
+                thunk()
+                |> Option.iter dispatch
     do
         build dispatch root buildContext
         updateAttachments()

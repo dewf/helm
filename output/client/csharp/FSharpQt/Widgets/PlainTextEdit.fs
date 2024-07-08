@@ -358,12 +358,14 @@ type PlainTextEditBinding<'msg>() =
         let msgThunk() =
             this.Handle.ToPlainText()
             |> msgFunc
-        Cmd.DelayedMsg msgThunk
+            |> Some
+        Cmd.Deferred msgThunk
     member this.FetchBlockCount (msgFunc: int -> 'msg) =
         let msgThunk() =
             this.Handle.BlockCount()
             |> msgFunc
-        Cmd.DelayedMsg msgThunk
+            |> Some
+        Cmd.Deferred msgThunk
 
 type PlainTextEdit<'msg>() =
     inherit Props<'msg>()
