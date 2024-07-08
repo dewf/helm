@@ -24,6 +24,7 @@ interface SignalHandler {
 }
 
 opaque Handle extends Widget.Handle {
+    bool isSizeGripEnabled();               // just testing something ...
     void setSizeGripEnabled(bool enabled);
     
     void clearMessage();

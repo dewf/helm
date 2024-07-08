@@ -177,14 +177,17 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
-type StatusBarBinding() =
-    inherit ModelBindingBase<StatusBar.Handle>()
-    internal new(handle: StatusBar.Handle) =
-        base.Handle <- handle
-        StatusBarBinding()
+type StatusBarProxy internal(handle: StatusBar.Handle) =
     member this.ShowMessage(message: string, ?timeout: int) =
-        this.Handle.ShowMessage(message, timeout |> Option.defaultValue 0)
+        handle.ShowMessage(message, timeout |> Option.defaultValue 0)
+    member this.SizeGripEnabled =
+        handle.IsSizeGripEnabled()
 
+type StatusBarBinding() =
+    inherit ModelBindingBase<StatusBar.Handle, StatusBarProxy>()
+    override this.MakeProxy (handle: StatusBar.Handle) =
+        StatusBarProxy(handle)
+    
 type StatusBar<'msg>() =
     inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>

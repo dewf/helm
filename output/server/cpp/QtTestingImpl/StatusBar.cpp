@@ -58,6 +58,10 @@ namespace StatusBar
         };
     };
 
+    bool Handle_isSizeGripEnabled(HandleRef _this) {
+        return THIS->isSizeGripEnabled();
+    }
+
     void Handle_setSizeGripEnabled(HandleRef _this, bool enabled) {
         THIS->setSizeGripEnabled(enabled);
     }

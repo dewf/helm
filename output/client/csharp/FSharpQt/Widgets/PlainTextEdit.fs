@@ -351,13 +351,14 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
+type PlainTextEditProxy internal(handle: PlainTextEdit.Handle) =
+    member this.ToPlainText() =
+        handle.ToPlainText()
+    
 type PlainTextEditBinding() =
-    inherit ModelBindingBase<PlainTextEdit.Handle>()
-    internal new(handle: PlainTextEdit.Handle) =
-        base.Handle <- handle
-        PlainTextEditBinding()
-    member this.ToPlainText () =
-        this.Handle.ToPlainText()
+    inherit ModelBindingBase<PlainTextEdit.Handle, PlainTextEditProxy>()
+    override this.MakeProxy (handle: PlainTextEdit.Handle) =
+        PlainTextEditProxy(handle)
 
 type PlainTextEdit<'msg>() =
     inherit Props<'msg>()
