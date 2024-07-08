@@ -8,14 +8,6 @@ type ModelBindingBase<'handle> internal() =
     
 // should these be declared in the modules, as <module>.ModelBinding ?
 
-type PlainTextEditBinding() =
-    inherit ModelBindingBase<PlainTextEdit.Handle>()
-    internal new(handle: PlainTextEdit.Handle) =
-        base.Handle <- handle
-        PlainTextEditBinding()
-    member this.ToPlainText () =
-        this.Handle.ToPlainText()
-        
 type AbstractProxyModelBinding() =
     inherit ModelBindingBase<AbstractProxyModel.Handle>()
     internal new(handle: AbstractProxyModel.Handle) =

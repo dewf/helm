@@ -350,6 +350,14 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
+    
+type PlainTextEditBinding() =
+    inherit ModelBindingBase<PlainTextEdit.Handle>()
+    internal new(handle: PlainTextEdit.Handle) =
+        base.Handle <- handle
+        PlainTextEditBinding()
+    member this.ToPlainText () =
+        this.Handle.ToPlainText()
 
 type PlainTextEdit<'msg>() =
     inherit Props<'msg>()
