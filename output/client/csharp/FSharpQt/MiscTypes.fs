@@ -255,7 +255,18 @@ module TextOption =
             | ManualWrap -> TextOption.WrapMode.ManualWrap
             | WrapAnywhere -> TextOption.WrapMode.WrapAnywhere
             | WrapAtWordBoundaryOrAnywhere -> TextOption.WrapMode.WrapAtWordBoundaryOrAnywhere
-        
+            
+type TimerType =
+    | PreciseTimer
+    | CoarseTimer
+    | VeryCoarseTimer
+with
+    member internal this.QtValue =
+        match this with
+        | PreciseTimer -> Enums.TimerType.PreciseTimer
+        | CoarseTimer -> Enums.TimerType.CoarseTimer
+        | VeryCoarseTimer -> Enums.TimerType.VeryCoarseTimer
+
 // various enums needed before widget proxies below:
 
 type ToolButtonStyle =
