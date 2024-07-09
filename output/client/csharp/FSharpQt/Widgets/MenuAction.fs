@@ -195,7 +195,7 @@ type Props<'msg>() =
     // member this.Font with set value =
     //     this.PushAttr(Font value)
 
-    member this.IconAttr with set value =
+    member this.Icon with set value =
         this.PushAttr(IconAttr value)
 
     member this.IconText with set value =

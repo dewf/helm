@@ -266,30 +266,64 @@ with
         | PreciseTimer -> Enums.TimerType.PreciseTimer
         | CoarseTimer -> Enums.TimerType.CoarseTimer
         | VeryCoarseTimer -> Enums.TimerType.VeryCoarseTimer
-
-// various enums needed before widget proxies below:
+        
+type ToolBarArea =
+    | LeftToolBarArea
+    | RightToolBarArea
+    | TopToolBarArea
+    | BottomToolBarArea
+with
+    static member internal NoToolBarAreas = Set.empty<ToolBarArea>
+    static member internal AllToolBarAreas =
+        [ LeftToolBarArea; RightToolBarArea; TopToolBarArea; BottomToolBarArea ]
+        |> Set.ofList
+    member internal this.QtValue =
+        match this with
+        | LeftToolBarArea -> Enums.ToolBarAreas.LeftToolBarArea
+        | RightToolBarArea -> Enums.ToolBarAreas.RightToolBarArea
+        | TopToolBarArea -> Enums.ToolBarAreas.TopToolBarArea
+        | BottomToolBarArea -> Enums.ToolBarAreas.BottomToolBarArea
+        // | AllToolBarAreas -> Enums.ToolBarAreas.AllToolBarAreas
+        // | NoToolBarArea -> Enums.ToolBarAreas.NoToolBarArea
+    static member internal QtSetFrom (values: ToolBarArea seq) =
+        (enum<Enums.ToolBarAreas> 0, values)
+        ||> Seq.fold (fun acc item ->
+            acc ||| item.QtValue)
+    static member internal SetFrom (qtValues: Enums.ToolBarAreas) =
+        let pairs = [
+            Enums.ToolBarAreas.LeftToolBarArea, LeftToolBarArea
+            Enums.ToolBarAreas.RightToolBarArea, RightToolBarArea
+            Enums.ToolBarAreas.TopToolBarArea, TopToolBarArea
+            Enums.ToolBarAreas.BottomToolBarArea, BottomToolBarArea
+        ]
+        (Set.empty<ToolBarArea>, pairs)
+        ||> List.fold (fun acc (flag, value) ->
+            if qtValues.HasFlag(flag) then
+                acc.Add(value)
+            else
+                acc)
 
 type ToolButtonStyle =
-    | IconOnly
-    | TextOnly
-    | TextBesideIcon
-    | TextUnderIcon
-    | FollowStyle
+    | ToolButtonIconOnly
+    | ToolButtonTextOnly
+    | ToolButtonTextBesideIcon
+    | ToolButtonTextUnderIcon
+    | ToolButtonFollowStyle
 with
     member internal this.QtValue =
         match this with
-        | IconOnly -> Enums.ToolButtonStyle.ToolButtonIconOnly
-        | TextOnly -> Enums.ToolButtonStyle.ToolButtonTextOnly
-        | TextBesideIcon -> Enums.ToolButtonStyle.ToolButtonTextBesideIcon
-        | TextUnderIcon -> Enums.ToolButtonStyle.ToolButtonTextUnderIcon
-        | FollowStyle -> Enums.ToolButtonStyle.ToolButtonFollowStyle
+        | ToolButtonIconOnly -> Enums.ToolButtonStyle.ToolButtonIconOnly
+        | ToolButtonTextOnly -> Enums.ToolButtonStyle.ToolButtonTextOnly
+        | ToolButtonTextBesideIcon -> Enums.ToolButtonStyle.ToolButtonTextBesideIcon
+        | ToolButtonTextUnderIcon -> Enums.ToolButtonStyle.ToolButtonTextUnderIcon
+        | ToolButtonFollowStyle -> Enums.ToolButtonStyle.ToolButtonFollowStyle
     static member internal From (style: Enums.ToolButtonStyle) =
         match style with
-        | Enums.ToolButtonStyle.ToolButtonIconOnly -> IconOnly
-        | Enums.ToolButtonStyle.ToolButtonTextOnly -> TextOnly
-        | Enums.ToolButtonStyle.ToolButtonTextBesideIcon -> TextBesideIcon
-        | Enums.ToolButtonStyle.ToolButtonTextUnderIcon -> TextUnderIcon
-        | Enums.ToolButtonStyle.ToolButtonFollowStyle -> FollowStyle
+        | Enums.ToolButtonStyle.ToolButtonIconOnly -> ToolButtonIconOnly
+        | Enums.ToolButtonStyle.ToolButtonTextOnly -> ToolButtonTextOnly
+        | Enums.ToolButtonStyle.ToolButtonTextBesideIcon -> ToolButtonTextBesideIcon
+        | Enums.ToolButtonStyle.ToolButtonTextUnderIcon -> ToolButtonTextUnderIcon
+        | Enums.ToolButtonStyle.ToolButtonFollowStyle -> ToolButtonFollowStyle
         | _ -> failwith "ToolButtonStyle.From - unknown input value"
     
 type ThemeIcon =

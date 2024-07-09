@@ -149,7 +149,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     let mutable currentMask = enum<MainWindow.SignalMask> 0
     // binding guards:
     let mutable lastIconSize = Size.Invalid
-    let mutable lastToolButtonStyle = ToolButtonStyle.FollowStyle
+    let mutable lastToolButtonStyle = ToolButtonStyle.ToolButtonIconOnly
     
     let signalDispatch (s: Signal) =
         signalMap s

@@ -23,17 +23,11 @@
         <Compile Include="Widgets\MenuAction.fs" />
         <Compile Include="Widgets\Layout.fs" />
         <Compile Include="Widgets\Timer.fs" />
+        <Compile Include="Widgets\Widget.fs" />
         
         <!-- inherit from Layout -->
         <Compile Include="Widgets\BoxLayout.fs" />
         <Compile Include="Widgets\GridLayout.fs" />
-        
-<!--        <Compile Include="Models\SimpleListModel.fs" />-->
-<!--        <Compile Include="Models\TrackedRows.fs" />-->
-<!--        <Compile Include="Models\ListModelNode.fs" />-->
-<!--        <Compile Include="Models\SortFilterProxyModel.fs" />-->
-
-        <Compile Include="Widgets\Widget.fs" />
         
         <!-- inherit from Widget -->
         <!--        <Compile Include="Widgets\CustomWidget.fs" />-->
@@ -52,22 +46,29 @@
         <Compile Include="Widgets\ComboBox.fs" />
         <Compile Include="Widgets\Label.fs" />
         <Compile Include="Widgets\StatusBar.fs" />
-        <!--        <Compile Include="Widgets\ToolBar.fs" />-->
+        <Compile Include="Widgets\GroupBox.fs" />
+        <Compile Include="Widgets\TabWidget.fs" />
+        <Compile Include="Widgets\ToolBar.fs" />
+        <!--        <Compile Include="Widgets\ScrollArea.fs" />-->
 
         <!--        <Compile Include="Widgets\Dialog.fs" />-->
+        
+        <!-- inherit from Dialog -->
         <!--        <Compile Include="Widgets\FileDialog.fs" />-->
         <!--        <Compile Include="Widgets\MessageBox.fs" />-->
         
-        <Compile Include="Widgets\GroupBox.fs" />
-        <Compile Include="Widgets\TabWidget.fs" />
         
         <!-- must be after tabwidget -->
         <Compile Include="Widgets\MainWindow.fs" />
 
+        <!--        <Compile Include="Models\SimpleListModel.fs" />-->
+        <!--        <Compile Include="Models\TrackedRows.fs" />-->
+        <!--        <Compile Include="Models\ListModelNode.fs" />-->
+        <!--        <Compile Include="Models\SortFilterProxyModel.fs" />-->
+
         <!--        <Compile Include="Widgets\ListView.fs" />-->
         <!--        <Compile Include="Widgets\TreeView.fs" />-->
         
-<!--        <Compile Include="Widgets\ScrollArea.fs" />-->
 <!--        <Compile Include="Widgets\WindowSet.fs" />-->
     </ItemGroup>
 
