@@ -1,38 +1,128 @@
 ﻿module FSharpQt.Widgets.ScrollArea
 
 open System
+open FSharpQt.Attrs
 open FSharpQt.BuilderNode
 open FSharpQt.MiscTypes
 open Org.Whatever.QtTesting
 
-type Signal = unit
+type private Signal = unit
 
-type Policy =
-    | AsNeeded
-    | AlwaysOff
-    | AlwaysOn
+type internal Attr =
+    | Alignment of align: Alignment
+    | WidgetResizable of resizable: bool
 with
-    member this.QtValue =
-        match this with
-        | AsNeeded -> AbstractScrollArea.ScrollBarPolicy.AsNeeded
-        | AlwaysOff -> AbstractScrollArea.ScrollBarPolicy.AlwaysOff
-        | AlwaysOn -> AbstractScrollArea.ScrollBarPolicy.AlwaysOn
-    
-type Attr =
-    | HPolicy of policy: Policy
-    | VPolicy of policy: Policy
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Alignment _ -> "scrollarea:alignment"
+            | WidgetResizable _ -> "scrollarea:widgetresizable"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyScrollAreaAttr(this)
+            | _ ->
+                printfn "warning: ScrollArea.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit AbstractScrollArea.AttrTarget
+        abstract member ApplyScrollAreaAttr: Attr -> unit
+    end
 
-let private keyFunc = function
-    | HPolicy _ -> 0
-    | VPolicy _ -> 1
+type Props<'msg>() =
+    inherit AbstractScrollArea.Props<'msg>()
     
-let private diffAttrs =
-    genericDiffAttrs keyFunc
-
-type private Model<'msg>(dispatch: 'msg -> unit) = 
+    member internal this.SignalMask = enum<ScrollArea.SignalMask> (int this._signalMask)
+    
+    member internal this.SignalMapList =
+        NullSignalMapFunc() :> ISignalMapFunc :: base.SignalMapList
+        
+    member this.Alignment with set value =
+        this.PushAttr(Alignment value)
+        
+    member this.WidgetResizable with set value =
+        this.PushAttr(WidgetResizable value)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit AbstractScrollArea.ModelCore<'msg>(dispatch)
+    let mutable scrollArea: ScrollArea.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    let mutable scrollArea = ScrollArea.Create()
+    let mutable currentMask = enum<ScrollArea.SignalMask> 0
+    
+    let signalDispatch (s: Signal) =
+        signalMap s
+        |> Option.iter dispatch
+        
+    member this.ScrollArea
+        with get() = scrollArea
+        and set value =
+            this.AbstractScrollArea <- value
+            scrollArea <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? NullSignalMapFunc ->
+                ()
+            | _ ->
+                failwith "ScrollArea.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "ScrollArea.ModelCore: signal map assignment didn't have a head element"
+            
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
+            scrollArea.SetSignalMask(value)
+            currentMask <- value
+            
+    interface AttrTarget with
+        member this.ApplyScrollAreaAttr attr =
+            match attr with
+            | Alignment align ->
+                scrollArea.SetAlignment(align.QtValue)
+            | WidgetResizable resizable ->
+                scrollArea.SetWidgetResizable(resizable)
+                
+    interface ScrollArea.SignalHandler with
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
+        member this.CustomContextMenuRequested pos =
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // Frame ==========================
+        // (none)
+        // AbstractScrollArea =============
+        // (none)
+        // ScrollArea =====================
+        // (none)
+        
+    interface IDisposable with
+        member this.Dispose() =
+            scrollArea.Dispose()
+    
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let scrollArea = ScrollArea.Create(this)
     let mutable syntheticLayoutWidget: Widget.Handle option = None
+    do
+        this.ScrollArea <- scrollArea
         
     member this.RemoveContent() =
         // TODO: need to do some serious testing with all this
@@ -52,53 +142,36 @@ type private Model<'msg>(dispatch: 'msg -> unit) =
         | :? IWidgetNode<'msg> as widgetNode ->
             scrollArea.SetWidget(widgetNode.Widget)
         | :? ILayoutNode<'msg> as layout ->
-            let widget = Widget.Create(new NullWidgetHandler())
+            let widget = Widget.CreateNoHandler()
             widget.SetLayout(layout.Layout)
             scrollArea.SetWidget(widget)
             syntheticLayoutWidget <- Some widget
         | _ ->
             failwith "ScrollArea.Model.AddContent - unknown node type"
-        
-    member this.Widget with get() = scrollArea
-    member this.SignalMap with set(value) = signalMap <- value
-    
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
-            match attr with
-            | HPolicy policy ->
-                scrollArea.SetHorizontalScrollBarPolicy(policy.QtValue)
-            | VPolicy policy ->
-                scrollArea.SetVerticalScrollBarPolicy(policy.QtValue)
-    
-    interface IDisposable with
-        member this.Dispose() =
-            scrollArea.Dispose()
 
-
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: ScrollArea.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    model.SignalMaps <- signalMaps
+    model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: ScrollArea.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-
 type ScrollArea<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     member this.Content with set value = maybeContent <- Some value
-    
-    let signalMap = (fun _ -> None)
-    
-    member val Attrs: Attr list = [] with get, set
+
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
@@ -127,7 +200,7 @@ type ScrollArea<'msg>() =
             contentList
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             maybeContent
@@ -137,18 +210,18 @@ type ScrollArea<'msg>() =
             let left' = (left :?> ScrollArea<'msg>)
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
-                |> createdOrChanged__old
-            this.model <- migrate left'.model nextAttrs signalMap
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateContent (depsChanges |> Map.ofList)
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
             
         override this.Widget =
-            this.model.Widget
+            this.model.ScrollArea
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.ScrollArea
             
         override this.Attachments =
             this.Attachments

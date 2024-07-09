@@ -49,18 +49,15 @@
         <Compile Include="Widgets\GroupBox.fs" />
         <Compile Include="Widgets\TabWidget.fs" />
         <Compile Include="Widgets\ToolBar.fs" />
-        <!--        <Compile Include="Widgets\ScrollArea.fs" />-->
-
+        <Compile Include="Widgets\MainWindow.fs" />
+        <Compile Include="Widgets\ScrollArea.fs" />
+        
         <!--        <Compile Include="Widgets\Dialog.fs" />-->
         
         <!-- inherit from Dialog -->
         <!--        <Compile Include="Widgets\FileDialog.fs" />-->
         <!--        <Compile Include="Widgets\MessageBox.fs" />-->
         
-        
-        <!-- must be after tabwidget -->
-        <Compile Include="Widgets\MainWindow.fs" />
-
         <!--        <Compile Include="Models\SimpleListModel.fs" />-->
         <!--        <Compile Include="Models\TrackedRows.fs" />-->
         <!--        <Compile Include="Models\ListModelNode.fs" />-->

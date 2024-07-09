@@ -556,22 +556,22 @@ with
             else
                 failwithf "DataRole.From: unknown input value [%d]" value
                 
-// for utility widgets (synthetic layout widgets etc)
-
-type internal NullWidgetHandler() =
-    interface Widget.SignalHandler with
-        member this.Destroyed obj =
-            ()
-        member this.ObjectNameChanged name =
-            ()
-        member this.CustomContextMenuRequested pos =
-            ()
-        member this.WindowIconChanged icon =
-            ()
-        member this.WindowTitleChanged title =
-            ()
-        member this.Dispose() =
-            ()
+// // for utility widgets (synthetic layout widgets etc)
+// NEW: just use Widget.CreateNoHandler()
+// type internal NullWidgetHandler() =
+//     interface Widget.SignalHandler with
+//         member this.Destroyed obj =
+//             ()
+//         member this.ObjectNameChanged name =
+//             ()
+//         member this.CustomContextMenuRequested pos =
+//             ()
+//         member this.WindowIconChanged icon =
+//             ()
+//         member this.WindowTitleChanged title =
+//             ()
+//         member this.Dispose() =
+//             ()
     
 // for anything where we don't want users to be dealing with Org.Whatever.QtTesting namespace (generated C# code)
 // generally these are for signals and callbacks of various kinds where the user might need to query some values

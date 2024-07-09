@@ -135,6 +135,7 @@ opaque Handle extends Object.Handle {
 }
 
 Handle create(SignalHandler handler);
+Handle createNoHandler();
 
 // SUBCLASSING ===========================================================
 

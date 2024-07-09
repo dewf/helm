@@ -279,7 +279,7 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         | :? IWidgetNode<'msg> as widgetNode ->
             mainWindow.SetCentralWidget(widgetNode.Widget)
         | :? ILayoutNode<'msg> as layout ->
-            let widget = Widget.Create(new NullWidgetHandler())
+            let widget = Widget.CreateNoHandler()
             widget.SetLayout(layout.Layout)
             mainWindow.SetCentralWidget(widget)
             syntheticLayoutWidget <- Some widget

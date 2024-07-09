@@ -387,6 +387,10 @@ namespace Widget
         return (HandleRef) new WidgetWithHandler(std::move(handler));
     }
 
+    HandleRef createNoHandler() {
+        return (HandleRef) new QWidget();
+    }
+
     // =========================================================================
 
 #define EVENTTHIS ((QEvent*)_this)

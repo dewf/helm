@@ -204,7 +204,7 @@ type ToolBarItem<'msg> internal(item: InternalItem<'msg>) =
             toolBar.AddSeparator()
             |> ignore // we don't do anything with the returned action - hopefully Qt owns it and we're not leaking?
         | ExpandingSpace ->
-            let w = Widget.Create(new NullWidgetHandler())
+            let w = Widget.CreateNoHandler()
             w.SetSizePolicy(Expanding.QtValue, Expanding.QtValue)
             toolBar.AddWidget(w)
         | Nothing ->
