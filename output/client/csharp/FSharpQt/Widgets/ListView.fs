@@ -1,21 +1,14 @@
 ﻿module FSharpQt.Widgets.ListView
 
+open FSharpQt.Attrs
 open FSharpQt.BuilderNode
 open System
 open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 
-type Signal =
-    | CustomContextMenuRequested of pos: Point
-    | Activated of index: ModelIndexProxy
-    | Clicked of index: ModelIndexProxy
-    | DoubleClicked of index: ModelIndexProxy
-    | Entered of index: ModelIndexProxy
-    | IconSizeChanged of size: Size
-    | Pressed of index: ModelIndexProxy
-    | ViewportEntered
-    | IndexesMoved of indexes: ModelIndexProxy array
-    
+type private Signal =
+    | IndexesMoved of indexes: ModelIndexProxy list
+
 type Movement =
     | Static
     | Free
@@ -62,41 +55,241 @@ with
         match this with
         | ListMode -> ListView.ViewMode.ListMode
         | IconMode -> ListView.ViewMode.IconMode
-
-type Attr =
-    | Movement of movement: Movement
+        
+type internal Attr =
+    | BatchSize of size: int
     | Flow of flow: Flow
-    | ResizeMode of mode: ResizeMode
+    | GridSize of size: Size
+    | Wrapping of state: bool
+    | ItemAlignment of align: Alignment
     | LayoutMode of mode: LayoutMode
+    | ModelColumn of column: int
+    | Movement of value: Movement
+    | ResizeMode of mode: ResizeMode
+    | SelectionRectVisible of visible: bool
+    | Spacing of spacing: int
+    | UniformItemSizes of state: bool
     | ViewMode of mode: ViewMode
+    | WordWrap of state: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | BatchSize _ -> "listview:batchsize"
+            | Flow _ -> "listview:flow"
+            | GridSize _ -> "listview:gridsize"
+            | Wrapping _ -> "listview:wrapping"
+            | ItemAlignment _ -> "listview:itemalignment"
+            | LayoutMode _ -> "listview:layoutmode"
+            | ModelColumn _ -> "listview:modelcolumn"
+            | Movement _ -> "listview:movement"
+            | ResizeMode _ -> "listview:resizemode"
+            | SelectionRectVisible _ -> "listview:selectionrectvisible"
+            | Spacing _ -> "listview:spacing"
+            | UniformItemSizes _ -> "listview:uniformitemsizes"
+            | ViewMode _ -> "listview:viewmode"
+            | WordWrap _ -> "listview:wordwrap"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyListViewAttr(this)
+            | _ ->
+                printfn "warning: ListView.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit AbstractItemView.AttrTarget
+        abstract member ApplyListViewAttr: Attr -> unit
+    end
     
-let private keyFunc = function
-    | Movement _ -> 0
-    | Flow _ -> 1
-    | ResizeMode _ -> 2
-    | LayoutMode _ -> 3
-    | ViewMode _ -> 4
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
+    
+type Props<'msg>() =
+    inherit AbstractItemView.Props<'msg>()
+    
+    let mutable onIndexesMoved: (ModelIndexProxy list -> 'msg) option = None
+    
+    member internal this.SignalMask = enum<ListView.SignalMask> (int this._signalMask)
+    
+    member this.OnIndexesMoved with set value =
+        onIndexesMoved <- Some value
+        this.AddSignal(int ListView.SignalMask.IndexesMoved)
+        
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | IndexesMoved indexes ->
+                onIndexesMoved
+                |> Option.map (fun f -> f indexes)
+        // prepend to parent list
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
+        
+    member this.BatchSize with set value =
+        this.PushAttr(BatchSize value)
 
-let private diffAttrs =
-    genericDiffAttrs keyFunc
+    member this.Flow with set value =
+        this.PushAttr(Flow value)
 
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable listView = ListView.Create(this)
+    member this.GridSize with set value =
+        this.PushAttr(GridSize value)
+
+    member this.Wrapping with set value =
+        this.PushAttr(Wrapping value)
+
+    member this.ItemAlignment with set value =
+        this.PushAttr(ItemAlignment value)
+
+    member this.LayoutMode with set value =
+        this.PushAttr(LayoutMode value)
+
+    member this.ModelColumn with set value =
+        this.PushAttr(ModelColumn value)
+
+    member this.Movement with set value =
+        this.PushAttr(Movement value)
+
+    member this.ResizeMode with set value =
+        this.PushAttr(ResizeMode value)
+
+    member this.SelectionRectVisible with set value =
+        this.PushAttr(SelectionRectVisible value)
+
+    member this.Spacing with set value =
+        this.PushAttr(Spacing value)
+
+    member this.UniformItemSizes with set value =
+        this.PushAttr(UniformItemSizes value)
+
+    member this.ViewMode with set value =
+        this.PushAttr(ViewMode value)
+
+    member this.WordWrap with set value =
+        this.PushAttr(WordWrap value)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit AbstractItemView.ModelCore<'msg>(dispatch)
+    let mutable listView: ListView.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<ListView.SignalMask> 0
+    // no binding guards
     
     let signalDispatch (s: Signal) =
         signalMap s
         |> Option.iter dispatch
         
-    member this.ListView = listView
-    member this.SignalMap with set value = signalMap <- value
-    
+    member this.ListView
+        with get() = listView
+        and set value =
+            this.AbstractItemView <- value
+            listView <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "ListView.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "ListView.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             listView.SetSignalMask(value)
             currentMask <- value
             
+    interface AttrTarget with
+        member this.ApplyListViewAttr attr =
+            match attr with
+            | BatchSize size ->
+                listView.SetBatchSize(size)
+            | Flow flow ->
+                listView.SetFlow(flow.QtValue)
+            | GridSize size ->
+                listView.SetGridSize(size.QtValue)
+            | Wrapping state ->
+                listView.SetWrapping(state)
+            | ItemAlignment align ->
+                listView.SetItemAlignment(align.QtValue)
+            | LayoutMode mode ->
+                listView.SetLayoutMode(mode.QtValue)
+            | ModelColumn column ->
+                listView.SetModelColumn(column)
+            | Movement value ->
+                listView.SetMovement(value.QtValue)
+            | ResizeMode mode ->
+                listView.SetResizeMode(mode.QtValue)
+            | SelectionRectVisible visible ->
+                listView.SetSelectionRectVisible(visible)
+            | Spacing spacing ->
+                listView.SetSpacing(spacing)
+            | UniformItemSizes state ->
+                listView.SetUniformItemSizes(state)
+            | ViewMode mode ->
+                listView.SetViewMode(mode.QtValue)
+            | WordWrap state ->
+                listView.SetWordWrap(state)
+                
+    interface ListView.SignalHandler with
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
+        member this.CustomContextMenuRequested pos =
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // Frame ==========================
+        // (none)
+        // AbstractScrollArea =============
+        // (none)
+        // AbstractItemView ===============
+        member this.Activated index =
+            (this :> AbstractItemView.SignalHandler).Activated index
+        member this.Clicked index =
+            (this :> AbstractItemView.SignalHandler).Clicked index
+        member this.DoubleClicked index =
+            (this :> AbstractItemView.SignalHandler).DoubleClicked index
+        member this.Entered index =
+            (this :> AbstractItemView.SignalHandler).Entered index
+        member this.IconSizeChanged size =
+            (this :> AbstractItemView.SignalHandler).IconSizeChanged size
+        member this.Pressed index =
+            (this :> AbstractItemView.SignalHandler).Pressed index
+        member this.ViewportEntered() =
+            (this :> AbstractItemView.SignalHandler).ViewportEntered()
+        // ListView =======================
+        member this.IndexesMoved indexes =
+            let indexes' =
+                indexes
+                |> Array.map ModelIndexProxy
+                |> Array.toList
+            signalDispatch (IndexesMoved indexes')
+
+    interface IDisposable with
+        member this.Dispose() =
+            listView.Dispose()
+
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let listView = ListView.Create(this)
+    do
+        this.ListView <- listView
+        
     member this.AddQtModel (model: AbstractItemModel.Handle) =
         listView.SetModel(model)
         
@@ -104,54 +297,16 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         // well if it gets deleted (as a dependency), won't that delete from the listView automatically?
         ()
     
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
-            match attr with
-            | Movement movement ->
-                listView.SetMovement movement.QtValue
-            | Flow flow ->
-                listView.SetFlow flow.QtValue
-            | ResizeMode mode ->
-                listView.SetResizeMode mode.QtValue
-            | LayoutMode mode ->
-                listView.SetLayoutMode mode.QtValue
-            | ViewMode mode ->
-                listView.SetViewMode mode.QtValue
-                
-    interface ListView.SignalHandler with
-        member this.CustomContextMenuRequested pos =
-            signalDispatch (Point.From pos |> CustomContextMenuRequested)
-        member this.Activated index =
-            signalDispatch (ModelIndexProxy(index) |> Activated)
-        member this.Clicked index =
-            signalDispatch (ModelIndexProxy(index) |> Clicked)
-        member this.DoubleClicked index =
-            signalDispatch (ModelIndexProxy(index) |> DoubleClicked)
-        member this.Entered index =
-            signalDispatch (ModelIndexProxy(index) |> Entered)
-        member this.IconSizeChanged size =
-            signalDispatch (Size.From size |> IconSizeChanged)
-        member this.Pressed index =
-            signalDispatch (ModelIndexProxy(index) |> Pressed)
-        member this.ViewportEntered () =
-            signalDispatch ViewportEntered
-        member this.IndexesMoved indexes =
-            signalDispatch (indexes |> Array.map ModelIndexProxy |> IndexesMoved)
-            
-    interface IDisposable with
-        member this.Dispose() =
-            listView.Dispose()
-
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: ListView.SignalMask) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: ListView.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: ListView.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: ListView.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -159,89 +314,13 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type ListView<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable maybeListModel: IModelNode<'msg> option = None
     member this.ListModel with set value = maybeListModel <- Some value
-    
-    let mutable signalMask = enum<ListView.SignalMask> 0
-    
-    let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
-    let mutable onActivated: (ModelIndexProxy -> 'msg) option = None
-    let mutable onClicked: (ModelIndexProxy -> 'msg) option = None
-    let mutable onDoubleClicked: (ModelIndexProxy -> 'msg) option = None
-    let mutable onEntered: (ModelIndexProxy -> 'msg) option = None
-    let mutable onIconSizeChanged: (Size -> 'msg) option = None
-    let mutable onPressed: (ModelIndexProxy -> 'msg) option = None
-    let mutable onViewportEntered: 'msg option = None
-    let mutable onIndexesMoved: (ModelIndexProxy array -> 'msg) option = None
-    
-    member this.OnCustomContextMenuRequested with set value =
-        onCustomContextMenuRequested <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.CustomContextMenuRequested
-        
-    member this.OnActivated with set value =
-        onActivated <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.Activated
-        
-    member this.OnClicked with set value =
-        onClicked <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.Clicked
-        
-    member this.OnDoubleClicked with set value =
-        onDoubleClicked <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.DoubleClicked
-        
-    member this.OnEntered with set value =
-        onEntered <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.Entered
-        
-    member this.OnIconSizeChanged with set value =
-        onIconSizeChanged <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.IconSizeChanged
-        
-    member this.OnPressed with set value =
-        onPressed <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.Pressed
-        
-    member this.OnViewportEntered with set value =
-        onViewportEntered <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.ViewportEntered
-        
-    member this.OnIndexesMoved with set value =
-        onIndexesMoved <- Some value
-        signalMask <- signalMask ||| ListView.SignalMask.IndexesMoved
-        
-    let signalMap = function
-        | CustomContextMenuRequested pos ->
-            onCustomContextMenuRequested
-            |> Option.map (fun f -> f pos)
-        | Activated index ->
-            onActivated
-            |> Option.map (fun f -> f index)
-        | Clicked index ->
-            onClicked
-            |> Option.map (fun f -> f index)
-        | DoubleClicked index ->
-            onDoubleClicked
-            |> Option.map (fun f -> f index)
-        | Entered index ->
-            onEntered
-            |> Option.map (fun f -> f index)
-        | IconSizeChanged size ->
-            onIconSizeChanged
-            |> Option.map (fun f -> f size)
-        | Pressed index ->
-            onPressed
-            |> Option.map (fun f -> f index)
-        | ViewportEntered ->
-            onViewportEntered
-        | IndexesMoved indexes ->
-            onIndexesMoved
-            |> Option.map (fun f -> f indexes)
             
     member this.MigrateDeps (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "model") with
@@ -267,7 +346,7 @@ type ListView<'msg>() =
             |> Option.toList
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch signalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             maybeListModel
@@ -276,8 +355,8 @@ type ListView<'msg>() =
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> ListView<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
-            this.model <- migrate left'.model nextAttrs signalMap signalMask
+            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateDeps(depsChanges |> Map.ofList)
 
         override this.Dispose() =

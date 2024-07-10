@@ -1,23 +1,16 @@
 ﻿module FSharpQt.Widgets.TreeView
 
+open FSharpQt.Attrs
 open FSharpQt.BuilderNode
 open System
 open Org.Whatever.QtTesting
 open FSharpQt.MiscTypes
 
-type Signal =
-    | CustomContextMenuRequested of pos: Point
-    | Activated of index: ModelIndexProxy
-    | Clicked of index: ModelIndexProxy
-    | DoubleClicked of index: ModelIndexProxy
-    | Entered of index: ModelIndexProxy
-    | IconSizeChanged of size: Size
-    | Pressed of index: ModelIndexProxy
-    | ViewportEntered
+type private Signal =
     | Collapsed of index: ModelIndexProxy
     | Expanded of index: ModelIndexProxy
     
-type Attr =
+type internal Attr =
     | AllColumnsShowFocus of enabled: bool
     | Animated of enabled: bool
     | AutoExpandDelay of delay: int
@@ -29,49 +22,141 @@ type Attr =
     | SortingEnabled of enabled: bool
     | UniformRowHeights of uniform: bool
     | WordWrap of enabled: bool
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | AllColumnsShowFocus _ ->"treeview:allcolumnsshowfocus"
+            | Animated _ ->"treeview:animated"
+            | AutoExpandDelay _ ->"treeview:autoexpanddelay"
+            | ExpandsOnDoubleClick _ ->"treeview:expandsondoubleclick"
+            | HeaderHidden _ ->"treeview:headerhidden"
+            | Indentation _ ->"treeview:indentation"
+            | ItemsExpandable _ ->"treeview:itemsexpandable"
+            | RootIsDecorated _ ->"treeview:rootisdecorated"
+            | SortingEnabled _ ->"treeview:sortingenabled"
+            | UniformRowHeights _ ->"treeview:uniformrowheights"
+            | WordWrap _ ->"treeview:wordwrap"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyTreeViewAttr(this)
+            | _ ->
+                printfn "warning: TreeView.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit AbstractItemView.AttrTarget
+        abstract member ApplyTreeViewAttr: Attr -> unit
+    end
     
-let private keyFunc = function
-    | AllColumnsShowFocus _ -> 0
-    | Animated _ -> 1
-    | AutoExpandDelay _ -> 2
-    | ExpandsOnDoubleClick _ -> 3
-    | HeaderHidden _ -> 4
-    | Indentation _ -> 5
-    | ItemsExpandable _ -> 6
-    | RootIsDecorated _ -> 7
-    | SortingEnabled _ -> 8
-    | UniformRowHeights _ -> 9
-    | WordWrap _ -> 10
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
     
-let private diffAttrs =
-    genericDiffAttrs keyFunc
-
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable treeView = TreeView.Create(this)
+type Props<'msg>() =
+    inherit AbstractItemView.Props<'msg>()
+    
+    let mutable onCollapsed: (ModelIndexProxy -> 'msg) option = None
+    let mutable onExpanded: (ModelIndexProxy -> 'msg) option = None
+    
+    member internal this.SignalMask = enum<TreeView.SignalMask> (int this._signalMask)
+    
+    member this.OnCollapsed with set value =
+        onCollapsed <- Some value
+        this.AddSignal(int TreeView.SignalMask.Collapsed)
+        
+    member this.OnExpanded with set value =
+        onExpanded <- Some value
+        this.AddSignal(int TreeView.SignalMask.Expanded)
+        
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | Collapsed index ->
+                onCollapsed
+                |> Option.map (fun f -> f index)
+            | Expanded index ->
+                onExpanded
+                |> Option.map (fun f -> f index)
+        // prepend to parent list
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
+        
+    member this.AllColumnsShowFocus with set value =
+        this.PushAttr(AllColumnsShowFocus value)
+        
+    member this.Animated with set value =
+        this.PushAttr(Animated value)
+    
+    member this.AutoExpandDelay with set value =
+        this.PushAttr(AutoExpandDelay value)
+    
+    member this.ExpandsOnDoubleClick with set value =
+        this.PushAttr(ExpandsOnDoubleClick value)
+    
+    member this.HeaderHidden with set value =
+        this.PushAttr(HeaderHidden value)
+    
+    member this.Indentation with set value =
+        this.PushAttr(Indentation value)
+    
+    member this.ItemsExpandable with set value =
+        this.PushAttr(ItemsExpandable value)
+    
+    member this.RootIsDecorated with set value =
+        this.PushAttr(RootIsDecorated value)
+    
+    member this.SortingEnabled with set value =
+        this.PushAttr(SortingEnabled value)
+    
+    member this.UniformRowHeights with set value =
+        this.PushAttr(UniformRowHeights value)
+    
+    member this.WordWrap with set value =
+        this.PushAttr(WordWrap value)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit AbstractItemView.ModelCore<'msg>(dispatch)
+    let mutable treeView: TreeView.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<TreeView.SignalMask> 0
+    // no binding guards
     
     let signalDispatch (s: Signal) =
         signalMap s
         |> Option.iter dispatch
         
-    member this.TreeView = treeView
-    member this.SignalMap with set value = signalMap <- value
-    
+    member this.TreeView
+        with get() = treeView
+        and set value =
+            this.AbstractItemView <- value
+            treeView <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "TreeView.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "TreeView.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             treeView.SetSignalMask(value)
             currentMask <- value
             
-    member this.AddQtModel (model: AbstractItemModel.Handle) =
-        treeView.SetModel(model)
-        
-    member this.RemoveQtModel () =
-        // well if it gets deleted (as a dependency), won't that delete from the view automatically?
-        ()
-    
-    member this.ApplyAttrs(attrs: Attr list) =
-        for attr in attrs do
+    interface AttrTarget with
+        member this.ApplyTreeViewAttr attr =
             match attr with
             | AllColumnsShowFocus enabled ->
                 treeView.SetAllColumnsShowFocus(enabled)
@@ -97,22 +182,38 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
                 treeView.SetWordWrap(enabled)
                 
     interface TreeView.SignalHandler with
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
         member this.CustomContextMenuRequested pos =
-            signalDispatch (Point.From pos |> CustomContextMenuRequested)
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // Frame ==========================
+        // (none)
+        // AbstractScrollArea =============
+        // (none)
+        // AbstractItemView ===============
         member this.Activated index =
-            signalDispatch (ModelIndexProxy(index) |> Activated)
+            (this :> AbstractItemView.SignalHandler).Activated index
         member this.Clicked index =
-            signalDispatch (ModelIndexProxy(index) |> Clicked)
+            (this :> AbstractItemView.SignalHandler).Clicked index
         member this.DoubleClicked index =
-            signalDispatch (ModelIndexProxy(index) |> DoubleClicked)
+            (this :> AbstractItemView.SignalHandler).DoubleClicked index
         member this.Entered index =
-            signalDispatch (ModelIndexProxy(index) |> Entered)
+            (this :> AbstractItemView.SignalHandler).Entered index
         member this.IconSizeChanged size =
-            signalDispatch (Size.From size |> IconSizeChanged)
+            (this :> AbstractItemView.SignalHandler).IconSizeChanged size
         member this.Pressed index =
-            signalDispatch (ModelIndexProxy(index) |> Pressed)
+            (this :> AbstractItemView.SignalHandler).Pressed index
         member this.ViewportEntered() =
-            signalDispatch ViewportEntered
+            (this :> AbstractItemView.SignalHandler).ViewportEntered()
+        // TreeView =======================
         member this.Collapsed index =
             signalDispatch (ModelIndexProxy(index) |> Collapsed)
         member this.Expanded index =
@@ -121,116 +222,44 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
     interface IDisposable with
         member this.Dispose() =
             treeView.Dispose()
+            
+type private Model<'msg>(dispatch: 'msg -> unit) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let treeView = TreeView.Create(this)
+    do
+        this.TreeView <- treeView
+        
+    member this.AddQtModel (model: AbstractItemModel.Handle) =
+        treeView.SetModel(model)
+        
+    member this.RemoveQtModel () =
+        // well if it gets deleted (as a dependency), won't that delete from the view automatically?
+        ()
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (signalMask: TreeView.SignalMask) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (signalMask: TreeView.SignalMask) =
     let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) (signalMask: TreeView.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: TreeView.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
-
 type TreeView<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     let mutable maybeTreeModel: IModelNode<'msg> option = None
     member this.TreeModel with set value = maybeTreeModel <- Some value
-    
-    let mutable signalMask = enum<TreeView.SignalMask> 0
-    
-    let mutable onCustomContextMenuRequested: (Point -> 'msg) option = None
-    let mutable onActivated: (ModelIndexProxy -> 'msg) option = None
-    let mutable onClicked: (ModelIndexProxy -> 'msg) option = None
-    let mutable onDoubleClicked: (ModelIndexProxy -> 'msg) option = None
-    let mutable onEntered: (ModelIndexProxy -> 'msg) option = None
-    let mutable onIconSizeChanged: (Size -> 'msg) option = None
-    let mutable onPressed: (ModelIndexProxy -> 'msg) option = None
-    let mutable onViewportEntered: 'msg option = None
-    let mutable onCollapsed: (ModelIndexProxy -> 'msg) option = None
-    let mutable onExpanded: (ModelIndexProxy -> 'msg) option = None
-    
-    member this.OnCustomContextMenuRequested with set value =
-        onCustomContextMenuRequested <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.CustomContextMenuRequested
-        
-    member this.OnActivated with set value =
-        onActivated <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.Activated
-        
-    member this.OnClicked with set value =
-        onClicked <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.Clicked
-        
-    member this.OnDoubleClicked with set value =
-        onDoubleClicked <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.DoubleClicked
-        
-    member this.OnEntered with set value =
-        onEntered <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.Entered
-        
-    member this.OnIconSizeChanged with set value =
-        onIconSizeChanged <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.IconSizeChanged
-        
-    member this.OnPressed with set value =
-        onPressed <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.Pressed
-        
-    member this.OnViewportEntered with set value =
-        onViewportEntered <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.ViewportEntered
-    
-    member this.OnCollapsed with set value =
-        onCollapsed <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.Collapsed
-        
-    member this.OnExpanded with set value =
-        onExpanded <- Some value
-        signalMask <- signalMask ||| TreeView.SignalMask.Expanded
-        
-    let signalMap = function
-        | CustomContextMenuRequested pos ->
-            onCustomContextMenuRequested
-            |> Option.map (fun f -> f pos)
-        | Activated index ->
-            onActivated
-            |> Option.map (fun f -> f index)
-        | Clicked index ->
-            onClicked
-            |> Option.map (fun f -> f index)
-        | DoubleClicked index ->
-            onDoubleClicked
-            |> Option.map (fun f -> f index)
-        | Entered index ->
-            onEntered
-            |> Option.map (fun f -> f index)
-        | IconSizeChanged size ->
-            onIconSizeChanged
-            |> Option.map (fun f -> f size)
-        | Pressed index ->
-            onPressed
-            |> Option.map (fun f -> f index)
-        | ViewportEntered ->
-            onViewportEntered
-        | Collapsed index ->
-            onCollapsed
-            |> Option.map (fun f -> f index)
-        | Expanded index ->
-            onExpanded
-            |> Option.map (fun f -> f index)
             
     member this.MigrateDeps (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "model") with
@@ -256,7 +285,7 @@ type TreeView<'msg>() =
             |> Option.toList
 
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch signalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
             
         override this.AttachDeps () =
             maybeTreeModel
@@ -265,8 +294,8 @@ type TreeView<'msg>() =
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> TreeView<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
-            this.model <- migrate left'.model nextAttrs signalMap signalMask
+            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateDeps(depsChanges |> Map.ofList)
 
         override this.Dispose() =
