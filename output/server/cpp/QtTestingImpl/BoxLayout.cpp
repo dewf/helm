@@ -86,6 +86,10 @@ namespace BoxLayout
         auto qDir = (QBoxLayout::Direction)dir;
         return (HandleRef) new BoxLayoutWithHandler(qDir, std::move(handler));
     }
+
+    HandleRef createNoHandler(Direction dir) {
+        return (HandleRef) new QBoxLayout((QBoxLayout::Direction)dir);
+    }
 }
 
 #include "BoxLayout.moc"

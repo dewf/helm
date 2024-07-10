@@ -30,6 +30,8 @@ type internal Attr =
     | TextVisible of state: bool
     | Value of value: int
     | Range of min: int * max: int
+    // our own:
+    | InnerText of text: string
 with
     interface IAttr with
         override this.AttrEquals other =
@@ -50,6 +52,7 @@ with
             | TextVisible _ -> "progressbar:textvisible"
             | Value _ -> "progressbar:value"
             | Range _ -> "progressbar:range"
+            | InnerText _ -> "progressbar:innertext"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
             | :? AttrTarget as attrTarget ->
@@ -115,11 +118,17 @@ type Props<'msg>() =
     member this.Range with set value =
         this.PushAttr(Range value)
         
+    member this.InnerText with set value =
+        this.PushAttr(InnerText value)
+        
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
     inherit Widget.ModelCore<'msg>(dispatch)
     let mutable progressBar: ProgressBar.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<ProgressBar.SignalMask> 0
+    
+    // label for use with InnerText
+    let mutable innerLabel: Label.Handle = null
 
     // binding guards:
     let mutable lastValue = Int32.MinValue
@@ -179,6 +188,18 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
                     progressBar.SetValue(value)
             | Range(min, max) ->
                 progressBar.SetRange(min, max)
+            | InnerText text ->
+                if innerLabel = null then
+                    let layout =
+                        BoxLayout.CreateNoHandler(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom) // not sure Org.Whatever.QtTesting prefix is required here, IDE seems to think it's not, but won't compile without it
+                    // layout.SetDirection(Org.Whatever.QtTesting.BoxLayout.Direction.TopToBottom)
+                    layout.SetContentsMargins(0, 0, 0, 0)
+                    innerLabel <- Label.CreateNoHandler()
+                    innerLabel.SetAlignment(Enums.Alignment.AlignCenter)
+                    layout.AddWidget(innerLabel)
+                    progressBar.SetLayout(layout)
+                    progressBar.SetTextVisible(false) // you probably want this ...
+                innerLabel.SetText(text)
                 
     interface ProgressBar.SignalHandler with
         // Object =========================

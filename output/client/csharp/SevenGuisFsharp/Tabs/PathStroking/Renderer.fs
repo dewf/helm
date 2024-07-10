@@ -357,7 +357,7 @@ type EventDelegate(state: State) =
         
 let view (state: State) =
     let timer =
-        Timer(Attrs = [ Interval TIMER_INTERVAL; Running true ], OnTimeout = TimerTick)
+        Timer(Interval = TIMER_INTERVAL, Running = true, OnTimeoutWithElapsed = TimerTick)
     let custom =
         let events = [
             PaintEvent

@@ -241,11 +241,11 @@ let view (state: State) =
         
     let dialog =
         let slider =
-            Slider(Attrs = [
-                Orientation Horizontal
-                Range(5, 100)
-                Value state.EditingRadius
-            ], OnValueChanged = SetRadius )
+            Slider(
+                Orientation = Horizontal,
+                Range = (5, 100),
+                Value = state.EditingRadius,
+                OnValueChanged = SetRadius)
         let cancel =
             PushButton(Text = "Cancel", OnClicked = CancelEdit)
         let apply =
@@ -269,7 +269,7 @@ let view (state: State) =
     let canvas =
         let contextMenu =
             let action =
-                MenuAction(Text = "Edit Radius", OnTriggered = (fun _ -> ShowDialog))
+                MenuAction(Text = "Edit Radius", OnTriggered = ShowDialog)
             Menu(Items = [
                 MenuItem(action)
             ])

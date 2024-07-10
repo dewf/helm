@@ -48,3 +48,4 @@ opaque Handle extends Frame.Handle {
 }
 
 Handle create(SignalHandler handler);
+Handle createNoHandler();

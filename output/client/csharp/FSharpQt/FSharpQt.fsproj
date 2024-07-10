@@ -59,15 +59,15 @@
         <Compile Include="Widgets\MessageBox.fs" />
         <Compile Include="Widgets\AbstractItemView.fs" />
         
-        <!--        <Compile Include="Models\SimpleListModel.fs" />-->
-        <!--        <Compile Include="Models\TrackedRows.fs" />-->
-        <!--        <Compile Include="Models\ListModelNode.fs" />-->
-        <!--        <Compile Include="Models\SortFilterProxyModel.fs" />-->
-        
         <Compile Include="Widgets\ListView.fs" />
         <Compile Include="Widgets\TreeView.fs" />
         
-<!--        <Compile Include="Widgets\WindowSet.fs" />-->
+        <Compile Include="Widgets\WindowSet.fs" />
+        
+<!--        <Compile Include="Models\SimpleListModel.fs" />-->
+<!--        <Compile Include="Models\TrackedRows.fs" />-->
+<!--        <Compile Include="Models\ListModelNode.fs" />-->
+<!--        <Compile Include="Models\SortFilterProxyModel.fs" />-->
     </ItemGroup>
 
     <ItemGroup>

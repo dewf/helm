@@ -45,3 +45,4 @@ opaque Handle extends Layout.Handle {
 }
 
 Handle create(Direction dir, SignalHandler handler);
+Handle createNoHandler(Direction dir);

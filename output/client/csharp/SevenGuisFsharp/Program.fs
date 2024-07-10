@@ -18,7 +18,7 @@ open Tabs.PathStroking.PathStroking
 open Tabs.TempConverter
 open Tabs.FlightBooker
 open Tabs.TimerPage
-open Tabs.CRUD
+// open Tabs.CRUD
 open Tabs.CircleDrawer
 
 [<RequireQualifiedAccess>]
@@ -101,7 +101,7 @@ let view (state: State) =
             |> List.map BoxItem
         let vbox =
             VBoxLayout(Items = items)
-        GroupBox(Attrs = [ GroupBox.Title "7GUIs" ], Layout = vbox)
+        GroupBox(Title = "7GUIs", Layout = vbox)
         
     let bottomGroup =
         let buttons =
@@ -114,7 +114,7 @@ let view (state: State) =
             |> List.map BoxItem
         let vbox =
             VBoxLayout(Items = items)
-        GroupBox(Attrs = [ GroupBox.Title "Misc" ], Layout = vbox)
+        GroupBox(Title = "Misc", Layout = vbox)
         
     let vbox =
         let items = [
@@ -127,10 +127,7 @@ let view (state: State) =
         
     let mainWindow =
         let window =
-            MainWindow(
-                Attrs = [ Title "7GUIs in F#/Qt" ],
-                CentralLayout = vbox,
-                OnClosed = MainWindowClosed)
+            MainWindow(WindowTitle = "7GUIs in F#/Qt", CentralLayout = vbox, OnWindowClosed = MainWindowClosed)
         IntKey 0, window :> IWindowNode<Msg>
         
     let instanceWindows =
@@ -142,13 +139,13 @@ let view (state: State) =
                 | GuiKind.TempConverter -> "Temperature Converter", TempConverter()
                 | GuiKind.FlightBooker -> "Flight Booker", FlightBooker()
                 | GuiKind.TimerPage -> "Timer", TimerPage()
-                | GuiKind.CRUD -> "CRUD", CRUDPage()
+                | GuiKind.CRUD -> "CRUD", failwith "CRUD currently broken" //CRUDPage()
                 | GuiKind.CircleDrawer -> "Circle Drawer", CircleDrawer()
                 | GuiKind.Spreadsheet -> failwith "not yet implemented"
                 | GuiKind.DropTesting -> "Drop Testing", DropTesting()
                 | GuiKind.PathStroking -> "Path Stroking", PathStroking()
             let window =
-                MainWindow(Attrs = [ Title title ], CentralLayout = node, OnClosed = InstanceClosed inst.Key)
+                MainWindow(WindowTitle = title, CentralLayout = node, OnWindowClosed = InstanceClosed inst.Key)
             IntKey inst.Key, window :> IWindowNode<Msg>)
         
     WindowSet(Windows = mainWindow :: instanceWindows)

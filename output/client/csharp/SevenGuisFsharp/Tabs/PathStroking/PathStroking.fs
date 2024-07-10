@@ -75,7 +75,7 @@ let radioGroup (title: string) (items: (string * 'a) list) (setterMsgFunc: 'a ->
             buttons
             |> List.map BoxItem
         VBoxLayout(Items = items)
-    GroupBox(Attrs = [ Title title ], Layout = vbox)
+    GroupBox(Title = title, Layout = vbox)
         
     
 let view (state: State) =
@@ -106,15 +106,10 @@ let view (state: State) =
         
     let penWidthGroup =
         let slider =
-            Slider(
-                Attrs = [
-                    Orientation Horizontal
-                    Range (1, 20)
-                    Value state.PenWidth
-                ], OnValueChanged = SetPenWidth)
+            Slider(Orientation = Horizontal, Range = (1, 20), Value = state.PenWidth, OnValueChanged = SetPenWidth)
         let vbox =
             VBoxLayout(Items = [ BoxItem(slider) ])
-        GroupBox(Attrs = [ Title "Pen Width" ], Layout = vbox)
+        GroupBox(Title = "Pen Width", Layout = vbox)
         
     let lineStyleGroup =
         let items =
@@ -141,7 +136,7 @@ let view (state: State) =
                   ])
         
     let scrollArea =
-        ScrollArea(Attrs = [ VPolicy AlwaysOn ], Content = rightPanel)
+        ScrollArea(VerticalScrollBarPolicy = AbstractScrollArea.ScrollBarAlwaysOn, Content = rightPanel)
         
     let renderer =
         PathStrokeRenderer(

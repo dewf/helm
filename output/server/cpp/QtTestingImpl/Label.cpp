@@ -126,6 +126,10 @@ namespace Label
     HandleRef create(std::shared_ptr<SignalHandler> handler) {
         return (HandleRef) new LabelWithHandler(std::move(handler));
     }
+
+    HandleRef createNoHandler() {
+        return (HandleRef) new QLabel();
+    }
 }
 
 #include "Label.moc"

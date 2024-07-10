@@ -13,7 +13,6 @@
         <Compile Include="Tabs\TempConverter.fs" />
         <Compile Include="Tabs\FlightBooker.fs" />
         <Compile Include="Tabs\TimerPage.fs" />
-        <Compile Include="Tabs\CRUD.fs" />
         <Compile Include="Tabs\CircleDrawer.fs" />
         <Compile Include="Tabs\DropTesting.fs" />
         <Compile Include="Tabs\PathStroking\Renderer.fs" />
