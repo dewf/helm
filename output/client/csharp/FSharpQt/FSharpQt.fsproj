@@ -30,7 +30,7 @@
         <Compile Include="Widgets\GridLayout.fs" />
         
         <!-- inherit from Widget -->
-        <!--        <Compile Include="Widgets\CustomWidget.fs" />-->
+        <Compile Include="Widgets\CustomWidget.fs" />
         <Compile Include="Widgets\Menu.fs" />
         <Compile Include="Widgets\MenuBar.fs" />
         <Compile Include="Widgets\AbstractButton.fs" />
@@ -57,13 +57,14 @@
         <!-- inherit from Dialog -->
         <Compile Include="Widgets\FileDialog.fs" />
         <Compile Include="Widgets\MessageBox.fs" />
+        <Compile Include="Widgets\AbstractItemView.fs" />
         
         <!--        <Compile Include="Models\SimpleListModel.fs" />-->
         <!--        <Compile Include="Models\TrackedRows.fs" />-->
         <!--        <Compile Include="Models\ListModelNode.fs" />-->
         <!--        <Compile Include="Models\SortFilterProxyModel.fs" />-->
-
-        <!--        <Compile Include="Widgets\ListView.fs" />-->
+        
+<!--        <Compile Include="Widgets\ListView.fs" />-->
         <!--        <Compile Include="Widgets\TreeView.fs" />-->
         
 <!--        <Compile Include="Widgets\WindowSet.fs" />-->

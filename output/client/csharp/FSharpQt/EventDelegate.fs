@@ -13,49 +13,6 @@ type UpdateArea =
     | Everything
     | Rects of Rect list
     
-type DropAction =
-    | Ignore
-    | Copy
-    | Move
-    | Link
-with
-    static member internal From (qtDropAction: Enums.DropAction) =
-        match qtDropAction with
-        | Enums.DropAction.Ignore -> Ignore
-        | Enums.DropAction.Copy -> Copy
-        | Enums.DropAction.Move -> Move
-        | Enums.DropAction.Link -> Link
-        | _ -> failwith "DropAction.From - unhandled DropAction case (only move/copy/link supported)"
-    member internal this.QtValue =
-        match this with
-        | Ignore -> Enums.DropAction.Ignore
-        | Copy -> Enums.DropAction.Copy
-        | Move -> Enums.DropAction.Move
-        | Link -> Enums.DropAction.Link
-    static member internal SetFrom (qtDropActionSet: Enums.DropActionSet) =
-        let pairs = [
-            // Enums.DropActionSet.Ignore, Ignore // 0 value
-            Enums.DropActionSet.Copy, Copy
-            Enums.DropActionSet.Move, Move
-            Enums.DropActionSet.Link, Link
-        ]
-        (Set.empty<DropAction>, pairs)
-        ||> List.fold (fun acc (flag, action) ->
-            if qtDropActionSet.HasFlag flag then
-                acc.Add(action)
-            else
-                acc)
-    static member internal QtSetFrom (actions: DropAction seq) =
-        (enum<Enums.DropActionSet> 0, actions)
-        ||> Seq.fold (fun acc action ->
-            let flag =
-                match action with
-                | Ignore -> Enums.DropActionSet.Ignore // 0 value, meaningless in a set
-                | Copy -> Enums.DropActionSet.Copy
-                | Move -> Enums.DropActionSet.Move
-                | Link -> Enums.DropActionSet.Link
-            acc ||| flag)
-    
 [<AbstractClass>]
 type EventDelegateInterface<'msg>() = // obviously it's an abstract class and not a proper interface, but that's mainly because F# doesn't currently support default interface methods / Scala-style traits
     abstract member Widget: Widget.Handle with set

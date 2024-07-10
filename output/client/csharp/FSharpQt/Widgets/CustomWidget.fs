@@ -10,7 +10,6 @@ open FSharpQt.EventDelegate
 
 open FSharpQt.MiscTypes
 open FSharpQt.Attrs
-open Widget
 
 // uses the same Signal/Attrs as Widget
 
@@ -20,7 +19,7 @@ open Widget
 // so it's nice to keep it out of the Widget module
 
 type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, eventDelegate: EventDelegateInterface<'msg>) as this =
-    inherit ModelCore<'msg>(dispatch)
+    inherit Widget.ModelCore<'msg>(dispatch)
     let widget = Widget.CreateSubclassed(this, methodMask, this) 
     do
         this.Widget <- widget
@@ -96,7 +95,7 @@ type private Model<'msg>(dispatch: 'msg -> unit, methodMask: Widget.MethodMask, 
             eventDelegate.DragLeave()
             |> Option.iter dispatch
             
-        override this.DropEvent(pos: Common.Point, modifiers: Enums.Modifiers, mimeData: Widget.MimeData, dropAction: Widget.DropAction) =
+        override this.DropEvent(pos: Common.Point, modifiers: Enums.Modifiers, mimeData: Widget.MimeData, dropAction: Enums.DropAction) =
             eventDelegate.Drop (Point.From pos) (Modifier.SetFrom modifiers) (MimeDataProxy(mimeData)) (DropAction.From dropAction)
             |> Option.iter dispatch
             
@@ -137,16 +136,10 @@ type EventMaskItem =
     | SizeHint
     | ResizeEvent
     | DropEvents
-
-type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskItems: EventMaskItem list) =
-    inherit Props<'msg>()
-    [<DefaultValue>] val mutable private model: Model<'msg>
-    
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
-    member private this.MethodMask =
+with
+    static member QtSetFrom (eventMaskItems: EventMaskItem seq) =
         (enum<Widget.MethodMask> 0, eventMaskItems)
-        ||> List.fold (fun acc item ->
+        ||> Seq.fold (fun acc item ->
             let value =
                 match item with
                 | MousePressEvent -> Widget.MethodMask.MousePressEvent
@@ -159,6 +152,15 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
                 | ResizeEvent -> Widget.MethodMask.ResizeEvent
                 | DropEvents -> Widget.MethodMask.DropEvents
             acc ||| value)
+
+type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskItems: EventMaskItem seq) =
+    inherit Widget.Props<'msg>()
+    [<DefaultValue>] val mutable private model: Model<'msg>
+    
+    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
+    
+    member private this.MethodMask =
+        EventMaskItem.QtSetFrom eventMaskItems
             
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
@@ -183,7 +185,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
             this.model.Widget
             
         override this.ContentKey =
-            (this :> IWidgetNode<'msg>).Widget
+            this.model.Widget
             
         override this.Attachments =
             this.Attachments
