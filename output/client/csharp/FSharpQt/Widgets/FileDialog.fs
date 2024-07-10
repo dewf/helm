@@ -4,13 +4,9 @@ open System
 open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
-open FSharpQt.MiscTypes
 open FSharpQt.Attrs
 
 type internal Signal =
-    // inherited
-    | DialogSignal of signal: Dialog.Signal
-    // ours
     | CurrentChanged of path: string
     | CurrentUrlChanged of url: string
     | DirectoryEntered of dir: string
@@ -20,7 +16,7 @@ type internal Signal =
     | FilterSelected of filter: string
     | UrlSelected of url: string
     | UrlsSelected of urls: string list
-
+    
 type FileMode =
     | AnyFile
     | ExistingFile
@@ -74,12 +70,12 @@ with
                 | HideNameFilterDetails -> FileDialog.Options.HideNameFilterDetails
                 | DontUseCustomDirectoryIcons -> FileDialog.Options.DontUseCustomDirectoryIcons
             acc ||| flag)
-        
-type private Attr =
+
+type internal Attr =
     | AcceptMode of mode: AcceptMode
     | DefaultSuffix of suffix: string
     | FileMode of mode: FileMode
-    | Options of opts: FileDialogOption seq
+    | Options of opts: Set<FileDialogOption>
     | SupportedSchemes of schemes: string list
     | ViewMode of mode: ViewMode
     | NameFilter of filter: string
@@ -110,34 +106,19 @@ with
             | SelectedFile _ -> "filedialog:selectedfile"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? FileDialogAttrTarget as attrTarget ->
-                let fileDialog =
-                    attrTarget.FileDialog
-                match this with
-                | AcceptMode mode ->
-                    fileDialog.SetAcceptMode(mode.QtValue)
-                | DefaultSuffix suffix ->
-                    fileDialog.SetDefaultSuffix(suffix)
-                | FileMode mode ->
-                    fileDialog.SetFileMode(mode.QtValue)
-                | Options opts ->
-                    fileDialog.SetOptions(FileDialogOption.QtSetFrom opts)
-                | SupportedSchemes schemes ->
-                    fileDialog.SetSupportedSchemes(schemes |> Array.ofList)
-                | ViewMode mode ->
-                    fileDialog.SetViewMode(mode.QtValue)
-                | NameFilter filter ->
-                    fileDialog.SetNameFilter(filter)
-                | NameFilters filters ->
-                    fileDialog.SetNameFilters(filters |> Array.ofList)
-                | MimeTypeFilters filters ->
-                    fileDialog.SetMimeTypeFilters(filters |> Array.ofList)
-                | Directory dir ->
-                    fileDialog.SetDirectory(dir)
-                | SelectedFile file ->
-                    fileDialog.SelectFile(file)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyFileDialogAttr(this)
             | _ ->
                 printfn "warning: FileDialog.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Dialog.AttrTarget
+        abstract member ApplyFileDialogAttr: Attr -> unit
+    end
+        
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
 
 type Props<'msg>() =
     inherit Dialog.Props<'msg>()
@@ -190,94 +171,159 @@ type Props<'msg>() =
         onUrlsSelected <- Some value
         this.AddSignal(int FileDialog.SignalMask.UrlsSelected)
         
-    member internal this.SignalMap = function
-        | DialogSignal signal ->
-            (this :> Dialog.Props<'msg>).SignalMap signal
-        | CurrentChanged path ->
-            onCurrentChanged
-            |> Option.map (fun f -> f path)
-        | CurrentUrlChanged url ->
-            onCurrentUrlChanged
-            |> Option.map (fun f -> f url)
-        | DirectoryEntered dir ->
-            onDirectoryEntered
-            |> Option.map (fun f -> f dir)
-        | DirectoryUrlEntered url ->
-            onDirectoryUrlEntered
-            |> Option.map (fun f -> f url)
-        | FileSelected file ->
-            onFileSelected
-            |> Option.map (fun f -> f file)
-        | FilesSelected files ->
-            onFilesSelected
-            |> Option.map (fun f -> f files)
-        | FilterSelected filter ->
-            onFilterSelected
-            |> Option.map (fun f -> f filter)
-        | UrlSelected url ->
-            onUrlSelected
-            |> Option.map (fun f -> f url)
-        | UrlsSelected urls ->
-            onUrlsSelected
-            |> Option.map (fun f -> f urls)
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | CurrentChanged path ->
+                onCurrentChanged
+                |> Option.map (fun f -> f path)
+            | CurrentUrlChanged url ->
+                onCurrentUrlChanged
+                |> Option.map (fun f -> f url)
+            | DirectoryEntered dir ->
+                onDirectoryEntered
+                |> Option.map (fun f -> f dir)
+            | DirectoryUrlEntered url ->
+                onDirectoryUrlEntered
+                |> Option.map (fun f -> f url)
+            | FileSelected file ->
+                onFileSelected
+                |> Option.map (fun f -> f file)
+            | FilesSelected files ->
+                onFilesSelected
+                |> Option.map (fun f -> f files)
+            | FilterSelected filter ->
+                onFilterSelected
+                |> Option.map (fun f -> f filter)
+            | UrlSelected url ->
+                onUrlSelected
+                |> Option.map (fun f -> f url)
+            | UrlsSelected urls ->
+                onUrlsSelected
+                |> Option.map (fun f -> f urls)
+        // prepend to parent signal map funcs
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
+        
+    member this.AcceptMode with set value =
+        this.PushAttr(AcceptMode value)
 
-type private Model<'msg>(dispatch: 'msg -> unit) as this =
-    let mutable fileDialog = FileDialog.Create(this)
-    
+    member this.DefaultSuffix with set value =
+        this.PushAttr(DefaultSuffix value)
+
+    member this.FileMode with set value =
+        this.PushAttr(FileMode value)
+
+    member this.Options with set value =
+        this.PushAttr(value |> Set.ofSeq |> Options)
+
+    member this.SupportedSchemes with set value =
+        this.PushAttr(value |> Seq.toList |> SupportedSchemes)
+
+    member this.ViewMode with set value =
+        this.PushAttr(ViewMode value)
+
+    member this.NameFilter with set value =
+        this.PushAttr(NameFilter value)
+
+    member this.NameFilters with set value =
+        this.PushAttr(value |> Seq.toList |> NameFilters)
+
+    member this.MimeTypeFilters with set value =
+        this.PushAttr(value |> Seq.toList |> MimeTypeFilters)
+
+    member this.Directory with set value =
+        this.PushAttr(Directory value)
+
+    member this.SelectedFile with set value =
+        this.PushAttr(SelectedFile value)
+                
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Dialog.ModelCore<'msg>(dispatch)
+    let mutable fileDialog: FileDialog.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<FileDialog.SignalMask> 0
     
-    let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
-        
-    member this.Dialog with get() = fileDialog
-    member this.SignalMap with set value = signalMap <- value
+    // TODO: binding guards (extremely unclear)
+    // lastCurrent
+    // lastSelectedFile
+    // lastSelectedFilter
     
+    let signalDispatch (s: Signal) =
+        signalMap s
+        |> Option.iter dispatch
+        
+    member this.FileDialog
+        with get() = fileDialog
+        and set value =
+            // assign to base
+            this.Dialog <- value
+            fileDialog <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "FileDialog.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "FileDialog.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             fileDialog.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
             
-    interface FileDialogAttrTarget with
-        member this.Widget = fileDialog
-        member this.Dialog = fileDialog
-        member this.FileDialog = fileDialog
-                
+    interface AttrTarget with
+        member this.ApplyFileDialogAttr attr =
+            match attr with
+            | AcceptMode mode ->
+                fileDialog.SetAcceptMode(mode.QtValue)
+            | DefaultSuffix suffix ->
+                fileDialog.SetDefaultSuffix(suffix)
+            | FileMode mode ->
+                fileDialog.SetFileMode(mode.QtValue)
+            | Options opts ->
+                fileDialog.SetOptions(FileDialogOption.QtSetFrom opts)
+            | SupportedSchemes schemes ->
+                fileDialog.SetSupportedSchemes(schemes |> Array.ofList)
+            | ViewMode mode ->
+                fileDialog.SetViewMode(mode.QtValue)
+            | NameFilter filter ->
+                fileDialog.SetNameFilter(filter)
+            | NameFilters filters ->
+                fileDialog.SetNameFilters(filters |> Array.ofList)
+            | MimeTypeFilters filters ->
+                fileDialog.SetMimeTypeFilters(filters |> Array.ofList)
+            | Directory dir ->
+                fileDialog.SetDirectory(dir)
+            | SelectedFile file ->
+                fileDialog.SelectFile(file)
+        
     interface FileDialog.SignalHandler with
-        // Widget:
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
         member this.CustomContextMenuRequested pos =
-            Point.From pos
-            |> Widget.Signal.CustomContextMenuRequested
-            |> Dialog.Signal.WidgetSignal
-            |> DialogSignal
-            |> signalDispatch
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =
-            IconProxy(icon)
-            |> Widget.Signal.WindowIconChanged
-            |> Dialog.Signal.WidgetSignal
-            |> DialogSignal
-            |> signalDispatch
+            (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
-            Widget.Signal.WindowTitleChanged title
-            |> Dialog.Signal.WidgetSignal
-            |> DialogSignal
-            |> signalDispatch
-        // Dialog:
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // Dialog =========================
         member this.Accepted() =
-            signalDispatch (Dialog.Accepted |> DialogSignal)
+            (this :> Dialog.SignalHandler).Accepted()
         member this.Finished result =
-            signalDispatch (Dialog.Finished result |> DialogSignal)
+            (this :> Dialog.SignalHandler).Finished(result)
         member this.Rejected() =
-            signalDispatch (Dialog.Rejected |> DialogSignal)
-        // FileDialog:
+            (this :> Dialog.SignalHandler).Rejected()
+        // FileDialog =====================
         member this.CurrentChanged path =
             signalDispatch (CurrentChanged path)
         member this.CurrentUrlChanged url =
@@ -288,8 +334,8 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
             signalDispatch (DirectoryUrlEntered url)
         member this.FileSelected file =
             signalDispatch (FileSelected file)
-        member this.FilesSelected selected =
-            signalDispatch (selected |> Array.toList |> FilesSelected)
+        member this.FilesSelected files =
+            signalDispatch (files |> Array.toList |> FilesSelected)
         member this.FilterSelected filter =
             signalDispatch (FilterSelected filter)
         member this.UrlSelected url =
@@ -301,22 +347,31 @@ type private Model<'msg>(dispatch: 'msg -> unit) as this =
         member this.Dispose() =
             fileDialog.Dispose()
 
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: FileDialog.SignalMask) =
-    let model = new Model<'msg>(dispatch)
+type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle option) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let fileDialog =
+        let parentHandle =
+            maybeParent
+            |> Option.defaultValue null
+        FileDialog.Create(parentHandle, this)
+    do
+        this.FileDialog <- fileDialog
+
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (initialMask: FileDialog.SignalMask) (maybeParent: Widget.Handle option) =
+    let model = new Model<'msg>(dispatch, maybeParent)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- initialMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: FileDialog.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: FileDialog.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
-
 
 type FileDialog<'msg>() =
     inherit Props<'msg>()
@@ -328,7 +383,7 @@ type FileDialog<'msg>() =
         override this.Dependencies = []
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask buildContext.ContainingWindow
             
         override this.AttachDeps () =
             ()
@@ -338,16 +393,16 @@ type FileDialog<'msg>() =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
             
         override this.Dialog =
-            this.model.Dialog
+            this.model.FileDialog
             
         override this.ContentKey =
-            (this :> IDialogNode<'msg>).Dialog
+            this.model.FileDialog
             
         override this.Attachments =
             this.Attachments

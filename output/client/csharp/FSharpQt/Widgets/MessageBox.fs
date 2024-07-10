@@ -3,12 +3,15 @@
 open System
 open FSharpQt
 open BuilderNode
+open FSharpQt.Attrs
+open FSharpQt.MiscTypes
 open Reactor
 open Org.Whatever.QtTesting
 
-type Signal = unit
+type private Signal =
+    | ButtonClicked of button: AbstractButtonProxy
 
-type MessageBoxButton =
+type StandardButton =
     | Ok
     | Save
     | SaveAll
@@ -28,6 +31,31 @@ type MessageBoxButton =
     | Reset
     | RestoreDefaults
 with
+    member internal this.QtValue =
+        match this with
+        | Ok -> MessageBox.StandardButton.Ok
+        | Save -> MessageBox.StandardButton.Save
+        | SaveAll -> MessageBox.StandardButton.SaveAll
+        | Open -> MessageBox.StandardButton.Open
+        | Yes -> MessageBox.StandardButton.Yes
+        | YesToAll -> MessageBox.StandardButton.YesToAll
+        | No -> MessageBox.StandardButton.No
+        | NoToAll -> MessageBox.StandardButton.NoToAll
+        | Abort -> MessageBox.StandardButton.Abort
+        | Retry -> MessageBox.StandardButton.Retry
+        | Ignore -> MessageBox.StandardButton.Ignore
+        | Close -> MessageBox.StandardButton.Close
+        | Cancel -> MessageBox.StandardButton.Cancel
+        | Discard -> MessageBox.StandardButton.Discard
+        | Help -> MessageBox.StandardButton.Help
+        | Apply -> MessageBox.StandardButton.Apply
+        | Reset -> MessageBox.StandardButton.Reset
+        | RestoreDefaults -> MessageBox.StandardButton.RestoreDefaults
+
+    member internal this.QtFlag =
+        int this.QtValue
+        |> enum<MessageBox.StandardButtonSet> // notice it's the '...Set' enum
+
     static member internal FromQtValue(raw: MessageBox.StandardButton) =
         match raw with
         // NoButton is currently not supported, it appears to be OK
@@ -51,30 +79,9 @@ with
         | MessageBox.StandardButton.RestoreDefaults -> RestoreDefaults
         | _ -> failwithf "MessageBox.StandardButton.FromQtValue - unknown input %A" raw
 
-    member internal this.QtValue =
-        match this with
-        | Ok -> MessageBox.StandardButton.Ok
-        | Save -> MessageBox.StandardButton.Save
-        | SaveAll -> MessageBox.StandardButton.SaveAll
-        | Open -> MessageBox.StandardButton.Open
-        | Yes -> MessageBox.StandardButton.Yes
-        | YesToAll -> MessageBox.StandardButton.YesToAll
-        | No -> MessageBox.StandardButton.No
-        | NoToAll -> MessageBox.StandardButton.NoToAll
-        | Abort -> MessageBox.StandardButton.Abort
-        | Retry -> MessageBox.StandardButton.Retry
-        | Ignore -> MessageBox.StandardButton.Ignore
-        | Close -> MessageBox.StandardButton.Close
-        | Cancel -> MessageBox.StandardButton.Cancel
-        | Discard -> MessageBox.StandardButton.Discard
-        | Help -> MessageBox.StandardButton.Help
-        | Apply -> MessageBox.StandardButton.Apply
-        | Reset -> MessageBox.StandardButton.Reset
-        | RestoreDefaults -> MessageBox.StandardButton.RestoreDefaults
-        
-    member internal this.QtFlag =
-        int this.QtValue
-        |> enum<MessageBox.StandardButtonSet>
+    static member internal QtSetFrom (buttons: StandardButton seq) =
+        (enum<MessageBox.StandardButtonSet> 0, buttons)
+        ||> Seq.fold (fun acc button -> acc ||| button.QtFlag)
         
 type Icon =
     | Information
@@ -84,106 +91,262 @@ type Icon =
 with
     member internal this.QtValue =
         match this with
-        | Information -> MessageBox.Icon.Information
-        | Warning -> MessageBox.Icon.Warning
-        | Critical -> MessageBox.Icon.Critical
-        | Question -> MessageBox.Icon.Question
-
-type Attr =
-    | Text of text: string
+        | Information -> MessageBox.MessageBoxIcon.Information
+        | Warning -> MessageBox.MessageBoxIcon.Warning
+        | Critical -> MessageBox.MessageBoxIcon.Critical
+        | Question -> MessageBox.MessageBoxIcon.Question
+        
+type Option =
+    | DontUseNativeDialog
+with
+    static member internal QtSetFrom (values: Option seq) =
+        (enum<MessageBox.Options> 0, values)
+        ||> Seq.fold (fun acc value ->
+            let flag =
+                match value with
+                | DontUseNativeDialog -> MessageBox.Options.DontUseNativeDialog
+            acc ||| flag)
+        
+type internal Attr =
+    | DetailedText of text: string
+    | IconAttr of icon: Icon
+    // | IconPixmap of pixmap: xxxx
     | InformativeText of text: string
-    | Buttons of buttons: MessageBoxButton list
-    | DefaultButton of button: MessageBoxButton
-    | Icon of icon: Icon
-    | WindowTitle of title: string
+    | Options of opts: Set<Option>
+    | StandardButtons of buttons: Set<StandardButton>
+    | Text of text: string
+    | TextFormat of format: TextFormat
+    | TextInteractionFlags of flags: Set<TextInteractionFlag>
+    | DefaultButton of button: StandardButton
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | DetailedText text -> "messagebox:detailedtext"
+            | IconAttr icon -> "messagebox:iconattr"
+            | InformativeText text -> "messagebox:informativetext"
+            | Options opts -> "messagebox:options"
+            | StandardButtons buttons -> "messagebox:standardbuttons"
+            | Text text -> "messagebox:text"
+            | TextFormat format -> "messagebox:textformat"
+            | TextInteractionFlags flags -> "messagebox:textinteractionflags"
+            | DefaultButton button -> "messagebox:defaultbutton"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyMessageBoxAttr(this)
+            | _ ->
+                printfn "warning: MessageBox.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Dialog.AttrTarget
+        abstract member ApplyMessageBoxAttr: Attr -> unit
+    end
+        
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
     
-let private keyFunc = function
-    | Text _ -> 0
-    | InformativeText _ -> 1
-    | Buttons _ -> 2
-    | DefaultButton _ -> 3
-    | Icon _ -> 4
-    | WindowTitle _ -> 5
+type Props<'msg>() =
+    inherit Dialog.Props<'msg>()
+    
+    let mutable onButtonClicked: (AbstractButtonProxy -> 'msg) option = None
+    
+    member this.SignalMask = enum<MessageBox.SignalMask> (int this._signalMask)
 
-let diffAttrs =
-    genericDiffAttrs keyFunc
+    member this.OnButtonClicked with set value =
+        onButtonClicked <- Some value
+        this.AddSignal(int MessageBox.SignalMask.ButtonClicked)
+        
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | ButtonClicked button ->
+                onButtonClicked
+                |> Option.map (fun f -> f button)
+        // prepend to parent signal map funcs
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
+        
+    member this.DetailedText with set value =
+        this.PushAttr(DetailedText value)
 
-type private Model<'msg>(dispatch: 'msg -> unit) =
-    let mutable messageBox = MessageBox.Create()
+    member this.Icon with set value =
+        this.PushAttr(IconAttr value)
+
+    // // | IconPixmap of pixmap: xxxx
+    // member this.IconPixmap with set value =
+    //     this.PushAttr(IconPixmap value)
+
+    member this.InformativeText with set value =
+        this.PushAttr(InformativeText value)
+
+    member this.Options with set value =
+        this.PushAttr(value |> Set.ofSeq |> Options)
+
+    member this.StandardButtons with set value =
+        this.PushAttr(value |> Set.ofSeq |> StandardButtons)
+
+    member this.Text with set value =
+        this.PushAttr(Text value)
+
+    member this.TextFormat with set value =
+        this.PushAttr(TextFormat value)
+
+    member this.TextInteractionFlags with set value =
+        this.PushAttr(value |> Set.ofSeq |> TextInteractionFlags)
+
+    member this.DefaultButton with set value =
+        this.PushAttr(DefaultButton value)
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Dialog.ModelCore<'msg>(dispatch)
+    let mutable messageBox: MessageBox.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    // no 'do' block currently since no signals
+    let mutable currentMask = enum<MessageBox.SignalMask> 0
     
-    member this.MessageBox with get() = messageBox
-    member this.SignalMap with set value = signalMap <- value
+    // no binding guards
     
-    member this.ApplyAttrs (attrs: Attr list) =
-        for attr in attrs do
+    let signalDispatch (s: Signal) =
+        signalMap s
+        |> Option.iter dispatch
+        
+    member this.MessageBox
+        with get() = messageBox
+        and set value =
+            // assign to base
+            this.Dialog <- value
+            messageBox <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "MessageBox.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "MessageBox.ModelCore: signal map assignment didn't have a head element"
+            
+    member this.SignalMask with set value =
+        if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
+            messageBox.SetSignalMask(value)
+            currentMask <- value
+            
+    interface AttrTarget with
+        member this.ApplyMessageBoxAttr attr =
             match attr with
-            | Text text ->
-                messageBox.SetText(text)
+            | DetailedText text ->
+                messageBox.SetDetailedText(text)
+            | IconAttr icon ->
+                messageBox.SetIcon(icon.QtValue)
             | InformativeText text ->
                 messageBox.SetInformativeText(text)
-            | Buttons buttons ->
-                let mask =
-                    ((enum<MessageBox.StandardButtonSet> 0), buttons)
-                    ||> List.fold (fun acc b ->
-                        acc ||| b.QtFlag)
-                messageBox.SetStandardButtons(mask)
+            | Options opts ->
+                messageBox.SetOptions(Option.QtSetFrom opts)
+            | StandardButtons buttons ->
+                messageBox.SetStandardButtons(StandardButton.QtSetFrom buttons)
+            | Text text ->
+                messageBox.SetText(text)
+            | TextFormat format ->
+                messageBox.SetTextFormat(format.QtValue)
+            | TextInteractionFlags flags ->
+                messageBox.SetTextInteractionFlags(TextInteractionFlag.QtSetFrom flags)
             | DefaultButton button ->
                 messageBox.SetDefaultButton(button.QtValue)
-            | Icon icon ->
-                messageBox.SetIcon(icon.QtValue)
-            | WindowTitle title ->
-                messageBox.SetWindowTitle(title)
                 
+    interface MessageBox.SignalHandler with
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
+        member this.CustomContextMenuRequested pos =
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
+        member this.WindowIconChanged icon =
+            (this :> Widget.SignalHandler).WindowIconChanged icon
+        member this.WindowTitleChanged title =
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // Dialog =========================
+        member this.Accepted() =
+            (this :> Dialog.SignalHandler).Accepted()
+        member this.Finished result =
+            (this :> Dialog.SignalHandler).Finished(result)
+        member this.Rejected() =
+            (this :> Dialog.SignalHandler).Rejected()
+        // FileDialog =====================
+        member this.ButtonClicked button =
+            signalDispatch (AbstractButtonProxy(button) |> ButtonClicked)
+            
     interface IDisposable with
         member this.Dispose() =
             messageBox.Dispose()
+    
+type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle option) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let messageBox =
+        let parentHandle =
+            maybeParent
+            |> Option.defaultValue null
+        MessageBox.Create(parentHandle, this)
+    do
+        this.MessageBox <- messageBox
 
-let private create (attrs: Attr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) =
-    let model = new Model<'msg>(dispatch)
-    model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (initialMask: MessageBox.SignalMask) (maybeParent: Widget.Handle option) =
+    let model = new Model<'msg>(dispatch, maybeParent)
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    model.SignalMaps <- signalMaps
+    model.SignalMask <- initialMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: Attr list) (signalMap: Signal -> 'msg option) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: MessageBox.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
+    model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
 
 type MessageBox<'msg>() =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attrs: Attr list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let signalMap = (fun _ -> None)
-            
     interface IDialogNode<'msg> with
         override this.Dependencies = []
         
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs signalMap dispatch
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask buildContext.ContainingWindow
             
         override this.AttachDeps() =
             ()
 
         override this.MigrateFrom (left: IBuilderNode<'msg>) (depsChanges: (DepsKey * DepsChange) list) =
             let left' = (left :?> MessageBox<'msg>)
-            let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged__old
-            this.model <- migrate left'.model nextAttrs signalMap
+            let nextAttrs =
+                diffAttrs left'.Attrs this.Attrs
+                |> createdOrChanged
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
 
         override this.Dialog =
-            (this.model.MessageBox :> Dialog.Handle)
+            this.model.MessageBox
             
         override this.ContentKey =
-            (this :> IDialogNode<'msg>).Dialog
+            this.model.MessageBox
             
         override this.Attachments =
             this.Attachments
@@ -191,10 +354,10 @@ type MessageBox<'msg>() =
 // use this in Cmd.Dialog invocation, it maps the raw int return value
 // this keeps us from having to declare the MessageBoxButton in Reactor which didn't feel right -
 //   maybe there will be other dialog types with different meanings to the .exec() return value
-let execMessageBox<'msg> (id: string) (msgFunc: MessageBoxButton -> 'msg) =
+let execMessageBox<'msg> (id: string) (msgFunc: StandardButton -> 'msg) =
     let msgFunc2 intValue =
         intValue
         |> enum<MessageBox.StandardButton>
-        |> MessageBoxButton.FromQtValue
+        |> StandardButton.FromQtValue
         |> msgFunc
     id, DialogOp.ExecWithResult msgFunc2

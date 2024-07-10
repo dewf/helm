@@ -587,6 +587,9 @@ type WidgetProxy internal(handle: Widget.Handle) =
     // member val widget = widget
     member this.Rect =
         Rect.From(handle.Rect())
+        
+type AbstractButtonProxy internal(handle: AbstractButton.Handle) =
+    let x = 10
 
 type ActionProxy internal(action: Action.Handle) =
     // not sure what methods/props will be useful yet

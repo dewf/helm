@@ -53,9 +53,10 @@
         <Compile Include="Widgets\ScrollArea.fs" />
         
         <Compile Include="Widgets\Dialog.fs" />
+        
         <!-- inherit from Dialog -->
-        <!--        <Compile Include="Widgets\FileDialog.fs" />-->
-        <!--        <Compile Include="Widgets\MessageBox.fs" />-->
+        <Compile Include="Widgets\FileDialog.fs" />
+        <Compile Include="Widgets\MessageBox.fs" />
         
         <!--        <Compile Include="Models\SimpleListModel.fs" />-->
         <!--        <Compile Include="Models\TrackedRows.fs" />-->

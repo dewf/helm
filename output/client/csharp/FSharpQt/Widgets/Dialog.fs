@@ -157,7 +157,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
     
 type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle option) as this =
     inherit ModelCore<'msg>(dispatch)
-    let mutable dialog =
+    let dialog =
         let parentHandle =
             maybeParent
             |> Option.defaultValue null
