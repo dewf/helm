@@ -8,15 +8,12 @@ open Org.Whatever.QtTesting
 open FSharpQt.Attrs
 open FSharpQt.MiscTypes
 
-type internal Signal =
-    // inherited
-    | WidgetSignal of signal: Widget.Signal
-    // ours
+type private Signal =
     | Accepted
     | Finished of result: int
     | Rejected
 
-type private Attr =
+type internal Attr =
     | Modal of state: bool
     | SizeGripEnabled of enabled: bool
 with
@@ -29,20 +26,23 @@ with
                 false
         override this.Key =
             match this with
-            | Modal _ -> "dialog:modal"
-            | SizeGripEnabled _ -> "dialog:sizegripenabled"
+            | Modal state -> "dialog:modal"
+            | SizeGripEnabled enabled -> "dialog:sizegripenabled"
         override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
             match target with
-            | :? DialogAttrTarget as attrTarget ->
-                let dialog =
-                    attrTarget.Dialog
-                match this with
-                | Modal state ->
-                    dialog.SetModal(state)
-                | SizeGripEnabled enabled ->
-                    dialog.SetSizeGripEnabled(enabled)
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyDialogAttr(this)
             | _ ->
-                printfn "warning: PushButton.Attr couldn't ApplyTo() unknown target type [%A]" target
+                printfn "warning: LineEdit.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit Widget.AttrTarget
+        abstract member ApplyDialogAttr: Attr -> unit
+    end
+                
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
                 
 type Props<'msg>() =
     inherit Widget.Props<'msg>()
@@ -64,66 +64,85 @@ type Props<'msg>() =
     member this.OnRejected with set value =
         onRejected <- Some value
         this.AddSignal(int Dialog.SignalMask.Rejected)
-
-    member internal this.SignalMap = function
-        | WidgetSignal signal ->
-            (this :> Widget.Props<'msg>).SignalMap_REMOVE signal
-        | Accepted ->
-            onAccepted
-        | Finished result ->
-            onFinished
-            |> Option.map (fun f -> f result)
-        | Rejected ->
-            onRejected
+        
+    member internal this.SignalMapList =
+        let thisFunc = function
+            | Accepted ->
+                onAccepted
+            | Finished result ->
+                onFinished
+                |> Option.map (fun f -> f result)
+            | Rejected ->
+                onRejected
+        // prepend to parent signal map funcs
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
     
     member this.Modal with set value =
         this.PushAttr(Modal value)
         
     member this.SizeGripEnabled with set value =
         this.PushAttr(SizeGripEnabled value)
-    
-type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle option) as this =
-    let mutable dialog =
-        let parentHandle =
-            maybeParent
-            |> Option.defaultValue null
-        Dialog.Create(parentHandle, this)
-    
+        
+type ModelCore<'msg>(dispatch: 'msg -> unit) =
+    inherit Widget.ModelCore<'msg>(dispatch)
+    let mutable dialog: Dialog.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
     let mutable currentMask = enum<Dialog.SignalMask> 0
     
+    // no binding guards
+    
     let signalDispatch (s: Signal) =
-        match signalMap s with
-        | Some msg ->
-            dispatch msg
-        | None ->
-            ()
-    
-    member this.Dialog with get() = dialog
-    member this.SignalMap with set value = signalMap <- value
-    
+        signalMap s
+        |> Option.iter dispatch
+        
+    member this.Dialog
+        with get() = dialog
+        and set value =
+            // assign to base
+            this.Widget <- value
+            dialog <- value
+            
+    member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
+        match mapFuncList with
+        | h :: etc ->
+            match h with
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
+            | _ ->
+                failwith "Dialog.ModelCore.SignalMaps: wrong func type"
+            // assign the remainder to parent class(es)
+            base.SignalMaps <- etc
+        | _ ->
+            failwith "Dialog.ModelCore: signal map assignment didn't have a head element"
+            
     member this.SignalMask with set value =
         if value <> currentMask then
+            // we don't need to invoke the base version, the most derived widget handles the full signal stack from all super classes (at the C++/C# levels)
             dialog.SetSignalMask(value)
             currentMask <- value
-    
-    member this.ApplyAttrs(attrs: (IAttr option * IAttr) list) =
-        for maybePrev, attr in attrs do
-            attr.ApplyTo(this, maybePrev)
             
-    interface DialogAttrTarget with
-        member this.Widget = dialog
-        member this.Dialog = dialog
-        
+    interface AttrTarget with
+        member this.ApplyDialogAttr attr =
+            match attr with
+            | Modal state ->
+                dialog.SetModal(state)
+            | SizeGripEnabled enabled ->
+                dialog.SetSizeGripEnabled(enabled)
+                
     interface Dialog.SignalHandler with
-        // Widget:  
+        // Object =========================
+        member this.Destroyed(obj: Object.Handle) =
+            (this :> Object.SignalHandler).Destroyed(obj)
+        member this.ObjectNameChanged(name: string) =
+            (this :> Object.SignalHandler).ObjectNameChanged(name)
+        // Widget =========================
         member this.CustomContextMenuRequested pos =
-            signalDispatch (Point.From pos |> Widget.CustomContextMenuRequested |> WidgetSignal)
+            (this :> Widget.SignalHandler).CustomContextMenuRequested pos
         member this.WindowIconChanged icon =
-            signalDispatch (IconProxy(icon) |> Widget.WindowIconChanged |> WidgetSignal)
+            (this :> Widget.SignalHandler).WindowIconChanged icon
         member this.WindowTitleChanged title =
-            signalDispatch (Widget.WindowTitleChanged title |> WidgetSignal)
-        // Dialog:
+            (this :> Widget.SignalHandler).WindowTitleChanged title
+        // Dialog =========================
         member this.Accepted() =
             signalDispatch Accepted
         member this.Finished result =
@@ -131,11 +150,21 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle opti
             signalDispatch (Finished result)
         member this.Rejected() =
             signalDispatch Rejected
-    
+            
     interface IDisposable with
         member this.Dispose() =
             dialog.Dispose()
     
+type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle option) as this =
+    inherit ModelCore<'msg>(dispatch)
+    let mutable dialog =
+        let parentHandle =
+            maybeParent
+            |> Option.defaultValue null
+        Dialog.Create(parentHandle, this)
+    do
+        this.Dialog <- dialog
+
     member this.RemoveLayout() =
         let existing =
             dialog.GetLayout()
@@ -145,16 +174,16 @@ type private Model<'msg>(dispatch: 'msg -> unit, maybeParent: Widget.Handle opti
     member this.AddLayout (layout: Layout.Handle) =
         dialog.SetLayout(layout)
 
-let private create (attrs: IAttr list) (signalMap: Signal -> 'msg option) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: Widget.Handle option) =
+let private create (attrs: IAttr list) (signalMaps: ISignalMapFunc list) (dispatch: 'msg -> unit) (initialMask: Dialog.SignalMask) (maybeParent: Widget.Handle option) =
     let model = new Model<'msg>(dispatch, maybeParent)
     model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- initialMask
     model
 
-let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMap: Signal -> 'msg option) (signalMask: Dialog.SignalMask) =
+let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (signalMaps: ISignalMapFunc list) (signalMask: Dialog.SignalMask) =
     model.ApplyAttrs attrs
-    model.SignalMap <- signalMap
+    model.SignalMaps <- signalMaps
     model.SignalMask <- signalMask
     model
 
@@ -196,7 +225,7 @@ type Dialog<'msg>() =
             |> Option.toList
             
         override this.Create dispatch buildContext =
-            this.model <- create this.Attrs this.SignalMap dispatch this.SignalMask buildContext.ContainingWindow
+            this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask buildContext.ContainingWindow
             
         override this.AttachDeps () =
             maybeLayout
@@ -207,7 +236,7 @@ type Dialog<'msg>() =
             let nextAttrs =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
-            this.model <- migrate left'.model nextAttrs this.SignalMap this.SignalMask
+            this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
             this.MigrateContent (depsChanges |> Map.ofList)
             
         override this.Dispose() =
@@ -217,9 +246,10 @@ type Dialog<'msg>() =
             this.model.Dialog
             
         override this.ContentKey =
-            (this :> IDialogNode<'msg>).Dialog
+            this.model.Dialog
             
-        override this.Attachments = this.Attachments
+        override this.Attachments =
+            this.Attachments
 
 // some utility stuff for Cmd.Dialog
 
