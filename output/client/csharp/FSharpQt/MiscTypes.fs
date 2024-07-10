@@ -695,6 +695,10 @@ type ModelIndexDeferred private(deferred: ModelIndex.Deferred) =
     internal new(handle: ModelIndex.Handle) =
         ModelIndexDeferred(ModelIndex.Deferred.FromHandle(handle))
         
+// persistent model index
+        
+type PersistentModelIndexProxy internal(index: PersistentModelIndex.Handle) =
+    member val internal Index = index
 
 // see notes on ModelIndex* stuff above, similar will apply here
 // maybe we need a "stack types" module or something?
