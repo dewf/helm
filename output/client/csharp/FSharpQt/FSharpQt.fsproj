@@ -65,6 +65,8 @@
         <Compile Include="Widgets\WindowSet.fs" />
         
         <Compile Include="Models\AbstractItemModel.fs" />
+        
+        <Compile Include="Models\AbstractListModel.fs" />
         <Compile Include="Models\SimpleListModel.fs" />
         <Compile Include="Models\TrackedRows.fs" />
         <Compile Include="Models\ListModelNode.fs" />
