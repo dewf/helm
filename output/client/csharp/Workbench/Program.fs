@@ -139,7 +139,7 @@ let view (state: State) =
             Icon = Icon(ThemeIcon.Computer),
             Text = "E&xit",
             Shortcut = seq,
-            OnTriggered = (fun _ -> AppExit))
+            OnTriggered = AppExit)
 
     let menuBar =
         let fileMenu =
@@ -162,7 +162,9 @@ let view (state: State) =
                 [ "CHANGED 01"; "CHANGED 02"; "CHANGED 03" ]
             else
                 [ "Primary"; "Secondary"; "Sequence" ]
-        ListModelNode(dataFunc, 3, Attrs = [ Rows state.ListData; Headers headers ])
+        ListModelNode(dataFunc, 3,
+                      Rows = state.ListData,
+                      Headers = headers)
         
     let proxyModel =
         let regex =
@@ -170,14 +172,12 @@ let view (state: State) =
             | Some filter -> Regex(filter, [RegexOption.CaseInsensitive])
             | None -> Regex()
         SortFilterProxyModel(
-            Attrs = [
-                FilterRegex regex
-                FilterKeyColumn (Some 1)
-            ],
+            FilterRegularExpression = regex,
+            FilterKeyColumn = Some 1,
             SourceModel = listModel)
         
     let treeView =
-        TreeView(Attrs = [ SortingEnabled true ], TreeModel = proxyModel)
+        TreeView(SortingEnabled = true, TreeModel = proxyModel)
         
     let button =
         PushButton(Text = "Add One", OnClicked = AddRow)
@@ -205,7 +205,8 @@ let view (state: State) =
         ])
         
     MainWindow(
-        Attrs = [ MainWindow.Title "Hmmm wut?"; Size (640, 480) ],
+        WindowTitle = "Hmmm wut?",
+        Size = Size.From (640, 480),
         CentralLayout = vbox,
         MenuBar = menuBar
         // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either
