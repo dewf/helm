@@ -9,6 +9,13 @@ type RowChangeItem<'row> =
     | RangeDeleted of index: int * count: int
     | RowReplaced of index: int * newRow: 'row
 
+// so that the 'row doesn't poison our Attrs, leads to weird issues    
+type ITrackedRows =
+    interface
+        abstract member Equals: System.Object -> bool
+        abstract member GetHashCode: unit -> int
+    end
+
 [<CustomEquality>]
 [<NoComparison>]
 type TrackedRows<'row> = {
@@ -17,15 +24,15 @@ type TrackedRows<'row> = {
     RowCount: int
     Changes: RowChangeItem<'row> list
 } with
-    override this.Equals other =
-        match other with
-        | :? TrackedRows<'row> as other' ->
-            this.Step = other'.Step
-        | _ ->
-            false
-            
-    override this.GetHashCode() =
-        this.Step.GetHashCode() // uhhhh
+    interface ITrackedRows with
+        override this.Equals other =
+            match other with
+            | :? TrackedRows<'row> as other' ->
+                this.Step = other'.Step
+            | _ ->
+                false
+        override this.GetHashCode() =
+            this.Step.GetHashCode() // uhhhh
         
     member this.BeginChanges() =
         { this with Step = this.Step + 1; Changes = [] } // 1 step per group of changes, I guess

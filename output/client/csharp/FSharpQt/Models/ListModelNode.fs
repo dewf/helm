@@ -1,106 +1,115 @@
 ﻿module FSharpQt.Models.ListModelNode
 
 open System
+open FSharpQt.Attrs
 open FSharpQt.BuilderNode
 open FSharpQt.Models.SimpleListModel
 open FSharpQt.Models.TrackedRows
 open FSharpQt.MiscTypes
 
-type Signal = unit
-    
-type Attr<'row> =
-    | Rows of rows: TrackedRows<'row>
+type private Signal = unit
+
+type internal Attr =
+    | Rows of rows: ITrackedRows
     | Headers of names: string list
+with
+    interface IAttr with
+        override this.AttrEquals other =
+            match other with
+            | :? Attr as otherAttr ->
+                this = otherAttr
+            | _ ->
+                false
+        override this.Key =
+            match this with
+            | Rows _ -> "listmodelnode:rows"
+            | Headers _ -> "listmodelnode:headers"
+        override this.ApplyTo (target: IAttrTarget, maybePrev: IAttr option) =
+            match target with
+            | :? AttrTarget as attrTarget ->
+                attrTarget.ApplyListModelNodeAttr(this)
+            | _ ->
+                printfn "warning: ListModelNode.Attr couldn't ApplyTo() unknown target type [%A]" target
+                
+and internal AttrTarget =
+    interface
+        inherit AbstractListModel.AttrTarget
+        abstract member ApplyListModelNodeAttr: Attr -> unit
+    end
     
-let private keyFunc = function
-    | Rows _ -> 0
-    | Headers _ -> 1
+type Props<'msg>() =
+    inherit AbstractListModel.Props<'msg>()
+    
+    member this.Rows with set value =
+        this.PushAttr(Rows value)
+        
+    member this.Headers with set value =
+        this.PushAttr(Headers value)
 
-// ===============================================================================
-// redeclared locally because of the dreaded "x would escape its scope" type errors
-let diffAttrs (a1: Attr<'row> list) (a2: Attr<'row> list)  =
-    let leftList = a1 |> List.map (fun a -> keyFunc a, a)
-    let rightList = a2 |> List.map (fun a -> keyFunc a, a)
-    let leftMap = leftList |> Map.ofList
-    let rightMap = rightList |> Map.ofList
-
-    let allKeys =
-        (leftList @ rightList)
-        |> List.map fst
-        |> List.distinct
-        |> List.sort
-
-    allKeys
-    |> List.choose (fun key ->
-        let leftVal, rightVal = (Map.tryFind key leftMap, Map.tryFind key rightMap)
-        match leftVal, rightVal with
-        | Some left, Some right ->
-            if left = right then None else Changed (left, right) |> Some
-        | Some left, None ->
-            Deleted left |> Some
-        | None, Some right ->
-            Created right |> Some
-        | _ -> failwith "shouldn't happen")
-// same as above
-let createdOrChanged (changes: AttrChange<Attr<'row>> list) =
-    changes
-    |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
-// ===============================================================================
-
-type Model<'msg,'row>(dispatch: 'msg -> unit, numColumns: int) =
+type Model<'msg,'row>(dispatch: 'msg -> unit, numColumns: int) as this =
+    inherit AbstractListModel.ModelCore<'msg>(dispatch)
     let listModel = new SimpleListModel<'row>(numColumns)
     let mutable headers: string list = []
+    do
+        this.AbstractListModel <- listModel.QtModel
     
     member this.QtModel =
         listModel.QtModel
         
     member this.DataFunc with set value =
         listModel.DataFunc <- value
-            
-    member this.ApplyAttrs(attrs: Attr<'row> list) =
-        for attr in attrs do
+        
+    interface AttrTarget with
+        member this.ApplyListModelNodeAttr attr =
             match attr with
-            | Rows rows ->
-                for change in rows.Changes do
-                    match change with
-                    | RowAdded(index, row) ->
-                        listModel.AddRowAt(index, row)
-                    | RangeAdded(index, rows) ->
-                        listModel.AddRowsAt(index, rows)
-                    | RowReplaced(index, newRow) ->
-                        listModel.ReplaceRowAt(index, newRow)
-                    | RowDeleted index ->
-                        listModel.DeleteRowAt(index)
-                    | RangeDeleted(index, count) ->
-                        listModel.DeleteRowsAt(index, count)
+            | Rows raw  ->
+                match raw with
+                | :? TrackedRows<'row> as rows ->
+                    for change in rows.Changes do
+                        match change with
+                        | RowAdded(index, row) ->
+                            listModel.AddRowAt(index, row)
+                        | RangeAdded(index, rows) ->
+                            listModel.AddRowsAt(index, rows)
+                        | RowReplaced(index, newRow) ->
+                            listModel.ReplaceRowAt(index, newRow)
+                        | RowDeleted index ->
+                            listModel.DeleteRowAt(index)
+                        | RangeDeleted(index, count) ->
+                            listModel.DeleteRowsAt(index, count)
+                | _ ->
+                    printfn "ListModelNode weirdness"
             | Headers names ->
                 if headers <> names then
                     headers <- names
                     listModel.Headers <- names
-    
+            
     interface IDisposable with
         member this.Dispose() =
             (listModel :> IDisposable).Dispose()
             
-let private create (attrs: Attr<'row> list) (dispatch: 'msg -> unit) (numColumns: int) (dataFunc: 'row -> int -> DataRole -> Variant) =
+let private create (attrs: IAttr list) (dispatch: 'msg -> unit) (numColumns: int) (dataFunc: 'row -> int -> ItemDataRole -> Variant) =
     let model = new Model<'msg, 'row>(dispatch, numColumns)
-    model.ApplyAttrs attrs
+    model.ApplyAttrs (attrs |> List.map (fun attr -> None, attr))
+    // model.SignalMaps <- signalMaps
+    // model.SignalMask <- signalMask
     model.DataFunc <- dataFunc
     model
 
-let private migrate (model: Model<'msg,'row>) (attrs: Attr<'row> list) (dataFunc: 'row -> int -> DataRole -> Variant) =
+let private migrate (model: Model<'msg,'row>) (attrs: (IAttr option * IAttr) list) (dataFunc: 'row -> int -> ItemDataRole -> Variant) =
     model.ApplyAttrs attrs
-    model.DataFunc <- dataFunc
+    // model.SignalMaps <- signalMaps
+    // model.SignalMask <- signalMask
     model
 
 let private dispose (model: Model<'msg,'row>) =
     (model :> IDisposable).Dispose()
 
 
-type ListModelNode<'msg,'row>(dataFunc: 'row -> int -> DataRole -> Variant, ?numColumns: int) =
+type ListModelNode<'msg,'row>(dataFunc: 'row -> int -> ItemDataRole -> Variant, ?numColumns: int) =
+    inherit Props<'msg>()
     [<DefaultValue>] val mutable model: Model<'msg,'row>
 
-    member val Attrs: Attr<'row> list = [] with get, set
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     interface IModelNode<'msg> with

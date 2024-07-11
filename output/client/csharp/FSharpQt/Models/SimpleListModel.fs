@@ -22,7 +22,7 @@ type SimpleListModel<'row>(numColumns: int) as this =
             .GetInteriorHandle()
             
     let mutable maybeHeaders: string array option = None
-    let mutable dataFunc: 'row -> int -> DataRole -> Variant = (fun _ _ _ -> Variant.Empty)
+    let mutable dataFunc: 'row -> int -> ItemDataRole -> Variant = (fun _ _ _ -> Variant.Empty)
     
     member this.DataFunc with set value =
         dataFunc <- value
@@ -34,7 +34,7 @@ type SimpleListModel<'row>(numColumns: int) as this =
             interior.EmitHeaderDataChanged(Enums.Orientation.Horizontal, 0, numColumns - 1)
             
     member this.QtModel =
-        interior :> AbstractItemModel.Handle
+        interior :> AbstractListModel.Handle
         
     interface AbstractListModel.MethodDelegate with
         member this.RowCount(parent: ModelIndex.Handle) =
@@ -49,7 +49,7 @@ type SimpleListModel<'row>(numColumns: int) as this =
                 let value =
                     let row =
                         rows[rowIndex]
-                    dataFunc row colIndex (DataRole.From role)
+                    dataFunc row colIndex (ItemDataRole.From role)
                 value.QtValue
             else
                 Variant.Empty.QtValue

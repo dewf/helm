@@ -18,7 +18,7 @@ open Tabs.PathStroking.PathStroking
 open Tabs.TempConverter
 open Tabs.FlightBooker
 open Tabs.TimerPage
-// open Tabs.CRUD
+open Tabs.CRUD
 open Tabs.CircleDrawer
 
 [<RequireQualifiedAccess>]
@@ -139,7 +139,7 @@ let view (state: State) =
                 | GuiKind.TempConverter -> "Temperature Converter", TempConverter()
                 | GuiKind.FlightBooker -> "Flight Booker", FlightBooker()
                 | GuiKind.TimerPage -> "Timer", TimerPage()
-                | GuiKind.CRUD -> "CRUD", failwith "CRUD currently broken" //CRUDPage()
+                | GuiKind.CRUD -> "CRUD", CRUDPage()
                 | GuiKind.CircleDrawer -> "Circle Drawer", CircleDrawer()
                 | GuiKind.Spreadsheet -> failwith "not yet implemented"
                 | GuiKind.DropTesting -> "Drop Testing", DropTesting()

@@ -1,63 +1,79 @@
-﻿module FSharpQt.Models.AbstractListModel
+﻿module FSharpQt.Models.AbstractProxyModel
 
 open System
 open FSharpQt.Attrs
 open Org.Whatever.QtTesting
 
-// no extra signals
-type private Signal = unit
-
-// no attributes, but for consistency with inherited stuff:
-type internal AttrTarget =
+type private Signal =
+    | SourceModelChanged
+    
+type internal Attr = unit
+    // technically this has a 'SourceModel' on the C++ side
+    // but that can't be a simple attribute for us, it's a node dependency (of whatever inherits from this - we don't currently have any kind of dependency inheritance)
+    // luckily it will appear to the developer as just another property :)
+    
+and internal AttrTarget = // for inheritance purposes only
     interface
         inherit AbstractItemModel.AttrTarget
-        // abstract member ApplyAbstractListModelAttr: Attr -> unit
+        // abstract member ApplyAbstractProxyModelAttr: Attr<'msg> -> unit
     end
 
+type private SignalMapFunc<'msg>(func) =
+    inherit SignalMapFuncBase<Signal,'msg>(func)
+    
 type Props<'msg>() =
     inherit AbstractItemModel.Props<'msg>()
     
-    member internal this.SignalMask = enum<AbstractListModel.SignalMask> (int this._signalMask)
+    let mutable onSourceModelChanged: 'msg option = None
     
+    member internal this.SignalMask = enum<AbstractProxyModel.SignalMask> (int this._signalMask)
+    
+    member this.OnSourceModelChanged with set value =
+        onSourceModelChanged <- Some value
+        this.AddSignal(int AbstractProxyModel.SignalMask.SourceModelChanged)
+
     member internal this.SignalMapList =
-        NullSignalMapFunc() :> ISignalMapFunc :: base.SignalMapList
+        let thisFunc = function
+            | SourceModelChanged ->
+                onSourceModelChanged
+        // prepend to parent signal map funcs
+        SignalMapFunc(thisFunc) :> ISignalMapFunc :: base.SignalMapList
 
 type ModelCore<'msg>(dispatch: 'msg -> unit) =
     inherit AbstractItemModel.ModelCore<'msg>(dispatch)
-    let mutable absListModel: AbstractListModel.Handle = null
+    let mutable absProxyModel: AbstractProxyModel.Handle = null
     let mutable signalMap: Signal -> 'msg option = (fun _ -> None)
-    // let mutable currentMask = enum<AbstractListModel.SignalMask> 0
-    // no binding guards
     
     let signalDispatch (s: Signal) =
         signalMap s
         |> Option.iter dispatch
-    
-    member this.AbstractListModel
-        with get() = absListModel
+        
+    member this.AbstractProxyModel
+        with get() = absProxyModel
         and set value =
+            // assign to base
             this.AbstractItemModel <- value
-            absListModel <- value
-   
+            absProxyModel <- value
+            
     member internal this.SignalMaps with set (mapFuncList: ISignalMapFunc list) =
         match mapFuncList with
         | h :: etc ->
             match h with
-            | :? NullSignalMapFunc ->
-                ()
+            | :? SignalMapFunc<'msg> as smf ->
+                signalMap <- smf.Func
             | _ ->
-                failwith "AbstractListModel.ModelCore.SignalMaps: wrong func type"
+                failwith "AbstractProxyModel.ModelCore.SignalMaps: wrong func type"
             // assign the remainder to parent class(es)
             base.SignalMaps <- etc
         | _ ->
-            failwith "AbstractListModel.ModelCore: signal map assignment didn't have a head element"
-
-    // no signal mask setter, because abstract
+            failwith "AbstractProxyModel.ModelCore: signal map assignment didn't have a head element"
+            
+    // no signal mask setter, abstract
     
     // "implemented" for inheritance purposes
     interface AttrTarget
-    
-    interface AbstractListModel.SignalHandler with
+                    
+    interface AbstractProxyModel.SignalHandler with
         // Object =========================
         member this.Destroyed(obj: Object.Handle) =
             (this :> Object.SignalHandler).Destroyed(obj)
@@ -100,9 +116,10 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
             (this :> AbstractItemModel.SignalHandler).RowsMoved(srcParent, srcStart, srcEnd, destParent, destRow)
         member this.RowsRemoved (parent, first, last) =
             (this :> AbstractItemModel.SignalHandler).RowsRemoved(parent, first, last)
-        // AbstractListModel ==============
-        // (none)
+        // AbstractProxyModel
+        member this.SourceModelChanged() =
+            signalDispatch SourceModelChanged
 
     interface IDisposable with
         member this.Dispose() =
-            absListModel.Dispose()
+            absProxyModel.Dispose()

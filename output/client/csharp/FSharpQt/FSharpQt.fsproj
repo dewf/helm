@@ -68,9 +68,10 @@
         
         <Compile Include="Models\AbstractListModel.fs" />
         <Compile Include="Models\SimpleListModel.fs" />
+        <Compile Include="Models\AbstractProxyModel.fs" />
         <Compile Include="Models\TrackedRows.fs" />
         <Compile Include="Models\ListModelNode.fs" />
-<!--        <Compile Include="Models\SortFilterProxyModel.fs" />-->
+        <Compile Include="Models\SortFilterProxyModel.fs" />
     </ItemGroup>
 
     <ItemGroup>

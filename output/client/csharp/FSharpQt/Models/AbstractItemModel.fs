@@ -30,7 +30,7 @@ type private Signal =
     | ColumnsInserted of parent: ModelIndexProxy * first: int * last: int
     | ColumnsMoved of sourceParent: ModelIndexProxy * sourceStart: int * sourceEnd: int * destinationParent: ModelIndexProxy * destinationColumn: int
     | ColumnsRemoved of parent: ModelIndexProxy * first: int * last: int
-    | DataChanged of topLeft: ModelIndexProxy * bottomRight: ModelIndexProxy * roles: DataRole list
+    | DataChanged of topLeft: ModelIndexProxy * bottomRight: ModelIndexProxy * roles: ItemDataRole list
     | HeaderDataChanged of orientation: Orientation * first: int * last: int
     | LayoutAboutToBeChanged of parents: PersistentModelIndexProxy list * hint: LayoutChangeHint
     | LayoutChanged of parents: PersistentModelIndexProxy list * hint: LayoutChangeHint
@@ -43,9 +43,14 @@ type private Signal =
     | RowsMoved of sourceParent: ModelIndexProxy * sourceStart: int * sourceEnd: int * destinationParent: ModelIndexProxy * destinationRow: int
     | RowsRemoved of parent: ModelIndexProxy * first: int * last: int
 
-// no attributes, wow!
+// no attributes, but for consistency with inherited stuff:
+type internal AttrTarget =
+    interface
+        inherit QObject.AttrTarget
+        // abstract member ApplyAbstractItemModelAttr: Attr -> unit
+    end
 
- type private SignalMapFunc<'msg>(func) =
+type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
     
 type Props<'msg>() =
@@ -57,7 +62,7 @@ type Props<'msg>() =
     let mutable onColumnsInserted: (ModelIndexProxy * int * int -> 'msg) option = None
     let mutable onColumnsMoved: (ModelIndexProxy * int * int * ModelIndexProxy * int -> 'msg) option = None
     let mutable onColumnsRemoved: (ModelIndexProxy * int * int -> 'msg) option = None
-    let mutable onDataChanged: (ModelIndexProxy * ModelIndexProxy * DataRole list -> 'msg) option = None
+    let mutable onDataChanged: (ModelIndexProxy * ModelIndexProxy * ItemDataRole list -> 'msg) option = None
     let mutable onHeaderDataChanged: (Orientation * int * int -> 'msg) option = None
     let mutable onLayoutAboutToBeChanged: (PersistentModelIndexProxy list * LayoutChangeHint -> 'msg) option = None
     let mutable onLayoutChanged: (PersistentModelIndexProxy list * LayoutChangeHint -> 'msg) option = None
@@ -233,7 +238,8 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
 
     // no signal mask setter, because abstract
     
-    // no AttrTarget implementation, no attrs!
+    // "implemented" for inheritance purposes
+    interface AttrTarget
     
     interface AbstractItemModel.SignalHandler with
         // Object =========================
@@ -257,7 +263,7 @@ type ModelCore<'msg>(dispatch: 'msg -> unit) =
         member this.DataChanged (topLeft, bottomRight, roles) =
             let roles' =
                 roles
-                |> Array.map DataRole.From
+                |> Array.map ItemDataRole.From
                 |> Array.toList
             signalDispatch (DataChanged (ModelIndexProxy(topLeft), ModelIndexProxy(bottomRight), roles'))
         member this.HeaderDataChanged (orientation, first, last) =

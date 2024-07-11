@@ -140,7 +140,7 @@ let update (state: State) (msg: Msg) =
         nextState, Cmd.None
         
 let view (state: State) =
-    let filterLabel = Label(Text = "Filter prefix:")
+    let filterLabel = Label(Text = "Filter:")
     let filterEdit =
         LineEdit(Text = state.FilterPattern, OnTextChanged = SetFilter)
 
@@ -150,17 +150,23 @@ let view (state: State) =
             | 0, DisplayRole -> Variant.String row.Last
             | 1, DisplayRole -> Variant.String row.First
             | _ -> Variant.Empty
-        ListModelNode(dataFunc, 2, Attrs = [ Rows state.Names; Headers [ "Last"; "First" ] ])
+        ListModelNode(dataFunc, 2,
+                      Rows = state.Names,
+                      Headers = [ "Last"; "First" ])
         
     let filterModel =
         let regex =
             match state.FilterPattern with
             | "" -> Regex()
             | value -> Regex(value, [ RegexOption.CaseInsensitive ])
-        SortFilterProxyModel(SourceModel = model, Attrs = [ FilterRegex regex; FilterKeyColumn None ], ModelBinding = proxyModel)
+        SortFilterProxyModel(
+            FilterRegularExpression = regex,
+            FilterKeyColumn = None,
+            SourceModel = model,
+            ModelBinding = proxyModel)
         
     let treeView =
-        TreeView(Attrs = [ SortingEnabled true ], TreeModel = filterModel, OnClicked = SelectItem)
+        TreeView(SortingEnabled = true, TreeModel = filterModel, OnClicked = SelectItem)
 
     let firstLabel = Label(Text = "First:")
     let firstEdit = LineEdit(Text = state.FirstEdit, OnTextChanged = SetFirst)
@@ -188,8 +194,8 @@ let view (state: State) =
         PushButton(Text = "Delete", Enabled = enabled, OnClicked = Delete)
     
     GridLayout(
-        Attrs = [
-            ColumnMinimumWidth (3, 120)
+        ColumnConfigs = [
+            ColConfig(3, minWidth = 120)
         ],
         Items = [
             GridItem(filterLabel, 0, 0)

@@ -254,6 +254,20 @@ with
                 | TextBrowserInteraction -> Enums.TextInteractionFlags.TextSelectableByMouse
             acc ||| flag)
         
+type CaseSensitivity =
+    | CaseInsensitive
+    | CaseSensitive
+with
+    static member internal From (qtValue: Enums.CaseSensitivity) =
+        match qtValue with
+        | Enums.CaseSensitivity.CaseInsensitive -> CaseInsensitive
+        | Enums.CaseSensitivity.CaseSensitive -> CaseSensitive
+        | _ -> failwithf "CaseSensitivity.From: unknown input value [%d]" (int qtValue)
+    member internal this.QtValue =
+        match this with
+        | CaseInsensitive -> Enums.CaseSensitivity.CaseInsensitive
+        | CaseSensitive -> Enums.CaseSensitivity.CaseSensitive
+        
 type TextElideMode =
     | ElideLeft
     | ElideRight
@@ -523,7 +537,7 @@ type ThemeIcon =
 let internal toQtThemeIcon (icon: ThemeIcon) =
     enum<Icon.ThemeIcon> (int icon)
     
-type DataRole =
+type ItemDataRole =
     | DisplayRole
     | DecorationRole
     | EditRole
@@ -546,7 +560,7 @@ type DataRole =
     | WhatsThisPropertyRole
     | UserRole of value: int   // over 0x0100
 with
-    member this.QtRole =
+    member this.QtValue =
         match this with
         | DisplayRole -> Enums.ItemDataRole.DisplayRole
         | DecorationRole -> Enums.ItemDataRole.DecorationRole

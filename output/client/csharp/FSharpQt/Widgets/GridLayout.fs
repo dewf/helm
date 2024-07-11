@@ -85,7 +85,7 @@ type Props<'msg>() =
             |> RowConfigs
         this.PushAttr(configs)
         
-    member this.ColConfigs with set (value: ColConfig seq) =
+    member this.ColumnConfigs with set (value: ColConfig seq) =
         let configs =
             value
             |> Seq.map (_.Config)
