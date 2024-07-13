@@ -40,7 +40,8 @@ interface SignalHandler {
     // (none)
 }
 
-// technically should be nodispose, but NI can't handle that yet
+// confusion reigns re: @nodipose on this, see project notes
+// (as it is, the @nodispose feature needs work for inheritance scenarios)
 opaque Handle extends AbstractItemModel.Handle {
     Interior getInteriorHandle();
 }

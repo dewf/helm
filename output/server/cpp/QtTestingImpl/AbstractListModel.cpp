@@ -93,7 +93,8 @@ namespace AbstractListModel
     }
 
     void Handle_dispose(HandleRef _this) {
-        printf("AbstractListModel::Handle_dispose called - shouldn't happen\n");
+        printf("!! AbstractListModel::Handle_dispose - honoring for now, but figure out if there needs to be a dedicated handle for subclasses, etc.\n");
+        delete THIS;
     }
 
     void Interior_emitDataChanged(InteriorRef _this, std::shared_ptr<ModelIndex::Deferred::Base> topLeft, std::shared_ptr<ModelIndex::Deferred::Base> bottomRight, std::vector<ItemDataRole> roles) {
