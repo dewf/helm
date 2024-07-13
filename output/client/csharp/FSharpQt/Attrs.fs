@@ -1,7 +1,5 @@
 ﻿module FSharpQt.Attrs
 
-open Org.Whatever.QtTesting
-
 type IAttrTarget =
     interface
     end
@@ -99,43 +97,3 @@ type ModelCoreRoot() =
         // nothing to do, just maintaining regularity
         // see note on .SignalMapList above
         ()
-        
-// ====================================================================
-// various interfaces for accessing qobjects/widgets, + 2-way binding guard setters where applicable
-// if you want to support a given type of attribute, you have to implement the target interface
-// reasonable enough!
-// TODO: move all these to their associated modules
-// they're really just proxies for the <thing>.ModelCore (and anything inheriting them)
-
-// type internal RadioButtonAttrTarget =
-//     interface
-//         inherit AbstractButtonAttrTarget
-//         abstract member RadioButton: RadioButton.Handle
-//     end
-
-// type internal ActionAttrTarget =
-//     interface
-//         inherit QObjectAttrTarget
-//         abstract member Action: Action.Handle
-//         abstract member SetEnabled: bool -> bool   // return value: internal value did change
-//         abstract member SetCheckable: bool -> bool
-//         abstract member SetChecked: bool -> bool
-//     end
-//   
-// type internal SortFilterProxyModelAttrTarget =
-//     interface
-//         inherit IAttrTarget
-//         abstract member ProxyModel: SortFilterProxyModel.Handle
-//     end
-//
-// type internal DialogAttrTarget =
-//     interface
-//         inherit WidgetAttrTarget
-//         abstract member Dialog: Dialog.Handle
-//     end
-//
-// type internal FileDialogAttrTarget =
-//     interface
-//         inherit DialogAttrTarget
-//         abstract member FileDialog: FileDialog.Handle
-//     end

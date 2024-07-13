@@ -3,15 +3,6 @@
 open Org.Whatever.QtTesting
 open Extensions
 
-type AttrChange<'a> =
-    | Created of 'a
-    | Deleted of 'a
-    | Changed of 'a * 'a
-
-let createdOrChanged__old (changes: AttrChange<'a> list) =
-    changes
-    |> List.choose (function | Created attr | Changed (_, attr) -> Some attr | _ -> None)
-    
 type DepsKey =
     // used by actual widgets
     | IntKey of i: int
@@ -180,33 +171,6 @@ let rec disposeTree(node: IBuilderNode<'msg>) =
         disposeTree node
     node.Dispose()
 
-let inline genericDiffAttrs (keyFunc: 'a -> int) (a1: 'a list) (a2: 'a list)  =
-    let leftList = a1 |> List.map (fun a -> keyFunc a, a)
-    let rightList = a2 |> List.map (fun a -> keyFunc a, a)
-    let leftMap = leftList |> Map.ofList
-    let rightMap = rightList |> Map.ofList
-
-    let allKeys =
-        (leftList @ rightList)
-        |> List.map fst
-        |> List.distinct
-        |> List.sort
-
-    allKeys
-    |> List.choose (fun key ->
-        let leftVal, rightVal = (Map.tryFind key leftMap, Map.tryFind key rightMap)
-        match leftVal, rightVal with
-        | Some left, Some right ->
-            if left = right then None else Changed (left, right) |> Some
-        | Some left, None ->
-            Deleted left |> Some
-        | None, Some right ->
-            Created right |> Some
-        | _ -> failwith "shouldn't happen")
-    
-let nullDiffAttrs (_: 'a list) (_: 'a list) =
-    []
-    
 let rec diff (dispatch: 'msg -> unit) (maybeLeft: IBuilderNode<'msg> option) (maybeRight: IBuilderNode<'msg> option) (context: BuilderContext<'msg>) =
     let createRight (dispatch: 'msg -> unit) (right: IBuilderNode<'msg>) =
         // initial create
