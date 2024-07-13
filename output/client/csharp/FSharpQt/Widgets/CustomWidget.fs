@@ -189,3 +189,5 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
             
         override this.Attachments =
             this.Attachments
+
+        override this.Binding = None

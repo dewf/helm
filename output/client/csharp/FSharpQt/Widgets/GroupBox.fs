@@ -256,3 +256,5 @@ type GroupBox<'msg>() =
             
         override this.Attachments =
             this.Attachments
+
+        override this.Binding = None

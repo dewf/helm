@@ -250,6 +250,9 @@ type Dialog<'msg>() =
             
         override this.Attachments =
             this.Attachments
+            
+        override this.Binding = None
+            
 
 // some utility stuff for Cmd.Dialog
 

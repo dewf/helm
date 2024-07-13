@@ -137,3 +137,5 @@ type ListModelNode<'msg,'row>(dataFunc: 'row -> int -> ItemDataRole -> Variant, 
             
         override this.Attachments =
             this.Attachments
+
+        override this.Binding = None

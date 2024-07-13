@@ -226,3 +226,5 @@ type StatusBar<'msg>() =
             
         override this.Attachments =
             this.Attachments
+
+        override this.Binding = None

@@ -295,6 +295,8 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
             
         override this.Attachments =
             this.Attachments
+            
+        override this.Binding = None
 
 type BoxLayout<'msg>() =
     inherit BoxLayoutBase<'msg>(BoxLayout.Direction.TopToBottom)

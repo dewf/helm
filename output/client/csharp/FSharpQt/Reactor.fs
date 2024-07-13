@@ -298,6 +298,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'signal,'root when 'root :> IBuilderN
         override this.ContentKey =
             this.reactor.Root.ContentKey
         override this.Attachments = []
+        override this.Binding = None
             
     
 [<AbstractClass>]

@@ -475,3 +475,5 @@ type MainWindow<'msg>() =
         
         override this.ShowIfVisible () =
             this.model.ShowIfVisible()
+
+        override this.Binding = None

@@ -351,6 +351,8 @@ type MessageBox<'msg>() =
         override this.Attachments =
             this.Attachments
 
+        override this.Binding = None
+
 // use this in Cmd.Dialog invocation, it maps the raw int return value
 // this keeps us from having to declare the MessageBoxButton in Reactor which didn't feel right -
 //   maybe there will be other dialog types with different meanings to the .exec() return value
