@@ -91,7 +91,7 @@ type PropsRoot() =
         []
     
     member internal this.MaybeBoundName = _maybeBoundName
-    member this.BoundName with set value =
+    member this.Name with set value =
         _maybeBoundName <- Some value
         
         
