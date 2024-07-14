@@ -202,10 +202,6 @@ type StatusBar<'msg>() =
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable maybeBoundName: string option = None
-    member this.BoundName with set value =
-        maybeBoundName <- Some value
-    
     interface IStatusBarNode<'msg> with
         override this.Dependencies = []
 
@@ -233,6 +229,6 @@ type StatusBar<'msg>() =
             this.Attachments
 
         override this.Binding =
-            maybeBoundName
+            this.MaybeBoundName
             |> Option.map (fun name ->
                 name, StatusBarBinding(this.model.StatusBar))

@@ -373,10 +373,6 @@ type PlainTextEdit<'msg>() =
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
 
-    let mutable maybeBoundName: string option = None
-    member this.BoundName with set value =
-        maybeBoundName <- Some value
-    
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
 
@@ -406,7 +402,7 @@ type PlainTextEdit<'msg>() =
             this.Attachments
 
         override this.Binding =
-            maybeBoundName
+            this.MaybeBoundName
             |> Option.map (fun name ->
                 name, PlainTextEditBinding(this.model.PlainTextEdit))
              

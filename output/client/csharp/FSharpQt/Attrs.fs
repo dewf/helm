@@ -70,10 +70,13 @@ type internal NullSignalMapFunc() =
     interface ISignalMapFunc // empty
         
 type PropsRoot() =
+    let mutable _maybeBoundName: string option = None
+    
     // internal attribute-from-properties storage that will be shared by subclasses (eg [Root] -> Widget -> AbstractButton -> PushButton)
     // needs to be reversed before use to maintain the order that was originally assigned
     // we do it this way (all subclasses sharing this single list) precisely to preserve the consumer-supplied order
     let mutable _attrs: IAttr list = []
+    
     member this.Attrs = _attrs |> List.rev
     member internal this.PushAttr(attr: IAttr) =
         _attrs <- attr :: _attrs
@@ -86,6 +89,11 @@ type PropsRoot() =
         // not really necessary, but keeps this "regular" in case any root classes (eg QObject)
         //   still call base.SignalMapList
         []
+    
+    member internal this.MaybeBoundName = _maybeBoundName
+    member this.BoundName with set value =
+        _maybeBoundName <- Some value
+        
         
 [<AbstractClass>]
 type ModelCoreRoot() =
