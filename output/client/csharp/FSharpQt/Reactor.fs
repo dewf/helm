@@ -22,6 +22,7 @@ type Cmd<'msg,'signal> =
     | None
     | Msg of 'msg
     | Signal of 'signal
+    | ViewExec of func: (Map<string, IBoundThing> -> 'msg option)
     | Batch of commands: Cmd<'msg,'signal> list
     | Dialog of name: string * op: DialogOp<'msg>
     | ShowMenu of name: string * loc: Point
@@ -35,8 +36,18 @@ let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
         return mapper result
     }
     
-let nullAttrUpdate (state: 'state) (attr: 'attr) =
-    state
+type ViewExecBuilder() =
+    member this.Bind(m, f) =
+        let func2 (bindings: Map<string, IBoundThing>) =
+            let thing = m bindings
+            f thing
+        func2
+    member this.Return(m) =
+        Some m
+    member this.Zero() =
+        None
+        
+let viewexec = ViewExecBuilder()
     
 type RelativeAttachment<'msg> =
     | AttachedDialog of node: IDialogNode<'msg> * relativeTo: Widget.Handle option
@@ -66,9 +77,30 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
     let mutable state = initState
     let mutable root = view state
     let mutable disableDispatch = false
+
     let mutable attachMap = Map.empty<string, RelativeAttachment<'msg>>
+    let mutable bindings = Map.empty<string, IBoundThing>
     
     let mutable disposed = false
+    
+    let updateBindings() =
+        let rec recInner (soFar: Map<string, IBoundThing>) (node: IBuilderNode<'msg>) =
+            let deps =
+                node.Dependencies
+                |> List.map snd
+            let attachments =
+                node.Attachments
+                |> List.map (fun (_, attach) -> attach.Node)
+            let soFar =
+                (soFar, attachments @ deps)
+                ||> List.fold recInner
+            match node.Binding with
+            | Some (name, thing) ->
+                // should we log or even crash when a duplicate exists?
+                soFar.Add(name, thing)
+            | None ->
+                soFar
+        bindings <- recInner Map.empty root
     
     let updateAttachments() =
         let rec recInner (soFar: Map<string, RelativeAttachment<'msg>>) (node: IBuilderNode<'msg>) =
@@ -125,6 +157,7 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
             diff dispatch (Some (prevRoot :> IBuilderNode<'msg>)) (Some (root :> IBuilderNode<'msg>)) buildContext
             disableDispatch <- false
             //
+            updateBindings()
             updateAttachments()
             // process command(s) after tree diff
             processCmd cmd
@@ -138,6 +171,12 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                 dispatch msg
             | Cmd.Signal signal ->
                 processSignal signal
+            | Cmd.ViewExec func ->
+                match func bindings with
+                | Some msg ->
+                    dispatch msg
+                | None ->
+                    ()
             | Cmd.Batch commands ->
                 commands
                 |> List.iter processCmd
@@ -165,6 +204,7 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                 |> Option.iter dispatch
     do
         build dispatch root buildContext
+        updateBindings()
         updateAttachments()
         processCmd initCmd
         
@@ -184,6 +224,7 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
         diff dispatch (Some prevRoot) (Some root) buildContext
         disableDispatch <- false
         //
+        updateBindings()
         updateAttachments()
         // no commands allowed in attr update (for now)
     
@@ -288,7 +329,7 @@ type ReactorNodeBase<'outerMsg,'state,'msg,'signal,'root when 'root :> IBuilderN
             this.reactor.ApplyAttrs(initAttrs)
         override this.AttachDeps () =
             ()
-        override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (depsChanges: (DepsKey * DepsChange) list) =
+        override this.MigrateFrom (left: IBuilderNode<'outerMsg>) (_: (DepsKey * DepsChange) list) =
             let left' = (left :?> ReactorNodeBase<'outerMsg,'state,'msg,'signal,'root>)
             let nextAttrs = diffAttrs left'.Attrs this.Attrs |> createdOrChanged
             this.reactor <- left'.reactor

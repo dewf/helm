@@ -2,13 +2,10 @@
 
 open System
 open FSharpQt.Attrs
-open FSharpQt.MiscTypes
-open FSharpQt.ModelBindings
-open FSharpQt.Reactor
+open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
-open FSharpQt
-open BuilderNode
+open FSharpQt.MiscTypes
 
 type private Signal =
     | BlockCountChanged of newCount: int
@@ -45,7 +42,7 @@ type internal Attr =
     | TabStopDistance of distance: double
     | TextInteractionFlags of flags: Set<TextInteractionFlag>
     | UndoRedoEnabled of enabled: bool
-    | WordWrapMode of mode: MiscTypes.TextOption.WrapMode
+    | WordWrapMode of mode: FSharpQt.MiscTypes.TextOption.WrapMode
 with
     interface IAttr with
         override this.AttrEquals other =
@@ -352,38 +349,39 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
-type PlainTextEditBinding<'msg>() =
-    inherit ModelBindingBase<PlainTextEdit.Handle>()
-    member this.FetchPlainText (msgFunc: string -> 'msg) =
-        let msgThunk() =
-            this.Handle.ToPlainText()
-            |> msgFunc
-            |> Some
-        Cmd.Deferred msgThunk
-    member this.FetchBlockCount (msgFunc: int -> 'msg) =
-        let msgThunk() =
-            this.Handle.BlockCount()
-            |> msgFunc
-            |> Some
-        Cmd.Deferred msgThunk
-
+type PlainTextEditBinding internal(handle: PlainTextEdit.Handle) =
+    interface IBoundThing
+    member this.ToPlainText() =
+        handle.ToPlainText()
+    member this.BlockCount =
+        handle.BlockCount()
+    
+let bindNode (name: string) (map: Map<string, IBoundThing>) =
+    match map.TryFind name with
+    | Some thing ->
+        match thing with
+        | :? PlainTextEditBinding as pte ->
+            pte
+        | _ ->
+            failwith "PlainTextEdit.getBinding fail"
+    | None ->
+        failwith "PlainTextEdit.getBinding fail"
+            
 type PlainTextEdit<'msg>() =
     inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
-    let mutable maybeModelBinding: PlainTextEditBinding<'msg> option = None
-    member this.ModelBinding with set value = maybeModelBinding <- Some value
+
+    let mutable maybeBoundName: string option = None
+    member this.BoundName with set value =
+        maybeBoundName <- Some value
     
     interface IWidgetNode<'msg> with
         override this.Dependencies = []
 
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
-            // assign the method proxy if one is requested
-            maybeModelBinding
-            |> Option.iter (fun mp -> mp.Handle <- this.model.PlainTextEdit)
             
         override this.AttachDeps () =
             ()
@@ -394,8 +392,6 @@ type PlainTextEdit<'msg>() =
                 diffAttrs left'.Attrs this.Attrs
                 |> createdOrChanged
             this.model <- migrate left'.model nextAttrs this.SignalMapList this.SignalMask
-            // maybeMethodProxy
-            // |> Option.iter (fun mp -> mp.Handle <- this.model.Widget)
 
         override this.Dispose() =
             (this.model :> IDisposable).Dispose()
@@ -409,4 +405,8 @@ type PlainTextEdit<'msg>() =
         override this.Attachments =
             this.Attachments
 
-        override this.Binding = None
+        override this.Binding =
+            maybeBoundName
+            |> Option.map (fun name ->
+                name, PlainTextEditBinding(this.model.PlainTextEdit))
+             
