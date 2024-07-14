@@ -178,16 +178,23 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
-type StatusBarBinding<'msg>() =
-    inherit ModelBindingBase<StatusBar.Handle>()
+type StatusBarBinding internal(handle: StatusBar.Handle) =
+    interface IViewBinding
     member this.ShowMessage(message: string, ?timeout: int) =
-        this.Handle.ShowMessage(message, timeout |> Option.defaultValue 0)
-    member this.FetchSizeGripEnabled (msgFunc: bool -> 'msg) =
-        let msgThunk() =
-            this.Handle.IsSizeGripEnabled()
-            |> msgFunc
-            |> Some
-        Cmd.Deferred msgThunk
+        handle.ShowMessage(message, timeout |> Option.defaultValue 0)
+    member this.IsSizeGripEnabled =
+        handle.IsSizeGripEnabled()
+        
+let bindNode (name: string) (map: Map<string, IViewBinding>) =
+    match map.TryFind name with
+    | Some thing ->
+        match thing with
+        | :? StatusBarBinding as statusBar ->
+            statusBar
+        | _ ->
+            failwith "StatusBar.bindNode fail"
+    | None ->
+        failwith "StatusBar.bindNode fail"
     
 type StatusBar<'msg>() =
     inherit Props<'msg>()
@@ -195,17 +202,15 @@ type StatusBar<'msg>() =
     
     member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
-    let mutable maybeModelBinding: StatusBarBinding<'msg> option = None
-    member this.ModelBinding with set value = maybeModelBinding <- Some value
+    let mutable maybeBoundName: string option = None
+    member this.BoundName with set value =
+        maybeBoundName <- Some value
     
     interface IStatusBarNode<'msg> with
         override this.Dependencies = []
 
         override this.Create dispatch buildContext =
             this.model <- create this.Attrs this.SignalMapList dispatch this.SignalMask
-            // assign the method proxy if one is requested
-            maybeModelBinding
-            |> Option.iter (fun mp -> mp.Handle <- this.model.StatusBar)
             
         override this.AttachDeps () =
             ()
@@ -227,4 +232,7 @@ type StatusBar<'msg>() =
         override this.Attachments =
             this.Attachments
 
-        override this.Binding = None
+        override this.Binding =
+            maybeBoundName
+            |> Option.map (fun name ->
+                name, StatusBarBinding(this.model.StatusBar))

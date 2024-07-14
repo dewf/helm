@@ -21,7 +21,7 @@ type DepsChange =
 type ContentKey =
     System.Object
     
-type IBoundThing =
+type IViewBinding =
     interface
     end
    
@@ -67,7 +67,7 @@ and IBuilderNode<'msg> =
         // for example, dialogs, pop-up menus, or non-visual nodes which might need to reference their parent somehow (or not, but simply need to be part of the build process)
         abstract Attachments: (string * Attachment<'msg>) list
         
-        abstract Binding: (string * IBoundThing) option // option for now, maybe a list at a later point if we ever need to expose 2+ things per node
+        abstract Binding: (string * IViewBinding) option // option for now, maybe a list at a later point if we ever need to expose 2+ things per node
     end
     
 and INonVisualNode<'msg> =

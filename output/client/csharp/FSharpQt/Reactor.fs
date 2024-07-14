@@ -22,13 +22,13 @@ type Cmd<'msg,'signal> =
     | None
     | Msg of 'msg
     | Signal of 'signal
-    | ViewExec of func: (Map<string, IBoundThing> -> 'msg option)
+    | ViewExec of func: (Map<string, IViewBinding> -> 'msg option)
     | Batch of commands: Cmd<'msg,'signal> list
     | Dialog of name: string * op: DialogOp<'msg>
     | ShowMenu of name: string * loc: Point
     | Async of block: Async<'msg>
     | Sub of subFunc: (('msg -> unit) -> unit)
-    | Deferred of thunk: (unit -> 'msg option)      // when we want to execute something only after the view() func has executed (currently used for 'model bindings' aka method proxies)
+    // | Deferred of thunk: (unit -> 'msg option)      // when we want to execute something only after the view() func has executed (currently used for 'model bindings' aka method proxies)
     
 let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
     async {
@@ -38,7 +38,7 @@ let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
     
 type ViewExecBuilder() =
     member this.Bind(m, f) =
-        let func2 (bindings: Map<string, IBoundThing>) =
+        let func2 (bindings: Map<string, IViewBinding>) =
             let thing = m bindings
             f thing
         func2
@@ -79,12 +79,12 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
     let mutable disableDispatch = false
 
     let mutable attachMap = Map.empty<string, RelativeAttachment<'msg>>
-    let mutable bindings = Map.empty<string, IBoundThing>
+    let mutable bindings = Map.empty<string, IViewBinding>
     
     let mutable disposed = false
     
     let updateBindings() =
-        let rec recInner (soFar: Map<string, IBoundThing>) (node: IBuilderNode<'msg>) =
+        let rec recInner (soFar: Map<string, IViewBinding>) (node: IBuilderNode<'msg>) =
             let deps =
                 node.Dependencies
                 |> List.map snd
@@ -199,9 +199,9 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                             printfn "Cmd.Sub - attempted to dispatch [%A] on a disposed reactor" msg
                     Application.ExecuteOnMainThread(inner)
                 subFunc safeDispatch
-            | Cmd.Deferred thunk ->
-                thunk()
-                |> Option.iter dispatch
+            // | Cmd.Deferred thunk ->
+            //     thunk()
+            //     |> Option.iter dispatch
     do
         build dispatch root buildContext
         updateBindings()

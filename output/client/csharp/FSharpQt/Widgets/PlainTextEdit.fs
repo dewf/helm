@@ -350,22 +350,22 @@ let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
     
 type PlainTextEditBinding internal(handle: PlainTextEdit.Handle) =
-    interface IBoundThing
+    interface IViewBinding
     member this.ToPlainText() =
         handle.ToPlainText()
     member this.BlockCount =
         handle.BlockCount()
     
-let bindNode (name: string) (map: Map<string, IBoundThing>) =
+let bindNode (name: string) (map: Map<string, IViewBinding>) =
     match map.TryFind name with
     | Some thing ->
         match thing with
         | :? PlainTextEditBinding as pte ->
             pte
         | _ ->
-            failwith "PlainTextEdit.getBinding fail"
+            failwith "PlainTextEdit.bindNode fail"
     | None ->
-        failwith "PlainTextEdit.getBinding fail"
+        failwith "PlainTextEdit.bindNode fail"
             
 type PlainTextEdit<'msg>() =
     inherit Props<'msg>()
