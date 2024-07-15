@@ -7,6 +7,7 @@ open BuilderNode
 open FSharpQt.MiscTypes
 open FSharpQt.Models
 open FSharpQt.Widgets.LineEdit
+open FSharpQt.Widgets.StatusBar
 open FakeThing
 open ListModelNode
 open SortFilterProxyModel
@@ -74,6 +75,7 @@ type State = {
     CurrentFilter: string option
     NextIntValue: int
     Suffix: string
+    StatusCounter: int
 }
 
 type Msg =
@@ -82,6 +84,14 @@ type Msg =
     | ToggleHeaders
     | FilterTextEdited of text: string
     | ReplaceSuffix
+    | ShowStatus
+    
+let cmdSetStatus text timeout =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! status = StatusBar.bindNode "status"
+            status.ShowMessage(text, timeout)
+        })
 
 let init () =
     let initRows = TrackedRows.Init([
@@ -95,8 +105,9 @@ let init () =
         CurrentFilter = None
         NextIntValue = 4
         Suffix = "Initial Suffix"
+        StatusCounter = 1
     }
-    nextState, Cmd.None
+    nextState, cmdSetStatus "status bar init" 0
     
 let update (state: State) (msg: Msg) =
     match msg with
@@ -130,6 +141,14 @@ let update (state: State) (msg: Msg) =
         { state with CurrentFilter = nextFilter }, Cmd.None
     | ReplaceSuffix ->
         { state with Suffix = "REPLACED!!" }, Cmd.None
+    | ShowStatus ->
+        let nextState =
+            { state with StatusCounter = state.StatusCounter + 1 }
+        let cmd =
+            let text =
+                sprintf "status bar update %d" state.StatusCounter
+            cmdSetStatus text 500
+        nextState, cmd
     
 let view (state: State) =
     let exitAction =
@@ -194,6 +213,9 @@ let view (state: State) =
     let replaceSuffixButton =
         PushButton(Text = "Replace Suffix", OnClicked = ReplaceSuffix)
         
+    let showStatusButton =
+        PushButton(Text = "Show Status", OnClicked = ShowStatus)
+        
     let vbox =
         VBoxLayout(Items = [
             BoxItem(treeView)
@@ -202,13 +224,18 @@ let view (state: State) =
             BoxItem(filterEdit)
             BoxItem(fakeButton)
             BoxItem(replaceSuffixButton)
+            BoxItem(showStatusButton)
         ])
+        
+    let status =
+        StatusBar(Name = "status")
         
     MainWindow(
         WindowTitle = "Hmmm wut?",
         Size = Size.From (640, 480),
         CentralLayout = vbox,
-        MenuBar = menuBar
+        MenuBar = menuBar,
+        StatusBar = status
         // actions are already owned by MainWindow, and once installed via menu I believe they are active anyway - this doesn't hurt, but in our case it's not necessary, either
         // Actions = [
         //     "first", action1
