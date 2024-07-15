@@ -83,7 +83,16 @@ let update (state: State) = function
     | ShowContext loc ->
         match state.MaybeHoverIndex with
         | Some _ ->
-            state, Cmd.ShowMenu ("context", loc)
+            let cmd =
+                let f bindings =
+                    viewexec bindings {
+                        let! menu = Menu.bindNode "context"
+                        let! canvas = CustomWidget.bindNode "canvas"
+                        let loc' = canvas.MapToGlobal(loc)
+                        menu.Popup(loc')
+                    }
+                Cmd.ViewExec f
+            state, cmd
         | None ->
             state, Cmd.None
     | ShowDialog ->
@@ -270,15 +279,16 @@ let view (state: State) =
         let contextMenu =
             let action =
                 MenuAction(Text = "Edit Radius", OnTriggered = ShowDialog)
-            Menu(Items = [
+            Menu(Name = "context", Items = [
                 MenuItem(action)
             ])
         CustomWidget(
             // first 2 args required
             EventDelegate(state), [ PaintEvent; MousePressEvent; MouseMoveEvent; SizeHint ],
+            Name = "canvas",
             MouseTracking = true, // tracking needed for move events without mouse down
             Attachments = [
-                "context", Attachment(contextMenu)
+                "context1111", Attachment(contextMenu)
                 "edit", Attachment(dialog)
             ])
         

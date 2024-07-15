@@ -152,6 +152,20 @@ with
                 | ResizeEvent -> Widget.MethodMask.ResizeEvent
                 | DropEvents -> Widget.MethodMask.DropEvents
             acc ||| value)
+        
+type CustomWidgetBinding internal(handle: Widget.Handle) =
+    inherit Widget.WidgetBinding(handle)
+    
+let bindNode (name: string) (map: Map<string, IViewBinding>) =
+    match map.TryFind name with
+    | Some thing ->
+        match thing with
+        | :? CustomWidgetBinding as widget ->
+            widget
+        | _ ->
+            failwith "CustomWidget.bindNode fail"
+    | None ->
+        failwith "CustomWidget.bindNode fail"
 
 type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskItems: EventMaskItem seq) =
     inherit Widget.Props<'msg>()
@@ -190,4 +204,7 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
         override this.Attachments =
             this.Attachments
 
-        override this.Binding = None
+        override this.Binding =
+            this.MaybeBoundName
+            |> Option.map (fun name ->
+                name, CustomWidgetBinding(this.model.Widget))

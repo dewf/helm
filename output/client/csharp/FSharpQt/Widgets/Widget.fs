@@ -612,6 +612,23 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
+    
+type WidgetBinding internal(handle: Widget.Handle) =
+    interface IViewBinding
+    member this.MapToGlobal (loc: Point) =
+        handle.MapToGlobal(loc.QtValue)
+        |> Point.From
+    
+let bindNode (name: string) (map: Map<string, IViewBinding>) =
+    match map.TryFind name with
+    | Some thing ->
+        match thing with
+        | :? WidgetBinding as widget ->
+            widget
+        | _ ->
+            failwith "Widget.bindNode fail"
+    | None ->
+        failwith "Widget.bindNode fail"
 
 type Widget<'msg>() =
     inherit Props<'msg>()
@@ -672,5 +689,7 @@ type Widget<'msg>() =
         override this.Attachments =
             this.Attachments
             
-        override this.Binding = None
-
+        override this.Binding =
+            this.MaybeBoundName
+            |> Option.map (fun name ->
+                name, WidgetBinding(this.model.Widget))

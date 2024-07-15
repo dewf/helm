@@ -25,9 +25,9 @@ type Cmd<'msg,'signal> =
     | ViewExec of func: (Map<string, IViewBinding> -> 'msg option)
     | Batch of commands: Cmd<'msg,'signal> list
     | Dialog of name: string * op: DialogOp<'msg>
-    | ShowMenu of name: string * loc: Point
     | Async of block: Async<'msg>
     | Sub of subFunc: (('msg -> unit) -> unit)
+    // | ShowMenu of name: string * loc: Point
     // | Deferred of thunk: (unit -> 'msg option)      // when we want to execute something only after the view() func has executed (currently used for 'model bindings' aka method proxies)
     
 let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
@@ -36,18 +36,16 @@ let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
         return mapper result
     }
     
-type ViewExecBuilder() =
+type ViewExecBuilder(bindings: Map<string, IViewBinding>) =
     member this.Bind(m, f) =
-        let func2 (bindings: Map<string, IViewBinding>) =
-            let thing = m bindings
-            f thing
-        func2
+        let thing = m bindings
+        f thing
     member this.Return(m) =
         Some m
     member this.Zero() =
         None
         
-let viewexec = ViewExecBuilder()
+let viewexec = ViewExecBuilder
     
 type RelativeAttachment<'msg> =
     | AttachedDialog of node: IDialogNode<'msg> * relativeTo: Widget.Handle option
@@ -182,8 +180,6 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                 |> List.iter processCmd
             | Cmd.Dialog (name, op) ->
                 this.DialogOp name op
-            | Cmd.ShowMenu (name, loc) ->
-                this.PopMenu name loc
             | Cmd.Async block ->
                 async {
                     let! msg = block
@@ -199,6 +195,8 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                             printfn "Cmd.Sub - attempted to dispatch [%A] on a disposed reactor" msg
                     Application.ExecuteOnMainThread(inner)
                 subFunc safeDispatch
+            // | Cmd.ShowMenu (name, loc) ->
+            //     this.PopMenu name loc
             // | Cmd.Deferred thunk ->
             //     thunk()
             //     |> Option.iter dispatch
@@ -274,19 +272,6 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
         | None ->
             printfn "SubReactor.DialogOp: couldn't find dialog '%s'" name
             
-    member this.PopMenu (name: string) (loc: Point) =
-        match attachMap.TryFind name with
-        | Some node ->
-            match node with
-            | AttachedPopup (node, relativeTo) ->
-                let loc' =
-                    relativeTo.MapToGlobal(loc.QtValue)
-                node.Menu.Popup(loc')
-            | _ ->
-                printfn "Cmd.PopMenu - found a node but it wasn't a menu node (are you using the same name twice?)"
-        | None ->
-            printfn "SubReactor.PopMenu: couldn't find popup '%s'" name
-        
     interface IDisposable with
         member this.Dispose() =
             // set ASAP to stop subscription dispatches after disposal:

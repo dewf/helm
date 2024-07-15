@@ -245,6 +245,22 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
+    
+type MenuBinding internal(handle: Menu.Handle) =
+    interface IViewBinding
+    member this.Popup(loc: Point) =
+        handle.Popup(loc.QtValue)
+    
+let bindNode (name: string) (map: Map<string, IViewBinding>) =
+    match map.TryFind name with
+    | Some thing ->
+        match thing with
+        | :? MenuBinding as menu ->
+            menu
+        | _ ->
+            failwith "Menu.bindNode fail"
+    | None ->
+        failwith "Menu.bindNode fail"
 
 type Menu<'msg>() =
     inherit Props<'msg>()
@@ -297,10 +313,10 @@ type Menu<'msg>() =
         override this.ContentKey =
             this.model.Menu
             
-        override this.Popup point =
-            this.model.Menu.Popup point
-            
         override this.Attachments =
             this.Attachments
 
-        override this.Binding = None
+        override this.Binding =
+            this.MaybeBoundName
+            |> Option.map (fun name ->
+                name, MenuBinding(this.model.Menu))

@@ -104,7 +104,6 @@ and IMenuNode<'msg> =
     interface
         inherit IBuilderNode<'msg>
         abstract member Menu: Menu.Handle
-        abstract member Popup: Common.Point -> unit
     end
     
 and IActionNode<'msg> =
