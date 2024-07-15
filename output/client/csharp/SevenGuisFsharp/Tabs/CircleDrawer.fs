@@ -84,14 +84,13 @@ let update (state: State) = function
         match state.MaybeHoverIndex with
         | Some _ ->
             let cmd =
-                let f bindings =
+                Cmd.ViewExec (fun bindings ->
                     viewexec bindings {
                         let! menu = Menu.bindNode "context"
                         let! canvas = CustomWidget.bindNode "canvas"
                         let loc' = canvas.MapToGlobal(loc)
                         menu.Popup(loc')
-                    }
-                Cmd.ViewExec f
+                    })
             state, cmd
         | None ->
             state, Cmd.None
