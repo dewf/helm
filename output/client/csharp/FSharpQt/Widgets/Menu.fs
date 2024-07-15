@@ -264,7 +264,6 @@ type Menu<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
 
     member val Items: MenuItem<'msg> list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MigrateContent (leftMenu: Menu<'msg>) =
         let leftItems =

@@ -207,8 +207,6 @@ type GroupBox<'msg>() =
     let mutable maybeLayout: ILayoutNode<'msg> option = None
     member this.Layout with set value = maybeLayout <- Some value
     
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "layout") with
         | Some change ->

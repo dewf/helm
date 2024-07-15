@@ -390,8 +390,6 @@ type MenuAction<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     let mutable buildState = Init
     
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
     interface IActionNode<'msg> with
         override this.Dependencies = []
         

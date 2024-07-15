@@ -40,7 +40,7 @@ type private SignalMapFunc<'msg>(func) =
     inherit SignalMapFuncBase<Signal,'msg>(func)
 
 type Props<'msg>() =
-    inherit PropsRoot()
+    inherit PropsRoot<'msg>()
     
     let mutable onDestroyed: (QObjectProxy -> 'msg) option = None
     let mutable onObjectNameChanged: (string -> 'msg) option = None

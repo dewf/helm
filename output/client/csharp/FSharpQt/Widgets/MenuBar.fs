@@ -173,7 +173,6 @@ type MenuBar<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Menus: IMenuNode<'msg> list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MigrateContent (leftMenuBar: MenuBar<'msg>) =
         let leftKeys =

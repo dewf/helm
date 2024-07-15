@@ -284,7 +284,6 @@ type GridLayout<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Items: GridItem<'msg> list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MigrateContent(leftBox: GridLayout<'msg>) =
         let leftContents =

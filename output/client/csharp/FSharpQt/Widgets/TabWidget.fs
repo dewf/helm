@@ -280,7 +280,6 @@ type TabWidget<'msg>() =
     // page label doubles as string dependency key
     // probably need to make that more apparent ...
     member val Pages: (string * IWidgetNode<'msg>) list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MigrateContent(leftTabWidget: TabWidget<'msg>) =
         let leftContents =

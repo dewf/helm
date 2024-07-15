@@ -284,8 +284,8 @@ let view (state: State) =
             Name = "canvas",
             MouseTracking = true, // tracking needed for move events without mouse down
             Attachments = [
-                "context1111", Attachment(contextMenu)
-                "edit1111", Attachment(dialog)
+                Attachment("context", contextMenu)
+                Attachment("edit", dialog)
             ])
         
     let vbox =

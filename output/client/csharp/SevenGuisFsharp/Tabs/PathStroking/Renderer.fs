@@ -370,7 +370,7 @@ let view (state: State) =
         ]
         CustomWidget(EventDelegate(state), events,
                      MouseTracking = true,
-                     Attachments = [ "timer", Attachment(timer) ])
+                     Attachments = [ Attachment("timer", timer) ])
     custom :> IWidgetNode<Msg>
 
 type PathStrokeRenderer<'outerMsg>() =

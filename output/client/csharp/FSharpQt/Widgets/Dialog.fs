@@ -214,8 +214,6 @@ type Dialog<'msg>() =
     inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
 
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-
     let mutable maybeLayout: ILayoutNode<'msg> option = None
     member private this.MaybeLayout = maybeLayout
     member this.Layout with set value = maybeLayout <- Some value

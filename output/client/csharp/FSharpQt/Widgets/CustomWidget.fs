@@ -167,8 +167,6 @@ type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskIt
     inherit Widget.Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
     member private this.MethodMask =
         EventMaskItem.QtSetFrom eventMaskItems
             

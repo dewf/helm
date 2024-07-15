@@ -110,8 +110,6 @@ type ListModelNode<'msg,'row>(dataFunc: 'row -> int -> ItemDataRole -> Variant, 
     inherit Props<'msg>()
     [<DefaultValue>] val mutable model: Model<'msg,'row>
 
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
     interface IModelNode<'msg> with
         override this.Dependencies = []
 

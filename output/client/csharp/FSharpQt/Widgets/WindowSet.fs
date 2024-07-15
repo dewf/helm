@@ -1,10 +1,12 @@
 ﻿module FSharpQt.Widgets.WindowSet
 
+open FSharpQt.Attrs
 open FSharpQt.BuilderNode
 
 type WindowSet<'msg>() =
+    inherit PropsRoot<'msg>()
+    
     member val Windows: (DepsKey * IWindowNode<'msg>) list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
         
     interface ITopLevelNode<'msg> with
         override this.Dependencies =

@@ -349,8 +349,6 @@ type SortFilterProxyModel<'msg>() =
     let mutable maybeSourceModel: IModelNode<'msg> option = None
     member this.SourceModel with set value = maybeSourceModel <- Some value
     
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
     member this.MigrateDeps (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "source") with
         | Some change ->

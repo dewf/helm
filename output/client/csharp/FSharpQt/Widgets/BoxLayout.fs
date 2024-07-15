@@ -243,7 +243,6 @@ type BoxLayoutBase<'msg>(initialDirection: BoxLayout.Direction) =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Items: BoxItem<'msg> list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
         
     member private this.MigrateContent(leftBox: BoxLayoutBase<'msg>) =
         let leftContents =

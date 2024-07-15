@@ -362,7 +362,6 @@ type ToolBar<'msg>() =
     [<DefaultValue>] val mutable private model: Model<'msg>
     
     member val Items: ToolBarItem<'msg> list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
     
     member private this.MigrateContent(leftToolBar: ToolBar<'msg>) =
         let leftContents =

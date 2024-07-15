@@ -1,5 +1,7 @@
 ﻿module FSharpQt.Attrs
 
+open FSharpQt.BuilderNode
+
 type IAttrTarget =
     interface
     end
@@ -69,7 +71,7 @@ type internal SignalMapFuncBase<'signal,'msg>(func: 'signal -> 'msg option) =
 type internal NullSignalMapFunc() =
     interface ISignalMapFunc // empty
         
-type PropsRoot() =
+type PropsRoot<'msg>() =
     let mutable _maybeBoundName: string option = None
     
     // internal attribute-from-properties storage that will be shared by subclasses (eg [Root] -> Widget -> AbstractButton -> PushButton)
@@ -93,6 +95,8 @@ type PropsRoot() =
     member internal this.MaybeBoundName = _maybeBoundName
     member this.Name with set value =
         _maybeBoundName <- Some value
+        
+    member val Attachments: Attachment<'msg> list = [] with get, set
         
         
 [<AbstractClass>]

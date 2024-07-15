@@ -326,7 +326,6 @@ type MainWindow<'msg>() =
     
     member val Actions: IActionNode<'msg> list = [] with get, set
     member val ToolBars: (string * IToolBarNode<'msg>) list = [] with get, set
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
 
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     member this.CentralWidget with set (value: IWidgetNode<'msg>) = maybeContent <- Some value
@@ -471,7 +470,8 @@ type MainWindow<'msg>() =
         override this.ContentKey =
             this.model.Widget
             
-        override this.Attachments = this.Attachments
+        override this.Attachments =
+            this.Attachments
         
         override this.ShowIfVisible () =
             this.model.ShowIfVisible()

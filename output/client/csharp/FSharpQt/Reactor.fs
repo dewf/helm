@@ -67,7 +67,7 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                 |> List.map snd
             let attachments =
                 node.Attachments
-                |> List.map (fun (_, attach) -> attach.Node)
+                |> List.map (_.Node)
             let soFar =
                 (soFar, attachments @ deps)
                 ||> List.fold recInner

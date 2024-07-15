@@ -24,26 +24,10 @@ type ContentKey =
 type IViewBinding =
     interface
     end
-   
-[<RequireQualifiedAccess>]
-type AttachmentValue<'msg> =
-    | NonVisual of node: INonVisualNode<'msg>
-    | Dialog of node: IDialogNode<'msg>
-    | Menu of node: IMenuNode<'msg>
-        
-and Attachment<'msg> private(value: AttachmentValue<'msg>) =
-    member val internal Value = value
-    new(node: INonVisualNode<'msg>) =
-        Attachment(AttachmentValue.NonVisual node)
-    new(node: IDialogNode<'msg>) =
-        Attachment(AttachmentValue.Dialog node)
-    new(node: IMenuNode<'msg>) =
-        Attachment(AttachmentValue.Menu node)
-    member internal this.Node =
-        match value with
-        | AttachmentValue.NonVisual node -> node :> IBuilderNode<'msg>
-        | AttachmentValue.Dialog node -> node
-        | AttachmentValue.Menu node -> node
+
+type Attachment<'msg>(id: string, node: IBuilderNode<'msg>) =
+    member val internal Id = id
+    member val internal Node = node
     
 and BuilderContext<'msg> = {
     // context cannot contain nodes (eg parent node),
@@ -64,8 +48,7 @@ and IBuilderNode<'msg> =
         
         // externally-supplied dependencies of any type, which the node itself has no knowledge of (except for providing the basic property storage)
         // will be added to self-reported dependencies during build/diff process
-        // for example, dialogs, pop-up menus, or non-visual nodes which might need to reference their parent somehow (or not, but simply need to be part of the build process)
-        abstract Attachments: (string * Attachment<'msg>) list
+        abstract Attachments: Attachment<'msg> list
         
         abstract Binding: (string * IViewBinding) option // option for now, maybe a list at a later point if we ever need to expose 2+ things per node
     end
@@ -152,7 +135,7 @@ and IModelNode<'msg> =
 let nodeDepsWithAttachments (node: IBuilderNode<'msg>) =
     let attachDeps =
         node.Attachments
-        |> List.map (fun (id, attach) -> AttachKey id, attach.Node)
+        |> List.map (fun attach -> AttachKey attach.Id, attach.Node)
     node.Dependencies @ attachDeps
     
 let dumpTree (node: IBuilderNode<'msg>) =

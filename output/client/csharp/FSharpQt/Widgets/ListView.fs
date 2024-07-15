@@ -317,8 +317,6 @@ type ListView<'msg>() =
     inherit Props<'msg>()
     [<DefaultValue>] val mutable private model: Model<'msg>
     
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
     let mutable maybeListModel: IModelNode<'msg> option = None
     member this.ListModel with set value = maybeListModel <- Some value
             

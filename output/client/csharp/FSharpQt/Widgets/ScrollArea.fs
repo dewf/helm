@@ -172,8 +172,6 @@ type ScrollArea<'msg>() =
     let mutable maybeContent: IWidgetOrLayoutNode<'msg> option = None
     member this.Content with set value = maybeContent <- Some value
 
-    member val Attachments: (string * Attachment<'msg>) list = [] with get, set
-    
     member private this.MigrateContent (changeMap: Map<DepsKey, DepsChange>) =
         match changeMap.TryFind (StrKey "content") with
         | Some change ->
