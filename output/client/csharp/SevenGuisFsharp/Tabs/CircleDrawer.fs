@@ -83,15 +83,7 @@ let update (state: State) = function
     | ShowContext loc ->
         match state.MaybeHoverIndex with
         | Some _ ->
-            let cmd =
-                Cmd.ViewExec (fun bindings ->
-                    viewexec bindings {
-                        let! menu = Menu.bindNode "context"
-                        let! canvas = CustomWidget.bindNode "canvas"
-                        let loc' = canvas.MapToGlobal(loc)
-                        menu.Popup(loc')
-                    })
-            state, cmd
+            state, showMenuAtPoint "context" loc "canvas"
         | None ->
             state, Cmd.None
     | ShowDialog ->
@@ -101,7 +93,9 @@ let update (state: State) = function
                 state |> circleAtIndex index
             let nextState =
                 { state with NowEditing = true; EditingRadius = circle.Radius }
-            nextState, Cmd.Dialog (execDialogAtPoint "edit" circle.Location DialogClosed)
+            let cmd =
+                execDialogWithResultAtPoint "edit" DialogClosed circle.Location "canvas"
+            nextState, cmd
         | None ->
             state, Cmd.None
     | SetRadius value ->
@@ -112,9 +106,9 @@ let update (state: State) = function
             |> List.tryFindIndex (fun circle -> Util.dist circle.Location loc < circle.Radius)
         { state with MaybeHoverIndex = nextHoverIndex }, Cmd.None
     | ApplyEdit ->
-        state, Cmd.Dialog ("edit", Accept)
+        state, acceptDialog "edit"
     | CancelEdit ->
-        state, Cmd.Dialog ("edit", Reject)
+        state, rejectDialog "edit"
     | DialogClosed accepted ->
         // this also catches the case where the dialog is closed with the [X] and not via the cancel button
         // hence not changing any state in the CancelEdit handler
@@ -272,7 +266,10 @@ let view (state: State) =
                 BoxItem(spacer = 10)
                 BoxItem(hbox)
             ])
-        Dialog(WindowTitle = "Edit Radius", Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ... probably need to settle on a single manner of handling dialog close events
+        Dialog(
+            Name = "edit",
+            WindowTitle = "Edit Radius",
+            Layout = vbox) // if using the Cmd.Dialog ExecWithResult, don't use the OnClosed signal here - I presume it would be sent twice ... probably need to settle on a single manner of handling dialog close events
         
     let canvas =
         let contextMenu =
@@ -288,7 +285,7 @@ let view (state: State) =
             MouseTracking = true, // tracking needed for move events without mouse down
             Attachments = [
                 "context1111", Attachment(contextMenu)
-                "edit", Attachment(dialog)
+                "edit1111", Attachment(dialog)
             ])
         
     let vbox =

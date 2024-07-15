@@ -189,6 +189,26 @@ let private migrate (model: Model<'msg>) (attrs: (IAttr option * IAttr) list) (s
 
 let private dispose (model: Model<'msg>) =
     (model :> IDisposable).Dispose()
+    
+type DialogBinding internal(handle: Dialog.Handle) =
+    inherit Widget.WidgetBinding(handle)
+    member this.Exec() =
+        handle.Exec()
+    member this.Show() =
+        handle.Show()
+    member this.Move(p: Point) =
+        handle.Move(p.QtValue)
+    member this.Accept() =
+        handle.Accept()
+    member this.Reject() =
+        handle.Reject()
+    
+let bindNode (name: string) (map: Map<string, IViewBinding>) =
+    match map.TryFind name with
+    | Some (:? DialogBinding as dialog) ->
+        dialog
+    | _ ->
+        failwith "Dialog.bindNode fail"
 
 type Dialog<'msg>() =
     inherit Props<'msg>()
@@ -251,23 +271,79 @@ type Dialog<'msg>() =
         override this.Attachments =
             this.Attachments
             
-        override this.Binding = None
-            
+        override this.Binding =
+            this.MaybeBoundName
+            |> Option.map (fun name ->
+                name, DialogBinding(this.model.Dialog))
 
-// some utility stuff for Cmd.Dialog
-
-let execDialog (id: string) (msgFunc: bool -> 'msg) =
-    let msgFunc2 intValue =
-        match intValue with
-        | 1 -> true
-        | _ -> false
-        |> msgFunc
-    id, DialogOp.ExecWithResult msgFunc2
+let acceptDialog name =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! dialog = bindNode name
+            dialog.Accept()
+        })
     
-let execDialogAtPoint (id: string) (p: Point) (msgFunc: bool -> 'msg) =
-    let msgFunc2 intValue =
-        match intValue with
-        | 1 -> true
-        | _ -> false
-        |> msgFunc
-    id, DialogOp.ExecAtPointWithResult (p, msgFunc2)
+let rejectDialog name =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! dialog = bindNode name
+            dialog.Reject()
+        })
+    
+let execDialog name =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! dialog = bindNode name
+            dialog.Exec() |> ignore
+        })
+    
+let execDialogAtPoint name point relativeTo =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! dialog = bindNode name
+            let! relativeToWidget = Widget.bindNode relativeTo
+            let p2 = relativeToWidget.MapToGlobal(point)
+            dialog.Move p2
+            dialog.Exec() |> ignore
+        })
+    
+let private resultCodeToBool (code: int) =
+    match code with
+    | 1 -> true
+    | 0 -> false
+    | _ -> failwithf "Dialog: unknown result code %d" code
+    
+let execDialogWithResult name msg =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! dialog = bindNode name
+            return dialog.Exec() |> resultCodeToBool |> msg
+        })
+    
+let execDialogWithResultAtPoint name msg point relativeTo =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! dialog = bindNode name
+            let! relativeToWidget = Widget.bindNode relativeTo
+            let p2 = relativeToWidget.MapToGlobal(point)
+            dialog.Move p2
+            return dialog.Exec() |> resultCodeToBool |> msg
+        })
+
+// // some utility stuff for Cmd.Dialog
+//
+// let execDialog (id: string) (msgFunc: bool -> 'msg) =
+//     let msgFunc2 intValue =
+//         match intValue with
+//         | 1 -> true
+//         | _ -> false
+//         |> msgFunc
+//     id, DialogOp.ExecWithResult msgFunc2
+//     
+// let execDialogAtPoint (id: string) (p: Point) (msgFunc: bool -> 'msg) =
+//     let msgFunc2 intValue =
+//         match intValue with
+//         | 1 -> true
+//         | _ -> false
+//         |> msgFunc
+//     id, DialogOp.ExecAtPointWithResult (p, msgFunc2)

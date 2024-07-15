@@ -5,17 +5,6 @@ open FSharpQt.BuilderNode
 open Org.Whatever.QtTesting
 
 open FSharpQt.Attrs
-open FSharpQt.MiscTypes
-
-type DialogOp<'msg> =
-    | Exec
-    | ExecAt of p: Point
-    | ExecWithResult of msgFunc: (int -> 'msg)
-    | ExecAtPointWithResult of p: Point * msgFunc: (int -> 'msg)
-    | Show
-    | ShowAt of p: Point
-    | Accept
-    | Reject
 
 [<RequireQualifiedAccess>]
 type Cmd<'msg,'signal> =
@@ -24,11 +13,8 @@ type Cmd<'msg,'signal> =
     | Signal of 'signal
     | ViewExec of func: (Map<string, IViewBinding> -> 'msg option)
     | Batch of commands: Cmd<'msg,'signal> list
-    | Dialog of name: string * op: DialogOp<'msg>
     | Async of block: Async<'msg>
     | Sub of subFunc: (('msg -> unit) -> unit)
-    // | ShowMenu of name: string * loc: Point
-    // | Deferred of thunk: (unit -> 'msg option)      // when we want to execute something only after the view() func has executed (currently used for 'model bindings' aka method proxies)
     
 let asyncPerform (block: Async<'a>) (mapper: 'a -> 'msg) =
     async {
@@ -46,10 +32,6 @@ type ViewExecBuilder(bindings: Map<string, IViewBinding>) =
         None
         
 let viewexec = ViewExecBuilder
-    
-type RelativeAttachment<'msg> =
-    | AttachedDialog of node: IDialogNode<'msg> * relativeTo: Widget.Handle option
-    | AttachedPopup of node: IMenuNode<'msg> * relativeTo: Widget.Handle
     
 type ComponentStateTarget<'state> =
     interface
@@ -70,15 +52,12 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                     update: 'state -> 'msg -> 'state * Cmd<'msg,'signal>,
                     view: 'state -> 'root,
                     processSignal: 'signal -> unit,
-                    buildContext: BuilderContext<'msg>) as this =
+                    buildContext: BuilderContext<'msg>) =
     let initState, initCmd = init()
     let mutable state = initState
     let mutable root = view state
     let mutable disableDispatch = false
-
-    let mutable attachMap = Map.empty<string, RelativeAttachment<'msg>>
     let mutable bindings = Map.empty<string, IViewBinding>
-    
     let mutable disposed = false
     
     let updateBindings() =
@@ -100,45 +79,6 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                 soFar
         bindings <- recInner Map.empty root
     
-    let updateAttachments() =
-        let rec recInner (soFar: Map<string, RelativeAttachment<'msg>>) (node: IBuilderNode<'msg>) =
-            // first process dependencies
-            let soFar =
-                (soFar, node.Dependencies)
-                ||> List.fold (fun acc (_, node) -> recInner acc node)
-            // now this node's attachments
-            (soFar, node.Attachments)
-            ||> List.fold (fun acc (id, attach) ->
-                match attach.Value with
-                | AttachmentValue.NonVisual nonVisualNode ->
-                    recInner acc nonVisualNode
-                | AttachmentValue.Dialog dialogNode ->
-                    // first process anything beneath (subdialogs! ack)
-                    let acc =
-                        recInner acc dialogNode
-                    // then this particular attachment
-                    let maybeWidget =
-                        match node with
-                        | :? IWidgetNode<'msg> as widgetNode -> Some widgetNode.Widget
-                        | :? IWindowNode<'msg> as windowNode -> Some windowNode.WindowWidget
-                        | :? IDialogNode<'msg> as dialogNode -> Some dialogNode.Dialog
-                        | _ -> None
-                    acc.Add(id, AttachedDialog(dialogNode, maybeWidget))
-                | AttachmentValue.Menu menuNode ->
-                    // deeper attachments
-                    let acc =
-                        recInner acc menuNode
-                    // then this particular attachment
-                    let widget =
-                        match node with
-                        | :? IWidgetNode<'msg> as widgetNode -> widgetNode.Widget
-                        | :? IWindowNode<'msg> as windowNode -> windowNode.WindowWidget
-                        | :? IDialogNode<'msg> as dialogNode -> dialogNode.Dialog :> Widget.Handle
-                        | _ -> failwith "Reactor .updateAttachments() - menu was not attached to something with a widget handle"
-                    acc.Add(id, AttachedPopup(menuNode, widget))
-                )
-        attachMap <- recInner Map.empty root
-
     let rec dispatch (msg: 'msg) =
         if disableDispatch then
             // currently diffing, something tried to dispatch due to an attribute change (generally a Qt widget emitting a signal due to a method call / property change)
@@ -156,7 +96,6 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
             disableDispatch <- false
             //
             updateBindings()
-            updateAttachments()
             // process command(s) after tree diff
             processCmd cmd
     and
@@ -178,8 +117,6 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
             | Cmd.Batch commands ->
                 commands
                 |> List.iter processCmd
-            | Cmd.Dialog (name, op) ->
-                this.DialogOp name op
             | Cmd.Async block ->
                 async {
                     let! msg = block
@@ -195,15 +132,9 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
                             printfn "Cmd.Sub - attempted to dispatch [%A] on a disposed reactor" msg
                     Application.ExecuteOnMainThread(inner)
                 subFunc safeDispatch
-            // | Cmd.ShowMenu (name, loc) ->
-            //     this.PopMenu name loc
-            // | Cmd.Deferred thunk ->
-            //     thunk()
-            //     |> Option.iter dispatch
     do
         build dispatch root buildContext
         updateBindings()
-        updateAttachments()
         processCmd initCmd
         
     member this.Root =
@@ -223,55 +154,8 @@ type Reactor<'state, 'msg, 'signal, 'root when 'root :> IBuilderNode<'msg>>(
         disableDispatch <- false
         //
         updateBindings()
-        updateAttachments()
         // no commands allowed in attr update (for now)
     
-    member this.DialogOp (name: string) (op: DialogOp<'msg>) =
-        match attachMap.TryFind name with
-        | Some node ->
-            match node with
-            | AttachedDialog (node, maybeWidget) ->
-                let moveTo (p: Point) =
-                    match maybeWidget with
-                    | Some widget ->
-                        let abs = widget.MapToGlobal(p.QtValue)
-                        node.Dialog.Move(abs)
-                    | None ->
-                        ()
-                match op with
-                | Exec ->
-                    node.Dialog.Exec()
-                    |> ignore
-                | ExecAt p ->
-                    moveTo p
-                    node.Dialog.Exec()
-                    |> ignore
-                | ExecWithResult msgFunc ->
-                    let result =
-                        node.Dialog.Exec()
-                    if not disposed then
-                        // since the above is a nested runloop, it's possible our container (eg reactor node of some kind) was disposed out from under us
-                        // dispatching is a no-no in that case
-                        dispatch (msgFunc result)
-                | ExecAtPointWithResult (p, msgFunc) ->
-                    moveTo p
-                    let result =
-                        node.Dialog.Exec()
-                    if not disposed then
-                        // see note above
-                        dispatch (msgFunc result)
-                | Show ->
-                    node.Dialog.Show()
-                | ShowAt p ->
-                    moveTo p
-                    node.Dialog.Show()
-                | Accept -> node.Dialog.Accept()
-                | Reject -> node.Dialog.Reject()
-            | _ ->
-                printfn "Cmd.DialogOp - found a node but it wasn't a dialog node (are you using the same name twice?)"
-        | None ->
-            printfn "SubReactor.DialogOp: couldn't find dialog '%s'" name
-            
     interface IDisposable with
         member this.Dispose() =
             // set ASAP to stop subscription dispatches after disposal:

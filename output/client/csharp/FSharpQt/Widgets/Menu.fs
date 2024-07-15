@@ -3,6 +3,7 @@
 open System
 open FSharpQt
 open FSharpQt.BuilderNode
+open FSharpQt.Reactor
 open Microsoft.FSharp.Core
 open Org.Whatever.QtTesting
 open Extensions
@@ -320,3 +321,12 @@ type Menu<'msg>() =
             this.MaybeBoundName
             |> Option.map (fun name ->
                 name, MenuBinding(this.model.Menu))
+
+let showMenuAtPoint name point relativeTo =
+    Cmd.ViewExec (fun bindings ->
+        viewexec bindings {
+            let! menu = bindNode name
+            let! relativeToWidget = Widget.bindNode relativeTo
+            let p2 = relativeToWidget.MapToGlobal(point)
+            menu.Popup(p2)
+        })

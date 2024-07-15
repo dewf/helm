@@ -80,7 +80,8 @@ type Msg =
     | EditChanged of str: string
     | EditSubmitted
     | ShowCalendar
-    | CalendarOp of op: DialogOp<Msg>
+    | AcceptDialog
+    | RejectDialog
 
 let init () =
     let state = {
@@ -117,9 +118,11 @@ let update (state: State) (msg: Msg) =
     | EditSubmitted ->
         state, Cmd.None
     | ShowCalendar ->
-        state, Cmd.Dialog ("calendar", Exec)
-    | CalendarOp op ->
-        state, Cmd.Dialog ("calendar", op)
+        state, execDialog "calendar"
+    | AcceptDialog ->
+        state, acceptDialog "calendar"
+    | RejectDialog ->
+        state, rejectDialog "calendar"
 
 let view (state: State) =
     let edit =
@@ -128,16 +131,20 @@ let view (state: State) =
         PushButton(Text = "Pick", Enabled = state.Enabled, OnClicked = ShowCalendar)
     let dialog =
         let reject =
-            PushButton(Text = "Reject", OnClicked = CalendarOp Reject)
+            PushButton(Text = "Reject", OnClicked = RejectDialog)
         let accept =
-            PushButton(Text = "Woot!", OnClicked = CalendarOp Accept)
+            PushButton(Text = "Woot!", OnClicked = AcceptDialog)
         let layout =
             BoxLayout(Direction = TopToBottom,
                       Items = [
                           BoxItem(reject)
                           BoxItem(accept)
                       ])
-        Dialog(Size = Size.From(320, 200), WindowTitle = state.DialogTitle, Layout = layout)
+        Dialog(
+            Name = "calendar",
+            Size = Size.From(320, 200),
+            WindowTitle = state.DialogTitle, 
+            Layout = layout)
     let hbox =
         BoxLayout(
             Direction = LeftToRight,
