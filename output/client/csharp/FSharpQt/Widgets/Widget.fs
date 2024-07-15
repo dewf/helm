@@ -618,6 +618,12 @@ type WidgetBinding internal(handle: Widget.Handle) =
     member this.MapToGlobal (loc: Point) =
         handle.MapToGlobal(loc.QtValue)
         |> Point.From
+    member this.Update() =
+        handle.Update()
+    member this.Update(x: int, y: int, width: int, height: int) =
+        handle.Update(x, y, width, height)
+    member this.Update(rect: Rect) =
+        handle.Update(rect.QtValue)
     
 let bindNode (name: string) (map: Map<string, IViewBinding>) =
     match map.TryFind name with
