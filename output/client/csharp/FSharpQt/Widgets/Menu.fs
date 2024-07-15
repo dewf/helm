@@ -254,13 +254,9 @@ type MenuBinding internal(handle: Menu.Handle) =
     
 let bindNode (name: string) (map: Map<string, IViewBinding>) =
     match map.TryFind name with
-    | Some thing ->
-        match thing with
-        | :? MenuBinding as menu ->
-            menu
-        | _ ->
-            failwith "Menu.bindNode fail"
-    | None ->
+    | Some (:? MenuBinding as menu) ->
+        menu
+    | _ ->
         failwith "Menu.bindNode fail"
 
 type Menu<'msg>() =

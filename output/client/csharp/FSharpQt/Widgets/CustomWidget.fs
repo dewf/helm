@@ -158,13 +158,9 @@ type CustomWidgetBinding internal(handle: Widget.Handle) =
     
 let bindNode (name: string) (map: Map<string, IViewBinding>) =
     match map.TryFind name with
-    | Some thing ->
-        match thing with
-        | :? CustomWidgetBinding as widget ->
-            widget
-        | _ ->
-            failwith "CustomWidget.bindNode fail"
-    | None ->
+    | Some (:? CustomWidgetBinding as widget) ->
+        widget
+    | _ ->
         failwith "CustomWidget.bindNode fail"
 
 type CustomWidget<'msg>(eventDelegate: EventDelegateInterface<'msg>, eventMaskItems: EventMaskItem seq) =

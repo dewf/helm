@@ -358,13 +358,9 @@ type PlainTextEditBinding internal(handle: PlainTextEdit.Handle) =
     
 let bindNode (name: string) (map: Map<string, IViewBinding>) =
     match map.TryFind name with
-    | Some thing ->
-        match thing with
-        | :? PlainTextEditBinding as pte ->
-            pte
-        | _ ->
-            failwith "PlainTextEdit.bindNode fail"
-    | None ->
+    | Some (:? PlainTextEditBinding as pte) ->
+        pte
+    | _ ->
         failwith "PlainTextEdit.bindNode fail"
             
 type PlainTextEdit<'msg>() =

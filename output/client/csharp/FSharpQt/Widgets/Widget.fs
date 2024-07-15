@@ -621,13 +621,9 @@ type WidgetBinding internal(handle: Widget.Handle) =
     
 let bindNode (name: string) (map: Map<string, IViewBinding>) =
     match map.TryFind name with
-    | Some thing ->
-        match thing with
-        | :? WidgetBinding as widget ->
-            widget
-        | _ ->
-            failwith "Widget.bindNode fail"
-    | None ->
+    | Some (:? WidgetBinding as widget) ->
+        widget
+    | _ ->
         failwith "Widget.bindNode fail"
 
 type Widget<'msg>() =

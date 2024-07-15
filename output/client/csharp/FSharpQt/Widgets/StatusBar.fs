@@ -187,13 +187,9 @@ type StatusBarBinding internal(handle: StatusBar.Handle) =
         
 let bindNode (name: string) (map: Map<string, IViewBinding>) =
     match map.TryFind name with
-    | Some thing ->
-        match thing with
-        | :? StatusBarBinding as statusBar ->
-            statusBar
-        | _ ->
-            failwith "StatusBar.bindNode fail"
-    | None ->
+    | Some (:? StatusBarBinding as statusBar) ->
+        statusBar
+    | _ ->
         failwith "StatusBar.bindNode fail"
     
 type StatusBar<'msg>() =
