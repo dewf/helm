@@ -1,7 +1,7 @@
 #include "core/NativeImplCore.h"
 #include <cstdint>
 
-#include "build/qttestingserver_global.h"
+#include "build/QtTestingServer_global.h"
 
 extern "C" {
     QTTESTINGSERVER_EXPORT int nativeImplInit(

@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.14)
 
-#set(CMAKE_PREFIX_PATH "C:/Qt/6.6.3/msvc2019_64/lib/cmake")
-set(CMAKE_PREFIX_PATH "C:/Qt/6.7.1/msvc2019_64/lib/cmake")
+if(WIN32)
+    #set(CMAKE_PREFIX_PATH "C:/Qt/6.6.3/msvc2019_64/lib/cmake")
+    set(CMAKE_PREFIX_PATH "C:/Qt/6.7.1/msvc2019_64/lib/cmake")
+elseif (APPLE)
+    set(CMAKE_PREFIX_PATH "/Users/daniel/Qt/6.7.2/macos/lib/cmake")
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+endif()
 
 project(QtTestingServer LANGUAGES CXX)
 
@@ -14,15 +19,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
-add_library(QtTestingServer SHARED
-  # QtTestingServer_global.h
-  # qttestingserver.cpp
-  # qttestingserver.h
-  ../dllmain.cpp
-  ../core/NativeImplCore.cpp
-  ../DirectExport.h
-  ../DirectExport.cpp
-)
+if (WIN32)
+    add_library(QtTestingServer SHARED
+            # QtTestingServer_global.h
+            # qttestingserver.cpp
+            # qttestingserver.h
+            ../dllmain.cpp
+            ../core/NativeImplCore.cpp
+            ../DirectExport.h
+            ../DirectExport.cpp
+    )
+else()
+    add_library(QtTestingServer SHARED
+            # QtTestingServer_global.h
+            # qttestingserver.cpp
+            # qttestingserver.h
+#            ../dllmain.cpp
+            ../core/NativeImplCore.cpp
+            ../DirectExport.h
+            ../DirectExport.cpp
+    )
+endif()
 
 add_subdirectory("../../cpp/QtTestingImpl/build" "${CMAKE_CURRENT_BINARY_DIR}/QtTestingImpl")
 
