@@ -1,7 +1,13 @@
+#pragma once
+
 #include "core/NativeImplCore.h"
 #include <cstdint>
 
-#include "build/QtTestingServer_global.h"
+#ifdef _WIN32
+#define QTTESTINGSERVER_EXPORT __declspec(dllexport)
+#else
+#define QTTESTINGSERVER_EXPORT __attribute__ ((visibility ("default")))
+#endif
 
 extern "C" {
     QTTESTINGSERVER_EXPORT int nativeImplInit(
